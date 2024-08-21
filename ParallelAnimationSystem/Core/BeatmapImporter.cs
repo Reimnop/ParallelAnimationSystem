@@ -96,14 +96,14 @@ public static class BeatmapImporter
         themeColors.Background = InterpolateColor4(a.Background, b.Background, t);
         themeColors.Gui = InterpolateColor4(a.Gui, b.Gui, t);
         themeColors.GuiAccent = InterpolateColor4(a.GuiAccent, b.GuiAccent, t);
-        for (var i = 0; i < 4; i++)
+        for (var i = 0; i < Math.Min(a.Player.Count, b.Player.Count); i++)
             themeColors.Player.Add(InterpolateColor4(a.Player[i], b.Player[i], t));
-        for (var i = 0; i < 9; i++)
+        for (var i = 0; i < Math.Min(a.Object.Count, b.Object.Count); i++)
             themeColors.Object.Add(InterpolateColor4(a.Object[i], b.Object[i], t));
-        // for (var i = 0; i < 9; i++)
-        //     themeColors.Effect.Add(InterpolateColor4(a.Effect[i], b.Effect[i], t));
-        // for (var i = 0; i < 9; i++)
-        //     themeColors.ParallaxObject.Add(InterpolateColor4(a.ParallaxObject[i], b.ParallaxObject[i], t));
+        for (var i = 0; i < Math.Min(a.Effect.Count, b.Effect.Count); i++)
+            themeColors.Effect.Add(InterpolateColor4(a.Effect[i], b.Effect[i], t));
+        for (var i = 0; i < Math.Min(a.ParallaxObject.Count, b.ParallaxObject.Count); i++)
+            themeColors.ParallaxObject.Add(InterpolateColor4(a.ParallaxObject[i], b.ParallaxObject[i], t));
         return themeColors;
     }
 
