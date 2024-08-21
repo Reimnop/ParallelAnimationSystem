@@ -24,8 +24,8 @@ rootCommand.SetHandler(async (levelFile, audioFile) =>
         Console.WriteLine("Please provide both a level file and an audio file.");
         return;
     }
-    
+
     await Startup.StartAppAsync(levelFile, audioFile);
 }, levelFileOption, audioFileOption);
 
-return rootCommand.InvokeAsync(args).Result;
+return await rootCommand.InvokeAsync(args);
