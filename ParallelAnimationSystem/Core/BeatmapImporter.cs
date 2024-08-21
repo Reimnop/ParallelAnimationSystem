@@ -158,7 +158,7 @@ public static class BeatmapImporter
             newObj.Text = obj.Text;
             newObj.Origin = obj.Origin;
             newObj.RenderDepth = obj.RenderDepth;
-            newObj.StartTime = obj.StartTime;
+            newObj.StartTime = obj.StartTime + prefabObject.Time; // TODO: Prefab offset
             newObj.AutoKillType = obj.AutoKillType;
             newObj.AutoKillOffset = obj.AutoKillOffset;
             newObj.ParentType = obj.ParentType;
@@ -167,7 +167,7 @@ public static class BeatmapImporter
             newObj.ScaleEvents.AddRange(obj.ScaleEvents);
             newObj.RotationEvents.AddRange(obj.RotationEvents);
             newObj.ColorEvents.AddRange(obj.ColorEvents);
-            newObj.Parent = parent;
+            newObj.Parent = obj.Parent;
             lookup.Add(obj, newObj);
         }
         
@@ -245,13 +245,13 @@ public static class BeatmapImporter
         var parentChainSize = 0;
         var parent = beatmapObject.Parent is IObject parentObject ? RecursivelyCreateParentTransform(parentObject, ref parentChainSize) : null;
         
-        var depth = MathHelper.MapRange(beatmapObject.RenderDepth - parentChainSize / 1000.0f - beatmapObject.StartTime / 1000000.0f, -200.0f, 200.0f, 0.0f, 1.0f);
+        var depth = MathHelper.MapRange(beatmapObject.RenderDepth + parentChainSize / 1000.0f + beatmapObject.StartTime / 1000000.0f, -200.0f, 200.0f, 0.0f, 1.0f);
         
         return new GameObject(
             startTime,
             killTime,
             positionAnimation, scaleAnimation, rotationAnimation, themeColorAnimation,
-            parentPositionTimeOffset, parentScaleTimeOffset, parentRotationTimeOffset,
+            -parentPositionTimeOffset, -parentScaleTimeOffset, -parentRotationTimeOffset,
             parentAnimatePosition, parentAnimateScale, parentAnimateRotation,
             origin, shapeIndex, shapeOptionIndex, depth, parent);
     }
@@ -278,7 +278,7 @@ public static class BeatmapImporter
         return new ParentTransform(
             -beatmapObject.StartTime,
             positionAnimation, scaleAnimation, rotationAnimation,
-            parentPositionTimeOffset, parentScaleTimeOffset, parentRotationTimeOffset,
+            -parentPositionTimeOffset, -parentScaleTimeOffset, -parentRotationTimeOffset,
             parentAnimatePosition, parentAnimateScale, parentAnimateRotation,
             parent);
     }
