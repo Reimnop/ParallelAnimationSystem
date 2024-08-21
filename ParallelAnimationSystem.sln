@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParallelAnimationSystem", "ParallelAnimationSystem/ParallelAnimationSystem.csproj", "{444CBF4B-0AAA-4747-B47F-12C9DEE5196E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pamx", "Pamx\Pamx\Pamx.csproj", "{4E314A52-4F54-460E-B124-58159D07B21C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pamx.Common", "Pamx\Pamx.Common\Pamx.Common.csproj", "{A086E971-5013-4440-8F4B-D2C59687D785}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pamx.Common.Implementation", "Pamx\Pamx.Common.Implementation\Pamx.Common.Implementation.csproj", "{DC897394-0124-425B-94C0-AD3E9ED8B160}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pamx.Ls", "Pamx\Pamx.Ls\Pamx.Ls.csproj", "{D9A017A4-5F4F-44F5-95F1-329392CBBC4B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pamx.Vg", "Pamx\Pamx.Vg\Pamx.Vg.csproj", "{F09645EC-4B4E-48AB-9442-788B6507E535}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Pamx", "Pamx", "{DC6C265A-A6F9-4550-9486-475FFBBD8B72}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{444CBF4B-0AAA-4747-B47F-12C9DEE5196E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{444CBF4B-0AAA-4747-B47F-12C9DEE5196E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{444CBF4B-0AAA-4747-B47F-12C9DEE5196E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{444CBF4B-0AAA-4747-B47F-12C9DEE5196E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4E314A52-4F54-460E-B124-58159D07B21C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E314A52-4F54-460E-B124-58159D07B21C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4E314A52-4F54-460E-B124-58159D07B21C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4E314A52-4F54-460E-B124-58159D07B21C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A086E971-5013-4440-8F4B-D2C59687D785}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A086E971-5013-4440-8F4B-D2C59687D785}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A086E971-5013-4440-8F4B-D2C59687D785}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A086E971-5013-4440-8F4B-D2C59687D785}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DC897394-0124-425B-94C0-AD3E9ED8B160}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC897394-0124-425B-94C0-AD3E9ED8B160}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC897394-0124-425B-94C0-AD3E9ED8B160}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC897394-0124-425B-94C0-AD3E9ED8B160}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9A017A4-5F4F-44F5-95F1-329392CBBC4B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9A017A4-5F4F-44F5-95F1-329392CBBC4B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9A017A4-5F4F-44F5-95F1-329392CBBC4B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9A017A4-5F4F-44F5-95F1-329392CBBC4B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F09645EC-4B4E-48AB-9442-788B6507E535}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F09645EC-4B4E-48AB-9442-788B6507E535}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F09645EC-4B4E-48AB-9442-788B6507E535}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F09645EC-4B4E-48AB-9442-788B6507E535}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{4E314A52-4F54-460E-B124-58159D07B21C} = {DC6C265A-A6F9-4550-9486-475FFBBD8B72}
+		{A086E971-5013-4440-8F4B-D2C59687D785} = {DC6C265A-A6F9-4550-9486-475FFBBD8B72}
+		{DC897394-0124-425B-94C0-AD3E9ED8B160} = {DC6C265A-A6F9-4550-9486-475FFBBD8B72}
+		{D9A017A4-5F4F-44F5-95F1-329392CBBC4B} = {DC6C265A-A6F9-4550-9486-475FFBBD8B72}
+		{F09645EC-4B4E-48AB-9442-788B6507E535} = {DC6C265A-A6F9-4550-9486-475FFBBD8B72}
+	EndGlobalSection
+EndGlobal
