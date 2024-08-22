@@ -73,25 +73,10 @@ public class Renderer(Options options, ILogger<Renderer> logger)
             ClientSize = new Vector2i(1600, 900),
             API = ContextAPI.OpenGL,
             Profile = ContextProfile.Core,
-            APIVersion = new Version(3, 3),
+            APIVersion = new Version(4, 3),
             IsEventDriven = false,
         };
         window = new NativeWindow(nws);
-        
-        // Fetch extensions
-        var extensionCount = GL.GetInteger(GetPName.NumExtensions);
-        var extensions = new HashSet<string>(extensionCount);
-        for (var i = 0; i < extensionCount; i++)
-            extensions.Add(GL.GetString(StringNameIndexed.Extensions, i));
-        
-        // Print all extensions
-        logger.LogInformation("Platform supports {ExtensionCount} OpenGL extensions:{Extensions}",
-            extensionCount,
-            string.Join(", ", extensions));
-        
-        // Check for DSA support
-        if (!extensions.Contains("GL_ARB_direct_state_access"))
-            throw new PlatformNotSupportedException("The current platform does not support ARB_direct_state_access extension");
         
         // Set VSync
         window.VSync = options.VSync ? VSyncMode.On : VSyncMode.Off; 
