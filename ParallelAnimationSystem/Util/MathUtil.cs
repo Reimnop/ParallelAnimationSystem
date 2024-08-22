@@ -26,4 +26,7 @@ public static class MathUtil
             -sin, cos,  0.0f,
             0.0f, 0.0f, 1.0f);
     }
+    
+    public static int DivideCeil(int dividend, int divisor)
+        => (dividend + divisor - 1) / divisor;
 }

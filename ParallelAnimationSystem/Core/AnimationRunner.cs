@@ -10,6 +10,7 @@ public class AnimationRunner
     public Vector2 CameraPosition { get; private set; }
     public float CameraScale { get; private set; }
     public float CameraRotation { get; private set; }
+    public float Hue { get; private set; }
     public Color4 BackgroundColor { get; private set; }
     
     public int ObjectCount => startTimeSortedGameObjects.Count;
@@ -24,6 +25,8 @@ public class AnimationRunner
     private readonly Sequence<Vector2, Vector2> cameraPositionAnimation;
     private readonly Sequence<float, float> cameraScaleAnimation;
     private readonly Sequence<float, float> cameraRotationAnimation;
+
+    private readonly Sequence<float, float> hueSequence;
         
     private float lastTime;
     
@@ -32,13 +35,15 @@ public class AnimationRunner
         Sequence<ITheme, ThemeColors> themeColorSequence,
         Sequence<Vector2, Vector2> cameraPositionAnimation,
         Sequence<float, float> cameraScaleAnimation,
-        Sequence<float, float> cameraRotationAnimation)
+        Sequence<float, float> cameraRotationAnimation,
+        Sequence<float, float> hueSequence)
     {
         // Set sequences
         this.themeColorSequence = themeColorSequence;
         this.cameraPositionAnimation = cameraPositionAnimation;
         this.cameraScaleAnimation = cameraScaleAnimation;
         this.cameraRotationAnimation = cameraRotationAnimation;
+        this.hueSequence = hueSequence;
         
         // A bit expensive, but we have to copy the enumerable to a list
         // to prevent multiple enumeration
@@ -57,6 +62,7 @@ public class AnimationRunner
         CameraPosition = cameraPositionAnimation.Interpolate(time);
         CameraScale = cameraScaleAnimation.Interpolate(time);
         CameraRotation = cameraRotationAnimation.Interpolate(time);
+        Hue = hueSequence.Interpolate(time);
         
         // Spawn and kill objects according to time
         SpawnAndKillObjects(time);

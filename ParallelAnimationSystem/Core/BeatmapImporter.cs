@@ -27,13 +27,30 @@ public static class BeatmapImporter
         var cameraScaleSequence = CreateCameraScaleSequence(beatmap.Events.Zoom);
         var cameraRotationSequence = CreateCameraRotationSequence(beatmap.Events.Rotation);
         
+        // Get post-processing sequences
+        var hueSequence = CreateHueSequence(beatmap.Events.Hue);
+        
         // Create the runner with the GameObjects
         return new AnimationRunner(
             gameObjects, 
             themeColorSequence, 
             cameraPositionSequence, 
             cameraScaleSequence, 
-            cameraRotationSequence);
+            cameraRotationSequence,
+            hueSequence);
+    }
+    
+    private static Sequence<float, float> CreateHueSequence(IList<FixedKeyframe<float>> hueEvents)
+    {
+        var keyframes = hueEvents
+            .Select(x =>
+            {
+                var time = x.Time;
+                var value = MathHelper.DegreesToRadians(x.Value);
+                var ease = EaseFunctions.GetOrDefault(x.Ease, EaseFunctions.Linear);
+                return new Animation.Keyframe<float>(time, value, ease);
+            });
+        return new Sequence<float, float>(keyframes, InterpolateFloat);
     }
     
     private static Sequence<Vector2, Vector2> CreateCameraPositionSequence(IList<FixedKeyframe<System.Numerics.Vector2>> cameraPositionEvents)

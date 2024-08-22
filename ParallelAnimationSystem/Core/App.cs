@@ -149,7 +149,8 @@ public class App(Options options, Renderer renderer, ILogger<App> logger)
             CameraData = new CameraData(
                 runner.CameraPosition,
                 runner.CameraScale,
-                runner.CameraRotation)
+                runner.CameraRotation),
+            PostProcessingData = new PostProcessingData(runner.Hue),
         };
 
         // Draw all alive game objects

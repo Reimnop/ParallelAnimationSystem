@@ -5,8 +5,8 @@ using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
-using OpenTK.Windowing.GraphicsLibraryFramework;
 using ParallelAnimationSystem.Data;
+using ParallelAnimationSystem.Rendering.PostProcessing;
 using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Rendering;
@@ -29,6 +29,9 @@ public class Renderer(Options options, ILogger<Renderer> logger)
     private readonly Buffer indexBuffer = new();
     private bool newMeshData = true;
     
+    // Post processors
+    private readonly Hue hue = new();
+    
     // OpenGL data
     private int vertexArrayHandle;
     private int vertexBufferHandle;
@@ -39,6 +42,8 @@ public class Renderer(Options options, ILogger<Renderer> logger)
     private Vector2i currentFboSize;
     private int fboTextureHandle, fboDepthBufferHandle;
     private int fboHandle;
+    private int postProcessTextureHandle1, postProcessTextureHandle2;
+    private int postProcessFboHandle;
 
     private readonly List<DrawData> opaqueDrawData = [];
     private readonly List<DrawData> transparentDrawData = [];
@@ -142,8 +147,8 @@ public class Renderer(Options options, ILogger<Renderer> logger)
         GL.VertexArrayElementBuffer(vertexArrayHandle, indexBufferHandle);
         
         // Initialize shader program
-        var vertexShaderSource = ReadAllText("Resources.Shaders.SimpleUnlitVertex.glsl");
-        var fragmentShaderSource = ReadAllText("Resources.Shaders.SimpleUnlitFragment.glsl");
+        var vertexShaderSource = ResourceUtil.ReadAllText("Resources.Shaders.SimpleUnlitVertex.glsl");
+        var fragmentShaderSource = ResourceUtil.ReadAllText("Resources.Shaders.SimpleUnlitFragment.glsl");
         
         // Create shaders
         var vertexShader = GL.CreateShader(ShaderType.VertexShader);
@@ -174,6 +179,8 @@ public class Renderer(Options options, ILogger<Renderer> logger)
         colorUniformLocation = GL.GetUniformLocation(programHandle, "uColor");
         
         // Initialize fbo
+        
+        // Initialize scene fbo
         var fboSize = window.ClientSize;
         GL.CreateTextures(TextureTarget.Texture2DMultisample, 1, out fboTextureHandle);
         GL.TextureStorage2DMultisample(fboTextureHandle, 4, SizedInternalFormat.Rgba8, fboSize.X, fboSize.Y, true);
@@ -184,7 +191,21 @@ public class Renderer(Options options, ILogger<Renderer> logger)
         GL.CreateFramebuffers(1, out fboHandle);
         GL.NamedFramebufferTexture(fboHandle, FramebufferAttachment.ColorAttachment0, fboTextureHandle, 0);
         GL.NamedFramebufferRenderbuffer(fboHandle, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, fboDepthBufferHandle);
+        
+        // Initialize post process fbo
+        GL.CreateTextures(TextureTarget.Texture2D, 1, out postProcessTextureHandle1);
+        GL.TextureStorage2D(postProcessTextureHandle1, 1, SizedInternalFormat.Rgba8, fboSize.X, fboSize.Y);
+        
+        GL.CreateTextures(TextureTarget.Texture2D, 1, out postProcessTextureHandle2);
+        GL.TextureStorage2D(postProcessTextureHandle2, 1, SizedInternalFormat.Rgba8, fboSize.X, fboSize.Y);
+        
+        GL.CreateFramebuffers(1, out postProcessFboHandle);
+        // We will bind the texture later
+        
         currentFboSize = fboSize;
+        
+        // Initialize post processors
+        hue.Initialize();
         
         logger.LogInformation("OpenGL initialized");
     }
@@ -297,10 +318,28 @@ public class Renderer(Options options, ILogger<Renderer> logger)
         // Unbind fbo
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
         
-        // Blit to window
+        // Blit to post process fbo
+        GL.NamedFramebufferTexture(postProcessFboHandle, FramebufferAttachment.ColorAttachment0, postProcessTextureHandle1, 0);
+        
         var windowSize = window.ClientSize;
         GL.BlitNamedFramebuffer(
-            fboHandle, 0, 
+            fboHandle, postProcessFboHandle, 
+            0, 0,
+            currentFboSize.X, currentFboSize.Y,
+            0, 0,
+            currentFboSize.X, currentFboSize.Y,
+            ClearBufferMask.ColorBufferBit,
+            BlitFramebufferFilter.Linear);
+        
+        // Do post-processing
+        var finalTexture = HandlePostProcessing(drawList.PostProcessingData, postProcessTextureHandle1, postProcessTextureHandle2);
+        
+        // Bind final texture to post process fbo
+        GL.NamedFramebufferTexture(postProcessFboHandle, FramebufferAttachment.ColorAttachment0, finalTexture, 0);
+        
+        // Blit to window
+        GL.BlitNamedFramebuffer(
+            postProcessFboHandle, 0,
             0, 0,
             currentFboSize.X, currentFboSize.Y,
             0, 0,
@@ -309,6 +348,17 @@ public class Renderer(Options options, ILogger<Renderer> logger)
             BlitFramebufferFilter.Linear);
 
         window.Context.SwapBuffers();
+    }
+
+    private int HandlePostProcessing(PostProcessingData data, int texture1, int texture2)
+    {
+        if (data.HueShiftAngle != 0.0f)
+        {
+            hue.Process(currentFboSize, data.HueShiftAngle, texture1, texture2);
+            Swap(ref texture1, ref texture2); // Swap after every post-processing pass
+        }
+        
+        return texture1;
     }
 
     private Matrix3 GetCameraMatrix(CameraData camera)
@@ -367,6 +417,8 @@ public class Renderer(Options options, ILogger<Renderer> logger)
         // Delete old textures
         GL.DeleteTexture(fboTextureHandle);
         GL.DeleteRenderbuffer(fboDepthBufferHandle);
+        GL.DeleteTexture(postProcessTextureHandle1);
+        GL.DeleteTexture(postProcessTextureHandle2);
         
         // Create new textures
         GL.CreateTextures(TextureTarget.Texture2DMultisample, 1, out fboTextureHandle);
@@ -374,6 +426,12 @@ public class Renderer(Options options, ILogger<Renderer> logger)
         
         GL.CreateRenderbuffers(1, out fboDepthBufferHandle);
         GL.NamedRenderbufferStorageMultisample(fboDepthBufferHandle, 4, RenderbufferStorage.DepthComponent, fboSize.X, fboSize.Y);
+        
+        GL.CreateTextures(TextureTarget.Texture2D, 1, out postProcessTextureHandle1);
+        GL.TextureStorage2D(postProcessTextureHandle1, 1, SizedInternalFormat.Rgba8, fboSize.X, fboSize.Y);
+        
+        GL.CreateTextures(TextureTarget.Texture2D, 1, out postProcessTextureHandle2);
+        GL.TextureStorage2D(postProcessTextureHandle2, 1, SizedInternalFormat.Rgba8, fboSize.X, fboSize.Y);
         
         // Bind to fbo
         GL.NamedFramebufferTexture(fboHandle, FramebufferAttachment.ColorAttachment0, fboTextureHandle, 0);
@@ -383,16 +441,9 @@ public class Renderer(Options options, ILogger<Renderer> logger)
         
         logger.LogInformation("OpenGL framebuffer size updated, now at {Width}x{Height}", currentFboSize.X, currentFboSize.Y);
     }
-
-    private static string ReadAllText(string path)
+    
+    private static void Swap<T>(ref T a, ref T b)
     {
-        var assembly = typeof(Renderer).Assembly;
-        path = $"{assembly.GetName().Name}.{path}";
-        
-        using var stream = assembly.GetManifestResourceStream(path);
-        if (stream is null)
-            throw new InvalidOperationException($"File '{path}' not found");
-        using var reader = new StreamReader(stream);
-        return reader.ReadToEnd();
+        (a, b) = (b, a);
     }
 }
