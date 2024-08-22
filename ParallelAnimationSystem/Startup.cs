@@ -25,16 +25,22 @@ public static class Startup
         app.Initialize();
 
         // Run the tasks
-        var rendererTask = Task.Run(() =>
+        var rendererThread = new Thread(() =>
         {
             // Since the renderer must all be on one thread, we must initialize it here
             // Then run it on the same thread
             renderer.Initialize();
             renderer.Run();
         });
-        var appTask = Task.Run(() => app.RunAsync());
+        var appThread = new Thread(() => app.Run());
+        
+        rendererThread.Start();
+        appThread.Start();
 
-        // Wait for both tasks to complete
-        await Task.WhenAll(rendererTask, appTask);
+        // Asynchronously wait for both threads to exit
+        await Task.WhenAll(
+            Task.Run(() => rendererThread.Join()),
+            Task.Run(() => appThread.Join())
+        );
     }
 }

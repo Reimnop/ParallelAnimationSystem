@@ -106,7 +106,7 @@ public class App(Options options, Renderer renderer, ILogger<App> logger)
         ]);
     }
     
-    public async Task RunAsync()
+    public void Run()
     {
         Debug.Assert(runner is not null);
         Debug.Assert(vorbisWaveReader is not null);
@@ -114,7 +114,7 @@ public class App(Options options, Renderer renderer, ILogger<App> logger)
         
         // Wait until renderer is initialized
         while (!renderer.Initialized)
-            await Task.Delay(50);
+            Thread.Sleep(50);
         
         // Play audio
         waveOutEvent.Play();
@@ -128,11 +128,11 @@ public class App(Options options, Renderer renderer, ILogger<App> logger)
             var currentTime = stopwatch.Elapsed.TotalSeconds;
             var delta = currentTime - lastTime;
             lastTime = currentTime;
-            await ProcessFrameAsync(delta);
+            ProcessFrame(delta);
         }
     }
     
-    private async Task ProcessFrameAsync(double delta)
+    private void ProcessFrame(double delta)
     {
         Debug.Assert(runner is not null);
         Debug.Assert(vorbisWaveReader is not null);
@@ -140,7 +140,7 @@ public class App(Options options, Renderer renderer, ILogger<App> logger)
         
         // Update runner
         var time = (float) waveOutEvent.GetPositionTimeSpan().TotalSeconds;
-        await runner.ProcessAsync(time);
+        runner.ProcessAsync(time).Wait();
         
         // Start queueing up draw data
         var drawList = new DrawList
@@ -164,14 +164,14 @@ public class App(Options options, Renderer renderer, ILogger<App> logger)
         }
         
         // Submit our draw list
-        await SubmitDrawListAsync(drawList);
+        SubmitDrawList(drawList);
     }
 
-    private async Task SubmitDrawListAsync(DrawList drawList)
+    private void SubmitDrawList(DrawList drawList)
     {
-        // Wait until we have less than 2 draw lists queued
+        // If we already have more than 2 draw lists queued, wait until we don't
         while (renderer.QueuedDrawListCount > 2)
-            await Task.Yield(); // We use a much smaller delay here, as we want to render as soon as possible
+            Thread.Yield();
         
         // Submit draw list
         renderer.SubmitDrawList(drawList);

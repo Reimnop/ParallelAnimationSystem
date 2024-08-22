@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
@@ -73,9 +74,8 @@ public class Renderer(Options options, ILogger<Renderer> logger)
         };
         window = new NativeWindow(nws);
         
-        // Enable VSync
-        if (options.VSync)
-            window.VSync = VSyncMode.On;
+        // Set VSync
+        window.VSync = options.VSync ? VSyncMode.On : VSyncMode.Off; 
         
         logger.LogInformation("Window created");
     }
@@ -180,9 +180,10 @@ public class Renderer(Options options, ILogger<Renderer> logger)
         Debug.Assert(window is not null);
         
         // Get the current draw list
-        if (!drawListQueue.TryDequeue(out var drawList))
-            return;
-        
+        DrawList? drawList;
+        while (!drawListQueue.TryDequeue(out drawList))
+            Thread.Yield();
+
         // Update OpenGL data
         UpdateOpenGlData();
         
