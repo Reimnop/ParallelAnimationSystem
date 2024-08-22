@@ -19,7 +19,7 @@ public class App(Renderer renderer, ILogger<App> logger)
     private VorbisWaveReader? vorbisWaveReader;
     private WaveOutEvent? waveOutEvent;
     
-    public void Initialize(string levelPath, string audioPath)
+    public void Initialize(string levelPath, string audioPath, LevelFormat format)
     {
         // Register all meshes
         RegisterMeshes();
@@ -31,10 +31,13 @@ public class App(Renderer renderer, ILogger<App> logger)
         if (jsonNode is not JsonObject jsonObject)
             throw new InvalidOperationException("Invalid JSON object");
         
-        var beatmap = LsDeserialization.DeserializeBeatmap(jsonObject);
+        var beatmap = format == LevelFormat.Lsb 
+            ? LsDeserialization.DeserializeBeatmap(jsonObject) 
+            : VgDeserialization.DeserializeBeatmap(jsonObject);
         
         // Migrate the beatmap to the latest version of the beatmap format
-        LsMigration.MigrateBeatmap(beatmap);
+        if (format == LevelFormat.Lsb)
+            LsMigration.MigrateBeatmap(beatmap);
         
         // Create animation runner
         runner = BeatmapImporter.CreateRunner(beatmap);
