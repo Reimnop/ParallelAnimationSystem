@@ -31,10 +31,10 @@ public class App(Renderer renderer, ILogger<App> logger)
         if (jsonNode is not JsonObject jsonObject)
             throw new InvalidOperationException("Invalid JSON object");
         
-        var beatmap = VgDeserialization.DeserializeBeatmap(jsonObject);
+        var beatmap = LsDeserialization.DeserializeBeatmap(jsonObject);
         
         // Migrate the beatmap to the latest version of the beatmap format
-        // LsMigration.MigrateBeatmap(beatmap);
+        LsMigration.MigrateBeatmap(beatmap);
         
         // Create animation runner
         runner = BeatmapImporter.CreateRunner(beatmap);
@@ -133,6 +133,7 @@ public class App(Renderer renderer, ILogger<App> logger)
         // Start queueing up draw data
         var drawList = new DrawList
         {
+            ClearColor = runner.BackgroundColor,
             CameraData = new CameraData(
                 runner.CameraPosition,
                 runner.CameraScale,

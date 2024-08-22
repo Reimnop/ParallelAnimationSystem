@@ -10,6 +10,8 @@ public class AnimationRunner
     public Vector2 CameraPosition { get; private set; }
     public float CameraScale { get; private set; }
     public float CameraRotation { get; private set; }
+    public Color4 BackgroundColor { get; private set; }
+    
     public int ObjectCount => startTimeSortedGameObjects.Count;
 
     private readonly List<GameObject> startTimeSortedGameObjects;
@@ -63,6 +65,8 @@ public class AnimationRunner
         var themeColors = themeColorSequence.Interpolate(time);
         if (themeColors is null)
             throw new InvalidOperationException("Theme colors are null, theme color sequence might not be populated");
+
+        BackgroundColor = themeColors.Background;
         
         // Update all objects in parallel
         await Parallel.ForEachAsync(aliveGameObjects, (x, _) => ProcessGameObjectAsync(x, themeColors, time));

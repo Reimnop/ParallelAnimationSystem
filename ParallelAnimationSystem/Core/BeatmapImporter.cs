@@ -78,6 +78,7 @@ public static class BeatmapImporter
     private static Sequence<ITheme, ThemeColors> CreateThemeSequence(IList<FixedKeyframe<IReference<ITheme>>> themeEvents)
     {
         var keyframes = themeEvents
+            .Where(x => x.Value.Value is not null)
             .Select(x =>
             {
                 var time = x.Time;

@@ -208,6 +208,7 @@ public class Renderer(ILogger<Renderer> logger)
         
         // Render
         GL.Viewport(0, 0, window.ClientSize.X, window.ClientSize.Y);
+        GL.ClearColor(drawList.ClearColor);
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
         
         // Use our program
