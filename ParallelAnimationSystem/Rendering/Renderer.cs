@@ -73,7 +73,7 @@ public class Renderer(Options options, ILogger<Renderer> logger)
             ClientSize = new Vector2i(1600, 900),
             API = ContextAPI.OpenGL,
             Profile = ContextProfile.Core,
-            APIVersion = new Version(4, 3),
+            APIVersion = new Version(4, 6),
             IsEventDriven = false,
         };
         window = new NativeWindow(nws);
