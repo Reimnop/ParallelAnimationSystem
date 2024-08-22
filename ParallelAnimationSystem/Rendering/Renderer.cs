@@ -10,7 +10,7 @@ using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Rendering;
 
-public class Renderer(ILogger<Renderer> logger)
+public class Renderer(Options options, ILogger<Renderer> logger)
 {
     private NativeWindow? window;
     
@@ -72,6 +72,10 @@ public class Renderer(ILogger<Renderer> logger)
             NumberOfSamples = 4,
         };
         window = new NativeWindow(nws);
+        
+        // Enable VSync
+        if (options.VSync)
+            window.VSync = VSyncMode.On;
         
         logger.LogInformation("Window created");
     }

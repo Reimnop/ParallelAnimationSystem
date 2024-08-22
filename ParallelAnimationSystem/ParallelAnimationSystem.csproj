@@ -8,7 +8,6 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
     <InvariantGlobalization>true</InvariantGlobalization>
-    <UseSystemResourceKeys>true</UseSystemResourceKeys>
   </PropertyGroup>
 
   <ItemGroup>

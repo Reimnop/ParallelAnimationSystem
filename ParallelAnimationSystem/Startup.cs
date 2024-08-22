@@ -7,16 +7,10 @@ namespace ParallelAnimationSystem;
 
 public static class Startup
 {
-    public static async Task StartAppAsync(string levelPath, string audioPath, LevelFormat? format = null)
+    public static async Task StartAppAsync(Options options)
     {
-        var levelFormat = format ?? Path.GetExtension(levelPath) switch
-        {
-            ".lsb" => LevelFormat.Lsb,
-            ".vgd" => LevelFormat.Vgd,
-            _ => throw new ArgumentException("Could not determine level format, try specifying it manually", nameof(format)),
-        };
-        
         var serviceCollection = new ServiceCollection();
+        serviceCollection.AddSingleton(options);
         serviceCollection.AddLogging(x => x.AddConsole());
         serviceCollection.AddSingleton<App>();
         serviceCollection.AddSingleton<Renderer>();
@@ -28,7 +22,7 @@ public static class Startup
         var renderer = serviceProvider.GetRequiredService<Renderer>();
 
         // Initialize the app first
-        app.Initialize(levelPath, audioPath, levelFormat);
+        app.Initialize();
 
         // Run the tasks
         var rendererTask = Task.Run(() =>

@@ -11,7 +11,7 @@ using ParallelAnimationSystem.Rendering;
 
 namespace ParallelAnimationSystem.Core;
 
-public class App(Renderer renderer, ILogger<App> logger)
+public class App(Options options, Renderer renderer, ILogger<App> logger)
 {
     private readonly List<List<MeshHandle>> meshes = [];
     
@@ -19,18 +19,27 @@ public class App(Renderer renderer, ILogger<App> logger)
     private VorbisWaveReader? vorbisWaveReader;
     private WaveOutEvent? waveOutEvent;
     
-    public void Initialize(string levelPath, string audioPath, LevelFormat format)
+    public void Initialize()
     {
         // Register all meshes
         RegisterMeshes();
         
         // Read animations from file
         logger.LogInformation("Reading level file");
-        var json = File.ReadAllText(levelPath);
+        var json = File.ReadAllText(options.LevelPath);
         var jsonNode = JsonNode.Parse(json);
         if (jsonNode is not JsonObject jsonObject)
             throw new InvalidOperationException("Invalid JSON object");
+
+        // Determine level format
+        var format = options.Format ?? Path.GetExtension(options.LevelPath) switch
+        {
+            ".lsb" => LevelFormat.Lsb,
+            ".vgd" => LevelFormat.Vgd,
+            _ => throw new ArgumentException("Unknown level file format")
+        };
         
+        // Deserialize beatmap
         var beatmap = format == LevelFormat.Lsb 
             ? LsDeserialization.DeserializeBeatmap(jsonObject) 
             : VgDeserialization.DeserializeBeatmap(jsonObject);
@@ -46,7 +55,7 @@ public class App(Renderer renderer, ILogger<App> logger)
         
         // Load audio
         logger.LogInformation("Loading audio");
-        vorbisWaveReader = new VorbisWaveReader(audioPath);
+        vorbisWaveReader = new VorbisWaveReader(options.AudioPath);
         waveOutEvent = new WaveOutEvent();
         waveOutEvent.Init(vorbisWaveReader);
     }
