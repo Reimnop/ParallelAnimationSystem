@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Mathematics;
@@ -34,6 +33,11 @@ public class Renderer(Options options, ILogger<Renderer> logger)
     private int vertexBufferHandle;
     private int indexBufferHandle;
     private int programHandle;
+    private int mvpUniformLocation, zUniformLocation, colorUniformLocation;
+
+    private Vector2i currentFboSize;
+    private int fboTextureHandle, fboDepthBufferHandle;
+    private int fboHandle;
 
     private readonly List<DrawData> opaqueDrawData = [];
     private readonly List<DrawData> transparentDrawData = [];
@@ -68,11 +72,25 @@ public class Renderer(Options options, ILogger<Renderer> logger)
             ClientSize = new Vector2i(1600, 900),
             API = ContextAPI.OpenGL,
             Profile = ContextProfile.Core,
-            APIVersion = new Version(4, 6),
+            APIVersion = new Version(3, 3),
             IsEventDriven = false,
-            NumberOfSamples = 4,
         };
         window = new NativeWindow(nws);
+        
+        // Fetch extensions
+        var extensionCount = GL.GetInteger(GetPName.NumExtensions);
+        var extensions = new HashSet<string>(extensionCount);
+        for (var i = 0; i < extensionCount; i++)
+            extensions.Add(GL.GetString(StringNameIndexed.Extensions, i));
+        
+        // Print all extensions
+        logger.LogInformation("Platform supports {ExtensionCount} OpenGL extensions:{Extensions}",
+            extensionCount,
+            string.Join(", ", extensions));
+        
+        // Check for DSA support
+        if (!extensions.Contains("GL_ARB_direct_state_access"))
+            throw new PlatformNotSupportedException("The current platform does not support ARB_direct_state_access extension");
         
         // Set VSync
         window.VSync = options.VSync ? VSyncMode.On : VSyncMode.Off; 
@@ -164,6 +182,24 @@ public class Renderer(Options options, ILogger<Renderer> logger)
         GL.DeleteShader(vertexShader);
         GL.DeleteShader(fragmentShader);
         
+        // Get uniform locations
+        mvpUniformLocation = GL.GetUniformLocation(programHandle, "uMvp");
+        zUniformLocation = GL.GetUniformLocation(programHandle, "uZ");
+        colorUniformLocation = GL.GetUniformLocation(programHandle, "uColor");
+        
+        // Initialize fbo
+        var fboSize = window.ClientSize;
+        GL.CreateTextures(TextureTarget.Texture2DMultisample, 1, out fboTextureHandle);
+        GL.TextureStorage2DMultisample(fboTextureHandle, 4, SizedInternalFormat.Rgba8, fboSize.X, fboSize.Y, true);
+        
+        GL.CreateRenderbuffers(1, out fboDepthBufferHandle);
+        GL.NamedRenderbufferStorageMultisample(fboDepthBufferHandle, 4, RenderbufferStorage.DepthComponent, fboSize.X, fboSize.Y);
+        
+        GL.CreateFramebuffers(1, out fboHandle);
+        GL.NamedFramebufferTexture(fboHandle, FramebufferAttachment.ColorAttachment0, fboTextureHandle, 0);
+        GL.NamedFramebufferRenderbuffer(fboHandle, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, fboDepthBufferHandle);
+        currentFboSize = fboSize;
+        
         logger.LogInformation("OpenGL initialized");
     }
 
@@ -212,9 +248,15 @@ public class Renderer(Options options, ILogger<Renderer> logger)
         var camera = GetCameraMatrix(drawList.CameraData);
         
         // Render
-        GL.Viewport(0, 0, window.ClientSize.X, window.ClientSize.Y);
-        GL.ClearColor(drawList.ClearColor);
-        GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+        GL.Viewport(0, 0, currentFboSize.X, currentFboSize.Y);
+        
+        // Clear buffers
+        var clearColor = drawList.ClearColor;
+        GL.ClearNamedFramebuffer(fboHandle, ClearBuffer.Color, 0, ref clearColor.R);
+        var depthClearValue = 1.0f;
+        GL.ClearNamedFramebuffer(fboHandle, ClearBuffer.Depth, 0, ref depthClearValue);
+        
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, fboHandle);
         
         // Use our program
         GL.UseProgram(programHandle);
@@ -225,7 +267,6 @@ public class Renderer(Options options, ILogger<Renderer> logger)
         // Opaque pass, disable blending, enable depth testing
         GL.Disable(EnableCap.Blend);
         GL.Enable(EnableCap.DepthTest);
-        GL.DepthMask(true);
         
         // Draw each mesh
         foreach (var drawData in opaqueDrawData)
@@ -234,9 +275,9 @@ public class Renderer(Options options, ILogger<Renderer> logger)
             var transform = drawData.Transform * camera;
             
             // Set transform
-            GL.UniformMatrix3(0, false, ref transform);
-            GL.Uniform1(1, drawData.Z);
-            GL.Uniform4(2, drawData.Color);
+            GL.UniformMatrix3(mvpUniformLocation, false, ref transform);
+            GL.Uniform1(zUniformLocation, drawData.Z);
+            GL.Uniform4(colorUniformLocation, drawData.Color);
             
             // Draw
             // TODO: We can probably glMultiDrawElementsBaseVertex here
@@ -244,10 +285,9 @@ public class Renderer(Options options, ILogger<Renderer> logger)
         }
         
         // Transparent pass, enable blending, disable depth write
+        GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
         GL.Enable(EnableCap.Blend);
         GL.DepthMask(false);
-        
-        GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
         
         // Draw each mesh
         foreach (var drawData in transparentDrawData)
@@ -256,9 +296,9 @@ public class Renderer(Options options, ILogger<Renderer> logger)
             var transform = drawData.Transform * camera;
 
             // Set transform
-            GL.UniformMatrix3(0, false, ref transform);
-            GL.Uniform1(1, drawData.Z);
-            GL.Uniform4(2, drawData.Color);
+            GL.UniformMatrix3(mvpUniformLocation, false, ref transform);
+            GL.Uniform1(zUniformLocation, drawData.Z);
+            GL.Uniform4(colorUniformLocation, drawData.Color);
 
             // Draw
             // TODO: We can probably glMultiDrawElementsBaseVertex here
@@ -267,6 +307,20 @@ public class Renderer(Options options, ILogger<Renderer> logger)
         
         // Restore depth write state
         GL.DepthMask(true);
+        
+        // Unbind fbo
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+        
+        // Blit to window
+        var windowSize = window.ClientSize;
+        GL.BlitNamedFramebuffer(
+            fboHandle, 0, 
+            0, 0,
+            currentFboSize.X, currentFboSize.Y,
+            0, 0,
+            windowSize.X, windowSize.Y,
+            ClearBufferMask.ColorBufferBit,
+            BlitFramebufferFilter.Linear);
 
         window.Context.SwapBuffers();
     }
@@ -285,6 +339,12 @@ public class Renderer(Options options, ILogger<Renderer> logger)
     }
 
     private void UpdateOpenGlData()
+    {
+        UpdateMeshData();
+        UpdateFboData();
+    }
+
+    private void UpdateMeshData()
     {
         lock (meshDataLock)
         {
@@ -307,7 +367,35 @@ public class Renderer(Options options, ILogger<Renderer> logger)
             }
         }
         
-        logger.LogInformation("OpenGL buffers updated, now at {VertexSize} vertices and {IndexSize} indices", vertexBuffer.Data.Length / Vector2.SizeInBytes, indexBuffer.Data.Length / sizeof(int));
+        logger.LogInformation("OpenGL mesh buffers updated, now at {VertexSize} vertices and {IndexSize} indices", vertexBuffer.Data.Length / Vector2.SizeInBytes, indexBuffer.Data.Length / sizeof(int));
+    }
+
+    private void UpdateFboData()
+    {
+        Debug.Assert(window is not null);
+
+        var fboSize = window.ClientSize;
+        if (fboSize == currentFboSize)
+            return;
+        
+        // Delete old textures
+        GL.DeleteTexture(fboTextureHandle);
+        GL.DeleteRenderbuffer(fboDepthBufferHandle);
+        
+        // Create new textures
+        GL.CreateTextures(TextureTarget.Texture2DMultisample, 1, out fboTextureHandle);
+        GL.TextureStorage2DMultisample(fboTextureHandle, 4, SizedInternalFormat.Rgba8, fboSize.X, fboSize.Y, true);
+        
+        GL.CreateRenderbuffers(1, out fboDepthBufferHandle);
+        GL.NamedRenderbufferStorageMultisample(fboDepthBufferHandle, 4, RenderbufferStorage.DepthComponent, fboSize.X, fboSize.Y);
+        
+        // Bind to fbo
+        GL.NamedFramebufferTexture(fboHandle, FramebufferAttachment.ColorAttachment0, fboTextureHandle, 0);
+        GL.NamedFramebufferRenderbuffer(fboHandle, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, fboDepthBufferHandle);
+
+        currentFboSize = fboSize;
+        
+        logger.LogInformation("OpenGL framebuffer size updated, now at {Width}x{Height}", currentFboSize.X, currentFboSize.Y);
     }
 
     private static string ReadAllText(string path)
