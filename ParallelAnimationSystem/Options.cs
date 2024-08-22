@@ -16,4 +16,7 @@ public class Options
     
     [Option("vsync", Required = false, HelpText = "Enable VSync")]
     public bool VSync { get; set; }
+    
+    [Option("workers", Required = false, Default = 4, HelpText = "Number of worker threads, set to -1 to use all available threads")]
+    public int WorkerCount { get; set; }
 }

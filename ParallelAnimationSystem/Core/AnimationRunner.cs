@@ -51,7 +51,7 @@ public class AnimationRunner
         killTimeSortedGameObjects.Sort((x, y) => x.KillTime.CompareTo(y.KillTime));
     }
 
-    public async Task ProcessAsync(float time)
+    public async Task ProcessAsync(float time, int workers = -1)
     {
         // Update sequences
         CameraPosition = cameraPositionAnimation.Interpolate(time);
@@ -69,7 +69,11 @@ public class AnimationRunner
         BackgroundColor = themeColors.Background;
         
         // Update all objects in parallel
-        await Parallel.ForEachAsync(aliveGameObjects, (x, _) => ProcessGameObjectAsync(x, themeColors, time));
+        var parallelOptions = new ParallelOptions
+        {
+            MaxDegreeOfParallelism = workers
+        };
+        await Parallel.ForEachAsync(aliveGameObjects, parallelOptions, (x, _) => ProcessGameObjectAsync(x, themeColors, time));
     }
 
     private static ValueTask ProcessGameObjectAsync(GameObject gameObject, ThemeColors themeColors, float time)

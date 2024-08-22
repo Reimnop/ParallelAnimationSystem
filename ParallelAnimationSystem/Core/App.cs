@@ -114,7 +114,7 @@ public class App(Options options, Renderer renderer, ILogger<App> logger)
         
         // Wait until renderer is initialized
         while (!renderer.Initialized)
-            Thread.Sleep(50);
+            Thread.Yield();
         
         // Play audio
         waveOutEvent.Play();
@@ -140,7 +140,7 @@ public class App(Options options, Renderer renderer, ILogger<App> logger)
         
         // Update runner
         var time = (float) waveOutEvent.GetPositionTimeSpan().TotalSeconds;
-        runner.ProcessAsync(time).Wait();
+        runner.ProcessAsync(time, options.WorkerCount).Wait();
         
         // Start queueing up draw data
         var drawList = new DrawList
