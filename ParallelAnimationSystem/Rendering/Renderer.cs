@@ -31,6 +31,7 @@ public class Renderer(Options options, ILogger<Renderer> logger)
     
     // Post processors
     private readonly Hue hue = new();
+    private readonly Bloom bloom = new();
     
     // OpenGL data
     private int vertexArrayHandle;
@@ -206,6 +207,7 @@ public class Renderer(Options options, ILogger<Renderer> logger)
         
         // Initialize post processors
         hue.Initialize();
+        bloom.Initialize();
         
         logger.LogInformation("OpenGL initialized");
     }
@@ -354,6 +356,9 @@ public class Renderer(Options options, ILogger<Renderer> logger)
     {
         if (hue.Process(currentFboSize, data.HueShiftAngle, texture1, texture2))
             Swap(ref texture1, ref texture2); // Swap if we processed
+        
+        if (bloom.Process(currentFboSize, data.BloomIntensity, data.BloomDiffusion, texture1, texture2))
+            Swap(ref texture1, ref texture2);
         
         return texture1;
     }

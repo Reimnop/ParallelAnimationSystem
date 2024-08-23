@@ -7,40 +7,20 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9b1e7f31-978d-41b0-ac0b-49ddcf3b23f4" name="Changes" comment="Fix more edge cases">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.gitmodules" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.ParallelAnimationSystem/.idea/indexLayout.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.ParallelAnimationSystem/.idea/projectSettingsUpdater.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.ParallelAnimationSystem/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.ParallelAnimationSystem/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Pamx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem.sln" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/Animation/EaseFunctions.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/Animation/Interpolator.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/Animation/Keyframe.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/Animation/Sequence.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/AnimationRunner.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/App.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/BeatmapImporter.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/GameObject.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/LsMigration.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/PaAssets.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/ParentTransform.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/ThemeColors.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Data/CameraData.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Data/DrawData.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Data/DrawList.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/ParallelAnimationSystem.csproj" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Program.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/Buffer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/MeshHandle.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/Renderer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/SimpleUnlitFragment.glsl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/SimpleUnlitVertex.glsl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Startup.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Util/MathUtil.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Util/SequenceUtil.cs" afterDir="false" />
+    <list default="true" id="9b1e7f31-978d-41b0-ac0b-49ddcf3b23f4" name="Changes" comment="Fix rendering">
+      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem.sln.DotSettings" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/PostProcessing/Bloom.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/PostProcessing/BloomCombine.glsl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/PostProcessing/BloomDownsample.glsl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/PostProcessing/BloomPrefilter.glsl" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/PostProcessing/BloomUpsample.glsl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.ParallelAnimationSystem/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.ParallelAnimationSystem/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Core/AnimationRunner.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/AnimationRunner.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Core/App.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/App.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Core/BeatmapImporter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/BeatmapImporter.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Data/PostProcessingData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Data/PostProcessingData.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/Renderer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/Renderer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/PostProcessing/Hue.glsl" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/PostProcessing/Hue.glsl" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="true" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -52,6 +32,7 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="ROOT_SYNC" value="DONT_SYNC" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
@@ -66,9 +47,18 @@
   }
 }</component>
   <component name="HighlightingSettingsPerFile">
+    <setting file="file://$USER_HOME$/AppData/Local/Symbols/src/dotnet/runtime/08338fcaa5c9b9a8190abb99222fed12aaba956c/src/libraries/System.Text.Json/src/System/Text/Json/Nodes/JsonNode.Operators.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$USER_HOME$/AppData/Local/Symbols/src/dotnet/runtime/08338fcaa5c9b9a8190abb99222fed12aaba956c/src/libraries/System.Text.Json/src/System/Text/Json/Nodes/JsonNode.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$USER_HOME$/AppData/Local/Symbols/src/dotnet/runtime/08338fcaa5c9b9a8190abb99222fed12aaba956c/src/libraries/System.Text.Json/src/System/Text/Json/Nodes/JsonNodeOptions.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$USER_HOME$/AppData/Local/Symbols/src/dotnet/runtime/08338fcaa5c9b9a8190abb99222fed12aaba956c/src/libraries/System.Text.Json/src/System/Text/Json/Nodes/JsonObject.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$USER_HOME$/AppData/Local/Symbols/src/dotnet/runtime/08338fcaa5c9b9a8190abb99222fed12aaba956c/src/libraries/System.Text.Json/src/System/Text/Json/Nodes/JsonValue.CreateOverloads.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$USER_HOME$/AppData/Local/Symbols/src/dotnet/runtime/08338fcaa5c9b9a8190abb99222fed12aaba956c/src/libraries/System.Text.Json/src/System/Text/Json/Nodes/JsonValue.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$USER_HOME$/AppData/Local/Symbols/src/dotnet/runtime/08338fcaa5c9b9a8190abb99222fed12aaba956c/src/libraries/System.Text.Json/src/System/Text/Json/Nodes/JsonValueOfT.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$USER_HOME$/AppData/Local/Symbols/src/dotnet/runtime/08338fcaa5c9b9a8190abb99222fed12aaba956c/src/libraries/System.Text.Json/src/System/Text/Json/Nodes/JsonValueOfTPrimitive.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/24372012c6c94138bf3f496e104366ffc8f918/15/812f40d4/WaitHandle.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/24372012c6c94138bf3f496e104366ffc8f918/1c/05b31acd/ArgumentNullException.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/24372012c6c94138bf3f496e104366ffc8f918/25/eec4725f/CollectionExtensions.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/24372012c6c94138bf3f496e104366ffc8f918/56/68bd56bb/ExceptionDispatchInfo.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/24372012c6c94138bf3f496e104366ffc8f918/84/7a53b5d2/ThrowHelper.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/24372012c6c94138bf3f496e104366ffc8f918/a6/bb21bec1/SafeFileHandle.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/24372012c6c94138bf3f496e104366ffc8f918/c5/b4ba10bf/Monitor.cs" root0="SKIP_HIGHLIGHTING" />
@@ -79,7 +69,10 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/ffdbecaac85a4a73a506f7ae3cb32d184d000/1e/dfcdc95d/MathHelper.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/ffdbecaac85a4a73a506f7ae3cb32d184d000/48/44a402e7/Matrix3.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/3e8f1cfc7f3332b9a0e31b3f10347da0b2775895319a6b9a2b4f25a4c48654bc/Command.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock://G:/Projects/ParallelAnimationSystem/Pamx/Pamx.Vg/VgDeserialization.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://G:/Projects/ParallelAnimationSystem/ParallelAnimationSystem/Core/AnimationRunner.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://G:/Projects/ParallelAnimationSystem/ParallelAnimationSystem/Core/BeatmapImporter.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://G:/Projects/ParallelAnimationSystem/ParallelAnimationSystem/Rendering/PostProcessing/Hue.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://G:/Projects/ParallelAnimationSystem/ParallelAnimationSystem/Rendering/Renderer.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
   <component name="ProjectColorInfo">{
@@ -97,6 +90,7 @@
   &quot;keyToString&quot;: {
     &quot;.NET Project.ParallelAnimationSystem.executor&quot;: &quot;Debug&quot;,
     &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;Publish to folder.Publish.executor&quot;: &quot;Run&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
@@ -116,10 +110,14 @@
     ]
   }
 }</component>
-  <component name="RunManager">
+  <component name="RunManager" selected=".NET Project.ParallelAnimationSystem">
+    <configuration name="Publish" type="DotNetFolderPublish" factoryName="Publish to folder">
+      <riderPublish configuration="Release" include_native_libs_for_self_extract="true" platform="Any CPU" produce_single_file="true" runtime="win-x64" self_contained="true" target_folder="$PROJECT_DIR$/ParallelAnimationSystem/bin/Release/net8.0/win-x64/publish" target_framework="net8.0" trim_unused_assemblies="true" uuid_high="4921518821831493447" uuid_low="-5440609166602987154" />
+      <method v="2" />
+    </configuration>
     <configuration name="ParallelAnimationSystem" type="DotNetProject" factoryName=".NET Project">
       <option name="EXE_PATH" value="$PROJECT_DIR$/ParallelAnimationSystem/bin/Debug/net8.0/ParallelAnimationSystem.exe" />
-      <option name="PROGRAM_PARAMETERS" value="--level level.vgd --audio audio.ogg" />
+      <option name="PROGRAM_PARAMETERS" value="-l level.vgd -a audio.ogg" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/ParallelAnimationSystem/bin/Debug/net8.0" />
       <option name="PASS_PARENT_ENVS" value="1" />
       <option name="USE_EXTERNAL_CONSOLE" value="0" />
@@ -135,6 +133,10 @@
         <option name="Build" />
       </method>
     </configuration>
+    <list>
+      <item itemvalue=".NET Project.ParallelAnimationSystem" />
+      <item itemvalue="Publish to folder.Publish" />
+    </list>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -150,7 +152,11 @@
       <workItem from="1724167381684" duration="9182000" />
       <workItem from="1724180410055" duration="17088000" />
       <workItem from="1724231514736" duration="755000" />
-      <workItem from="1724232293037" duration="19018000" />
+      <workItem from="1724232293037" duration="22054000" />
+      <workItem from="1724295496377" duration="11006000" />
+      <workItem from="1724316327357" duration="2325000" />
+      <workItem from="1724318951605" duration="18329000" />
+      <workItem from="1724397771855" duration="22498000" />
     </task>
     <task id="LOCAL-00001" summary="Fix more edge cases">
       <option name="closed" value="true" />
@@ -160,7 +166,223 @@
       <option name="project" value="LOCAL" />
       <updated>1724253882108</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Initial commit">
+      <option name="closed" value="true" />
+      <created>1724255302889</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1724255302889</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Fix dumbass bugs">
+      <option name="closed" value="true" />
+      <created>1724259049375</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1724259049375</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Add some flags">
+      <option name="closed" value="true" />
+      <created>1724259076752</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1724259076752</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Fix theme">
+      <option name="closed" value="true" />
+      <created>1724259167674</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1724259167674</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Implement bg color">
+      <option name="closed" value="true" />
+      <created>1724296532250</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1724296532250</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Limited pre-Legacy support">
+      <option name="closed" value="true" />
+      <created>1724299140434</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1724299140434</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Dededuplicate some LS assets">
+      <option name="closed" value="true" />
+      <created>1724299208613</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1724299208613</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Update Pamx">
+      <option name="closed" value="true" />
+      <created>1724299218911</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1724299218911</updated>
+    </task>
+    <task id="LOCAL-00010" summary="More pre-Legacy work">
+      <option name="closed" value="true" />
+      <created>1724299554716</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1724299554716</updated>
+    </task>
+    <task id="LOCAL-00011" summary="Update Pamx">
+      <option name="closed" value="true" />
+      <created>1724299561008</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1724299561008</updated>
+    </task>
+    <task id="LOCAL-00012" summary="Ls support">
+      <option name="closed" value="true" />
+      <created>1724301817302</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1724301817302</updated>
+    </task>
+    <task id="LOCAL-00013" summary="Fix empty prefabs">
+      <option name="closed" value="true" />
+      <created>1724313734645</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1724313734645</updated>
+    </task>
+    <task id="LOCAL-00014" summary="Update Pamx">
+      <option name="closed" value="true" />
+      <created>1724313768547</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1724313768547</updated>
+    </task>
+    <task id="LOCAL-00015" summary="Added vsync">
+      <option name="closed" value="true" />
+      <created>1724314501834</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1724314501834</updated>
+    </task>
+    <task id="LOCAL-00016" summary="Reduce CPU usage">
+      <option name="closed" value="true" />
+      <created>1724319822659</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1724319822659</updated>
+    </task>
+    <task id="LOCAL-00017" summary="Make number of threads configurable">
+      <option name="closed" value="true" />
+      <created>1724320033694</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1724320033694</updated>
+    </task>
+    <task id="LOCAL-00018" summary="Lower OpenGL requirement">
+      <option name="closed" value="true" />
+      <created>1724326950362</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1724326950362</updated>
+    </task>
+    <task id="LOCAL-00019" summary="Small fixes for AOT">
+      <option name="closed" value="true" />
+      <created>1724328662637</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1724328662637</updated>
+    </task>
+    <task id="LOCAL-00020" summary="Update Pamx">
+      <option name="closed" value="true" />
+      <created>1724328676994</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1724328676994</updated>
+    </task>
+    <task id="LOCAL-00021" summary="Disable AOT for now">
+      <option name="closed" value="true" />
+      <created>1724328691509</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1724328691509</updated>
+    </task>
+    <task id="LOCAL-00022" summary="Make it trimmable">
+      <option name="closed" value="true" />
+      <created>1724328781913</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1724328781913</updated>
+    </task>
+    <task id="LOCAL-00023" summary="It's an int....">
+      <option name="closed" value="true" />
+      <created>1724329748813</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1724329748813</updated>
+    </task>
+    <task id="LOCAL-00024" summary="Update Pamx">
+      <option name="closed" value="true" />
+      <created>1724329760447</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1724329760447</updated>
+    </task>
+    <task id="LOCAL-00025" summary="3.3 also doesn't work, absolutely useless">
+      <option name="closed" value="true" />
+      <created>1724341265585</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1724341265585</updated>
+    </task>
+    <task id="LOCAL-00026" summary="back to 4.6">
+      <option name="closed" value="true" />
+      <created>1724341294363</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1724341294363</updated>
+    </task>
+    <task id="LOCAL-00027" summary="Added post-processing support">
+      <option name="closed" value="true" />
+      <created>1724351983640</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1724351983640</updated>
+    </task>
+    <task id="LOCAL-00028" summary="Fix rendering">
+      <option name="closed" value="true" />
+      <created>1724408041770</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1724408041770</updated>
+    </task>
+    <option name="localTasksCounter" value="29" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -183,7 +405,30 @@
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
     <MESSAGE value="Fix more edge cases" />
-    <option name="LAST_COMMIT_MESSAGE" value="Fix more edge cases" />
+    <MESSAGE value="Initial commit" />
+    <MESSAGE value="Fix dumbass bugs" />
+    <MESSAGE value="Add some flags" />
+    <MESSAGE value="Fix theme" />
+    <MESSAGE value="Implement bg color" />
+    <MESSAGE value="Limited pre-Legacy support" />
+    <MESSAGE value="Dededuplicate some LS assets" />
+    <MESSAGE value="More pre-Legacy work" />
+    <MESSAGE value="Ls support" />
+    <MESSAGE value="Fix empty prefabs" />
+    <MESSAGE value="Added vsync" />
+    <MESSAGE value="Reduce CPU usage" />
+    <MESSAGE value="Make number of threads configurable" />
+    <MESSAGE value="Lower OpenGL requirement" />
+    <MESSAGE value="Small fixes for AOT" />
+    <MESSAGE value="Disable AOT for now" />
+    <MESSAGE value="Make it trimmable" />
+    <MESSAGE value="It's an int...." />
+    <MESSAGE value="Update Pamx" />
+    <MESSAGE value="3.3 also doesn't work, absolutely useless" />
+    <MESSAGE value="back to 4.6" />
+    <MESSAGE value="Added post-processing support" />
+    <MESSAGE value="Fix rendering" />
+    <option name="LAST_COMMIT_MESSAGE" value="Fix rendering" />
   </component>
   <component name="XDebuggerManager">
     <pin-to-top-manager>

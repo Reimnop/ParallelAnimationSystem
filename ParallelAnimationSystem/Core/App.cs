@@ -150,7 +150,11 @@ public class App(Options options, Renderer renderer, ILogger<App> logger)
                 runner.CameraPosition,
                 runner.CameraScale,
                 runner.CameraRotation),
-            PostProcessingData = new PostProcessingData(runner.Hue),
+            PostProcessingData = new PostProcessingData(
+                runner.Hue,
+                runner.Bloom.Intensity,
+                // We have to turn diffusion from 0 -> infinity to 0 -> 1, else the bloom shader blows up
+                runner.Bloom.Diffusion / (runner.Bloom.Diffusion + 1.0f)), 
         };
 
         // Draw all alive game objects

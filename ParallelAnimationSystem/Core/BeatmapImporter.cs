@@ -28,6 +28,7 @@ public static class BeatmapImporter
         var cameraRotationSequence = CreateCameraRotationSequence(beatmap.Events.Rotation);
         
         // Get post-processing sequences
+        var bloomSequence = CreateBloomSequence(beatmap.Events.Bloom);
         var hueSequence = CreateHueSequence(beatmap.Events.Hue);
         
         // Create the runner with the GameObjects
@@ -37,9 +38,32 @@ public static class BeatmapImporter
             cameraPositionSequence, 
             cameraScaleSequence, 
             cameraRotationSequence,
+            bloomSequence,
             hueSequence);
     }
     
+    private static Sequence<BloomData, BloomData> CreateBloomSequence(IList<FixedKeyframe<BloomData>> bloomEvents)
+    {
+        var keyframes = bloomEvents
+            .Select(x =>
+            {
+                var time = x.Time;
+                var value = x.Value;
+                var ease = EaseFunctions.GetOrDefault(x.Ease, EaseFunctions.Linear);
+                return new Animation.Keyframe<BloomData>(time, value, ease);
+            });
+        return new Sequence<BloomData, BloomData>(keyframes, InterpolateBloomData);
+    }
+
+    private static BloomData InterpolateBloomData(BloomData a, BloomData b, float t, object? context)
+    {
+        return new BloomData
+        {
+            Intensity = MathHelper.Lerp(a.Intensity, b.Intensity, t),
+            Diffusion = MathHelper.Lerp(a.Diffusion, b.Diffusion, t)
+        };
+    }
+
     private static Sequence<float, float> CreateHueSequence(IList<FixedKeyframe<float>> hueEvents)
     {
         var keyframes = hueEvents

@@ -1,5 +1,6 @@
 using OpenTK.Mathematics;
 using Pamx.Common;
+using Pamx.Common.Data;
 using ParallelAnimationSystem.Core.Animation;
 
 namespace ParallelAnimationSystem.Core;
@@ -10,6 +11,7 @@ public class AnimationRunner
     public Vector2 CameraPosition { get; private set; }
     public float CameraScale { get; private set; }
     public float CameraRotation { get; private set; }
+    public BloomData Bloom { get; private set; }
     public float Hue { get; private set; }
     public Color4 BackgroundColor { get; private set; }
     
@@ -26,6 +28,7 @@ public class AnimationRunner
     private readonly Sequence<float, float> cameraScaleAnimation;
     private readonly Sequence<float, float> cameraRotationAnimation;
 
+    private readonly Sequence<BloomData, BloomData> bloomSequence;
     private readonly Sequence<float, float> hueSequence;
         
     private float lastTime;
@@ -36,6 +39,7 @@ public class AnimationRunner
         Sequence<Vector2, Vector2> cameraPositionAnimation,
         Sequence<float, float> cameraScaleAnimation,
         Sequence<float, float> cameraRotationAnimation,
+        Sequence<BloomData, BloomData> bloomSequence,
         Sequence<float, float> hueSequence)
     {
         // Set sequences
@@ -43,6 +47,7 @@ public class AnimationRunner
         this.cameraPositionAnimation = cameraPositionAnimation;
         this.cameraScaleAnimation = cameraScaleAnimation;
         this.cameraRotationAnimation = cameraRotationAnimation;
+        this.bloomSequence = bloomSequence;
         this.hueSequence = hueSequence;
         
         // A bit expensive, but we have to copy the enumerable to a list
@@ -62,6 +67,7 @@ public class AnimationRunner
         CameraPosition = cameraPositionAnimation.Interpolate(time);
         CameraScale = cameraScaleAnimation.Interpolate(time);
         CameraRotation = cameraRotationAnimation.Interpolate(time);
+        Bloom = bloomSequence.Interpolate(time);
         Hue = hueSequence.Interpolate(time);
         
         // Spawn and kill objects according to time
