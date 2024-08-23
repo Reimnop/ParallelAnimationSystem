@@ -8,6 +8,7 @@ public static class LsMigration
 {
     public static void MigrateBeatmap(IBeatmap beatmap)
     {
+        // Migrate theme color keyframes
         foreach (var o in beatmap.Objects.Concat(beatmap.Prefabs.SelectMany(x => x.BeatmapObjects)))
         {
             if (o.Type == ObjectType.LegacyHelper)
@@ -25,6 +26,19 @@ public static class LsMigration
                     o.ColorEvents[i] = oldColorKeyframe;
                 }
             }
+        }
+        
+        // Migrate bloom keyframes
+        var events = beatmap.Events;
+        for (var i = 0; i < events.Bloom.Count; i++)
+        {
+            var bloomKeyframe = events.Bloom[i];
+            bloomKeyframe.Value = new BloomData
+            {
+                Intensity = bloomKeyframe.Value.Intensity,
+                Diffusion = 5.0f,
+            };
+            events.Bloom[i] = bloomKeyframe;
         }
     }
 }

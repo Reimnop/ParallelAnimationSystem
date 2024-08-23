@@ -7,20 +7,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9b1e7f31-978d-41b0-ac0b-49ddcf3b23f4" name="Changes" comment="Fix rendering">
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem.sln.DotSettings" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/PostProcessing/Bloom.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/PostProcessing/BloomCombine.glsl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/PostProcessing/BloomDownsample.glsl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/PostProcessing/BloomPrefilter.glsl" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/PostProcessing/BloomUpsample.glsl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.ParallelAnimationSystem/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.ParallelAnimationSystem/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Core/AnimationRunner.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/AnimationRunner.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Core/App.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/App.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Core/BeatmapImporter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/BeatmapImporter.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Data/PostProcessingData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Data/PostProcessingData.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/Renderer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/Renderer.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/PostProcessing/Hue.glsl" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/PostProcessing/Hue.glsl" afterDir="false" />
+    <list default="true" id="9b1e7f31-978d-41b0-ac0b-49ddcf3b23f4" name="Changes" comment="Added bloom...">
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Core/LsMigration.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/LsMigration.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="true" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -117,7 +105,7 @@
     </configuration>
     <configuration name="ParallelAnimationSystem" type="DotNetProject" factoryName=".NET Project">
       <option name="EXE_PATH" value="$PROJECT_DIR$/ParallelAnimationSystem/bin/Debug/net8.0/ParallelAnimationSystem.exe" />
-      <option name="PROGRAM_PARAMETERS" value="-l level.vgd -a audio.ogg" />
+      <option name="PROGRAM_PARAMETERS" value="-l level.lsb -a level.ogg" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/ParallelAnimationSystem/bin/Debug/net8.0" />
       <option name="PASS_PARENT_ENVS" value="1" />
       <option name="USE_EXTERNAL_CONSOLE" value="0" />
@@ -156,7 +144,7 @@
       <workItem from="1724295496377" duration="11006000" />
       <workItem from="1724316327357" duration="2325000" />
       <workItem from="1724318951605" duration="18329000" />
-      <workItem from="1724397771855" duration="22498000" />
+      <workItem from="1724397771855" duration="23168000" />
     </task>
     <task id="LOCAL-00001" summary="Fix more edge cases">
       <option name="closed" value="true" />
@@ -382,7 +370,15 @@
       <option name="project" value="LOCAL" />
       <updated>1724408041770</updated>
     </task>
-    <option name="localTasksCounter" value="29" />
+    <task id="LOCAL-00029" summary="Added bloom...">
+      <option name="closed" value="true" />
+      <created>1724436578376</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1724436578376</updated>
+    </task>
+    <option name="localTasksCounter" value="30" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -428,7 +424,8 @@
     <MESSAGE value="back to 4.6" />
     <MESSAGE value="Added post-processing support" />
     <MESSAGE value="Fix rendering" />
-    <option name="LAST_COMMIT_MESSAGE" value="Fix rendering" />
+    <MESSAGE value="Added bloom..." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added bloom..." />
   </component>
   <component name="XDebuggerManager">
     <pin-to-top-manager>
