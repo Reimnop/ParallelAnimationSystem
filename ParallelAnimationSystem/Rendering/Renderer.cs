@@ -186,7 +186,7 @@ public class Renderer(Options options, ILogger<Renderer> logger)
         GL.TextureStorage2DMultisample(fboTextureHandle, 4, SizedInternalFormat.Rgba8, fboSize.X, fboSize.Y, true);
         
         GL.CreateRenderbuffers(1, out fboDepthBufferHandle);
-        GL.NamedRenderbufferStorageMultisample(fboDepthBufferHandle, 4, RenderbufferStorage.DepthComponent, fboSize.X, fboSize.Y);
+        GL.NamedRenderbufferStorageMultisample(fboDepthBufferHandle, 4, RenderbufferStorage.DepthComponent32f, fboSize.X, fboSize.Y);
         
         GL.CreateFramebuffers(1, out fboHandle);
         GL.NamedFramebufferTexture(fboHandle, FramebufferAttachment.ColorAttachment0, fboTextureHandle, 0);
@@ -352,11 +352,8 @@ public class Renderer(Options options, ILogger<Renderer> logger)
 
     private int HandlePostProcessing(PostProcessingData data, int texture1, int texture2)
     {
-        if (data.HueShiftAngle != 0.0f)
-        {
-            hue.Process(currentFboSize, data.HueShiftAngle, texture1, texture2);
-            Swap(ref texture1, ref texture2); // Swap after every post-processing pass
-        }
+        if (hue.Process(currentFboSize, data.HueShiftAngle, texture1, texture2))
+            Swap(ref texture1, ref texture2); // Swap if we processed
         
         return texture1;
     }
@@ -425,7 +422,7 @@ public class Renderer(Options options, ILogger<Renderer> logger)
         GL.TextureStorage2DMultisample(fboTextureHandle, 4, SizedInternalFormat.Rgba8, fboSize.X, fboSize.Y, true);
         
         GL.CreateRenderbuffers(1, out fboDepthBufferHandle);
-        GL.NamedRenderbufferStorageMultisample(fboDepthBufferHandle, 4, RenderbufferStorage.DepthComponent, fboSize.X, fboSize.Y);
+        GL.NamedRenderbufferStorageMultisample(fboDepthBufferHandle, 4, RenderbufferStorage.DepthComponent32f, fboSize.X, fboSize.Y);
         
         GL.CreateTextures(TextureTarget.Texture2D, 1, out postProcessTextureHandle1);
         GL.TextureStorage2D(postProcessTextureHandle1, 1, SizedInternalFormat.Rgba8, fboSize.X, fboSize.Y);

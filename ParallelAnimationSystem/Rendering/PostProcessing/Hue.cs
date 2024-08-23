@@ -31,8 +31,11 @@ public class Hue
         GL.DeleteShader(shader);
     }
     
-    public void Process(Vector2i size, float shiftAngle, int inputTexture, int outputTexture)
+    public bool Process(Vector2i size, float shiftAngle, int inputTexture, int outputTexture)
     {
+        if (shiftAngle == 0.0f)
+            return false;
+        
         GL.UseProgram(program);
         
         GL.BindImageTexture(0, inputTexture, 0, false, 0, TextureAccess.ReadOnly, SizedInternalFormat.Rgba8);
@@ -45,5 +48,7 @@ public class Hue
             MathUtil.DivideCeil(size.Y, 8), 
             1);
         GL.MemoryBarrier(MemoryBarrierFlags.ShaderImageAccessBarrierBit);
+        
+        return true;
     }
 }

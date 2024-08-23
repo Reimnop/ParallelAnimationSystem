@@ -139,10 +139,18 @@ public static class BeatmapImporter
         return beatmap.Objects
             .Concat(beatmap.PrefabObjects
                 .SelectMany(ExpandPrefabObject))
-            .Select(CreateGameObject)
+            .Indexed()
+            .Select(x => CreateGameObject(x.Index, x.Value))
             .OfType<GameObject>();
     }
-
+    
+    private static IEnumerable<(int Index, T Value)> Indexed<T>(this IEnumerable<T> enumerable)
+    {
+        var i = 0;
+        foreach (var value in enumerable)
+            yield return (i++, value);
+    }
+        
     private static IEnumerable<IObject> ExpandPrefabObject(IPrefabObject prefabObject)
     {
         // Create a global empty object to act as the parent
@@ -212,7 +220,7 @@ public static class BeatmapImporter
             yield return newObj;
     }
 
-    private static GameObject? CreateGameObject(IObject beatmapObject)
+    private static GameObject? CreateGameObject(int i, IObject beatmapObject)
     {
         // We can skip empty objects to save memory
         if (beatmapObject.Type is ObjectType.Empty or ObjectType.LegacyEmpty)
@@ -263,7 +271,7 @@ public static class BeatmapImporter
         var parentChainSize = 0;
         var parent = beatmapObject.Parent is IObject parentObject ? RecursivelyCreateParentTransform(parentObject, ref parentChainSize) : null;
         
-        var depth = MathHelper.MapRange(beatmapObject.RenderDepth + parentChainSize / 1000.0f + beatmapObject.StartTime / 1000000.0f, -200.0f, 200.0f, 0.0f, 1.0f);
+        var depth = MathHelper.MapRange(beatmapObject.RenderDepth + parentChainSize * beatmapObject.RenderDepth * 0.0005f - i * 0.00001f, -100.0f, 100.0f, 0.0f, 1.0f);
         
         return new GameObject(
             startTime,
