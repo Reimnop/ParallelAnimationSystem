@@ -4,7 +4,7 @@ using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Rendering.PostProcessing;
 
-public class Bloom
+public class Bloom : IDisposable
 {
     private int prefilterProgram, downsampleProgram, blurProgram, upsampleProgram, combineProgram;
     private int 
@@ -209,5 +209,22 @@ public class Bloom
     private static void Swap<T>(ref T a, ref T b)
     {
         (a, b) = (b, a);
+    }
+
+    public void Dispose()
+    {
+        GL.DeleteProgram(prefilterProgram);
+        GL.DeleteProgram(downsampleProgram);
+        GL.DeleteProgram(blurProgram);
+        GL.DeleteProgram(upsampleProgram);
+        GL.DeleteProgram(combineProgram);
+        
+        GL.DeleteTexture(tempImage1);
+        GL.DeleteTexture(tempImage2);
+        
+        foreach (var mip in mipChain)
+            GL.DeleteTexture(mip);
+        
+        GL.DeleteSampler(textureSampler);
     }
 }

@@ -4,7 +4,7 @@ using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Rendering.PostProcessing;
 
-public class Hue
+public class Hue : IDisposable
 {
     private int program;
     private int sizeUniformLocation;
@@ -50,5 +50,10 @@ public class Hue
         GL.MemoryBarrier(MemoryBarrierFlags.ShaderImageAccessBarrierBit);
         
         return true;
+    }
+
+    public void Dispose()
+    {
+        GL.DeleteProgram(program);
     }
 }

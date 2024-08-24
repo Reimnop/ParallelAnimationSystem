@@ -11,7 +11,7 @@ using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Rendering;
 
-public class Renderer(Options options, ILogger<Renderer> logger)
+public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
 {
     private NativeWindow? window;
     
@@ -97,6 +97,7 @@ public class Renderer(Options options, ILogger<Renderer> logger)
         
         // Initialize OpenGL data
         InitializeOpenGlData();
+        logger.LogInformation("OpenGL initialized");
         
         // Enable multisampling
         GL.Enable(EnableCap.Multisample);
@@ -208,8 +209,27 @@ public class Renderer(Options options, ILogger<Renderer> logger)
         // Initialize post processors
         hue.Initialize();
         bloom.Initialize();
+    }
+    
+    public void Dispose()
+    {
+        bloom.Dispose();
+        hue.Dispose();
         
-        logger.LogInformation("OpenGL initialized");
+        GL.DeleteProgram(programHandle);
+        GL.DeleteBuffer(vertexBufferHandle);
+        GL.DeleteBuffer(indexBufferHandle);
+        GL.DeleteVertexArray(vertexArrayHandle);
+        
+        GL.DeleteTexture(fboTextureHandle);
+        GL.DeleteRenderbuffer(fboDepthBufferHandle);
+        GL.DeleteTexture(postProcessTextureHandle1);
+        GL.DeleteTexture(postProcessTextureHandle2);
+        
+        GL.DeleteFramebuffer(fboHandle);
+        GL.DeleteFramebuffer(postProcessFboHandle);
+        
+        window?.Dispose();
     }
 
     private void UpdateFrame()

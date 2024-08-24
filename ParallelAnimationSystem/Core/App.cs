@@ -11,13 +11,15 @@ using ParallelAnimationSystem.Rendering;
 
 namespace ParallelAnimationSystem.Core;
 
-public class App(Options options, Renderer renderer, ILogger<App> logger)
+public class App(Options options, Renderer renderer, ILogger<App> logger) : IDisposable
 {
     private readonly List<List<MeshHandle>> meshes = [];
     
     private AnimationRunner? runner;
     private VorbisWaveReader? vorbisWaveReader;
     private WaveOutEvent? waveOutEvent;
+    
+    private bool disposing;
     
     public void Initialize()
     {
@@ -125,7 +127,7 @@ public class App(Options options, Renderer renderer, ILogger<App> logger)
         var stopwatch = Stopwatch.StartNew();
 
         var lastTime = 0.0;
-        while (!renderer.Exiting)
+        while (!renderer.Exiting && !disposing)
         {
             var currentTime = stopwatch.Elapsed.TotalSeconds;
             var delta = currentTime - lastTime;
@@ -177,10 +179,22 @@ public class App(Options options, Renderer renderer, ILogger<App> logger)
     private void SubmitDrawList(DrawList drawList)
     {
         // If we already have more than 2 draw lists queued, wait until we don't
-        while (renderer.QueuedDrawListCount > 2)
+        while (renderer is { QueuedDrawListCount: > 2, Exiting: false })
             Thread.Yield();
+        
+        // Return if we are exiting
+        if (renderer.Exiting)
+            return;
         
         // Submit draw list
         renderer.SubmitDrawList(drawList);
+    }
+
+    public void Dispose()
+    {
+        disposing = true;
+        
+        vorbisWaveReader?.Dispose();
+        waveOutEvent?.Dispose();
     }
 }
