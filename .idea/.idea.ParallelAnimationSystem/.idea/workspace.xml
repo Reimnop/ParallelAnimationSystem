@@ -7,8 +7,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9b1e7f31-978d-41b0-ac0b-49ddcf3b23f4" name="Changes" comment="Added bloom...">
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Core/LsMigration.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/LsMigration.cs" afterDir="false" />
+    <list default="true" id="9b1e7f31-978d-41b0-ac0b-49ddcf3b23f4" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/PostProcessing/BloomBlur.glsl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.ParallelAnimationSystem/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.ParallelAnimationSystem/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Core/App.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/App.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/PostProcessing/Bloom.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/PostProcessing/Bloom.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/PostProcessing/BloomCombine.glsl" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/PostProcessing/BloomCombine.glsl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/PostProcessing/BloomDownsample.glsl" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/PostProcessing/BloomDownsample.glsl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/PostProcessing/BloomPrefilter.glsl" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/PostProcessing/BloomPrefilter.glsl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/PostProcessing/BloomUpsample.glsl" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/PostProcessing/BloomUpsample.glsl" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="true" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -17,6 +24,13 @@
   </component>
   <component name="DpaMonitoringSettings">
     <option name="autoShow" value="false" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="shader-template" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -35,6 +49,7 @@
   }
 }</component>
   <component name="HighlightingSettingsPerFile">
+    <setting file="file://$USER_HOME$/AppData/Local/Symbols/src/dotnet/runtime/08338fcaa5c9b9a8190abb99222fed12aaba956c/src/libraries/System.Private.CoreLib/src/System/ThrowHelper.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$USER_HOME$/AppData/Local/Symbols/src/dotnet/runtime/08338fcaa5c9b9a8190abb99222fed12aaba956c/src/libraries/System.Text.Json/src/System/Text/Json/Nodes/JsonNode.Operators.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$USER_HOME$/AppData/Local/Symbols/src/dotnet/runtime/08338fcaa5c9b9a8190abb99222fed12aaba956c/src/libraries/System.Text.Json/src/System/Text/Json/Nodes/JsonNode.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$USER_HOME$/AppData/Local/Symbols/src/dotnet/runtime/08338fcaa5c9b9a8190abb99222fed12aaba956c/src/libraries/System.Text.Json/src/System/Text/Json/Nodes/JsonNodeOptions.cs" root0="SKIP_HIGHLIGHTING" />
@@ -105,7 +120,7 @@
     </configuration>
     <configuration name="ParallelAnimationSystem" type="DotNetProject" factoryName=".NET Project">
       <option name="EXE_PATH" value="$PROJECT_DIR$/ParallelAnimationSystem/bin/Debug/net8.0/ParallelAnimationSystem.exe" />
-      <option name="PROGRAM_PARAMETERS" value="-l level.lsb -a level.ogg" />
+      <option name="PROGRAM_PARAMETERS" value="-l level.vgd -a audio.ogg" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/ParallelAnimationSystem/bin/Debug/net8.0" />
       <option name="PASS_PARENT_ENVS" value="1" />
       <option name="USE_EXTERNAL_CONSOLE" value="0" />
@@ -144,7 +159,8 @@
       <workItem from="1724295496377" duration="11006000" />
       <workItem from="1724316327357" duration="2325000" />
       <workItem from="1724318951605" duration="18329000" />
-      <workItem from="1724397771855" duration="23168000" />
+      <workItem from="1724397771855" duration="23945000" />
+      <workItem from="1724477578259" duration="3593000" />
     </task>
     <task id="LOCAL-00001" summary="Fix more edge cases">
       <option name="closed" value="true" />
@@ -378,7 +394,15 @@
       <option name="project" value="LOCAL" />
       <updated>1724436578376</updated>
     </task>
-    <option name="localTasksCounter" value="30" />
+    <task id="LOCAL-00030" summary="Ls migration for bloom">
+      <option name="closed" value="true" />
+      <created>1724437735820</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1724437735820</updated>
+    </task>
+    <option name="localTasksCounter" value="31" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -400,7 +424,6 @@
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-    <MESSAGE value="Fix more edge cases" />
     <MESSAGE value="Initial commit" />
     <MESSAGE value="Fix dumbass bugs" />
     <MESSAGE value="Add some flags" />
@@ -425,7 +448,8 @@
     <MESSAGE value="Added post-processing support" />
     <MESSAGE value="Fix rendering" />
     <MESSAGE value="Added bloom..." />
-    <option name="LAST_COMMIT_MESSAGE" value="Added bloom..." />
+    <MESSAGE value="Ls migration for bloom" />
+    <option name="LAST_COMMIT_MESSAGE" value="Ls migration for bloom" />
   </component>
   <component name="XDebuggerManager">
     <pin-to-top-manager>

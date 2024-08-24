@@ -22,6 +22,7 @@ void main() {
     
     // Combine them
     vec4 color = color1 + color2 * uIntensity;
+    color.a = 1.0;
     
     // Store result
     imageStore(uImageOutput, coords, color);

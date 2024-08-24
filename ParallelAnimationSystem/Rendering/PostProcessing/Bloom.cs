@@ -6,17 +6,20 @@ namespace ParallelAnimationSystem.Rendering.PostProcessing;
 
 public class Bloom
 {
-    private int prefilterProgram, downsampleProgram, upsampleProgram, combineProgram;
+    private int prefilterProgram, downsampleProgram, blurProgram, upsampleProgram, combineProgram;
     private int 
         prefilterSizeUniformLocation,
         downsampleOutputSizeUniformLocation,
+        blurSizeUniformLocation,
+        blurVerticalUniformLocation,
         upsampleOutputSizeUniformLocation,
         upsampleDiffusionUniformLocation,
         combineSizeUniformLocation,
         combineIntensityUniformLocation;
 
+    private int tempImage1, tempImage2;
     private int textureSampler;
-
+    
     private readonly List<int> mipChain = [];
     private Vector2i currentSize = -Vector2i.One;
 
@@ -24,11 +27,14 @@ public class Bloom
     {
         prefilterProgram = CreateProgram("BloomPrefilter");
         downsampleProgram = CreateProgram("BloomDownsample");
+        blurProgram = CreateProgram("BloomBlur");
         upsampleProgram = CreateProgram("BloomUpsample");
         combineProgram = CreateProgram("BloomCombine");
         
         prefilterSizeUniformLocation = GL.GetUniformLocation(prefilterProgram, "uSize");
         downsampleOutputSizeUniformLocation = GL.GetUniformLocation(downsampleProgram, "uOutputSize");
+        blurSizeUniformLocation = GL.GetUniformLocation(blurProgram, "uSize");
+        blurVerticalUniformLocation = GL.GetUniformLocation(blurProgram, "uVertical");
         upsampleOutputSizeUniformLocation = GL.GetUniformLocation(upsampleProgram, "uOutputSize");
         upsampleDiffusionUniformLocation = GL.GetUniformLocation(upsampleProgram, "uDiffusion");
         combineSizeUniformLocation = GL.GetUniformLocation(combineProgram, "uSize");
@@ -49,7 +55,7 @@ public class Bloom
         // Update mip chain if size has changed
         if (size != currentSize)
         {
-            UpdateMipChain(size);
+            UpdateTextures(size);
             currentSize = size;
         }
         
@@ -69,15 +75,40 @@ public class Bloom
         // Bind sampler
         GL.BindSampler(0, textureSampler);
         
-        // Downsample until we reach MaxMipLevels
-        GL.UseProgram(downsampleProgram);
+        // Downsample and blur until we reach MaxMipLevels
         for (var i = 1; i < mipChain.Count; i++)
         {
             var mipSize = new Vector2i(size.X >> i, size.Y >> i);
             
+            // Downsample it to temporary image
+            GL.UseProgram(downsampleProgram);
             GL.BindTextureUnit(0, mipChain[i - 1]);
-            GL.BindImageTexture(1, mipChain[i], 0, false, 0, TextureAccess.WriteOnly, SizedInternalFormat.Rgba16f);
+            GL.BindImageTexture(1, tempImage1, 0, false, 0, TextureAccess.WriteOnly, SizedInternalFormat.Rgba16f);
             GL.Uniform2(downsampleOutputSizeUniformLocation, mipSize);
+            
+            GL.DispatchCompute(
+                MathUtil.DivideCeil(mipSize.X, 8), 
+                MathUtil.DivideCeil(mipSize.Y, 8), 
+                1);
+            GL.MemoryBarrier(MemoryBarrierFlags.ShaderImageAccessBarrierBit);
+            
+            // Blur pass H
+            GL.UseProgram(blurProgram);
+            GL.BindImageTexture(0, tempImage1, 0, false, 0, TextureAccess.ReadOnly, SizedInternalFormat.Rgba16f);
+            GL.BindImageTexture(1, tempImage2, 0, false, 0, TextureAccess.WriteOnly, SizedInternalFormat.Rgba16f);
+            GL.Uniform2(blurSizeUniformLocation, mipSize);
+            GL.Uniform1(blurVerticalUniformLocation, 0);
+            
+            GL.DispatchCompute(
+                MathUtil.DivideCeil(mipSize.X, 8), 
+                MathUtil.DivideCeil(mipSize.Y, 8), 
+                1);
+            GL.MemoryBarrier(MemoryBarrierFlags.ShaderImageAccessBarrierBit);
+            
+            // Blur pass V
+            GL.BindImageTexture(0, tempImage2, 0, false, 0, TextureAccess.ReadOnly, SizedInternalFormat.Rgba16f);
+            GL.BindImageTexture(1, mipChain[i], 0, false, 0, TextureAccess.WriteOnly, SizedInternalFormat.Rgba16f);
+            GL.Uniform1(blurVerticalUniformLocation, 1);
             
             GL.DispatchCompute(
                 MathUtil.DivideCeil(mipSize.X, 8), 
@@ -122,8 +153,20 @@ public class Bloom
         return true;
     }
 
-    private void UpdateMipChain(Vector2i size)
+    private void UpdateTextures(Vector2i size)
     {
+        // Update the temporary images
+        if (tempImage1 != 0)
+            GL.DeleteTexture(tempImage1);
+        GL.CreateTextures(TextureTarget.Texture2D, 1, out tempImage1);
+        GL.TextureStorage2D(tempImage1, 1, SizedInternalFormat.Rgba16f, size.X, size.Y);
+        
+        if (tempImage2 != 0)
+            GL.DeleteTexture(tempImage2);
+        GL.CreateTextures(TextureTarget.Texture2D, 1, out tempImage2);
+        GL.TextureStorage2D(tempImage2, 1, SizedInternalFormat.Rgba16f, size.X, size.Y);
+        
+        // Caluculate the mip levels
         var mipLevels = CalculateMipLevels(size);
         
         // Clean up old mip chain
@@ -161,5 +204,10 @@ public class Bloom
         GL.DeleteShader(shader);
         
         return program;
+    }
+
+    private static void Swap<T>(ref T a, ref T b)
+    {
+        (a, b) = (b, a);
     }
 }
