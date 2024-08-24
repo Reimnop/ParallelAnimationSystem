@@ -127,7 +127,7 @@ public class App(Options options, Renderer renderer, ILogger<App> logger) : IDis
         var stopwatch = Stopwatch.StartNew();
 
         var lastTime = 0.0;
-        while (!renderer.Exiting && !disposing)
+        while (!IsShuttingDown())
         {
             var currentTime = stopwatch.Elapsed.TotalSeconds;
             var delta = currentTime - lastTime;
@@ -179,16 +179,19 @@ public class App(Options options, Renderer renderer, ILogger<App> logger) : IDis
     private void SubmitDrawList(DrawList drawList)
     {
         // If we already have more than 2 draw lists queued, wait until we don't
-        while (renderer is { QueuedDrawListCount: > 2, Exiting: false })
+        while (renderer.QueuedDrawListCount > 2 && !IsShuttingDown())
             Thread.Yield();
         
-        // Return if we are exiting
-        if (renderer.Exiting)
+        // Return if we are shutting down
+        if (IsShuttingDown())
             return;
         
         // Submit draw list
         renderer.SubmitDrawList(drawList);
     }
+    
+    private bool IsShuttingDown()
+        => renderer.Exiting || disposing;
 
     public void Dispose()
     {
