@@ -29,4 +29,10 @@ public static class MathUtil
     
     public static int DivideCeil(int dividend, int divisor)
         => (dividend + divisor - 1) / divisor;
+    
+    public static double Lerp(double start, double end, double t)
+        => start + t * (end - start);
+    
+    public static float Lerp(float start, float end, float t)
+        => start + t * (end - start);
 }

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.IO.Hashing;
 using System.Text;
 using OpenTK.Mathematics;
@@ -59,8 +58,8 @@ public static class BeatmapImporter
     {
         return new BloomData
         {
-            Intensity = MathHelper.Lerp(a.Intensity, b.Intensity, t),
-            Diffusion = MathHelper.Lerp(a.Diffusion, b.Diffusion, t)
+            Intensity = MathUtil.Lerp(a.Intensity, b.Intensity, t),
+            Diffusion = MathUtil.Lerp(a.Diffusion, b.Diffusion, t)
         };
     }
 
@@ -152,10 +151,10 @@ public static class BeatmapImporter
     private static Color4 InterpolateColor4(Color4 a, Color4 b, float t)
     {
         return new Color4(
-            MathHelper.Lerp(a.R, b.R, t),
-            MathHelper.Lerp(a.G, b.G, t),
-            MathHelper.Lerp(a.B, b.B, t),
-            MathHelper.Lerp(a.A, b.A, t));
+            MathUtil.Lerp(a.R, b.R, t),
+            MathUtil.Lerp(a.G, b.G, t),
+            MathUtil.Lerp(a.B, b.B, t),
+            MathUtil.Lerp(a.A, b.A, t));
     }
 
     private static IEnumerable<GameObject> CreateGameObjects(IBeatmap beatmap)
@@ -399,13 +398,13 @@ public static class BeatmapImporter
     private static Vector2 InterpolateVector2(Vector2 a, Vector2 b, float t, object? context)
     {
         return new Vector2(
-            MathHelper.Lerp(a.X, b.X, t),
-            MathHelper.Lerp(a.Y, b.Y, t));
+            MathUtil.Lerp(a.X, b.X, t),
+            MathUtil.Lerp(a.Y, b.Y, t));
     }
     
     private static float InterpolateFloat(float a, float b, float t, object? context)
     {
-        return MathHelper.Lerp(a, b, t);
+        return MathUtil.Lerp(a, b, t);
     }
     
     private static (Color4, Color4) InterpolateThemeColor(ThemeColor a, ThemeColor b, float t, object? context)
@@ -420,16 +419,16 @@ public static class BeatmapImporter
         var colorBStart = colors.Object[b.Index];
         var colorBEnd = colors.Object[b.EndIndex];
 
-        var opacity = MathHelper.Lerp(opacityA, opacityB, t);
+        var opacity = MathUtil.Lerp(opacityA, opacityB, t);
         var color1 = new Color4(
-            MathHelper.Lerp(colorAStart.R, colorBStart.R, t),
-            MathHelper.Lerp(colorAStart.G, colorBStart.G, t),
-            MathHelper.Lerp(colorAStart.B, colorBStart.B, t),
+            MathUtil.Lerp(colorAStart.R, colorBStart.R, t),
+            MathUtil.Lerp(colorAStart.G, colorBStart.G, t),
+            MathUtil.Lerp(colorAStart.B, colorBStart.B, t),
             opacity);
         var color2 = new Color4(
-            MathHelper.Lerp(colorAEnd.R, colorBEnd.R, t),
-            MathHelper.Lerp(colorAEnd.G, colorBEnd.G, t),
-            MathHelper.Lerp(colorAEnd.B, colorBEnd.B, t),
+            MathUtil.Lerp(colorAEnd.R, colorBEnd.R, t),
+            MathUtil.Lerp(colorAEnd.G, colorBEnd.G, t),
+            MathUtil.Lerp(colorAEnd.B, colorBEnd.B, t),
             opacity);
         return (color1, color2);
     }
@@ -483,6 +482,6 @@ public static class BeatmapImporter
         // Get the hash as a float
         var hashValue = hash.GetCurrentHashAsUInt32();
         
-        return (float) MathHelper.Lerp(min, max, hashValue / (double) uint.MaxValue);
+        return (float) MathUtil.Lerp(min, max, hashValue / (double) uint.MaxValue);
     }
 }

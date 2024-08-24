@@ -7,8 +7,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9b1e7f31-978d-41b0-ac0b-49ddcf3b23f4" name="Changes" comment="Fix helper">
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/Renderer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/Renderer.cs" afterDir="false" />
+    <list default="true" id="9b1e7f31-978d-41b0-ac0b-49ddcf3b23f4" name="Changes" comment="Fix crash">
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.ParallelAnimationSystem/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.ParallelAnimationSystem/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Core/BeatmapImporter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/BeatmapImporter.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Util/MathUtil.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Util/MathUtil.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="true" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -66,6 +68,7 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/ffdbecaac85a4a73a506f7ae3cb32d184d000/48/44a402e7/Matrix3.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/3e8f1cfc7f3332b9a0e31b3f10347da0b2775895319a6b9a2b4f25a4c48654bc/Command.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="mock://G:/Projects/ParallelAnimationSystem/ParallelAnimationSystem/Core/App.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://G:/Projects/ParallelAnimationSystem/ParallelAnimationSystem/Rendering/Renderer.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
   <component name="ProjectColorInfo">{
@@ -103,7 +106,7 @@
     ]
   }
 }</component>
-  <component name="RunManager" selected=".NET Project.ParallelAnimationSystem">
+  <component name="RunManager" selected="Publish to folder.Publish">
     <configuration name="Publish" type="DotNetFolderPublish" factoryName="Publish to folder">
       <riderPublish configuration="Release" include_native_libs_for_self_extract="true" platform="Any CPU" produce_single_file="true" runtime="win-x64" self_contained="true" target_folder="$PROJECT_DIR$/ParallelAnimationSystem/bin/Release/net8.0/win-x64/publish" target_framework="net8.0" trim_unused_assemblies="true" uuid_high="4921518821831493447" uuid_low="-5440609166602987154" />
       <method v="2" />
@@ -150,7 +153,7 @@
       <workItem from="1724316327357" duration="2325000" />
       <workItem from="1724318951605" duration="18329000" />
       <workItem from="1724397771855" duration="23945000" />
-      <workItem from="1724477578259" duration="4416000" />
+      <workItem from="1724477578259" duration="5612000" />
     </task>
     <task id="LOCAL-00001" summary="Fix more edge cases">
       <option name="closed" value="true" />
@@ -408,7 +411,15 @@
       <option name="project" value="LOCAL" />
       <updated>1724482674765</updated>
     </task>
-    <option name="localTasksCounter" value="33" />
+    <task id="LOCAL-00033" summary="Fix crash">
+      <option name="closed" value="true" />
+      <created>1724483079223</created>
+      <option name="number" value="00033" />
+      <option name="presentableId" value="LOCAL-00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1724483079223</updated>
+    </task>
+    <option name="localTasksCounter" value="34" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -430,7 +441,6 @@
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-    <MESSAGE value="Add some flags" />
     <MESSAGE value="Fix theme" />
     <MESSAGE value="Implement bg color" />
     <MESSAGE value="Limited pre-Legacy support" />
@@ -455,7 +465,8 @@
     <MESSAGE value="Ls migration for bloom" />
     <MESSAGE value="Make bloom less intense" />
     <MESSAGE value="Fix helper" />
-    <option name="LAST_COMMIT_MESSAGE" value="Fix helper" />
+    <MESSAGE value="Fix crash" />
+    <option name="LAST_COMMIT_MESSAGE" value="Fix crash" />
   </component>
   <component name="XDebuggerManager">
     <pin-to-top-manager>
