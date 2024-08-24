@@ -47,6 +47,8 @@ public class App(Options options, Renderer renderer, ILogger<App> logger)
         // Migrate the beatmap to the latest version of the beatmap format
         if (format == LevelFormat.Lsb)
             LsMigration.MigrateBeatmap(beatmap);
+        else
+            VgMigration.MigrateBeatmap(beatmap);
         
         // Create animation runner
         runner = BeatmapImporter.CreateRunner(beatmap);
