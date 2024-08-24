@@ -7,10 +7,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9b1e7f31-978d-41b0-ac0b-49ddcf3b23f4" name="Changes" comment="Make bloom less intense">
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/VgMigration.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.ParallelAnimationSystem/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.ParallelAnimationSystem/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Core/App.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/App.cs" afterDir="false" />
+    <list default="true" id="9b1e7f31-978d-41b0-ac0b-49ddcf3b23f4" name="Changes" comment="Fix helper">
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/Renderer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/Renderer.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="true" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -67,10 +65,7 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/ffdbecaac85a4a73a506f7ae3cb32d184d000/1e/dfcdc95d/MathHelper.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/ffdbecaac85a4a73a506f7ae3cb32d184d000/48/44a402e7/Matrix3.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/3e8f1cfc7f3332b9a0e31b3f10347da0b2775895319a6b9a2b4f25a4c48654bc/Command.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock://G:/Projects/ParallelAnimationSystem/ParallelAnimationSystem/Core/AnimationRunner.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock://G:/Projects/ParallelAnimationSystem/ParallelAnimationSystem/Core/BeatmapImporter.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock://G:/Projects/ParallelAnimationSystem/ParallelAnimationSystem/Rendering/PostProcessing/Hue.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock://G:/Projects/ParallelAnimationSystem/ParallelAnimationSystem/Rendering/Renderer.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://G:/Projects/ParallelAnimationSystem/ParallelAnimationSystem/Core/App.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
   <component name="ProjectColorInfo">{
@@ -155,7 +150,7 @@
       <workItem from="1724316327357" duration="2325000" />
       <workItem from="1724318951605" duration="18329000" />
       <workItem from="1724397771855" duration="23945000" />
-      <workItem from="1724477578259" duration="4065000" />
+      <workItem from="1724477578259" duration="4416000" />
     </task>
     <task id="LOCAL-00001" summary="Fix more edge cases">
       <option name="closed" value="true" />
@@ -405,7 +400,15 @@
       <option name="project" value="LOCAL" />
       <updated>1724482216479</updated>
     </task>
-    <option name="localTasksCounter" value="32" />
+    <task id="LOCAL-00032" summary="Fix helper">
+      <option name="closed" value="true" />
+      <created>1724482674765</created>
+      <option name="number" value="00032" />
+      <option name="presentableId" value="LOCAL-00032" />
+      <option name="project" value="LOCAL" />
+      <updated>1724482674765</updated>
+    </task>
+    <option name="localTasksCounter" value="33" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -427,7 +430,6 @@
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-    <MESSAGE value="Fix dumbass bugs" />
     <MESSAGE value="Add some flags" />
     <MESSAGE value="Fix theme" />
     <MESSAGE value="Implement bg color" />
@@ -452,7 +454,8 @@
     <MESSAGE value="Added bloom..." />
     <MESSAGE value="Ls migration for bloom" />
     <MESSAGE value="Make bloom less intense" />
-    <option name="LAST_COMMIT_MESSAGE" value="Make bloom less intense" />
+    <MESSAGE value="Fix helper" />
+    <option name="LAST_COMMIT_MESSAGE" value="Fix helper" />
   </component>
   <component name="XDebuggerManager">
     <pin-to-top-manager>

@@ -228,6 +228,16 @@ public class Renderer(Options options, ILogger<Renderer> logger)
         DrawList? drawList;
         while (!drawListQueue.TryDequeue(out drawList))
             Thread.Yield();
+        
+        var windowSize = window.ClientSize;
+        
+        // If window size is invalid, don't draw
+        // and limit FPS
+        if (windowSize.X <= 0 || windowSize.Y <= 0)
+        {
+            Thread.Sleep(50);
+            return;
+        }
 
         // Update OpenGL data
         UpdateOpenGlData();
@@ -323,7 +333,6 @@ public class Renderer(Options options, ILogger<Renderer> logger)
         // Blit to post process fbo
         GL.NamedFramebufferTexture(postProcessFboHandle, FramebufferAttachment.ColorAttachment0, postProcessTextureHandle1, 0);
         
-        var windowSize = window.ClientSize;
         GL.BlitNamedFramebuffer(
             fboHandle, postProcessFboHandle, 
             0, 0,
