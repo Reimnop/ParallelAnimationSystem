@@ -1,6 +1,7 @@
 using OpenTK.Mathematics;
 using Pamx.Common.Data;
 using ParallelAnimationSystem.Core.Animation;
+using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core;
@@ -18,6 +19,7 @@ public class GameObject(
     bool parentAnimatePosition,
     bool parentAnimateScale,
     bool parentAnimateRotation,
+    RenderMode renderMode,
     Vector2 origin,
     int shapeIndex,
     int shapeOptionIndex,
@@ -39,6 +41,8 @@ public class GameObject(
     public bool ParentAnimatePosition { get; } = parentAnimatePosition;
     public bool ParentAnimateScale { get; } = parentAnimateScale;
     public bool ParentAnimateRotation { get; } = parentAnimateRotation;
+    
+    public RenderMode RenderMode { get; } = renderMode;
     
     public Vector2 Origin { get; } = origin;
     

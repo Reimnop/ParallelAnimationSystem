@@ -14,9 +14,9 @@ public class DrawList : IEnumerable<DrawData>
     
     private readonly List<DrawData> drawData = [];
     
-    public void AddMesh(MeshHandle mesh, Matrix3 transform, float z, Color4 color)
+    public void AddMesh(MeshHandle mesh, Matrix3 transform, float z, RenderMode renderMode, Color4 color1, Color4 color2)
     {
-        drawData.Add(new DrawData(mesh, transform, z, color));
+        drawData.Add(new DrawData(mesh, transform, z, renderMode, color1, color2));
     }
 
     public IEnumerator<DrawData> GetEnumerator()

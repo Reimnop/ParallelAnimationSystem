@@ -38,7 +38,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
     private int vertexBufferHandle;
     private int indexBufferHandle;
     private int programHandle;
-    private int mvpUniformLocation, zUniformLocation, colorUniformLocation;
+    private int mvpUniformLocation, zUniformLocation, renderModeUniformLocation, color1UniformLocation, color2UniformLocation;
 
     private Vector2i currentFboSize;
     private int fboTextureHandle, fboDepthBufferHandle;
@@ -178,7 +178,9 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         // Get uniform locations
         mvpUniformLocation = GL.GetUniformLocation(programHandle, "uMvp");
         zUniformLocation = GL.GetUniformLocation(programHandle, "uZ");
-        colorUniformLocation = GL.GetUniformLocation(programHandle, "uColor");
+        renderModeUniformLocation = GL.GetUniformLocation(programHandle, "uRenderMode");
+        color1UniformLocation = GL.GetUniformLocation(programHandle, "uColor1");
+        color2UniformLocation = GL.GetUniformLocation(programHandle, "uColor2");
         
         // Initialize fbo
         
@@ -269,11 +271,11 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         foreach (var drawData in drawList)
         {
             // Discard draw data that is fully transparent, or outside of clipping range
-            if (drawData.Color.A == 0.0f || drawData.Z < 0.0f || drawData.Z > 1.0f)
+            if ((drawData.Color1.A == 0.0f && drawData.Color2.A == 0.0f) || drawData.Z < 0.0f || drawData.Z > 1.0f)
                 continue;
             
             // Add to appropriate list
-            if (drawData.Color.A == 1.0f)
+            if (drawData.Color1.A == 1.0f && drawData.Color2.A == 1.0f && drawData.Color1 != drawData.Color2)
                 opaqueDrawData.Add(drawData);
             else
                 transparentDrawData.Add(drawData);
@@ -316,7 +318,9 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
             // Set transform
             GL.UniformMatrix3(mvpUniformLocation, false, ref transform);
             GL.Uniform1(zUniformLocation, drawData.Z);
-            GL.Uniform4(colorUniformLocation, drawData.Color);
+            GL.Uniform1(renderModeUniformLocation, (int) drawData.RenderMode);
+            GL.Uniform4(color1UniformLocation, drawData.Color1);
+            GL.Uniform4(color2UniformLocation, drawData.Color2);
             
             // Draw
             // TODO: We can probably glMultiDrawElementsBaseVertex here
@@ -337,7 +341,9 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
             // Set transform
             GL.UniformMatrix3(mvpUniformLocation, false, ref transform);
             GL.Uniform1(zUniformLocation, drawData.Z);
-            GL.Uniform4(colorUniformLocation, drawData.Color);
+            GL.Uniform1(renderModeUniformLocation, (int) drawData.RenderMode);
+            GL.Uniform4(color1UniformLocation, drawData.Color1);
+            GL.Uniform4(color2UniformLocation, drawData.Color2);
 
             // Draw
             // TODO: We can probably glMultiDrawElementsBaseVertex here

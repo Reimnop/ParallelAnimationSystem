@@ -7,6 +7,7 @@ using Pamx.Common.Data;
 using Pamx.Common.Enum;
 using Pamx.Common.Implementation;
 using ParallelAnimationSystem.Core.Animation;
+using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core;
@@ -285,6 +286,16 @@ public static class BeatmapImporter
         var parentAnimatePosition = beatmapObject.ParentType.HasFlag(ParentType.Position);
         var parentAnimateScale = beatmapObject.ParentType.HasFlag(ParentType.Scale);
         var parentAnimateRotation = beatmapObject.ParentType.HasFlag(ParentType.Rotation);
+
+        var renderMode = beatmapObject.RenderType switch
+        {
+            RenderType.Normal => RenderMode.Normal,
+            RenderType.LeftToRightGradient => RenderMode.LeftToRightGradient,
+            RenderType.RightToLeftGradient => RenderMode.RightToLeftGradient,
+            RenderType.InwardsGradient => RenderMode.InwardsGradient,
+            RenderType.OutwardsGradient => RenderMode.OutwardsGradient,
+            _ => throw new ArgumentOutOfRangeException()
+        };
         
         var origin = new Vector2(beatmapObject.Origin.X, beatmapObject.Origin.Y);
 
@@ -302,7 +313,7 @@ public static class BeatmapImporter
             positionAnimation, scaleAnimation, rotationAnimation, themeColorAnimation,
             -parentPositionTimeOffset, -parentScaleTimeOffset, -parentRotationTimeOffset,
             parentAnimatePosition, parentAnimateScale, parentAnimateRotation,
-            origin, shapeIndex, shapeOptionIndex, depth, parent);
+            renderMode, origin, shapeIndex, shapeOptionIndex, depth, parent);
     }
 
     private static ParentTransform RecursivelyCreateParentTransform(IObject beatmapObject, ref int parentChainSize)

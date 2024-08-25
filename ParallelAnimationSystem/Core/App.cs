@@ -167,9 +167,11 @@ public class App(Options options, Renderer renderer, ILogger<App> logger) : IDis
             var mesh = meshes[gameObject.ShapeIndex][gameObject.ShapeOptionIndex];
             var transform = gameObject.CachedTransform;
             var z = gameObject.Depth;
-            var color = gameObject.CachedThemeColor.Item1;
+            var renderMode = gameObject.RenderMode;
+            var color1 = gameObject.CachedThemeColor.Item1;
+            var color2 = gameObject.CachedThemeColor.Item2;
             
-            drawList.AddMesh(mesh, transform, z, color);
+            drawList.AddMesh(mesh, transform, z, renderMode, color1, color2);
         }
         
         // Submit our draw list
