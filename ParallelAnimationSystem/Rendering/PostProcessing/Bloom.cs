@@ -1,4 +1,4 @@
-using OpenTK.Graphics.OpenGL4;
+using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using ParallelAnimationSystem.Util;
 
@@ -40,11 +40,11 @@ public class Bloom : IDisposable
         combineSizeUniformLocation = GL.GetUniformLocation(combineProgram, "uSize");
         combineIntensityUniformLocation = GL.GetUniformLocation(combineProgram, "uIntensity");
         
-        GL.CreateSamplers(1, out textureSampler);
-        GL.SamplerParameter(textureSampler, SamplerParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
-        GL.SamplerParameter(textureSampler, SamplerParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
-        GL.SamplerParameter(textureSampler, SamplerParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
-        GL.SamplerParameter(textureSampler, SamplerParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+        textureSampler = GL.CreateSampler();
+        GL.SamplerParameteri(textureSampler, SamplerParameterI.TextureMinFilter, (int)TextureMinFilter.Linear);
+        GL.SamplerParameteri(textureSampler, SamplerParameterI.TextureMagFilter, (int)TextureMagFilter.Linear);
+        GL.SamplerParameteri(textureSampler, SamplerParameterI.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+        GL.SamplerParameteri(textureSampler, SamplerParameterI.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
     }
 
     public bool Process(Vector2i size, float intensity, float diffusion, int inputTexture, int outputTexture)
@@ -62,15 +62,15 @@ public class Bloom : IDisposable
         // Prefilter to mip 0
         GL.UseProgram(prefilterProgram);
         
-        GL.BindImageTexture(0, inputTexture, 0, false, 0, TextureAccess.ReadOnly, SizedInternalFormat.Rgba8);
-        GL.BindImageTexture(1, mipChain[0], 0, false, 0, TextureAccess.WriteOnly, SizedInternalFormat.Rgba16f);
-        GL.Uniform2(prefilterSizeUniformLocation, size);
+        GL.BindImageTexture(0, inputTexture, 0, false, 0, BufferAccess.ReadOnly, InternalFormat.Rgba8);
+        GL.BindImageTexture(1, mipChain[0], 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f);
+        GL.Uniform2f(prefilterSizeUniformLocation, 1, size);
         
         GL.DispatchCompute(
-            MathUtil.DivideCeil(size.X, 8), 
-            MathUtil.DivideCeil(size.Y, 8), 
+            (uint)MathUtil.DivideCeil(size.X, 8), 
+            (uint)MathUtil.DivideCeil(size.Y, 8), 
             1);
-        GL.MemoryBarrier(MemoryBarrierFlags.ShaderImageAccessBarrierBit);
+        GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit);
         
         // Bind sampler
         GL.BindSampler(0, textureSampler);
@@ -83,38 +83,38 @@ public class Bloom : IDisposable
             // Downsample it to temporary image
             GL.UseProgram(downsampleProgram);
             GL.BindTextureUnit(0, mipChain[i - 1]);
-            GL.BindImageTexture(1, tempImage1, 0, false, 0, TextureAccess.WriteOnly, SizedInternalFormat.Rgba16f);
-            GL.Uniform2(downsampleOutputSizeUniformLocation, mipSize);
+            GL.BindImageTexture(1, tempImage1, 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f);
+            GL.Uniform2i(downsampleOutputSizeUniformLocation, 1, mipSize);
             
             GL.DispatchCompute(
-                MathUtil.DivideCeil(mipSize.X, 8), 
-                MathUtil.DivideCeil(mipSize.Y, 8), 
+                (uint)MathUtil.DivideCeil(mipSize.X, 8), 
+                (uint)MathUtil.DivideCeil(mipSize.Y, 8), 
                 1);
-            GL.MemoryBarrier(MemoryBarrierFlags.ShaderImageAccessBarrierBit);
+            GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit);
             
             // Blur pass H
             GL.UseProgram(blurProgram);
-            GL.BindImageTexture(0, tempImage1, 0, false, 0, TextureAccess.ReadOnly, SizedInternalFormat.Rgba16f);
-            GL.BindImageTexture(1, tempImage2, 0, false, 0, TextureAccess.WriteOnly, SizedInternalFormat.Rgba16f);
-            GL.Uniform2(blurSizeUniformLocation, mipSize);
-            GL.Uniform1(blurVerticalUniformLocation, 0);
+            GL.BindImageTexture(0, tempImage1, 0, false, 0, BufferAccess.ReadOnly, InternalFormat.Rgba16f);
+            GL.BindImageTexture(1, tempImage2, 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f);
+            GL.Uniform2i(blurSizeUniformLocation, 1, mipSize);
+            GL.Uniform1i(blurVerticalUniformLocation, 0);
             
             GL.DispatchCompute(
-                MathUtil.DivideCeil(mipSize.X, 8), 
-                MathUtil.DivideCeil(mipSize.Y, 8), 
+                (uint)MathUtil.DivideCeil(mipSize.X, 8), 
+                (uint)MathUtil.DivideCeil(mipSize.Y, 8), 
                 1);
-            GL.MemoryBarrier(MemoryBarrierFlags.ShaderImageAccessBarrierBit);
+            GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit);
             
             // Blur pass V
-            GL.BindImageTexture(0, tempImage2, 0, false, 0, TextureAccess.ReadOnly, SizedInternalFormat.Rgba16f);
-            GL.BindImageTexture(1, mipChain[i], 0, false, 0, TextureAccess.WriteOnly, SizedInternalFormat.Rgba16f);
-            GL.Uniform1(blurVerticalUniformLocation, 1);
+            GL.BindImageTexture(0, tempImage2, 0, false, 0, BufferAccess.ReadOnly, InternalFormat.Rgba16f);
+            GL.BindImageTexture(1, mipChain[i], 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f);
+            GL.Uniform1i(blurVerticalUniformLocation, 1);
             
             GL.DispatchCompute(
-                MathUtil.DivideCeil(mipSize.X, 8), 
-                MathUtil.DivideCeil(mipSize.Y, 8), 
+                (uint)MathUtil.DivideCeil(mipSize.X, 8), 
+                (uint)MathUtil.DivideCeil(mipSize.Y, 8), 
                 1);
-            GL.MemoryBarrier(MemoryBarrierFlags.ShaderImageAccessBarrierBit);
+            GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit);
         }
         
         // Upsample back up the chain
@@ -125,30 +125,30 @@ public class Bloom : IDisposable
             var mipSize = new Vector2i(size.X >> i, size.Y >> i);
             
             GL.BindTextureUnit(0, mipChain[i + 1]);
-            GL.BindImageTexture(1, mipChain[i], 0, false, 0, TextureAccess.ReadWrite, SizedInternalFormat.Rgba16f);
-            GL.Uniform2(upsampleOutputSizeUniformLocation, mipSize);
-            GL.Uniform1(upsampleDiffusionUniformLocation, diffusion);
+            GL.BindImageTexture(1, mipChain[i], 0, false, 0, BufferAccess.ReadWrite, InternalFormat.Rgba16f);
+            GL.Uniform2i(upsampleOutputSizeUniformLocation, 1, mipSize);
+            GL.Uniform1f(upsampleDiffusionUniformLocation, diffusion);
             
             GL.DispatchCompute(
-                MathUtil.DivideCeil(mipSize.X, 8), 
-                MathUtil.DivideCeil(mipSize.Y, 8), 
+                (uint)MathUtil.DivideCeil(mipSize.X, 8), 
+                (uint)MathUtil.DivideCeil(mipSize.Y, 8), 
                 1);
-            GL.MemoryBarrier(MemoryBarrierFlags.ShaderImageAccessBarrierBit);
+            GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit);
         }
         
         // Combine result with input
         GL.UseProgram(combineProgram);
-        GL.BindImageTexture(0, inputTexture, 0, false, 0, TextureAccess.ReadOnly, SizedInternalFormat.Rgba8);
-        GL.BindImageTexture(1, mipChain[0], 0, false, 0, TextureAccess.ReadOnly, SizedInternalFormat.Rgba16f);
-        GL.BindImageTexture(2, outputTexture, 0, false, 0, TextureAccess.WriteOnly, SizedInternalFormat.Rgba8);
-        GL.Uniform2(combineSizeUniformLocation, size);
-        GL.Uniform1(combineIntensityUniformLocation, intensity);
+        GL.BindImageTexture(0, inputTexture, 0, false, 0, BufferAccess.ReadOnly, InternalFormat.Rgba8);
+        GL.BindImageTexture(1, mipChain[0], 0, false, 0, BufferAccess.ReadOnly, InternalFormat.Rgba16f);
+        GL.BindImageTexture(2, outputTexture, 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba8);
+        GL.Uniform2i(combineSizeUniformLocation, 1, size);
+        GL.Uniform1f(combineIntensityUniformLocation, intensity);
         
         GL.DispatchCompute(
-            MathUtil.DivideCeil(size.X, 8), 
-            MathUtil.DivideCeil(size.Y, 8), 
+           (uint)MathUtil.DivideCeil(size.X, 8), 
+           (uint)MathUtil.DivideCeil(size.Y, 8), 
             1);
-        GL.MemoryBarrier(MemoryBarrierFlags.ShaderImageAccessBarrierBit);
+        GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit);
         
         return true;
     }
@@ -158,12 +158,12 @@ public class Bloom : IDisposable
         // Update the temporary images
         if (tempImage1 != 0)
             GL.DeleteTexture(tempImage1);
-        GL.CreateTextures(TextureTarget.Texture2D, 1, out tempImage1);
+        tempImage1 = GL.CreateTexture(TextureTarget.Texture2d);
         GL.TextureStorage2D(tempImage1, 1, SizedInternalFormat.Rgba16f, size.X, size.Y);
         
         if (tempImage2 != 0)
             GL.DeleteTexture(tempImage2);
-        GL.CreateTextures(TextureTarget.Texture2D, 1, out tempImage2);
+        tempImage2 = GL.CreateTexture(TextureTarget.Texture2d);
         GL.TextureStorage2D(tempImage2, 1, SizedInternalFormat.Rgba16f, size.X, size.Y);
         
         // Caluculate the mip levels
@@ -177,7 +177,7 @@ public class Bloom : IDisposable
         // Create new mip chain
         for (var i = 0; i < mipLevels; i++)
         {
-            GL.CreateTextures(TextureTarget.Texture2D, 1, out int mip);
+            var mip = GL.CreateTexture(TextureTarget.Texture2d);
             GL.TextureStorage2D(mip, 1, SizedInternalFormat.Rgba16f, size.X >> i, size.Y >> i);
             mipChain.Add(mip);
         }

@@ -8,16 +8,18 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9b1e7f31-978d-41b0-ac0b-49ddcf3b23f4" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Data/RenderMode.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.ParallelAnimationSystem/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.ParallelAnimationSystem/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Core/App.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/App.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Core/AnimationRunner.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/AnimationRunner.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Core/BeatmapImporter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/BeatmapImporter.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Core/GameObject.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/GameObject.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Core/ThemeColors.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/ThemeColors.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Data/DrawData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Data/DrawData.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Data/DrawList.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Data/DrawList.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/ParallelAnimationSystem.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/ParallelAnimationSystem.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Program.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/PostProcessing/Bloom.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/PostProcessing/Bloom.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/PostProcessing/Hue.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/PostProcessing/Hue.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/Renderer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/Renderer.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/SimpleUnlitFragment.glsl" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/SimpleUnlitFragment.glsl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/SimpleUnlitVertex.glsl" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/SimpleUnlitVertex.glsl" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="true" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -73,13 +75,12 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/514572a396c648419bfc63435e919efcde00/9c/f82d0cf3/NativeWindow.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a8d4fa595ced467f968e9ff0b17c676b91e5c0/64/603cdf44/IEquatable`1.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a8d4fa595ced467f968e9ff0b17c676b91e5c0/a5/9a816f3f/Single.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/d6d9a64f5a9e4e8db91d96dc491a13e2495800/dd/b22e1ac9/GL.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/ffdbecaac85a4a73a506f7ae3cb32d184d000/1e/dfcdc95d/MathHelper.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/ffdbecaac85a4a73a506f7ae3cb32d184d000/48/44a402e7/Matrix3.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/3e8f1cfc7f3332b9a0e31b3f10347da0b2775895319a6b9a2b4f25a4c48654bc/Command.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock://G:/Projects/ParallelAnimationSystem/ParallelAnimationSystem/Core/App.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock://G:/Projects/ParallelAnimationSystem/ParallelAnimationSystem/Core/App.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock://G:/Projects/ParallelAnimationSystem/ParallelAnimationSystem/Rendering/PostProcessing/Bloom.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock://G:/Projects/ParallelAnimationSystem/ParallelAnimationSystem/Rendering/PostProcessing/Hue.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/6ded741cabd4cd8d7ff777cc3df56744492cc13268aa5d23e3c2d6c2bfada37/Color4.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://G:/Projects/ParallelAnimationSystem/ParallelAnimationSystem/Core/AnimationRunner.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
   <component name="ProjectColorInfo">{
@@ -117,14 +118,14 @@
     ]
   }
 }</component>
-  <component name="RunManager" selected=".NET Project.ParallelAnimationSystem">
+  <component name="RunManager" selected="Publish to folder.Publish">
     <configuration name="Publish" type="DotNetFolderPublish" factoryName="Publish to folder">
       <riderPublish configuration="Release" include_native_libs_for_self_extract="true" platform="Any CPU" produce_single_file="true" runtime="win-x64" self_contained="true" target_folder="$PROJECT_DIR$/ParallelAnimationSystem/bin/Release/net8.0/win-x64/publish" target_framework="net8.0" trim_unused_assemblies="true" uuid_high="4921518821831493447" uuid_low="-5440609166602987154" />
       <method v="2" />
     </configuration>
     <configuration name="ParallelAnimationSystem" type="DotNetProject" factoryName=".NET Project">
       <option name="EXE_PATH" value="$PROJECT_DIR$/ParallelAnimationSystem/bin/Debug/net8.0/ParallelAnimationSystem.exe" />
-      <option name="PROGRAM_PARAMETERS" value="-l level.vgd -a audio.ogg" />
+      <option name="PROGRAM_PARAMETERS" value="-l level.lsb -a level.ogg" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/ParallelAnimationSystem/bin/Debug/net8.0" />
       <option name="PASS_PARENT_ENVS" value="1" />
       <option name="USE_EXTERNAL_CONSOLE" value="0" />
@@ -167,7 +168,8 @@
       <workItem from="1724477578259" duration="10913000" />
       <workItem from="1724506536807" duration="5751000" />
       <workItem from="1724518994624" duration="1762000" />
-      <workItem from="1724590908069" duration="4435000" />
+      <workItem from="1724590908069" duration="4993000" />
+      <workItem from="1724610556650" duration="2287000" />
     </task>
     <task id="LOCAL-00001" summary="Fix more edge cases">
       <option name="closed" value="true" />
@@ -457,7 +459,15 @@
       <option name="project" value="LOCAL" />
       <updated>1724511980435</updated>
     </task>
-    <option name="localTasksCounter" value="37" />
+    <task id="LOCAL-00037" summary="Added alpha gradients">
+      <option name="closed" value="true" />
+      <created>1724603232001</created>
+      <option name="number" value="00037" />
+      <option name="presentableId" value="LOCAL-00037" />
+      <option name="project" value="LOCAL" />
+      <updated>1724603232001</updated>
+    </task>
+    <option name="localTasksCounter" value="38" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -479,7 +489,6 @@
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-    <MESSAGE value="Dededuplicate some LS assets" />
     <MESSAGE value="More pre-Legacy work" />
     <MESSAGE value="Ls support" />
     <MESSAGE value="Fix empty prefabs" />
@@ -504,7 +513,8 @@
     <MESSAGE value="Fix lerp, hopefully" />
     <MESSAGE value="Properly manage memory now" />
     <MESSAGE value="Add IsShuttingDown method" />
-    <option name="LAST_COMMIT_MESSAGE" value="Add IsShuttingDown method" />
+    <MESSAGE value="Added alpha gradients" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added alpha gradients" />
   </component>
   <component name="XDebuggerManager">
     <pin-to-top-manager>

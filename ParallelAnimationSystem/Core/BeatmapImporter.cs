@@ -1,3 +1,4 @@
+using System.Drawing;
 using System.IO.Hashing;
 using System.Text;
 using OpenTK.Mathematics;
@@ -135,27 +136,27 @@ public static class BeatmapImporter
     private static ThemeColors InterpolateTheme(ITheme a, ITheme b, float t, object? context)
     {
         var themeColors = new ThemeColors();
-        themeColors.Background = InterpolateColor4(a.Background, b.Background, t);
-        themeColors.Gui = InterpolateColor4(a.Gui, b.Gui, t);
-        themeColors.GuiAccent = InterpolateColor4(a.GuiAccent, b.GuiAccent, t);
+        themeColors.Background = InterpolateColor4(a.Background.ToColor4(), b.Background.ToColor4(), t);
+        themeColors.Gui = InterpolateColor4(a.Gui.ToColor4(), b.Gui.ToColor4(), t);
+        themeColors.GuiAccent = InterpolateColor4(a.GuiAccent.ToColor4(), b.GuiAccent.ToColor4(), t);
         for (var i = 0; i < Math.Min(a.Player.Count, b.Player.Count); i++)
-            themeColors.Player.Add(InterpolateColor4(a.Player[i], b.Player[i], t));
+            themeColors.Player.Add(InterpolateColor4(a.Player[i].ToColor4(), b.Player[i].ToColor4(), t));
         for (var i = 0; i < Math.Min(a.Object.Count, b.Object.Count); i++)
-            themeColors.Object.Add(InterpolateColor4(a.Object[i], b.Object[i], t));
+            themeColors.Object.Add(InterpolateColor4(a.Object[i].ToColor4(), b.Object[i].ToColor4(), t));
         for (var i = 0; i < Math.Min(a.Effect.Count, b.Effect.Count); i++)
-            themeColors.Effect.Add(InterpolateColor4(a.Effect[i], b.Effect[i], t));
+            themeColors.Effect.Add(InterpolateColor4(a.Effect[i].ToColor4(), b.Effect[i].ToColor4(), t));
         for (var i = 0; i < Math.Min(a.ParallaxObject.Count, b.ParallaxObject.Count); i++)
-            themeColors.ParallaxObject.Add(InterpolateColor4(a.ParallaxObject[i], b.ParallaxObject[i], t));
+            themeColors.ParallaxObject.Add(InterpolateColor4(a.ParallaxObject[i].ToColor4(), b.ParallaxObject[i].ToColor4(), t));
         return themeColors;
     }
 
-    private static Color4 InterpolateColor4(Color4 a, Color4 b, float t)
+    private static Color4<Rgba> InterpolateColor4(Color4<Rgba> a, Color4<Rgba> b, float t)
     {
-        return new Color4(
-            MathUtil.Lerp(a.R, b.R, t),
-            MathUtil.Lerp(a.G, b.G, t),
-            MathUtil.Lerp(a.B, b.B, t),
-            MathUtil.Lerp(a.A, b.A, t));
+        return new Color4<Rgba>(
+            MathUtil.Lerp(a.X, b.X, t),
+            MathUtil.Lerp(a.Y, b.Y, t),
+            MathUtil.Lerp(a.Z, b.Z, t),
+            MathUtil.Lerp(a.W, b.W, t));
     }
 
     private static IEnumerable<GameObject> CreateGameObjects(IBeatmap beatmap)
@@ -359,7 +360,7 @@ public static class BeatmapImporter
         return new Sequence<float, float>(EnumerateRotationSequenceKeyframes(events, additive, seed), InterpolateFloat);
     }
     
-    private static Sequence<ThemeColor, (Color4, Color4)> CreateThemeColorSequence(IEnumerable<FixedKeyframe<ThemeColor>> events)
+    private static Sequence<ThemeColor, (Color4<Rgba>, Color4<Rgba>)> CreateThemeColorSequence(IEnumerable<FixedKeyframe<ThemeColor>> events)
     {
         var keyframes = events.Select(e =>
         {
@@ -368,7 +369,7 @@ public static class BeatmapImporter
             var ease = EaseFunctions.GetOrDefault(e.Ease, EaseFunctions.Linear);
             return new Animation.Keyframe<ThemeColor>(time, value, ease);
         });
-        return new Sequence<ThemeColor, (Color4, Color4)>(keyframes, InterpolateThemeColor);
+        return new Sequence<ThemeColor, (Color4<Rgba>, Color4<Rgba>)>(keyframes, InterpolateThemeColor);
     }
 
     private static IEnumerable<Animation.Keyframe<Vector2>> EnumerateSequenceKeyframes(
@@ -418,7 +419,7 @@ public static class BeatmapImporter
         return MathUtil.Lerp(a, b, t);
     }
     
-    private static (Color4, Color4) InterpolateThemeColor(ThemeColor a, ThemeColor b, float t, object? context)
+    private static (Color4<Rgba>, Color4<Rgba>) InterpolateThemeColor(ThemeColor a, ThemeColor b, float t, object? context)
     {
         if (context is not ThemeColors colors)
             throw new ArgumentException($"Context is not of type {typeof(ThemeColors)}");
@@ -431,15 +432,15 @@ public static class BeatmapImporter
         var colorBEnd = colors.Object[b.EndIndex];
 
         var opacity = MathUtil.Lerp(opacityA, opacityB, t);
-        var color1 = new Color4(
-            MathUtil.Lerp(colorAStart.R, colorBStart.R, t),
-            MathUtil.Lerp(colorAStart.G, colorBStart.G, t),
-            MathUtil.Lerp(colorAStart.B, colorBStart.B, t),
+        var color1 = new Color4<Rgba>(
+            MathUtil.Lerp(colorAStart.X, colorBStart.X, t),
+            MathUtil.Lerp(colorAStart.Y, colorBStart.Y, t),
+            MathUtil.Lerp(colorAStart.Z, colorBStart.Z, t),
             opacity);
-        var color2 = new Color4(
-            MathUtil.Lerp(colorAEnd.R, colorBEnd.R, t),
-            MathUtil.Lerp(colorAEnd.G, colorBEnd.G, t),
-            MathUtil.Lerp(colorAEnd.B, colorBEnd.B, t),
+        var color2 = new Color4<Rgba>(
+            MathUtil.Lerp(colorAEnd.X, colorBEnd.X, t),
+            MathUtil.Lerp(colorAEnd.Y, colorBEnd.Y, t),
+            MathUtil.Lerp(colorAEnd.Z, colorBEnd.Z, t),
             opacity);
         return (color1, color2);
     }
@@ -494,5 +495,10 @@ public static class BeatmapImporter
         var hashValue = hash.GetCurrentHashAsUInt32();
         
         return (float) MathUtil.Lerp(min, max, hashValue / (double) uint.MaxValue);
+    }
+    
+    private static Color4<Rgba> ToColor4(this Color color)
+    {
+        return new Color4<Rgba>(color.R / 255.0f, color.G / 255.0f, color.B / 255.0f, color.A / 255.0f);
     }
 }

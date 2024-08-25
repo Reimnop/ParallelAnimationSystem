@@ -1,4 +1,4 @@
-using OpenTK.Graphics.OpenGL4;
+using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using ParallelAnimationSystem.Util;
 
@@ -38,16 +38,16 @@ public class Hue : IDisposable
         
         GL.UseProgram(program);
         
-        GL.BindImageTexture(0, inputTexture, 0, false, 0, TextureAccess.ReadOnly, SizedInternalFormat.Rgba8);
-        GL.BindImageTexture(1, outputTexture, 0, false, 0, TextureAccess.WriteOnly, SizedInternalFormat.Rgba8);
-        GL.Uniform2(sizeUniformLocation, size);
-        GL.Uniform1(hueShiftAngleUniformLocation, shiftAngle);
+        GL.BindImageTexture(0, inputTexture, 0, false, 0, BufferAccess.ReadOnly, InternalFormat.Rgba8);
+        GL.BindImageTexture(1, outputTexture, 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba8);
+        GL.Uniform2i(sizeUniformLocation, 1, size);
+        GL.Uniform1f(hueShiftAngleUniformLocation, shiftAngle);
         
         GL.DispatchCompute(
-            MathUtil.DivideCeil(size.X, 8), 
-            MathUtil.DivideCeil(size.Y, 8), 
+            (uint)MathUtil.DivideCeil(size.X, 8), 
+            (uint)MathUtil.DivideCeil(size.Y, 8), 
             1);
-        GL.MemoryBarrier(MemoryBarrierFlags.ShaderImageAccessBarrierBit);
+        GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit);
         
         return true;
     }

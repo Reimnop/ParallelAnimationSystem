@@ -12,7 +12,7 @@ public class GameObject(
     Sequence<Vector2, Vector2> positionAnimation,
     Sequence<Vector2, Vector2> scaleAnimation,
     Sequence<float, float> rotationAnimation,
-    Sequence<ThemeColor, (Color4, Color4)> themeColorAnimation,
+    Sequence<ThemeColor, (Color4<Rgba>, Color4<Rgba>)> themeColorAnimation,
     float parentPositionTimeOffset,
     float parentScaleTimeOffset,
     float parentRotationTimeOffset,
@@ -32,7 +32,7 @@ public class GameObject(
     public Sequence<Vector2, Vector2> PositionAnimation { get; } = positionAnimation;
     public Sequence<Vector2, Vector2> ScaleAnimation { get; } = scaleAnimation;
     public Sequence<float, float> RotationAnimation { get; } = rotationAnimation;
-    public Sequence<ThemeColor, (Color4, Color4)> ThemeColorAnimation { get; } = themeColorAnimation;
+    public Sequence<ThemeColor, (Color4<Rgba>, Color4<Rgba>)> ThemeColorAnimation { get; } = themeColorAnimation;
     
     public float ParentPositionTimeOffset { get; } = parentPositionTimeOffset;
     public float ParentScaleTimeOffset { get; } = parentScaleTimeOffset;
@@ -53,7 +53,7 @@ public class GameObject(
     public ParentTransform? Parent { get; } = parent;
     
     public Matrix3 CachedTransform { get; private set; } = Matrix3.Identity;
-    public (Color4, Color4) CachedThemeColor { get; private set; } = (Color4.White, Color4.White);
+    public (Color4<Rgba>, Color4<Rgba>) CachedThemeColor { get; private set; } = (Color4.White, Color4.White);
 
     public Matrix3 CalculateTransform(float time, object? context = null)
     {
@@ -75,7 +75,7 @@ public class GameObject(
         return CachedTransform;
     }
     
-    public (Color4, Color4) CalculateThemeColor(float time, object? context = null)
+    public (Color4<Rgba>, Color4<Rgba>) CalculateThemeColor(float time, object? context = null)
     {
         CachedThemeColor = ThemeColorAnimation.Interpolate(time - StartTime, context);
         return CachedThemeColor;

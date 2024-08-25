@@ -13,7 +13,7 @@ public class AnimationRunner
     public float CameraRotation { get; private set; }
     public BloomData Bloom { get; private set; }
     public float Hue { get; private set; }
-    public Color4 BackgroundColor { get; private set; }
+    public Color4<Rgba> BackgroundColor { get; private set; }
     
     public int ObjectCount => startTimeSortedGameObjects.Count;
 

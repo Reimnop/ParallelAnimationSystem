@@ -1,10 +1,12 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
-using OpenTK.Graphics.OpenGL4;
+using OpenTK.Graphics;
+using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering.PostProcessing;
 using ParallelAnimationSystem.Util;
@@ -81,8 +83,12 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
             Profile = ContextProfile.Core,
             APIVersion = new Version(4, 6),
             IsEventDriven = false,
+            AutoLoadBindings = false,
         };
         window = new NativeWindow(nws);
+        
+        // Load OpenGL bindings
+        GLLoader.LoadBindings(new GLFWBindingsContext());
         
         // Set VSync
         window.VSync = options.VSync ? VSyncMode.On : VSyncMode.Off; 
@@ -121,22 +127,18 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         Debug.Assert(window is not null);
         
         // We will exclusively use DSA for this project
-        GL.CreateVertexArrays(1, out vertexArrayHandle);
-        GL.CreateBuffers(1, out vertexBufferHandle);
-        GL.CreateBuffers(1, out indexBufferHandle);
+        vertexArrayHandle = GL.CreateVertexArray();
+        vertexBufferHandle = GL.CreateBuffer();
+        indexBufferHandle = GL.CreateBuffer();
 
         // Upload data to GPU
-        unsafe
-        {
-            var vertexBufferData = vertexBuffer.Data;
-            var indexBufferData = indexBuffer.Data;
-            
-            fixed (byte* ptr = vertexBufferData)
-                GL.NamedBufferData(vertexBufferHandle, vertexBufferData.Length, (IntPtr) ptr, BufferUsageHint.StaticDraw);
-            
-            fixed (byte* ptr = indexBufferData)
-                GL.NamedBufferData(indexBufferHandle, indexBufferData.Length, (IntPtr) ptr, BufferUsageHint.StaticDraw);
-        }
+        var vertexBufferData = vertexBuffer.Data;
+        var indexBufferData = indexBuffer.Data;
+        var vertexBufferSize = vertexBufferData.Length * Vector2.SizeInBytes;
+        var indexBufferSize = indexBufferData.Length * sizeof(int);
+        
+        GL.NamedBufferData(vertexBufferHandle, vertexBufferSize, vertexBuffer.Data, VertexBufferObjectUsage.StaticDraw);
+        GL.NamedBufferData(indexBufferHandle, indexBufferSize, indexBuffer.Data, VertexBufferObjectUsage.StaticDraw);
         
         newMeshData = false;
         
@@ -186,24 +188,24 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         
         // Initialize scene fbo
         var fboSize = window.ClientSize;
-        GL.CreateTextures(TextureTarget.Texture2DMultisample, 1, out fboTextureHandle);
+        fboTextureHandle = GL.CreateTexture(TextureTarget.Texture2dMultisample);
         GL.TextureStorage2DMultisample(fboTextureHandle, 4, SizedInternalFormat.Rgba8, fboSize.X, fboSize.Y, true);
         
-        GL.CreateRenderbuffers(1, out fboDepthBufferHandle);
-        GL.NamedRenderbufferStorageMultisample(fboDepthBufferHandle, 4, RenderbufferStorage.DepthComponent32f, fboSize.X, fboSize.Y);
+        fboDepthBufferHandle = GL.CreateRenderbuffer();
+        GL.NamedRenderbufferStorageMultisample(fboDepthBufferHandle, 4, InternalFormat.DepthComponent32f, fboSize.X, fboSize.Y);
         
-        GL.CreateFramebuffers(1, out fboHandle);
+        fboHandle = GL.CreateFramebuffer();
         GL.NamedFramebufferTexture(fboHandle, FramebufferAttachment.ColorAttachment0, fboTextureHandle, 0);
         GL.NamedFramebufferRenderbuffer(fboHandle, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, fboDepthBufferHandle);
         
         // Initialize post process fbo
-        GL.CreateTextures(TextureTarget.Texture2D, 1, out postProcessTextureHandle1);
+        postProcessTextureHandle1 = GL.CreateTexture(TextureTarget.Texture2d);
         GL.TextureStorage2D(postProcessTextureHandle1, 1, SizedInternalFormat.Rgba8, fboSize.X, fboSize.Y);
         
-        GL.CreateTextures(TextureTarget.Texture2D, 1, out postProcessTextureHandle2);
+        postProcessTextureHandle2 = GL.CreateTexture(TextureTarget.Texture2d);
         GL.TextureStorage2D(postProcessTextureHandle2, 1, SizedInternalFormat.Rgba8, fboSize.X, fboSize.Y);
         
-        GL.CreateFramebuffers(1, out postProcessFboHandle);
+        postProcessFboHandle = GL.CreateFramebuffer();
         // We will bind the texture later
         
         currentFboSize = fboSize;
@@ -271,11 +273,11 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         foreach (var drawData in drawList)
         {
             // Discard draw data that is fully transparent, or outside of clipping range
-            if ((drawData.Color1.A == 0.0f && drawData.Color2.A == 0.0f) || drawData.Z < 0.0f || drawData.Z > 1.0f)
+            if ((drawData.Color1.W == 0.0f && drawData.Color2.W == 0.0f) || drawData.Z < 0.0f || drawData.Z > 1.0f)
                 continue;
             
             // Add to appropriate list
-            if (drawData.Color1.A == 1.0f && drawData.Color2.A == 1.0f && drawData.Color1 != drawData.Color2)
+            if (drawData.Color1.W == 1.0f && drawData.Color2.W == 1.0f && drawData.Color1 != drawData.Color2)
                 opaqueDrawData.Add(drawData);
             else
                 transparentDrawData.Add(drawData);
@@ -293,9 +295,9 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         
         // Clear buffers
         var clearColor = drawList.ClearColor;
-        GL.ClearNamedFramebuffer(fboHandle, ClearBuffer.Color, 0, ref clearColor.R);
-        var depthClearValue = 1.0f;
-        GL.ClearNamedFramebuffer(fboHandle, ClearBuffer.Depth, 0, ref depthClearValue);
+        var depth = 1.0f;
+        GL.ClearNamedFramebufferf(fboHandle, OpenTK.Graphics.OpenGL.Buffer.Color, 0, in clearColor.X);
+        GL.ClearNamedFramebufferf(fboHandle, OpenTK.Graphics.OpenGL.Buffer.Depth, 0, in depth);
         
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, fboHandle);
         
@@ -314,13 +316,15 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         {
             var mesh = drawData.Mesh;
             var transform = drawData.Transform * camera;
+            var color1 = drawData.Color1;
+            var color2 = drawData.Color2;
             
             // Set transform
-            GL.UniformMatrix3(mvpUniformLocation, false, ref transform);
-            GL.Uniform1(zUniformLocation, drawData.Z);
-            GL.Uniform1(renderModeUniformLocation, (int) drawData.RenderMode);
-            GL.Uniform4(color1UniformLocation, drawData.Color1);
-            GL.Uniform4(color2UniformLocation, drawData.Color2);
+            GL.UniformMatrix3f(mvpUniformLocation, 1, false, in transform);
+            GL.Uniform1f(zUniformLocation, drawData.Z);
+            GL.Uniform1i(renderModeUniformLocation, (int) drawData.RenderMode);
+            GL.Uniform4f(color1UniformLocation, color1.X, color1.Y, color1.Z, color1.W);
+            GL.Uniform4f(color2UniformLocation, color2.X, color2.Y, color2.Z, color2.W);
             
             // Draw
             // TODO: We can probably glMultiDrawElementsBaseVertex here
@@ -337,14 +341,16 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         {
             var mesh = drawData.Mesh;
             var transform = drawData.Transform * camera;
-
+            var color1 = drawData.Color1;
+            var color2 = drawData.Color2;
+            
             // Set transform
-            GL.UniformMatrix3(mvpUniformLocation, false, ref transform);
-            GL.Uniform1(zUniformLocation, drawData.Z);
-            GL.Uniform1(renderModeUniformLocation, (int) drawData.RenderMode);
-            GL.Uniform4(color1UniformLocation, drawData.Color1);
-            GL.Uniform4(color2UniformLocation, drawData.Color2);
-
+            GL.UniformMatrix3f(mvpUniformLocation, 1, false, in transform);
+            GL.Uniform1f(zUniformLocation, drawData.Z);
+            GL.Uniform1i(renderModeUniformLocation, (int) drawData.RenderMode);
+            GL.Uniform4f(color1UniformLocation, color1.X, color1.Y, color1.Z, color1.W);
+            GL.Uniform4f(color2UniformLocation, color2.X, color2.Y, color2.Z, color2.W);
+            
             // Draw
             // TODO: We can probably glMultiDrawElementsBaseVertex here
             GL.DrawElementsBaseVertex(PrimitiveType.Triangles, mesh.IndexSize, DrawElementsType.UnsignedInt, mesh.IndexOffset * sizeof(int), mesh.VertexOffset);
@@ -458,16 +464,16 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         GL.DeleteTexture(postProcessTextureHandle2);
         
         // Create new textures
-        GL.CreateTextures(TextureTarget.Texture2DMultisample, 1, out fboTextureHandle);
+        fboTextureHandle = GL.CreateTexture(TextureTarget.Texture2dMultisample);
         GL.TextureStorage2DMultisample(fboTextureHandle, 4, SizedInternalFormat.Rgba8, fboSize.X, fboSize.Y, true);
         
-        GL.CreateRenderbuffers(1, out fboDepthBufferHandle);
-        GL.NamedRenderbufferStorageMultisample(fboDepthBufferHandle, 4, RenderbufferStorage.DepthComponent32f, fboSize.X, fboSize.Y);
+        fboDepthBufferHandle = GL.CreateRenderbuffer();
+        GL.NamedRenderbufferStorageMultisample(fboDepthBufferHandle, 4, InternalFormat.DepthComponent32f, fboSize.X, fboSize.Y);
         
-        GL.CreateTextures(TextureTarget.Texture2D, 1, out postProcessTextureHandle1);
+        postProcessTextureHandle1 = GL.CreateTexture(TextureTarget.Texture2d);
         GL.TextureStorage2D(postProcessTextureHandle1, 1, SizedInternalFormat.Rgba8, fboSize.X, fboSize.Y);
         
-        GL.CreateTextures(TextureTarget.Texture2D, 1, out postProcessTextureHandle2);
+        postProcessTextureHandle2 = GL.CreateTexture(TextureTarget.Texture2d);
         GL.TextureStorage2D(postProcessTextureHandle2, 1, SizedInternalFormat.Rgba8, fboSize.X, fboSize.Y);
         
         // Bind to fbo
