@@ -64,7 +64,7 @@ public class Bloom : IDisposable
         
         GL.BindImageTexture(0, inputTexture, 0, false, 0, BufferAccess.ReadOnly, InternalFormat.Rgba8);
         GL.BindImageTexture(1, mipChain[0], 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f);
-        GL.Uniform2f(prefilterSizeUniformLocation, 1, size);
+        GL.Uniform2i(prefilterSizeUniformLocation, 1, size);
         
         GL.DispatchCompute(
             (uint)MathUtil.DivideCeil(size.X, 8), 
