@@ -9,17 +9,6 @@
   <component name="ChangeListManager">
     <list default="true" id="9b1e7f31-978d-41b0-ac0b-49ddcf3b23f4" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.ParallelAnimationSystem/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.ParallelAnimationSystem/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Core/AnimationRunner.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/AnimationRunner.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Core/BeatmapImporter.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/BeatmapImporter.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Core/GameObject.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/GameObject.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Core/ThemeColors.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/ThemeColors.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Data/DrawData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Data/DrawData.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Data/DrawList.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Data/DrawList.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/ParallelAnimationSystem.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/ParallelAnimationSystem.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Program.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/PostProcessing/Bloom.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/PostProcessing/Bloom.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/PostProcessing/Hue.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/PostProcessing/Hue.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/Renderer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/Renderer.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="true" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -80,6 +69,7 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/ffdbecaac85a4a73a506f7ae3cb32d184d000/48/44a402e7/Matrix3.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/3e8f1cfc7f3332b9a0e31b3f10347da0b2775895319a6b9a2b4f25a4c48654bc/Command.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/6ded741cabd4cd8d7ff777cc3df56744492cc13268aa5d23e3c2d6c2bfada37/Color4.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://G:/Projects/ParallelAnimationSystem/ParallelAnimationSystem/Core/AnimationRunner.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="mock://G:/Projects/ParallelAnimationSystem/ParallelAnimationSystem/Core/AnimationRunner.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
@@ -169,7 +159,7 @@
       <workItem from="1724506536807" duration="5751000" />
       <workItem from="1724518994624" duration="1762000" />
       <workItem from="1724590908069" duration="4993000" />
-      <workItem from="1724610556650" duration="2287000" />
+      <workItem from="1724610556650" duration="3574000" />
     </task>
     <task id="LOCAL-00001" summary="Fix more edge cases">
       <option name="closed" value="true" />
@@ -467,7 +457,15 @@
       <option name="project" value="LOCAL" />
       <updated>1724603232001</updated>
     </task>
-    <option name="localTasksCounter" value="38" />
+    <task id="LOCAL-00038" summary="Update to OpenTK 5">
+      <option name="closed" value="true" />
+      <created>1724613123352</created>
+      <option name="number" value="00038" />
+      <option name="presentableId" value="LOCAL-00038" />
+      <option name="project" value="LOCAL" />
+      <updated>1724613123352</updated>
+    </task>
+    <option name="localTasksCounter" value="39" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -489,7 +487,6 @@
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-    <MESSAGE value="More pre-Legacy work" />
     <MESSAGE value="Ls support" />
     <MESSAGE value="Fix empty prefabs" />
     <MESSAGE value="Added vsync" />
@@ -514,7 +511,8 @@
     <MESSAGE value="Properly manage memory now" />
     <MESSAGE value="Add IsShuttingDown method" />
     <MESSAGE value="Added alpha gradients" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added alpha gradients" />
+    <MESSAGE value="Update to OpenTK 5" />
+    <option name="LAST_COMMIT_MESSAGE" value="Update to OpenTK 5" />
   </component>
   <component name="XDebuggerManager">
     <pin-to-top-manager>

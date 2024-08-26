@@ -277,7 +277,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
                 continue;
             
             // Add to appropriate list
-            if (drawData.Color1.W == 1.0f && drawData.Color2.W == 1.0f && drawData.Color1 != drawData.Color2)
+            if (drawData.Color1.W == 1.0f && drawData.Color2.W == 1.0f)
                 opaqueDrawData.Add(drawData);
             else
                 transparentDrawData.Add(drawData);

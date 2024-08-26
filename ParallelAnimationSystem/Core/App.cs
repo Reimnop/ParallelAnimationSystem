@@ -171,6 +171,9 @@ public class App(Options options, Renderer renderer, ILogger<App> logger) : IDis
             var color1 = gameObject.CachedThemeColor.Item1;
             var color2 = gameObject.CachedThemeColor.Item2;
             
+            if (color1 == color2)
+                color2.W = 0.0f;
+            
             drawList.AddMesh(mesh, transform, z, renderMode, color1, color2);
         }
         
