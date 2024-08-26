@@ -7,7 +7,7 @@ namespace ParallelAnimationSystem;
 
 public static class Startup
 {
-    public static async Task StartAppAsync(Options options)
+    public static void StartApp(Options options)
     {
         var serviceCollection = new ServiceCollection();
         serviceCollection.AddSingleton(options);
@@ -15,32 +15,29 @@ public static class Startup
         serviceCollection.AddSingleton<App>();
         serviceCollection.AddSingleton<Renderer>();
 
-        var serviceProvider = serviceCollection.BuildServiceProvider();
+        using var serviceProvider = serviceCollection.BuildServiceProvider();
 
         // Run app
         var app = serviceProvider.GetRequiredService<App>();
-        var renderer = serviceProvider.GetRequiredService<Renderer>();
 
-        // Initialize the app first
+        // Initialize the app
         app.Initialize();
 
-        // Run the tasks
-        var rendererThread = new Thread(() =>
-        {
-            // Since the renderer must all be on one thread, we must initialize it here
-            // Then run it on the same thread
-            renderer.Initialize();
-            renderer.Run();
-        });
-        var appThread = new Thread(() => app.Run());
-        
-        rendererThread.Start();
+        // Run app thread
+        var appThread = new Thread(app.Run);
         appThread.Start();
+        
+        // We'll run the renderer on the main thread
+        var renderer = serviceProvider.GetRequiredService<Renderer>();
+        renderer.Initialize();
 
-        // Asynchronously wait for both threads to exit
-        await Task.WhenAll(
-            Task.Run(() => rendererThread.Join()),
-            Task.Run(() => appThread.Join())
-        );
+        while (!renderer.ShouldExit)
+            renderer.ProcessFrame();
+        
+        // When renderer exits, we'll shut down the app
+        app.Shutdown();
+        
+        // When the renderer exits, we'll wait for the app thread to finish
+        appThread.Join();
     }
 }

@@ -19,7 +19,7 @@ public class App(Options options, Renderer renderer, ILogger<App> logger) : IDis
     private VorbisWaveReader? vorbisWaveReader;
     private WaveOutEvent? waveOutEvent;
     
-    private bool disposing;
+    private bool shuttingDown;
     
     public void Initialize()
     {
@@ -40,19 +40,23 @@ public class App(Options options, Renderer renderer, ILogger<App> logger) : IDis
             ".vgd" => LevelFormat.Vgd,
             _ => throw new ArgumentException("Unknown level file format")
         };
+        logger.LogInformation("Using beatmap format '{LevelFormat}'", format);
         
         // Deserialize beatmap
+        logger.LogInformation("Deserializing beatmap");
         var beatmap = format == LevelFormat.Lsb 
             ? LsDeserialization.DeserializeBeatmap(jsonObject) 
             : VgDeserialization.DeserializeBeatmap(jsonObject);
         
         // Migrate the beatmap to the latest version of the beatmap format
+        logger.LogInformation("Migrating beatmap");
         if (format == LevelFormat.Lsb)
             LsMigration.MigrateBeatmap(beatmap);
         else
             VgMigration.MigrateBeatmap(beatmap);
         
         // Create animation runner
+        logger.LogInformation("Initializing animation runner");
         runner = BeatmapImporter.CreateRunner(beatmap);
         
         logger.LogInformation("Loaded {ObjectCount} objects", runner.ObjectCount);
@@ -116,10 +120,6 @@ public class App(Options options, Renderer renderer, ILogger<App> logger) : IDis
         Debug.Assert(vorbisWaveReader is not null);
         Debug.Assert(waveOutEvent is not null);
         
-        // Wait until renderer is initialized
-        while (!renderer.Initialized)
-            Thread.Yield();
-        
         // Play audio
         waveOutEvent.Play();
         
@@ -127,7 +127,7 @@ public class App(Options options, Renderer renderer, ILogger<App> logger) : IDis
         var stopwatch = Stopwatch.StartNew();
 
         var lastTime = 0.0;
-        while (!IsShuttingDown())
+        while (!shuttingDown)
         {
             var currentTime = stopwatch.Elapsed.TotalSeconds;
             var delta = currentTime - lastTime;
@@ -144,7 +144,7 @@ public class App(Options options, Renderer renderer, ILogger<App> logger) : IDis
         
         // Update runner
         var time = (float) waveOutEvent.GetPositionTimeSpan().TotalSeconds;
-        runner.ProcessAsync(time, options.WorkerCount).Wait();
+        runner.Process(time, options.WorkerCount);
         
         // Start queueing up draw data
         var bloomData = runner.Bloom;
@@ -184,24 +184,27 @@ public class App(Options options, Renderer renderer, ILogger<App> logger) : IDis
     private void SubmitDrawList(DrawList drawList)
     {
         // If we already have more than 2 draw lists queued, wait until we don't
-        while (renderer.QueuedDrawListCount > 2 && !IsShuttingDown())
+        while (renderer.QueuedDrawListCount > 2 && !shuttingDown)
             Thread.Yield();
         
         // Return if we are shutting down
-        if (IsShuttingDown())
+        if (shuttingDown)
             return;
         
         // Submit draw list
         renderer.SubmitDrawList(drawList);
     }
     
-    private bool IsShuttingDown()
-        => renderer.Exiting || disposing;
+    public void Shutdown()
+    {
+        shuttingDown = true;
+    }
 
     public void Dispose()
     {
-        disposing = true;
+        GC.SuppressFinalize(this);
         
+        shuttingDown = true;
         vorbisWaveReader?.Dispose();
         waveOutEvent?.Dispose();
     }

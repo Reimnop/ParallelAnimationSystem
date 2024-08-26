@@ -4,9 +4,7 @@ using Microsoft.Extensions.Logging;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
-using OpenTK.Windowing.Common;
-using OpenTK.Windowing.Desktop;
-using OpenTK.Windowing.GraphicsLibraryFramework;
+using OpenTK.Platform;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering.PostProcessing;
 using ParallelAnimationSystem.Util;
@@ -15,10 +13,10 @@ namespace ParallelAnimationSystem.Rendering;
 
 public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
 {
-    private NativeWindow? window;
-    
-    public bool Initialized => window is not null;
-    public bool Exiting => window?.IsExiting ?? true;
+    public bool ShouldExit { get; private set; }
+
+    private WindowHandle? windowHandle;
+    private OpenGLContextHandle? glContextHandle;
     
     public int QueuedDrawListCount => drawListQueue.Count;
 
@@ -73,48 +71,66 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
 
     public void Initialize()
     {
-        GLFWProvider.CheckForMainThread = false;
-        
-        var nws = new NativeWindowSettings
+        var toolkitOptions = new ToolkitOptions
         {
-            Title = "Parallel Animation System",
-            ClientSize = new Vector2i(1600, 900),
-            API = ContextAPI.OpenGL,
-            Profile = ContextProfile.Core,
-            APIVersion = new Version(4, 6),
-            IsEventDriven = false,
-            AutoLoadBindings = false,
+            ApplicationName = "Parallel Animation System",
+            Logger = new MelLogger<Renderer>(logger, "OpenGL: "),
         };
-        window = new NativeWindow(nws);
+        Toolkit.Init(toolkitOptions);
+        
+        var contextSettings = new OpenGLGraphicsApiHints
+        {
+            Version = new Version(4, 6),
+            Profile = OpenGLProfile.Core,
+#if DEBUG
+            DebugFlag = true,
+#endif
+            DepthBits = ContextDepthBits.None,
+            StencilBits = ContextStencilBits.None,
+        };
+
+        EventQueue.EventRaised += (handle, type, args) =>
+        {
+            if (handle != windowHandle)
+                return;
+
+            if (type == PlatformEventType.Close)
+            {
+                logger.LogInformation("Closing window");
+                
+                var closeArgs = (CloseEventArgs) args;
+                Toolkit.Window.Destroy(closeArgs.Window);
+            }
+        };
+
+        windowHandle = Toolkit.Window.Create(contextSettings);
+        Toolkit.Window.SetTitle(windowHandle, "Parallel Animation System");
+        Toolkit.Window.SetClientSize(windowHandle, 1366, 768);
+        Toolkit.Window.SetMode(windowHandle, WindowMode.Normal);
+        
+        // Create OpenGL context
+        glContextHandle = Toolkit.OpenGL.CreateFromWindow(windowHandle);
+        Toolkit.OpenGL.SetCurrentContext(glContextHandle);
         
         // Load OpenGL bindings
-        GLLoader.LoadBindings(new GLFWBindingsContext());
+        GLLoader.LoadBindings(Toolkit.OpenGL.GetBindingsContext(glContextHandle));
         
         // Set VSync
-        window.VSync = options.VSync ? VSyncMode.On : VSyncMode.Off; 
+        Toolkit.OpenGL.SetSwapInterval(options.VSync ? 1 : 0);
         
         logger.LogInformation("Window created");
-    }
-    
-    public void Run()
-    {
-        if (window is null)
-            throw new InvalidOperationException("Renderer has not been initialized");
+        
+        // Get window size
+        Toolkit.Window.GetClientSize(windowHandle, out var initialWidth, out var initialHeight);
+        var initialSize = new Vector2i(initialWidth, initialHeight);
         
         // Initialize OpenGL data
-        InitializeOpenGlData();
-        logger.LogInformation("OpenGL initialized");
+        InitializeOpenGlData(initialSize);
         
         // Enable multisampling
         GL.Enable(EnableCap.Multisample);
         
-        // Render loop
-        logger.LogInformation("Entering render loop");
-        while (!window.IsExiting)
-        {
-            UpdateFrame();
-            RenderFrame();
-        }
+        logger.LogInformation("OpenGL initialized");
     }
 
     public void SubmitDrawList(DrawList drawList)
@@ -122,10 +138,8 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         drawListQueue.Enqueue(drawList);
     }
 
-    private void InitializeOpenGlData()
+    private void InitializeOpenGlData(Vector2i size)
     {
-        Debug.Assert(window is not null);
-        
         // We will exclusively use DSA for this project
         vertexArrayHandle = GL.CreateVertexArray();
         vertexBufferHandle = GL.CreateBuffer();
@@ -187,12 +201,11 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         // Initialize fbo
         
         // Initialize scene fbo
-        var fboSize = window.ClientSize;
         fboTextureHandle = GL.CreateTexture(TextureTarget.Texture2dMultisample);
-        GL.TextureStorage2DMultisample(fboTextureHandle, 4, SizedInternalFormat.Rgba8, fboSize.X, fboSize.Y, true);
+        GL.TextureStorage2DMultisample(fboTextureHandle, 4, SizedInternalFormat.Rgba8, size.X, size.Y, true);
         
         fboDepthBufferHandle = GL.CreateRenderbuffer();
-        GL.NamedRenderbufferStorageMultisample(fboDepthBufferHandle, 4, InternalFormat.DepthComponent32f, fboSize.X, fboSize.Y);
+        GL.NamedRenderbufferStorageMultisample(fboDepthBufferHandle, 4, InternalFormat.DepthComponent32f, size.X, size.Y);
         
         fboHandle = GL.CreateFramebuffer();
         GL.NamedFramebufferTexture(fboHandle, FramebufferAttachment.ColorAttachment0, fboTextureHandle, 0);
@@ -200,15 +213,15 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         
         // Initialize post process fbo
         postProcessTextureHandle1 = GL.CreateTexture(TextureTarget.Texture2d);
-        GL.TextureStorage2D(postProcessTextureHandle1, 1, SizedInternalFormat.Rgba8, fboSize.X, fboSize.Y);
+        GL.TextureStorage2D(postProcessTextureHandle1, 1, SizedInternalFormat.Rgba8, size.X, size.Y);
         
         postProcessTextureHandle2 = GL.CreateTexture(TextureTarget.Texture2d);
-        GL.TextureStorage2D(postProcessTextureHandle2, 1, SizedInternalFormat.Rgba8, fboSize.X, fboSize.Y);
+        GL.TextureStorage2D(postProcessTextureHandle2, 1, SizedInternalFormat.Rgba8, size.X, size.Y);
         
         postProcessFboHandle = GL.CreateFramebuffer();
         // We will bind the texture later
         
-        currentFboSize = fboSize;
+        currentFboSize = size;
         
         // Initialize post processors
         hue.Initialize();
@@ -233,38 +246,49 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         GL.DeleteFramebuffer(fboHandle);
         GL.DeleteFramebuffer(postProcessFboHandle);
         
-        window?.Dispose();
+        if (windowHandle is not null && !Toolkit.Window.IsWindowDestroyed(windowHandle))
+            Toolkit.Window.Destroy(windowHandle);
     }
 
-    private void UpdateFrame()
+    public void ProcessFrame()
     {
-        Debug.Assert(window is not null);
+        if (windowHandle is null)
+            throw new InvalidOperationException("Renderer has not been initialized");
         
-        window.NewInputFrame();
-        NativeWindow.ProcessWindowEvents(false);
+        Toolkit.Window.ProcessEvents(false);
+        
+        // Check if window is closed
+        if (Toolkit.Window.IsWindowDestroyed(windowHandle))
+        {
+            ShouldExit = true;
+            return;
+        }
+        
+        // Get window size
+        Toolkit.Window.GetClientSize(windowHandle, out var width, out var height);
+        var size = new Vector2i(width, height);
+        
+        RenderFrame(size);
     }
     
-    private void RenderFrame()
+    private void RenderFrame(Vector2i size)
     {
-        Debug.Assert(window is not null);
-        
         // Get the current draw list
+        // If no draw list is available, wait until we have one
         DrawList? drawList;
         while (!drawListQueue.TryDequeue(out drawList))
             Thread.Yield();
-        
-        var windowSize = window.ClientSize;
-        
+
         // If window size is invalid, don't draw
         // and limit FPS
-        if (windowSize.X <= 0 || windowSize.Y <= 0)
+        if (size.X <= 0 || size.Y <= 0)
         {
             Thread.Sleep(50);
             return;
         }
 
         // Update OpenGL data
-        UpdateOpenGlData();
+        UpdateOpenGlData(size);
         
         // Split draw list into opaque and transparent
         opaqueDrawData.Clear();
@@ -288,7 +312,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         transparentDrawData.Sort((a, b) => b.Z.CompareTo(a.Z));
         
         // Get camera matrix (view and projection)
-        var camera = GetCameraMatrix(drawList.CameraData);
+        var camera = GetCameraMatrix(drawList.CameraData, size);
         
         // Render
         GL.Viewport(0, 0, currentFboSize.X, currentFboSize.Y);
@@ -386,11 +410,12 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
             0, 0,
             currentFboSize.X, currentFboSize.Y,
             0, 0,
-            windowSize.X, windowSize.Y,
+            size.X, size.Y,
             ClearBufferMask.ColorBufferBit,
             BlitFramebufferFilter.Linear);
-
-        window.Context.SwapBuffers();
+        
+        Debug.Assert(glContextHandle is not null);
+        Toolkit.OpenGL.SwapBuffers(glContextHandle);
     }
 
     private int HandlePostProcessing(PostProcessingData data, int texture1, int texture2)
@@ -404,11 +429,9 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         return texture1;
     }
 
-    private Matrix3 GetCameraMatrix(CameraData camera)
+    private static Matrix3 GetCameraMatrix(CameraData camera, Vector2i size)
     {
-        Debug.Assert(window is not null);
-        
-        var aspectRatio = window.ClientSize.X / (float) window.ClientSize.Y;
+        var aspectRatio = size.X / (float) size.Y;
         var view = Matrix3.Invert(
             MathUtil.CreateScale(Vector2.One * camera.Scale) *
             MathUtil.CreateRotation(camera.Rotation) *
@@ -417,10 +440,10 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         return view * projection;
     }
 
-    private void UpdateOpenGlData()
+    private void UpdateOpenGlData(Vector2i size)
     {
         UpdateMeshData();
-        UpdateFboData();
+        UpdateFboData(size);
     }
 
     private void UpdateMeshData()
@@ -449,12 +472,9 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         logger.LogInformation("OpenGL mesh buffers updated, now at {VertexSize} vertices and {IndexSize} indices", vertexBuffer.Data.Length / Vector2.SizeInBytes, indexBuffer.Data.Length / sizeof(int));
     }
 
-    private void UpdateFboData()
+    private void UpdateFboData(Vector2i size)
     {
-        Debug.Assert(window is not null);
-
-        var fboSize = window.ClientSize;
-        if (fboSize == currentFboSize)
+        if (size == currentFboSize)
             return;
         
         // Delete old textures
@@ -465,22 +485,22 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         
         // Create new textures
         fboTextureHandle = GL.CreateTexture(TextureTarget.Texture2dMultisample);
-        GL.TextureStorage2DMultisample(fboTextureHandle, 4, SizedInternalFormat.Rgba8, fboSize.X, fboSize.Y, true);
+        GL.TextureStorage2DMultisample(fboTextureHandle, 4, SizedInternalFormat.Rgba8, size.X, size.Y, true);
         
         fboDepthBufferHandle = GL.CreateRenderbuffer();
-        GL.NamedRenderbufferStorageMultisample(fboDepthBufferHandle, 4, InternalFormat.DepthComponent32f, fboSize.X, fboSize.Y);
+        GL.NamedRenderbufferStorageMultisample(fboDepthBufferHandle, 4, InternalFormat.DepthComponent32f, size.X, size.Y);
         
         postProcessTextureHandle1 = GL.CreateTexture(TextureTarget.Texture2d);
-        GL.TextureStorage2D(postProcessTextureHandle1, 1, SizedInternalFormat.Rgba8, fboSize.X, fboSize.Y);
+        GL.TextureStorage2D(postProcessTextureHandle1, 1, SizedInternalFormat.Rgba8, size.X, size.Y);
         
         postProcessTextureHandle2 = GL.CreateTexture(TextureTarget.Texture2d);
-        GL.TextureStorage2D(postProcessTextureHandle2, 1, SizedInternalFormat.Rgba8, fboSize.X, fboSize.Y);
+        GL.TextureStorage2D(postProcessTextureHandle2, 1, SizedInternalFormat.Rgba8, size.X, size.Y);
         
         // Bind to fbo
         GL.NamedFramebufferTexture(fboHandle, FramebufferAttachment.ColorAttachment0, fboTextureHandle, 0);
         GL.NamedFramebufferRenderbuffer(fboHandle, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, fboDepthBufferHandle);
 
-        currentFboSize = fboSize;
+        currentFboSize = size;
         
         logger.LogInformation("OpenGL framebuffer size updated, now at {Width}x{Height}", currentFboSize.X, currentFboSize.Y);
     }

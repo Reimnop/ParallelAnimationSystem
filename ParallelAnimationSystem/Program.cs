@@ -5,10 +5,10 @@ using ParallelAnimationSystem;
 public class Program
 {
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(Options))]
-    public static async Task Main(string[] args)
+    public static void Main(string[] args)
     {
-        await Parser.Default
+        Parser.Default
             .ParseArguments<Options>(args)
-            .WithParsedAsync(Startup.StartAppAsync);
+            .WithParsed(Startup.StartApp);
     }
 }
