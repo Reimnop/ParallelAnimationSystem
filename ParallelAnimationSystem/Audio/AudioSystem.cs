@@ -10,7 +10,9 @@ public class AudioSystem(ILogger<AudioSystem> logger) : IDisposable
     
     public void Initialize()
     {
-        OpenALLibraryNameContainer.OverridePath = "soft_oal.dll";
+        // Override the OpenAL library path on Windows
+        if (OperatingSystem.IsWindows())
+            OpenALLibraryNameContainer.OverridePath = "soft_oal.dll";
         
         var device = ALC.OpenDevice(null);
         if (device == ALDevice.Null)

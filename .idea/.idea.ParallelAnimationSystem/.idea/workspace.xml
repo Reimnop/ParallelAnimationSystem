@@ -7,15 +7,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9b1e7f31-978d-41b0-ac0b-49ddcf3b23f4" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Audio/AudioPlayer.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Audio/AudioSystem.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Audio/Stream/IAudioStream.cs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Audio/Stream/VorbisAudioStream.cs" afterDir="false" />
+    <list default="true" id="9b1e7f31-978d-41b0-ac0b-49ddcf3b23f4" name="Changes" comment="Changed audio system">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.ParallelAnimationSystem/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.ParallelAnimationSystem/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Core/App.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/App.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Audio/AudioPlayer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Audio/AudioPlayer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Audio/AudioSystem.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Audio/AudioSystem.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/ParallelAnimationSystem.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/ParallelAnimationSystem.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Startup.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Startup.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="true" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -85,6 +81,7 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/6ded741cabd4cd8d7ff777cc3df56744492cc13268aa5d23e3c2d6c2bfada37/Color4.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/7135c2f5f416e1cc524059257489d915474a1ea1586c0ebed47ded19c1f5b/ILogger.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/9e6bcde0d2cd3ad7f55d4b372d6be5df75cdcfae851d6454357ac47286b5967/Types.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://G:/Projects/ParallelAnimationSystem/ParallelAnimationSystem/Core/App.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
   <component name="ProjectColorInfo">{
@@ -122,9 +119,9 @@
     ]
   }
 }]]></component>
-  <component name="RunManager" selected=".NET Project.ParallelAnimationSystem">
+  <component name="RunManager" selected="Publish to folder.Publish">
     <configuration name="Publish" type="DotNetFolderPublish" factoryName="Publish to folder">
-      <riderPublish configuration="Release" include_native_libs_for_self_extract="true" platform="Any CPU" produce_single_file="true" runtime="win-x64" self_contained="true" target_folder="$PROJECT_DIR$/ParallelAnimationSystem/bin/Release/net8.0/win-x64/publish" target_framework="net8.0" trim_unused_assemblies="true" uuid_high="4921518821831493447" uuid_low="-5440609166602987154" />
+      <riderPublish configuration="Release" platform="Any CPU" runtime="win-x64" self_contained="true" target_folder="$PROJECT_DIR$/ParallelAnimationSystem/bin/Release/net8.0/win-x64/publish" target_framework="net8.0" trim_unused_assemblies="true" uuid_high="4921518821831493447" uuid_low="-5440609166602987154" />
       <method v="2" />
     </configuration>
     <configuration name="ParallelAnimationSystem" type="DotNetProject" factoryName=".NET Project">
@@ -179,7 +176,7 @@
       <workItem from="1724676937470" duration="566000" />
       <workItem from="1724682913217" duration="3083000" />
       <workItem from="1724686107833" duration="2722000" />
-      <workItem from="1724693192389" duration="11450000" />
+      <workItem from="1724693192389" duration="12029000" />
     </task>
     <task id="LOCAL-00001" summary="Fix more edge cases">
       <option name="closed" value="true" />
@@ -525,7 +522,15 @@
       <option name="project" value="LOCAL" />
       <updated>1724687344121</updated>
     </task>
-    <option name="localTasksCounter" value="44" />
+    <task id="LOCAL-00044" summary="Changed audio system">
+      <option name="closed" value="true" />
+      <created>1724738757585</created>
+      <option name="number" value="00044" />
+      <option name="presentableId" value="LOCAL-00044" />
+      <option name="project" value="LOCAL" />
+      <updated>1724738757585</updated>
+    </task>
+    <option name="localTasksCounter" value="45" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -547,7 +552,6 @@
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-    <MESSAGE value="Lower OpenGL requirement" />
     <MESSAGE value="Small fixes for AOT" />
     <MESSAGE value="Disable AOT for now" />
     <MESSAGE value="Make it trimmable" />
@@ -572,7 +576,8 @@
     <MESSAGE value="Ditch GLFW, use PAL2" />
     <MESSAGE value="Debloat" />
     <MESSAGE value="Fuck you" />
-    <option name="LAST_COMMIT_MESSAGE" value="Fuck you" />
+    <MESSAGE value="Changed audio system" />
+    <option name="LAST_COMMIT_MESSAGE" value="Changed audio system" />
   </component>
   <component name="XDebuggerManager">
     <pin-to-top-manager>

@@ -39,10 +39,8 @@ public class AudioPlayer : IDisposable
             memoryStream.Write(MemoryMarshal.AsBytes(buffer));
         
         var data = memoryStream.ToArray();
-        
-        // Snap sample count to nearest multiple of channels
-        var sampleCount = data.Length / sizeof(float) / stream.Channels * stream.Channels;
-        var dataSize = sampleCount * sizeof(float);
+        var sampleSize = sizeof(float) * stream.Channels;
+        var dataSize = data.Length / sampleSize * sampleSize;
         
         // Initialize AL buffer
         bufferHandle = AL.GenBuffer();
