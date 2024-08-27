@@ -18,6 +18,9 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
     private AudioPlayer? audioPlayer;
     
     private bool shuttingDown;
+
+    private double time;
+    private double lastAudioTime;
     
     public void Initialize()
     {
@@ -139,9 +142,22 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
         Debug.Assert(runner is not null);
         Debug.Assert(audioPlayer is not null);
         
+        var currentAudioTime = audioPlayer.Position.TotalSeconds;
+        
+        // If audio hasn't updated, we estimate the time using the last known time
+        if (currentAudioTime == lastAudioTime)
+        {
+            time += delta;
+        }
+        else
+        {
+            time = currentAudioTime;
+            lastAudioTime = currentAudioTime;
+        }
+        
+        
         // Update runner
-        var time = (float) audioPlayer.Position.TotalSeconds;
-        runner.Process(time, options.WorkerCount);
+        runner.Process((float) time, options.WorkerCount);
         
         // Start queueing up draw data
         var bloomData = runner.Bloom;
