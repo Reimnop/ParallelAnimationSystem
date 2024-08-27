@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using ParallelAnimationSystem.Audio;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Rendering;
 
@@ -12,32 +13,34 @@ public static class Startup
         var serviceCollection = new ServiceCollection();
         serviceCollection.AddSingleton(options);
         serviceCollection.AddLogging(x => x.AddConsole());
-        serviceCollection.AddSingleton<App>();
         serviceCollection.AddSingleton<Renderer>();
+        serviceCollection.AddSingleton<AudioSystem>();
+        serviceCollection.AddSingleton<App>();
 
         using var serviceProvider = serviceCollection.BuildServiceProvider();
-
-        // Run app
+        
+        // Get services
+        var renderer = serviceProvider.GetRequiredService<Renderer>();
+        var audioSystem = serviceProvider.GetRequiredService<AudioSystem>();
         var app = serviceProvider.GetRequiredService<App>();
 
-        // Initialize the app
+        // Initialize them
+        audioSystem.Initialize();
         app.Initialize();
-
+        renderer.Initialize();
+        
         // Run app thread
         var appThread = new Thread(app.Run);
         appThread.Start();
         
-        // We'll run the renderer on the main thread
-        var renderer = serviceProvider.GetRequiredService<Renderer>();
-        renderer.Initialize();
-
+        // Enter the main loop
         while (!renderer.ShouldExit)
             renderer.ProcessFrame();
         
-        // When renderer exits, we'll shut down the app
+        // When renderer exits, we'll shut down the services
         app.Shutdown();
         
-        // When the renderer exits, we'll wait for the app thread to finish
+        // Wait for the app thread to finish
         appThread.Join();
     }
 }

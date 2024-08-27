@@ -1,23 +1,21 @@
 using System.Diagnostics;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging;
-using NAudio.Utils;
-using NAudio.Vorbis;
-using NAudio.Wave;
 using Pamx.Ls;
 using Pamx.Vg;
+using ParallelAnimationSystem.Audio;
+using ParallelAnimationSystem.Audio.Stream;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering;
 
 namespace ParallelAnimationSystem.Core;
 
-public class App(Options options, Renderer renderer, ILogger<App> logger) : IDisposable
+public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<App> logger) : IDisposable
 {
     private readonly List<List<MeshHandle>> meshes = [];
     
     private AnimationRunner? runner;
-    private VorbisWaveReader? vorbisWaveReader;
-    private WaveOutEvent? waveOutEvent;
+    private AudioPlayer? audioPlayer;
     
     private bool shuttingDown;
     
@@ -27,7 +25,7 @@ public class App(Options options, Renderer renderer, ILogger<App> logger) : IDis
         RegisterMeshes();
         
         // Read animations from file
-        logger.LogInformation("Reading level file");
+        logger.LogInformation("Reading beatmap file from '{LevelPath}'", options.LevelPath);
         var json = File.ReadAllText(options.LevelPath);
         var jsonNode = JsonNode.Parse(json);
         if (jsonNode is not JsonObject jsonObject)
@@ -62,10 +60,11 @@ public class App(Options options, Renderer renderer, ILogger<App> logger) : IDis
         logger.LogInformation("Loaded {ObjectCount} objects", runner.ObjectCount);
         
         // Load audio
-        logger.LogInformation("Loading audio");
-        vorbisWaveReader = new VorbisWaveReader(options.AudioPath);
-        waveOutEvent = new WaveOutEvent();
-        waveOutEvent.Init(vorbisWaveReader);
+        logger.LogInformation("Loading audio from '{AudioPath}'", options.AudioPath);
+        
+        // TODO: When we have streaming audio, don't dispose the stream here
+        using var audioStream = new VorbisAudioStream(options.AudioPath);
+        audioPlayer = audio.CreatePlayer(audioStream);
     }
 
     private void RegisterMeshes()
@@ -117,11 +116,10 @@ public class App(Options options, Renderer renderer, ILogger<App> logger) : IDis
     public void Run()
     {
         Debug.Assert(runner is not null);
-        Debug.Assert(vorbisWaveReader is not null);
-        Debug.Assert(waveOutEvent is not null);
+        Debug.Assert(audioPlayer is not null);
         
         // Play audio
-        waveOutEvent.Play();
+        audioPlayer.Play();
         
         // Start loop
         var stopwatch = Stopwatch.StartNew();
@@ -139,11 +137,10 @@ public class App(Options options, Renderer renderer, ILogger<App> logger) : IDis
     private void ProcessFrame(double delta)
     {
         Debug.Assert(runner is not null);
-        Debug.Assert(vorbisWaveReader is not null);
-        Debug.Assert(waveOutEvent is not null);
+        Debug.Assert(audioPlayer is not null);
         
         // Update runner
-        var time = (float) waveOutEvent.GetPositionTimeSpan().TotalSeconds;
+        var time = (float) audioPlayer.Position.TotalSeconds;
         runner.Process(time, options.WorkerCount);
         
         // Start queueing up draw data
@@ -205,7 +202,6 @@ public class App(Options options, Renderer renderer, ILogger<App> logger) : IDis
         GC.SuppressFinalize(this);
         
         shuttingDown = true;
-        vorbisWaveReader?.Dispose();
-        waveOutEvent?.Dispose();
+        audioPlayer?.Dispose();
     }
 }

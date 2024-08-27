@@ -8,7 +8,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="9b1e7f31-978d-41b0-ac0b-49ddcf3b23f4" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Audio/AudioPlayer.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Audio/AudioSystem.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Audio/Stream/IAudioStream.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Audio/Stream/VorbisAudioStream.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.ParallelAnimationSystem/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.ParallelAnimationSystem/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Core/App.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/App.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/ParallelAnimationSystem.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/ParallelAnimationSystem.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Startup.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Startup.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="true" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -42,6 +49,7 @@
   }
 }</component>
   <component name="HighlightingSettingsPerFile">
+    <setting file="file://$USER_HOME$/AppData/Local/Symbols/src/dotnet/runtime/08338fcaa5c9b9a8190abb99222fed12aaba956c/src/libraries/System.Private.CoreLib/src/Microsoft/Win32/SafeHandles/SafeFileHandle.Windows.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$USER_HOME$/AppData/Local/Symbols/src/dotnet/runtime/08338fcaa5c9b9a8190abb99222fed12aaba956c/src/libraries/System.Private.CoreLib/src/System/ThrowHelper.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$USER_HOME$/AppData/Local/Symbols/src/dotnet/runtime/08338fcaa5c9b9a8190abb99222fed12aaba956c/src/libraries/System.Text.Json/src/System/Text/Json/Nodes/JsonNode.Operators.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$USER_HOME$/AppData/Local/Symbols/src/dotnet/runtime/08338fcaa5c9b9a8190abb99222fed12aaba956c/src/libraries/System.Text.Json/src/System/Text/Json/Nodes/JsonNode.cs" root0="SKIP_HIGHLIGHTING" />
@@ -64,11 +72,18 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/514572a396c648419bfc63435e919efcde00/9c/f82d0cf3/NativeWindow.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a8d4fa595ced467f968e9ff0b17c676b91e5c0/64/603cdf44/IEquatable`1.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a8d4fa595ced467f968e9ff0b17c676b91e5c0/a5/9a816f3f/Single.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/b625b28a941b4736bc6b59358b1474e615c00/c2/3e6c0ab8/AL.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/d6d9a64f5a9e4e8db91d96dc491a13e2495800/dd/b22e1ac9/GL.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/ffdbecaac85a4a73a506f7ae3cb32d184d000/1e/dfcdc95d/MathHelper.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/ffdbecaac85a4a73a506f7ae3cb32d184d000/48/44a402e7/Matrix3.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/3abe378a8183931e446e69f342ecb93cd94c7adc12d6605cc1432b38865f73c4/ALDevice.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/3e8f1cfc7f3332b9a0e31b3f10347da0b2775895319a6b9a2b4f25a4c48654bc/Command.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/4c4c453befb17785f3e1c532776f3a28f6f1566b3872b2e1adf2722fd64b51fc/ALBase.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/536b026f525d7169592ec5ff0bce531ba56dc859c1fd5d5b3e5637329b107f/WindowComponent.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/54e507e5e6e689133a13baef2498fcc309fd11e9dee98fdc129685bd9eba765/ALLoader.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/63745a7bd5934361bbd6da9ea6372eaf241a52d9c4d198dabe6626b6eeefe5/OpenALLibraryNameContainer.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/6ded741cabd4cd8d7ff777cc3df56744492cc13268aa5d23e3c2d6c2bfada37/Color4.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/7135c2f5f416e1cc524059257489d915474a1ea1586c0ebed47ded19c1f5b/ILogger.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/9e6bcde0d2cd3ad7f55d4b372d6be5df75cdcfae851d6454357ac47286b5967/Types.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
   <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
@@ -83,38 +98,38 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;.NET Project.ParallelAnimationSystem.executor&quot;: &quot;Debug&quot;,
-    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;Publish to folder.Publish.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;project.propVCSSupport.Confirmation&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    ".NET Project.ParallelAnimationSystem.executor": "Debug",
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "Publish to folder.Publish.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "master",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "project.propVCSSupport.Confirmation",
+    "vue.rearranger.settings.migration": "true"
   },
-  &quot;keyToStringList&quot;: {
-    &quot;rider.external.source.directories&quot;: [
-      &quot;C:\\Users\\rayng\\AppData\\Roaming\\JetBrains\\Rider2024.1\\resharper-host\\DecompilerCache&quot;,
-      &quot;C:\\Users\\rayng\\AppData\\Roaming\\JetBrains\\Rider2024.1\\resharper-host\\SourcesCache&quot;,
-      &quot;C:\\Users\\rayng\\AppData\\Local\\Symbols\\src&quot;
+  "keyToStringList": {
+    "rider.external.source.directories": [
+      "C:\\Users\\rayng\\AppData\\Roaming\\JetBrains\\Rider2024.1\\resharper-host\\DecompilerCache",
+      "C:\\Users\\rayng\\AppData\\Roaming\\JetBrains\\Rider2024.1\\resharper-host\\SourcesCache",
+      "C:\\Users\\rayng\\AppData\\Local\\Symbols\\src"
     ]
   }
-}</component>
-  <component name="RunManager" selected="Publish to folder.Publish">
+}]]></component>
+  <component name="RunManager" selected=".NET Project.ParallelAnimationSystem">
     <configuration name="Publish" type="DotNetFolderPublish" factoryName="Publish to folder">
       <riderPublish configuration="Release" include_native_libs_for_self_extract="true" platform="Any CPU" produce_single_file="true" runtime="win-x64" self_contained="true" target_folder="$PROJECT_DIR$/ParallelAnimationSystem/bin/Release/net8.0/win-x64/publish" target_framework="net8.0" trim_unused_assemblies="true" uuid_high="4921518821831493447" uuid_low="-5440609166602987154" />
       <method v="2" />
     </configuration>
     <configuration name="ParallelAnimationSystem" type="DotNetProject" factoryName=".NET Project">
       <option name="EXE_PATH" value="$PROJECT_DIR$/ParallelAnimationSystem/bin/Debug/net8.0/ParallelAnimationSystem.exe" />
-      <option name="PROGRAM_PARAMETERS" value="-l level.lsb -a level.ogg" />
+      <option name="PROGRAM_PARAMETERS" value="-l level.vgd -a audio.ogg" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/ParallelAnimationSystem/bin/Debug/net8.0" />
       <option name="PASS_PARENT_ENVS" value="1" />
       <option name="USE_EXTERNAL_CONSOLE" value="0" />
@@ -161,6 +176,10 @@
       <workItem from="1724610556650" duration="3574000" />
       <workItem from="1724672575265" duration="547000" />
       <workItem from="1724675226236" duration="78000" />
+      <workItem from="1724676937470" duration="566000" />
+      <workItem from="1724682913217" duration="3083000" />
+      <workItem from="1724686107833" duration="2722000" />
+      <workItem from="1724693192389" duration="11450000" />
     </task>
     <task id="LOCAL-00001" summary="Fix more edge cases">
       <option name="closed" value="true" />
@@ -474,7 +493,39 @@
       <option name="project" value="LOCAL" />
       <updated>1724672764360</updated>
     </task>
-    <option name="localTasksCounter" value="40" />
+    <task id="LOCAL-00040" summary="Add icon">
+      <option name="closed" value="true" />
+      <created>1724677028690</created>
+      <option name="number" value="00040" />
+      <option name="presentableId" value="LOCAL-00040" />
+      <option name="project" value="LOCAL" />
+      <updated>1724677028690</updated>
+    </task>
+    <task id="LOCAL-00041" summary="Ditch GLFW, use PAL2">
+      <option name="closed" value="true" />
+      <created>1724685651236</created>
+      <option name="number" value="00041" />
+      <option name="presentableId" value="LOCAL-00041" />
+      <option name="project" value="LOCAL" />
+      <updated>1724685651236</updated>
+    </task>
+    <task id="LOCAL-00042" summary="Debloat">
+      <option name="closed" value="true" />
+      <created>1724685922677</created>
+      <option name="number" value="00042" />
+      <option name="presentableId" value="LOCAL-00042" />
+      <option name="project" value="LOCAL" />
+      <updated>1724685922677</updated>
+    </task>
+    <task id="LOCAL-00043" summary="Fuck you">
+      <option name="closed" value="true" />
+      <created>1724687344121</created>
+      <option name="number" value="00043" />
+      <option name="presentableId" value="LOCAL-00043" />
+      <option name="project" value="LOCAL" />
+      <updated>1724687344121</updated>
+    </task>
+    <option name="localTasksCounter" value="44" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -496,10 +547,6 @@
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-    <MESSAGE value="Fix empty prefabs" />
-    <MESSAGE value="Added vsync" />
-    <MESSAGE value="Reduce CPU usage" />
-    <MESSAGE value="Make number of threads configurable" />
     <MESSAGE value="Lower OpenGL requirement" />
     <MESSAGE value="Small fixes for AOT" />
     <MESSAGE value="Disable AOT for now" />
@@ -521,7 +568,11 @@
     <MESSAGE value="Added alpha gradients" />
     <MESSAGE value="Update to OpenTK 5" />
     <MESSAGE value="CPU handle gradient fade, not GPU!" />
-    <option name="LAST_COMMIT_MESSAGE" value="CPU handle gradient fade, not GPU!" />
+    <MESSAGE value="Add icon" />
+    <MESSAGE value="Ditch GLFW, use PAL2" />
+    <MESSAGE value="Debloat" />
+    <MESSAGE value="Fuck you" />
+    <option name="LAST_COMMIT_MESSAGE" value="Fuck you" />
   </component>
   <component name="XDebuggerManager">
     <pin-to-top-manager>
