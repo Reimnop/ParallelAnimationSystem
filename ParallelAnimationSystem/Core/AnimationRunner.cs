@@ -117,17 +117,17 @@ public class AnimationRunner
         {
             // Update objects backwards in time
             // Spawn
-            while (spawnIndex - 1 >= 0 && time < startTimeSortedGameObjects[spawnIndex - 1].StartTime)
-            {
-                aliveGameObjects.Remove(startTimeSortedGameObjects[spawnIndex - 1]);
-                spawnIndex--;
-            }
-            
-            // Despawn
             while (killIndex - 1 >= 0 && time < killTimeSortedGameObjects[killIndex - 1].KillTime)
             {
                 aliveGameObjects.Add(killTimeSortedGameObjects[killIndex - 1]);
                 killIndex--;
+            }
+            
+            // Despawn
+            while (spawnIndex - 1 >= 0 && time < startTimeSortedGameObjects[spawnIndex - 1].StartTime)
+            {
+                aliveGameObjects.Remove(startTimeSortedGameObjects[spawnIndex - 1]);
+                spawnIndex--;
             }
         }
         
