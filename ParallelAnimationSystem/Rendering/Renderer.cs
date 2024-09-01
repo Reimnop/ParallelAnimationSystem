@@ -522,17 +522,11 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
             // Update our buffers with the new data
             newMeshData = false;
             
-            unsafe
-            {
-                var vertexBufferData = vertexBuffer.Data;
-                var indexBufferData = indexBuffer.Data;
+            var vertexBufferData = vertexBuffer.Data;
+            var indexBufferData = indexBuffer.Data;
                 
-                fixed (byte* ptr = vertexBufferData)
-                    GL.NamedBufferSubData(vertexBufferHandle, IntPtr.Zero, vertexBufferData.Length, (IntPtr) ptr);
-                
-                fixed (byte* ptr = indexBufferData)
-                    GL.NamedBufferSubData(indexBufferHandle, IntPtr.Zero, indexBufferData.Length, (IntPtr) ptr);
-            }
+            GL.NamedBufferSubData(vertexBufferHandle, IntPtr.Zero, vertexBufferData.Length, vertexBufferData);
+            GL.NamedBufferSubData(indexBufferHandle, IntPtr.Zero, indexBufferData.Length, indexBufferData);
         }
         
         logger.LogInformation("OpenGL mesh buffers updated, now at {VertexSize} vertices and {IndexSize} indices", vertexBuffer.Data.Length / Vector2.SizeInBytes, indexBuffer.Data.Length / sizeof(int));
