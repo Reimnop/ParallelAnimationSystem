@@ -39,6 +39,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
     private int vertexArrayHandle;
     private int vertexBufferHandle;
     private int indexBufferHandle;
+    private int multiDrawIndirectBufferHandle;
     private int multiDrawStorageBufferHandle;
     private int programHandle;
     
@@ -170,6 +171,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         GL.VertexArrayElementBuffer(vertexArrayHandle, indexBufferHandle);
         
         // Initialize multi draw buffer
+        multiDrawIndirectBufferHandle = GL.CreateBuffer();
         multiDrawStorageBufferHandle = GL.CreateBuffer();
         
         // Initialize shader program
@@ -463,17 +465,22 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         }
         
         // Upload storage buffer to GPU
-        GL.NamedBufferData(multiDrawStorageBufferHandle, multiDrawStorageBuffer.Data.Length, multiDrawStorageBuffer.Data, VertexBufferObjectUsage.DynamicDraw);
+        var indirectBufferData = multiDrawIndirectBuffer.Data;
+        var storageBufferData = multiDrawStorageBuffer.Data;
         
-        // Bind storage buffer
+        GL.NamedBufferData(multiDrawIndirectBufferHandle, indirectBufferData.Length, indirectBufferData, VertexBufferObjectUsage.DynamicDraw);
+        GL.NamedBufferData(multiDrawStorageBufferHandle, storageBufferData.Length, storageBufferData, VertexBufferObjectUsage.DynamicDraw);
+        
+        // Bind buffers
+        GL.BindBuffer(BufferTarget.DrawIndirectBuffer, multiDrawIndirectBufferHandle);
         GL.BindBufferBase(BufferTarget.ShaderStorageBuffer, 0, multiDrawStorageBufferHandle);
 
         // Draw
         GL.MultiDrawElementsIndirect(
             PrimitiveType.Triangles,
             DrawElementsType.UnsignedInt,
-            multiDrawIndirectBuffer.Data,
-            multiDrawIndirectBuffer.Data.Length / Unsafe.SizeOf<DrawElementsIndirectCommand>(),
+            0,
+            drawDataList.Count,
             0);
     }
 
