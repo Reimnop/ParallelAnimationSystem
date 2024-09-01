@@ -422,7 +422,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         multiDrawStorageBuffer.Clear();
         
         // Append data
-        foreach (var (mesh, transform, z, renderMode, color1, color2) in drawDataList)
+        foreach (var (mesh, transform, color1, color2, z, renderMode) in drawDataList)
         {
             var mvp = transform * camera;
 

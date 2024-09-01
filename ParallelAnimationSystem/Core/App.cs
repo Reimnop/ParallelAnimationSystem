@@ -187,7 +187,7 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
             if (color1 == color2)
                 color2.W = 0.0f;
             
-            drawList.AddMesh(mesh, transform, z, renderMode, color1, color2);
+            drawList.AddMesh(mesh, transform, color1, color2, z, renderMode);
         }
         
         // Submit our draw list
