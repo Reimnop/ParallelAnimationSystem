@@ -1,3 +1,3 @@
 namespace ParallelAnimationSystem.Rendering;
 
-public record struct MeshHandle(int VertexOffset, int VertexSize, int IndexOffset, int IndexSize);
+public record struct MeshHandle(int VertexOffset, int VertexCount, int IndexOffset, int IndexCount);

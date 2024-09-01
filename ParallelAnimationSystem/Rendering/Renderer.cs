@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
@@ -37,9 +38,9 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
     private int vertexArrayHandle;
     private int vertexBufferHandle;
     private int indexBufferHandle;
+    private int multiDrawStorageBufferHandle;
     private int programHandle;
-    private int mvpUniformLocation, zUniformLocation, renderModeUniformLocation, color1UniformLocation, color2UniformLocation;
-
+    
     private Vector2i currentFboSize;
     private int fboTextureHandle, fboDepthBufferHandle;
     private int fboHandle;
@@ -169,6 +170,9 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
                 
         GL.VertexArrayElementBuffer(vertexArrayHandle, indexBufferHandle);
         
+        // Initialize multi draw buffer
+        multiDrawStorageBufferHandle = GL.CreateBuffer();
+        
         // Initialize shader program
         var vertexShaderSource = ResourceUtil.ReadAllText("Resources.Shaders.SimpleUnlitVertex.glsl");
         var fragmentShaderSource = ResourceUtil.ReadAllText("Resources.Shaders.SimpleUnlitFragment.glsl");
@@ -176,13 +180,27 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         // Create shaders
         var vertexShader = GL.CreateShader(ShaderType.VertexShader);
         GL.ShaderSource(vertexShader, vertexShaderSource);
+        GL.CompileShader(vertexShader);
+        
+        // Check for vertex shader compilation errors
+        var vertexStatus = GL.GetShaderi(vertexShader, ShaderParameterName.CompileStatus);
+        if (vertexStatus == 0)
+        {
+            GL.GetShaderInfoLog(vertexShader, out var infoLog);
+            throw new InvalidOperationException($"Vertex shader compilation failed: {infoLog}");
+        }
         
         var fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
         GL.ShaderSource(fragmentShader, fragmentShaderSource);
-        
-        // Compile them
-        GL.CompileShader(vertexShader);
         GL.CompileShader(fragmentShader);
+        
+        // Check for fragment shader compilation errors
+        var fragmentStatus = GL.GetShaderi(fragmentShader, ShaderParameterName.CompileStatus);
+        if (fragmentStatus == 0)
+        {
+            GL.GetShaderInfoLog(fragmentShader, out var infoLog);
+            throw new InvalidOperationException($"Fragment shader compilation failed: {infoLog}");
+        }
         
         // Create program
         programHandle = GL.CreateProgram();
@@ -190,21 +208,21 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         GL.AttachShader(programHandle, fragmentShader);
         GL.LinkProgram(programHandle);
         
+        // Check for program linking errors
+        var linkStatus = GL.GetProgrami(programHandle, ProgramProperty.LinkStatus);
+        if (linkStatus == 0)
+        {
+            GL.GetProgramInfoLog(programHandle, out var infoLog);
+            throw new InvalidOperationException($"Program linking failed: {infoLog}");
+        }
+        
         // Clean up
         GL.DetachShader(programHandle, vertexShader);
         GL.DetachShader(programHandle, fragmentShader);
         GL.DeleteShader(vertexShader);
         GL.DeleteShader(fragmentShader);
         
-        // Get uniform locations
-        mvpUniformLocation = GL.GetUniformLocation(programHandle, "uMvp");
-        zUniformLocation = GL.GetUniformLocation(programHandle, "uZ");
-        renderModeUniformLocation = GL.GetUniformLocation(programHandle, "uRenderMode");
-        color1UniformLocation = GL.GetUniformLocation(programHandle, "uColor1");
-        color2UniformLocation = GL.GetUniformLocation(programHandle, "uColor2");
-        
-        // Initialize fbo
-        
+        // Initialize fbos
         // Initialize scene fbo
         fboTextureHandle = GL.CreateTexture(TextureTarget.Texture2dMultisample);
         GL.TextureStorage2DMultisample(fboTextureHandle, 4, SizedInternalFormat.Rgba8, size.X, size.Y, true);
@@ -389,24 +407,77 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
 
     private void RenderDrawDataList(List<DrawData> drawDataList, Matrix3 camera)
     {
+        if (drawDataList.Count == 0)
+            return;
+        
         // Draw each mesh
+        // foreach (var drawData in drawDataList)
+        // {
+        //     var mesh = drawData.Mesh;
+        //     var transform = drawData.Transform * camera;
+        //     var color1 = drawData.Color1;
+        //     var color2 = drawData.Color2;
+        //     
+        //     // Set transform
+        //     GL.UniformMatrix3f(mvpUniformLocation, 1, false, in transform);
+        //     GL.Uniform1f(zUniformLocation, drawData.Z);
+        //     GL.Uniform1i(renderModeUniformLocation, (int) drawData.RenderMode);
+        //     GL.Uniform4f(color1UniformLocation, color1.X, color1.Y, color1.Z, color1.W);
+        //     GL.Uniform4f(color2UniformLocation, color2.X, color2.Y, color2.Z, color2.W);
+        //     
+        //     // Draw
+        //     // TODO: We can probably glMultiDrawElementsBaseVertex here
+        //     GL.DrawElementsBaseVertex(PrimitiveType.Triangles, mesh.IndexSize, DrawElementsType.UnsignedInt, mesh.IndexOffset * sizeof(int), mesh.VertexOffset);
+        // }
+        
+        // Multi draw
+        multiDrawCountBuffer.Clear();
+        multiDrawIndexOffsetBuffer.Clear();
+        multiDrawBaseVertexBuffer.Clear();
+        multiDrawStorageBuffer.Clear();
         foreach (var drawData in drawDataList)
         {
             var mesh = drawData.Mesh;
             var transform = drawData.Transform * camera;
             var color1 = drawData.Color1;
             var color2 = drawData.Color2;
+            var z = drawData.Z;
+            var renderMode = drawData.RenderMode;
             
-            // Set transform
-            GL.UniformMatrix3f(mvpUniformLocation, 1, false, in transform);
-            GL.Uniform1f(zUniformLocation, drawData.Z);
-            GL.Uniform1i(renderModeUniformLocation, (int) drawData.RenderMode);
-            GL.Uniform4f(color1UniformLocation, color1.X, color1.Y, color1.Z, color1.W);
-            GL.Uniform4f(color2UniformLocation, color2.X, color2.Y, color2.Z, color2.W);
-            
-            // Draw
-            // TODO: We can probably glMultiDrawElementsBaseVertex here
-            GL.DrawElementsBaseVertex(PrimitiveType.Triangles, mesh.IndexSize, DrawElementsType.UnsignedInt, mesh.IndexOffset * sizeof(int), mesh.VertexOffset);
+            multiDrawCountBuffer.Append(mesh.IndexCount);
+            multiDrawIndexOffsetBuffer.Append(mesh.IndexOffset * sizeof(int));
+            multiDrawBaseVertexBuffer.Append(mesh.VertexOffset);
+            multiDrawStorageBuffer.Append(new MultiDrawItem
+            {
+                MvpRow1 = transform.Row0,
+                MvpRow2 = transform.Row1,
+                MvpRow3 = transform.Row2,
+                Color1 = (Vector4) color1,
+                Color2 = (Vector4) color2,
+                Z = z,
+                RenderMode = (int) renderMode,
+            });
+        }
+        
+        // Upload storage buffer to GPU
+        GL.NamedBufferData(multiDrawStorageBufferHandle, multiDrawStorageBuffer.Data.Length, multiDrawStorageBuffer.Data, VertexBufferObjectUsage.DynamicDraw);
+        
+        // Bind storage buffer
+        GL.BindBufferBase(BufferTarget.ShaderStorageBuffer, 0, multiDrawStorageBufferHandle);
+
+        // Draw
+        unsafe
+        {
+            fixed (byte* countPtr = multiDrawCountBuffer.Data)
+            fixed (byte* indexOffsetPtr = multiDrawIndexOffsetBuffer.Data)
+            fixed (byte* baseVertexBuffer = multiDrawBaseVertexBuffer.Data)
+                GL.MultiDrawElementsBaseVertex(
+                    PrimitiveType.Triangles,
+                    (int*)countPtr,
+                    DrawElementsType.UnsignedInt,
+                    (void**)indexOffsetPtr,
+                    drawDataList.Count,
+                    (int*)baseVertexBuffer);
         }
     }
 
