@@ -3,10 +3,9 @@
 layout(location = 0) out vec4 fragColor;
 
 in vec2 vUv;
-
-uniform int uRenderMode;
-uniform vec4 uColor1;
-uniform vec4 uColor2;
+in vec4 vColor1;
+in vec4 vColor2;
+in flat int vRenderMode;
 
 vec4 getColor(vec4 color1, vec4 color2, int mode, vec2 uv) {
     // mode 0: color1
@@ -31,5 +30,5 @@ vec4 getColor(vec4 color1, vec4 color2, int mode, vec2 uv) {
 }
 
 void main() {
-    fragColor = getColor(uColor1, uColor2, uRenderMode, vUv);
+    fragColor = getColor(vColor1, vColor2, vRenderMode, vUv);
 }
