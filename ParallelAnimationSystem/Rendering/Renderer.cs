@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using OpenTK.Graphics;
@@ -39,7 +38,6 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
     private int vertexArrayHandle;
     private int vertexBufferHandle;
     private int indexBufferHandle;
-    private int multiDrawIndirectBufferHandle;
     private int multiDrawStorageBufferHandle;
     private int programHandle;
     
@@ -52,7 +50,9 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
     private readonly List<DrawData> opaqueDrawData = [];
     private readonly List<DrawData> transparentDrawData = [];
     
-    private readonly Buffer multiDrawIndirectBuffer = new();
+    private readonly Buffer multiDrawCountBuffer = new();
+    private readonly Buffer multiDrawIndexOffsetBuffer = new();
+    private readonly Buffer multiDrawBaseVertexBuffer = new();
     private readonly Buffer multiDrawStorageBuffer = new();
     
     public MeshHandle RegisterMesh(ReadOnlySpan<Vector2> vertices, ReadOnlySpan<int> indices)
@@ -171,7 +171,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         GL.VertexArrayElementBuffer(vertexArrayHandle, indexBufferHandle);
         
         // Initialize multi draw buffer
-        multiDrawIndirectBufferHandle = GL.CreateBuffer();
+        GL.CreateBuffer();
         multiDrawStorageBufferHandle = GL.CreateBuffer();
         
         // Initialize shader program
