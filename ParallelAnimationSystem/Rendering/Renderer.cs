@@ -49,6 +49,11 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
     private readonly List<DrawData> opaqueDrawData = [];
     private readonly List<DrawData> transparentDrawData = [];
     
+    private readonly Buffer multiDrawCountBuffer = new();
+    private readonly Buffer multiDrawIndexOffsetBuffer = new();
+    private readonly Buffer multiDrawBaseVertexBuffer = new();
+    private readonly Buffer multiDrawStorageBuffer = new();
+    
     public MeshHandle RegisterMesh(ReadOnlySpan<Vector2> vertices, ReadOnlySpan<int> indices)
     {
         lock (meshDataLock)
@@ -335,50 +340,14 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         GL.Disable(EnableCap.Blend);
         GL.Enable(EnableCap.DepthTest);
         
-        // Draw each mesh
-        foreach (var drawData in opaqueDrawData)
-        {
-            var mesh = drawData.Mesh;
-            var transform = drawData.Transform * camera;
-            var color1 = drawData.Color1;
-            var color2 = drawData.Color2;
-            
-            // Set transform
-            GL.UniformMatrix3f(mvpUniformLocation, 1, false, in transform);
-            GL.Uniform1f(zUniformLocation, drawData.Z);
-            GL.Uniform1i(renderModeUniformLocation, (int) drawData.RenderMode);
-            GL.Uniform4f(color1UniformLocation, color1.X, color1.Y, color1.Z, color1.W);
-            GL.Uniform4f(color2UniformLocation, color2.X, color2.Y, color2.Z, color2.W);
-            
-            // Draw
-            // TODO: We can probably glMultiDrawElementsBaseVertex here
-            GL.DrawElementsBaseVertex(PrimitiveType.Triangles, mesh.IndexSize, DrawElementsType.UnsignedInt, mesh.IndexOffset * sizeof(int), mesh.VertexOffset);
-        }
+        RenderDrawDataList(opaqueDrawData, camera);
         
         // Transparent pass, enable blending, disable depth write
         GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
         GL.Enable(EnableCap.Blend);
         GL.DepthMask(false);
         
-        // Draw each mesh
-        foreach (var drawData in transparentDrawData)
-        {
-            var mesh = drawData.Mesh;
-            var transform = drawData.Transform * camera;
-            var color1 = drawData.Color1;
-            var color2 = drawData.Color2;
-            
-            // Set transform
-            GL.UniformMatrix3f(mvpUniformLocation, 1, false, in transform);
-            GL.Uniform1f(zUniformLocation, drawData.Z);
-            GL.Uniform1i(renderModeUniformLocation, (int) drawData.RenderMode);
-            GL.Uniform4f(color1UniformLocation, color1.X, color1.Y, color1.Z, color1.W);
-            GL.Uniform4f(color2UniformLocation, color2.X, color2.Y, color2.Z, color2.W);
-            
-            // Draw
-            // TODO: We can probably glMultiDrawElementsBaseVertex here
-            GL.DrawElementsBaseVertex(PrimitiveType.Triangles, mesh.IndexSize, DrawElementsType.UnsignedInt, mesh.IndexOffset * sizeof(int), mesh.VertexOffset);
-        }
+        RenderDrawDataList(transparentDrawData, camera);
         
         // Restore depth write state
         GL.DepthMask(true);
@@ -416,6 +385,29 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         
         Debug.Assert(glContextHandle is not null);
         Toolkit.OpenGL.SwapBuffers(glContextHandle);
+    }
+
+    private void RenderDrawDataList(List<DrawData> drawDataList, Matrix3 camera)
+    {
+        // Draw each mesh
+        foreach (var drawData in drawDataList)
+        {
+            var mesh = drawData.Mesh;
+            var transform = drawData.Transform * camera;
+            var color1 = drawData.Color1;
+            var color2 = drawData.Color2;
+            
+            // Set transform
+            GL.UniformMatrix3f(mvpUniformLocation, 1, false, in transform);
+            GL.Uniform1f(zUniformLocation, drawData.Z);
+            GL.Uniform1i(renderModeUniformLocation, (int) drawData.RenderMode);
+            GL.Uniform4f(color1UniformLocation, color1.X, color1.Y, color1.Z, color1.W);
+            GL.Uniform4f(color2UniformLocation, color2.X, color2.Y, color2.Z, color2.W);
+            
+            // Draw
+            // TODO: We can probably glMultiDrawElementsBaseVertex here
+            GL.DrawElementsBaseVertex(PrimitiveType.Triangles, mesh.IndexSize, DrawElementsType.UnsignedInt, mesh.IndexOffset * sizeof(int), mesh.VertexOffset);
+        }
     }
 
     private int HandlePostProcessing(PostProcessingData data, int texture1, int texture2)
