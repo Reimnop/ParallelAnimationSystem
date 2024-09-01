@@ -10,51 +10,57 @@ public class Buffer(int capacity = 1024)
 
     private int length;
 
-    public unsafe void Append<T>(T data) where T : unmanaged
+    public void Append<T>(T data) where T : unmanaged
     {
-        var length = sizeof(T);
-        var offset = this.length;
+        var size = Unsafe.SizeOf<T>();
+        var offset = length;
 
         // Resize buffer if necessary
-        if (offset + length > this.data.Length)
+        if (offset + size > this.data.Length)
         {
             var newSize = this.data.Length;
-            while (offset + length > newSize)
+            while (offset + size > newSize)
                 newSize *= 2;
 
             Array.Resize(ref this.data, newSize);
         }
         
         // Copy data
-        fixed (byte* ptr = this.data)
-            Unsafe.CopyBlock(ptr + offset, &data, (uint) length);
+        unsafe
+        {
+            fixed (byte* ptr = this.data)
+                Unsafe.CopyBlock(ptr + offset, &data, (uint) size);
+        }
 
         // Update size
-        this.length += length;
+        length += size;
     }
     
-    public unsafe void Append<T>(ReadOnlySpan<T> data) where T : unmanaged
+    public void Append<T>(ReadOnlySpan<T> data) where T : unmanaged
     {
-        var length = sizeof(T) * data.Length;
-        var offset = this.length;
+        var size = Unsafe.SizeOf<T>() * data.Length;
+        var offset = length;
 
         // Resize buffer if necessary
-        if (offset + length > this.data.Length)
+        if (offset + size > this.data.Length)
         {
             var newSize = this.data.Length;
-            while (offset + length > newSize)
+            while (offset + size > newSize)
                 newSize *= 2;
 
             Array.Resize(ref this.data, newSize);
         }
         
         // Copy data
-        fixed (byte* ptr = this.data)
+        unsafe
+        {
+            fixed (byte* ptr = this.data)
             fixed (T* src = data)
-                Unsafe.CopyBlock(ptr + offset, src, (uint) length);
+                Unsafe.CopyBlock(ptr + offset, src, (uint) size);
+        }
         
         // Update size
-        this.length += length;
+        length += size;
     }
     
     public void Clear()

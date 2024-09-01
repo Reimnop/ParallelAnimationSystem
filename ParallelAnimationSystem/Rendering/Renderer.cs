@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using OpenTK.Graphics;
@@ -38,6 +39,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
     private int vertexArrayHandle;
     private int vertexBufferHandle;
     private int indexBufferHandle;
+    private int multiDrawIndirectBufferHandle;
     private int multiDrawStorageBufferHandle;
     private int programHandle;
     
@@ -50,9 +52,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
     private readonly List<DrawData> opaqueDrawData = [];
     private readonly List<DrawData> transparentDrawData = [];
     
-    private readonly Buffer multiDrawCountBuffer = new();
-    private readonly Buffer multiDrawIndexOffsetBuffer = new();
-    private readonly Buffer multiDrawBaseVertexBuffer = new();
+    private readonly Buffer multiDrawIndirectBuffer = new();
     private readonly Buffer multiDrawStorageBuffer = new();
     
     public MeshHandle RegisterMesh(ReadOnlySpan<Vector2> vertices, ReadOnlySpan<int> indices)
@@ -171,6 +171,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         GL.VertexArrayElementBuffer(vertexArrayHandle, indexBufferHandle);
         
         // Initialize multi draw buffer
+        multiDrawIndirectBufferHandle = GL.CreateBuffer();
         multiDrawStorageBufferHandle = GL.CreateBuffer();
         
         // Initialize shader program
@@ -415,7 +416,6 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         if (drawDataList.Count == 0)
             return;
         
-        // Clear buffers
         multiDrawCountBuffer.Clear();
         multiDrawIndexOffsetBuffer.Clear();
         multiDrawBaseVertexBuffer.Clear();
@@ -501,17 +501,11 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
             // Update our buffers with the new data
             newMeshData = false;
             
-            unsafe
-            {
-                var vertexBufferData = vertexBuffer.Data;
-                var indexBufferData = indexBuffer.Data;
+            var vertexBufferData = vertexBuffer.Data;
+            var indexBufferData = indexBuffer.Data;
                 
-                fixed (byte* ptr = vertexBufferData)
-                    GL.NamedBufferSubData(vertexBufferHandle, IntPtr.Zero, vertexBufferData.Length, (IntPtr) ptr);
-                
-                fixed (byte* ptr = indexBufferData)
-                    GL.NamedBufferSubData(indexBufferHandle, IntPtr.Zero, indexBufferData.Length, (IntPtr) ptr);
-            }
+            GL.NamedBufferSubData(vertexBufferHandle, IntPtr.Zero, vertexBufferData.Length, vertexBufferData);
+            GL.NamedBufferSubData(indexBufferHandle, IntPtr.Zero, indexBufferData.Length, indexBufferData);
         }
         
         logger.LogInformation("OpenGL mesh buffers updated, now at {VertexSize} vertices and {IndexSize} indices", vertexBuffer.Data.Length / Vector2.SizeInBytes, indexBuffer.Data.Length / sizeof(int));
