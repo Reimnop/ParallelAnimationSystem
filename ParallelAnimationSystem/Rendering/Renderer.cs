@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using OpenTK.Graphics;
@@ -50,9 +51,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
     private readonly List<DrawData> opaqueDrawData = [];
     private readonly List<DrawData> transparentDrawData = [];
     
-    private readonly Buffer multiDrawCountBuffer = new();
-    private readonly Buffer multiDrawIndexOffsetBuffer = new();
-    private readonly Buffer multiDrawBaseVertexBuffer = new();
+    private readonly Buffer multiDrawIndirectBuffer = new();
     private readonly Buffer multiDrawStorageBuffer = new();
     
     public MeshHandle RegisterMesh(ReadOnlySpan<Vector2> vertices, ReadOnlySpan<int> indices)
@@ -431,9 +430,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         // }
         
         // Multi draw
-        multiDrawCountBuffer.Clear();
-        multiDrawIndexOffsetBuffer.Clear();
-        multiDrawBaseVertexBuffer.Clear();
+        multiDrawIndirectBuffer.Clear();
         multiDrawStorageBuffer.Clear();
         foreach (var drawData in drawDataList)
         {
@@ -444,9 +441,15 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
             var z = drawData.Z;
             var renderMode = drawData.RenderMode;
             
-            multiDrawCountBuffer.Append(mesh.IndexCount);
-            multiDrawIndexOffsetBuffer.Append(mesh.IndexOffset * sizeof(int));
-            multiDrawBaseVertexBuffer.Append(mesh.VertexOffset);
+            multiDrawIndirectBuffer.Append(new DrawElementsIndirectCommand
+            {
+                Count = mesh.IndexCount,
+                InstanceCount = 1,
+                FirstIndex = mesh.IndexOffset,
+                BaseVertex = mesh.VertexOffset,
+                BaseInstance = 0,
+            });
+            
             multiDrawStorageBuffer.Append(new MultiDrawItem
             {
                 MvpRow1 = transform.Row0,
@@ -466,19 +469,12 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         GL.BindBufferBase(BufferTarget.ShaderStorageBuffer, 0, multiDrawStorageBufferHandle);
 
         // Draw
-        unsafe
-        {
-            fixed (byte* countPtr = multiDrawCountBuffer.Data)
-            fixed (byte* indexOffsetPtr = multiDrawIndexOffsetBuffer.Data)
-            fixed (byte* baseVertexBuffer = multiDrawBaseVertexBuffer.Data)
-                GL.MultiDrawElementsBaseVertex(
-                    PrimitiveType.Triangles,
-                    (int*)countPtr,
-                    DrawElementsType.UnsignedInt,
-                    (void**)indexOffsetPtr,
-                    drawDataList.Count,
-                    (int*)baseVertexBuffer);
-        }
+        GL.MultiDrawElementsIndirect(
+            PrimitiveType.Triangles,
+            DrawElementsType.UnsignedInt,
+            multiDrawIndirectBuffer.Data,
+            multiDrawIndirectBuffer.Data.Length / Unsafe.SizeOf<DrawElementsIndirectCommand>(),
+            0);
     }
 
     private int HandlePostProcessing(PostProcessingData data, int texture1, int texture2)
