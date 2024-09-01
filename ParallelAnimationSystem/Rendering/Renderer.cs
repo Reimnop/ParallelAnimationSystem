@@ -351,6 +351,9 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         // Use our program
         GL.UseProgram(programHandle);
         
+        // Bind storage buffer
+        GL.BindBufferBase(BufferTarget.ShaderStorageBuffer, 0, multiDrawStorageBufferHandle);
+        
         // Bind our vertex array
         GL.BindVertexArray(vertexArrayHandle);
         
@@ -358,6 +361,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         GL.Disable(EnableCap.Blend);
         GL.Enable(EnableCap.DepthTest);
         
+        // Render opaque draw data
         RenderDrawDataList(opaqueDrawData, camera);
         
         // Transparent pass, enable blending, disable depth write
@@ -365,6 +369,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         GL.Enable(EnableCap.Blend);
         GL.DepthMask(false);
         
+        // Render transparent draw data
         RenderDrawDataList(transparentDrawData, camera);
         
         // Restore depth write state
@@ -410,48 +415,25 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         if (drawDataList.Count == 0)
             return;
         
-        // Draw each mesh
-        // foreach (var drawData in drawDataList)
-        // {
-        //     var mesh = drawData.Mesh;
-        //     var transform = drawData.Transform * camera;
-        //     var color1 = drawData.Color1;
-        //     var color2 = drawData.Color2;
-        //     
-        //     // Set transform
-        //     GL.UniformMatrix3f(mvpUniformLocation, 1, false, in transform);
-        //     GL.Uniform1f(zUniformLocation, drawData.Z);
-        //     GL.Uniform1i(renderModeUniformLocation, (int) drawData.RenderMode);
-        //     GL.Uniform4f(color1UniformLocation, color1.X, color1.Y, color1.Z, color1.W);
-        //     GL.Uniform4f(color2UniformLocation, color2.X, color2.Y, color2.Z, color2.W);
-        //     
-        //     // Draw
-        //     // TODO: We can probably glMultiDrawElementsBaseVertex here
-        //     GL.DrawElementsBaseVertex(PrimitiveType.Triangles, mesh.IndexSize, DrawElementsType.UnsignedInt, mesh.IndexOffset * sizeof(int), mesh.VertexOffset);
-        // }
-        
-        // Multi draw
+        // Clear buffers
         multiDrawCountBuffer.Clear();
         multiDrawIndexOffsetBuffer.Clear();
         multiDrawBaseVertexBuffer.Clear();
         multiDrawStorageBuffer.Clear();
-        foreach (var drawData in drawDataList)
+        
+        // Append data
+        foreach (var (mesh, transform, z, renderMode, color1, color2) in drawDataList)
         {
-            var mesh = drawData.Mesh;
-            var transform = drawData.Transform * camera;
-            var color1 = drawData.Color1;
-            var color2 = drawData.Color2;
-            var z = drawData.Z;
-            var renderMode = drawData.RenderMode;
-            
+            var mvp = transform * camera;
+
             multiDrawCountBuffer.Append(mesh.IndexCount);
-            multiDrawIndexOffsetBuffer.Append(mesh.IndexOffset * sizeof(int));
+            multiDrawIndexOffsetBuffer.Append((IntPtr)(mesh.IndexOffset * sizeof(int)));
             multiDrawBaseVertexBuffer.Append(mesh.VertexOffset);
             multiDrawStorageBuffer.Append(new MultiDrawItem
             {
-                MvpRow1 = transform.Row0,
-                MvpRow2 = transform.Row1,
-                MvpRow3 = transform.Row2,
+                MvpRow1 = mvp.Row0,
+                MvpRow2 = mvp.Row1,
+                MvpRow3 = mvp.Row2,
                 Color1 = (Vector4) color1,
                 Color2 = (Vector4) color2,
                 Z = z,
@@ -460,24 +442,24 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         }
         
         // Upload storage buffer to GPU
-        GL.NamedBufferData(multiDrawStorageBufferHandle, multiDrawStorageBuffer.Data.Length, multiDrawStorageBuffer.Data, VertexBufferObjectUsage.DynamicDraw);
-        
-        // Bind storage buffer
-        GL.BindBufferBase(BufferTarget.ShaderStorageBuffer, 0, multiDrawStorageBufferHandle);
+        var multiDrawStorageBufferData = multiDrawStorageBuffer.Data;
+        GL.NamedBufferData(multiDrawStorageBufferHandle, multiDrawStorageBufferData.Length, multiDrawStorageBufferData, VertexBufferObjectUsage.DynamicDraw);
 
         // Draw
+        var multiDrawCountBufferData = MemoryMarshal.Cast<byte, int>(multiDrawCountBuffer.Data);
+        var multiDrawIndexOffsetBufferData = MemoryMarshal.Cast<byte, IntPtr>(multiDrawIndexOffsetBuffer.Data);
+        var multiDrawBaseVertexBufferBufferData = MemoryMarshal.Cast<byte, int>(multiDrawBaseVertexBuffer.Data);
+
         unsafe
         {
-            fixed (byte* countPtr = multiDrawCountBuffer.Data)
-            fixed (byte* indexOffsetPtr = multiDrawIndexOffsetBuffer.Data)
-            fixed (byte* baseVertexBuffer = multiDrawBaseVertexBuffer.Data)
+            fixed (IntPtr* ptr = multiDrawIndexOffsetBufferData)
                 GL.MultiDrawElementsBaseVertex(
                     PrimitiveType.Triangles,
-                    (int*)countPtr,
+                    multiDrawCountBufferData,
                     DrawElementsType.UnsignedInt,
-                    (void**)indexOffsetPtr,
+                    (void**)ptr,
                     drawDataList.Count,
-                    (int*)baseVertexBuffer);
+                    multiDrawBaseVertexBufferBufferData);
         }
     }
 
