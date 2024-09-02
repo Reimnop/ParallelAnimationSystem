@@ -8,6 +8,12 @@ public static class LsMigration
 {
     public static void MigrateBeatmap(IBeatmap beatmap)
     {
+        // Negate prefab offsets
+        foreach (var prefab in beatmap.Prefabs)
+        {
+            prefab.Offset = -prefab.Offset;
+        }
+        
         // Migrate theme color keyframes
         foreach (var o in beatmap.Objects.Concat(beatmap.Prefabs.SelectMany(x => x.BeatmapObjects)))
         {
