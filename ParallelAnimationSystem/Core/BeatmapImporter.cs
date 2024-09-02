@@ -209,7 +209,7 @@ public static class BeatmapImporter
             newObj.Text = obj.Text;
             newObj.Origin = obj.Origin;
             newObj.RenderDepth = obj.RenderDepth;
-            newObj.StartTime = obj.StartTime + prefabObject.Time; // TODO: Prefab offset
+            newObj.StartTime = obj.StartTime + prefabObject.Time + prefab.Offset;
             newObj.AutoKillType = obj.AutoKillType;
             newObj.AutoKillOffset = obj.AutoKillOffset;
             newObj.ParentType = obj.ParentType;
