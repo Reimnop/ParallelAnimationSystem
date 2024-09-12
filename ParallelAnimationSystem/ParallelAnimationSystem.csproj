@@ -36,5 +36,9 @@
     <ProjectReference Include="..\TmpEmulation\TmpIO\TmpIO.csproj" />
     <ProjectReference Include="..\TmpEmulation\TmpParser\TmpParser.csproj" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <Folder Include="Resources\Fonts\" />
+  </ItemGroup>
 
 </Project>

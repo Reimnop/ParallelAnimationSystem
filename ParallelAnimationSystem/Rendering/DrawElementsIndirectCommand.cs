@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 namespace ParallelAnimationSystem.Rendering;
 
 // https://registry.khronos.org/OpenGL-Refpages/gl4/html/glMultiDrawElementsIndirect.xhtml
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
+[StructLayout(LayoutKind.Sequential, Size = 20)]
 public struct DrawElementsIndirectCommand
 {
     public required int Count;

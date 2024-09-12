@@ -7,11 +7,26 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9b1e7f31-978d-41b0-ac0b-49ddcf3b23f4" name="Changes" comment="Changed audio system">
+    <list default="true" id="9b1e7f31-978d-41b0-ac0b-49ddcf3b23f4" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Data/RenderType.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/BoldItalic.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/GlyphData.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/TextHandle.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Fonts/Inconsolata.tmpe" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/.idea.ParallelAnimationSystem/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.ParallelAnimationSystem/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem.sln.DotSettings" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem.sln.DotSettings" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Audio/AudioPlayer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Audio/AudioPlayer.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Audio/AudioSystem.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Audio/AudioSystem.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Core/AnimationRunner.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/AnimationRunner.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Core/App.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Core/App.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Data/DrawData.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Data/DrawData.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Data/DrawList.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Data/DrawList.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/ParallelAnimationSystem.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/ParallelAnimationSystem.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/DrawElementsIndirectCommand.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/DrawElementsIndirectCommand.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/MultiDrawItem.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/MultiDrawItem.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/Renderer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Rendering/Renderer.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/SimpleUnlitFragment.glsl" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/SimpleUnlitFragment.glsl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/SimpleUnlitVertex.glsl" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Resources/Shaders/SimpleUnlitVertex.glsl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParallelAnimationSystem/Util/ResourceUtil.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ParallelAnimationSystem/Util/ResourceUtil.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="true" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -29,8 +44,14 @@
     </option>
   </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="master" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
     <option name="ROOT_SYNC" value="DONT_SYNC" />
+    <option name="UPDATE_TYPE" value="REBASE" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
@@ -69,9 +90,12 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a8d4fa595ced467f968e9ff0b17c676b91e5c0/64/603cdf44/IEquatable`1.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/a8d4fa595ced467f968e9ff0b17c676b91e5c0/a5/9a816f3f/Single.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/b625b28a941b4736bc6b59358b1474e615c00/c2/3e6c0ab8/AL.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/cfa30c0e6298434fa39e6679f80bc93159e00/56/8b44dae9/Matrix3.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/d6d9a64f5a9e4e8db91d96dc491a13e2495800/dd/b22e1ac9/GL.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/ffdbecaac85a4a73a506f7ae3cb32d184d000/1e/dfcdc95d/MathHelper.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/DecompilerCache/decompiler/ffdbecaac85a4a73a506f7ae3cb32d184d000/48/44a402e7/Matrix3.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/1db33de1fb6b11614953917646d2e2dc1ed0b04e74833af27dc2e027f4b9e/Handles.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/31ce81e24452fa14d4b9e67d7fa180dd948a678f3e66dbcc8a0b7d4ea7947/GL.Overloads.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/3abe378a8183931e446e69f342ecb93cd94c7adc12d6605cc1432b38865f73c4/ALDevice.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/3e8f1cfc7f3332b9a0e31b3f10347da0b2775895319a6b9a2b4f25a4c48654bc/Command.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/4c4c453befb17785f3e1c532776f3a28f6f1566b3872b2e1adf2722fd64b51fc/ALBase.cs" root0="SKIP_HIGHLIGHTING" />
@@ -80,8 +104,20 @@
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/63745a7bd5934361bbd6da9ea6372eaf241a52d9c4d198dabe6626b6eeefe5/OpenALLibraryNameContainer.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/6ded741cabd4cd8d7ff777cc3df56744492cc13268aa5d23e3c2d6c2bfada37/Color4.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/7135c2f5f416e1cc524059257489d915474a1ea1586c0ebed47ded19c1f5b/ILogger.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/80c1466de61023e94c53632c856281e5a07dc98c11c9c5e332277587fc23974/GL.Native.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="file://$APPLICATION_CONFIG_DIR$/resharper-host/SourcesCache/9e6bcde0d2cd3ad7f55d4b372d6be5df75cdcfae851d6454357ac47286b5967/Types.cs" root0="SKIP_HIGHLIGHTING" />
-    <setting file="mock://G:/Projects/ParallelAnimationSystem/ParallelAnimationSystem/Core/App.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/ParallelAnimationSystem/Audio/AudioPlayer.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/ParallelAnimationSystem/Audio/AudioSystem.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/ParallelAnimationSystem/Audio/Stream/IAudioStream.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/ParallelAnimationSystem/Core/AnimationRunner.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/ParallelAnimationSystem/Core/App.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="mock://G:/Projects/ParallelAnimationSystem/ParallelAnimationSystem/Core/BeatmapImporter.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://G:/Projects/ParallelAnimationSystem/ParallelAnimationSystem/Core/BeatmapImporter.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="mock://G:/Projects/ParallelAnimationSystem/ParallelAnimationSystem/Core/LsMigration.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/ParallelAnimationSystem/Rendering/PostProcessing/Bloom.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/ParallelAnimationSystem/Rendering/Renderer.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="mock://G:/Projects/ParallelAnimationSystem/ParallelAnimationSystem/Startup.cs" root0="SKIP_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/ParallelAnimationSystem/Startup.cs" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
   <component name="ProjectColorInfo">{
@@ -97,12 +133,12 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    ".NET Project.ParallelAnimationSystem.executor": "Debug",
+    ".NET Project.ParallelAnimationSystem.executor": "Run",
     "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "Publish to folder.Publish.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "master",
+    "git-widget-placeholder": "text",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -119,14 +155,14 @@
     ]
   }
 }]]></component>
-  <component name="RunManager" selected="Publish to folder.Publish">
+  <component name="RunManager" selected=".NET Project.ParallelAnimationSystem">
     <configuration name="Publish" type="DotNetFolderPublish" factoryName="Publish to folder">
-      <riderPublish configuration="Release" platform="Any CPU" runtime="win-x64" self_contained="true" target_folder="$PROJECT_DIR$/ParallelAnimationSystem/bin/Release/net8.0/win-x64/publish" target_framework="net8.0" trim_unused_assemblies="true" uuid_high="4921518821831493447" uuid_low="-5440609166602987154" />
+      <riderPublish configuration="Release" include_native_libs_for_self_extract="true" platform="Any CPU" produce_single_file="true" runtime="win-x64" self_contained="true" target_folder="$PROJECT_DIR$/ParallelAnimationSystem/bin/Release/net8.0/win-x64/publish" target_framework="net8.0" trim_unused_assemblies="true" uuid_high="4921518821831493447" uuid_low="-5440609166602987154" />
       <method v="2" />
     </configuration>
     <configuration name="ParallelAnimationSystem" type="DotNetProject" factoryName=".NET Project">
       <option name="EXE_PATH" value="$PROJECT_DIR$/ParallelAnimationSystem/bin/Debug/net8.0/ParallelAnimationSystem.exe" />
-      <option name="PROGRAM_PARAMETERS" value="-l level.vgd -a audio.ogg" />
+      <option name="PROGRAM_PARAMETERS" value="-l &quot;C:\Users\rayng\Downloads\2730931903\2730931903\level.lsb&quot; -a &quot;C:\Users\rayng\Downloads\2730931903\2730931903\level.ogg&quot;" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/ParallelAnimationSystem/bin/Debug/net8.0" />
       <option name="PASS_PARENT_ENVS" value="1" />
       <option name="USE_EXTERNAL_CONSOLE" value="0" />
@@ -177,14 +213,15 @@
       <workItem from="1724682913217" duration="3083000" />
       <workItem from="1724686107833" duration="2722000" />
       <workItem from="1724693192389" duration="12029000" />
-    </task>
-    <task id="LOCAL-00001" summary="Fix more edge cases">
-      <option name="closed" value="true" />
-      <created>1724253882108</created>
-      <option name="number" value="00001" />
-      <option name="presentableId" value="LOCAL-00001" />
-      <option name="project" value="LOCAL" />
-      <updated>1724253882108</updated>
+      <workItem from="1725263139355" duration="5726000" />
+      <workItem from="1725972682637" duration="461000" />
+      <workItem from="1725986556314" duration="41000" />
+      <workItem from="1725990766755" duration="1000000" />
+      <workItem from="1726025664841" duration="29000" />
+      <workItem from="1726025843672" duration="48000" />
+      <workItem from="1726030435046" duration="26000" />
+      <workItem from="1726108749444" duration="314000" />
+      <workItem from="1726127711165" duration="19941000" />
     </task>
     <task id="LOCAL-00002" summary="Initial commit">
       <option name="closed" value="true" />
@@ -530,7 +567,55 @@
       <option name="project" value="LOCAL" />
       <updated>1724738757585</updated>
     </task>
-    <option name="localTasksCounter" value="45" />
+    <task id="LOCAL-00045" summary="Revert to old renderer, fix dumb bug&#10;&#10;Apparently void* is 64-bit...">
+      <option name="closed" value="true" />
+      <created>1725209842711</created>
+      <option name="number" value="00045" />
+      <option name="presentableId" value="LOCAL-00045" />
+      <option name="project" value="LOCAL" />
+      <updated>1725209842711</updated>
+    </task>
+    <task id="LOCAL-00046" summary="Fix merge mistakes...">
+      <option name="closed" value="true" />
+      <created>1725210371081</created>
+      <option name="number" value="00046" />
+      <option name="presentableId" value="LOCAL-00046" />
+      <option name="project" value="LOCAL" />
+      <updated>1725210371081</updated>
+    </task>
+    <task id="LOCAL-00047" summary="Make ordering of variables consistent">
+      <option name="closed" value="true" />
+      <created>1725212439940</created>
+      <option name="number" value="00047" />
+      <option name="presentableId" value="LOCAL-00047" />
+      <option name="project" value="LOCAL" />
+      <updated>1725212439940</updated>
+    </task>
+    <task id="LOCAL-00048" summary="Fix prefab offset">
+      <option name="closed" value="true" />
+      <created>1725263594826</created>
+      <option name="number" value="00048" />
+      <option name="presentableId" value="LOCAL-00048" />
+      <option name="project" value="LOCAL" />
+      <updated>1725263594827</updated>
+    </task>
+    <task id="LOCAL-00049" summary="Disable AOT">
+      <option name="closed" value="true" />
+      <created>1725263604035</created>
+      <option name="number" value="00049" />
+      <option name="presentableId" value="LOCAL-00049" />
+      <option name="project" value="LOCAL" />
+      <updated>1725263604035</updated>
+    </task>
+    <task id="LOCAL-00050" summary="That made it even worse, apparently">
+      <option name="closed" value="true" />
+      <created>1725263980409</created>
+      <option name="number" value="00050" />
+      <option name="presentableId" value="LOCAL-00050" />
+      <option name="project" value="LOCAL" />
+      <updated>1725263980410</updated>
+    </task>
+    <option name="localTasksCounter" value="51" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -552,12 +637,6 @@
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
-    <MESSAGE value="Small fixes for AOT" />
-    <MESSAGE value="Disable AOT for now" />
-    <MESSAGE value="Make it trimmable" />
-    <MESSAGE value="It's an int...." />
-    <MESSAGE value="Update Pamx" />
-    <MESSAGE value="3.3 also doesn't work, absolutely useless" />
     <MESSAGE value="back to 4.6" />
     <MESSAGE value="Added post-processing support" />
     <MESSAGE value="Fix rendering" />
@@ -577,7 +656,13 @@
     <MESSAGE value="Debloat" />
     <MESSAGE value="Fuck you" />
     <MESSAGE value="Changed audio system" />
-    <option name="LAST_COMMIT_MESSAGE" value="Changed audio system" />
+    <MESSAGE value="Revert to old renderer, fix dumb bug&#10;&#10;Apparently void* is 64-bit..." />
+    <MESSAGE value="Fix merge mistakes..." />
+    <MESSAGE value="Make ordering of variables consistent" />
+    <MESSAGE value="Fix prefab offset" />
+    <MESSAGE value="Disable AOT" />
+    <MESSAGE value="That made it even worse, apparently" />
+    <option name="LAST_COMMIT_MESSAGE" value="That made it even worse, apparently" />
   </component>
   <component name="XDebuggerManager">
     <pin-to-top-manager>

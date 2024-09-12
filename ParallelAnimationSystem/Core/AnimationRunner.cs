@@ -14,6 +14,9 @@ public class AnimationRunner
     public BloomData Bloom { get; private set; }
     public float Hue { get; private set; }
     public Color4<Rgba> BackgroundColor { get; private set; }
+
+    public event EventHandler<GameObject>? ObjectSpawned;
+    public event EventHandler<GameObject>? ObjectKilled;
     
     public int ObjectCount => startTimeSortedGameObjects.Count;
 
@@ -102,15 +105,19 @@ public class AnimationRunner
             // Spawn
             while (spawnIndex < startTimeSortedGameObjects.Count && time >= startTimeSortedGameObjects[spawnIndex].StartTime)
             {
-                aliveGameObjects.Add(startTimeSortedGameObjects[spawnIndex]);
+                var obj = startTimeSortedGameObjects[spawnIndex];
+                aliveGameObjects.Add(obj);
                 spawnIndex++;
+                ObjectSpawned?.Invoke(this, obj);
             }
 
-            // Despawn
+            // Kill
             while (killIndex < killTimeSortedGameObjects.Count && time >= killTimeSortedGameObjects[killIndex].KillTime)
             {
-                aliveGameObjects.Remove(killTimeSortedGameObjects[killIndex]);
+                var obj = killTimeSortedGameObjects[killIndex];
+                aliveGameObjects.Remove(obj);
                 killIndex++;
+                ObjectKilled?.Invoke(this, obj);
             }
         }
         else if (time < lastTime)
@@ -119,15 +126,19 @@ public class AnimationRunner
             // Spawn
             while (killIndex - 1 >= 0 && time < killTimeSortedGameObjects[killIndex - 1].KillTime)
             {
-                aliveGameObjects.Add(killTimeSortedGameObjects[killIndex - 1]);
+                var obj = killTimeSortedGameObjects[killIndex - 1];
+                aliveGameObjects.Add(obj);
                 killIndex--;
+                ObjectSpawned?.Invoke(this, obj);
             }
             
-            // Despawn
+            // Kill
             while (spawnIndex - 1 >= 0 && time < startTimeSortedGameObjects[spawnIndex - 1].StartTime)
             {
-                aliveGameObjects.Remove(startTimeSortedGameObjects[spawnIndex - 1]);
+                var obj = startTimeSortedGameObjects[spawnIndex - 1];
+                aliveGameObjects.Remove(obj);
                 spawnIndex--;
+                ObjectKilled?.Invoke(this, obj);
             }
         }
         

@@ -1,12 +1,14 @@
 using System.Diagnostics;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging;
+using OpenTK.Mathematics;
 using Pamx.Ls;
 using Pamx.Vg;
 using ParallelAnimationSystem.Audio;
 using ParallelAnimationSystem.Audio.Stream;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering;
+using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core;
 
@@ -16,6 +18,9 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
     
     private AnimationRunner? runner;
     private AudioPlayer? audioPlayer;
+
+    private readonly Dictionary<GameObject, TextHandle> cachedTextHandles = [];
+    private FontHandle fontInconsolata;
     
     private bool shuttingDown;
 
@@ -26,6 +31,9 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
     {
         // Register all meshes
         RegisterMeshes();
+        
+        // Register all fonts
+        RegisterFonts();
         
         // Read animations from file
         logger.LogInformation("Reading beatmap file from '{LevelPath}'", options.LevelPath);
@@ -59,6 +67,21 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
         // Create animation runner
         logger.LogInformation("Initializing animation runner");
         runner = BeatmapImporter.CreateRunner(beatmap);
+        runner.ObjectSpawned += (_, go) =>
+        {
+            if (go.ShapeIndex != 4)
+                return;
+            if (string.IsNullOrWhiteSpace(go.Text))
+                return;
+            var textHandle = renderer.CreateText(go.Text, fontInconsolata);
+            cachedTextHandles.Add(go, textHandle);
+        };
+        runner.ObjectKilled += (_, go) =>
+        {
+            if (go.ShapeIndex != 4)
+                return;
+            cachedTextHandles.Remove(go);
+        };
         
         logger.LogInformation("Loaded {ObjectCount} objects", runner.ObjectCount);
         
@@ -116,6 +139,14 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
         ]);
     }
     
+    private void RegisterFonts()
+    {
+        logger.LogInformation("Registering fonts");
+        
+        using (var streamInconsolata = ResourceUtil.ReadAsStream("Resources.Fonts.Inconsolata.tmpe"))
+            fontInconsolata = renderer.RegisterFont(streamInconsolata);
+    }
+    
     public void Run()
     {
         Debug.Assert(runner is not null);
@@ -142,19 +173,7 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
         Debug.Assert(runner is not null);
         Debug.Assert(audioPlayer is not null);
         
-        var currentAudioTime = audioPlayer.Position.TotalSeconds;
-        
-        // If audio hasn't updated, we estimate the time using the last known time
-        if (currentAudioTime == lastAudioTime)
-        {
-            time += delta;
-        }
-        else
-        {
-            time = currentAudioTime;
-            lastAudioTime = currentAudioTime;
-        }
-        
+        var time = CalculateTime(audioPlayer, delta);
         
         // Update runner
         runner.Process((float) time, options.WorkerCount);
@@ -177,22 +196,51 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
         // Draw all alive game objects
         foreach (var gameObject in runner.AliveGameObjects)
         {
-            // TODO: Text object
-            var mesh = meshes[gameObject.ShapeIndex == 4 ? 0 : gameObject.ShapeIndex][gameObject.ShapeOptionIndex];
             var transform = gameObject.CachedTransform;
             var z = gameObject.Depth;
-            var renderMode = gameObject.RenderMode;
             var color1 = gameObject.CachedThemeColor.Item1;
             var color2 = gameObject.CachedThemeColor.Item2;
             
-            if (color1 == color2)
-                color2.W = 0.0f;
+            if (gameObject.ShapeIndex != 4) // 4 is text
+            {
+                var mesh = meshes[gameObject.ShapeIndex][gameObject.ShapeOptionIndex];
+                var renderMode = gameObject.RenderMode;
             
-            drawList.AddMesh(mesh, transform, color1, color2, z, renderMode);
+                if (color1 == color2)
+                    color2.W = 0.0f;
+            
+                drawList.AddMesh(mesh, transform, color1, color2, z, renderMode);
+            }
+            else
+            {
+                if (cachedTextHandles.TryGetValue(gameObject, out var textHandle))
+                    drawList.AddText(textHandle, MathUtil.CreateScale(new Vector2(1.0f / 32.0f)) * transform, color1, z);
+            }
         }
         
         // Submit our draw list
         SubmitDrawList(drawList);
+    }
+
+    private double CalculateTime(AudioPlayer audioPlayer, double delta)
+    {
+        if (!audioPlayer.Playing)
+            return 0.0;
+        
+        var currentAudioTime = audioPlayer.Position.TotalSeconds;
+        
+        // If audio hasn't updated, we estimate the time using the last known time
+        if (currentAudioTime == lastAudioTime)
+        {
+            time += delta;
+        }
+        else
+        {
+            time = currentAudioTime;
+            lastAudioTime = currentAudioTime;
+        }
+        
+        return time;
     }
 
     private void SubmitDrawList(DrawList drawList)
