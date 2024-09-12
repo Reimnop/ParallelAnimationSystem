@@ -20,6 +20,14 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         public TmpFile FontFile { get; } = fontFile;
         public bool Initialized { get; private set; }
         public int AtlasHandle { get; private set; }
+
+        public void Initialize(int atlasHandle)
+        {
+            if (Initialized)
+                return;
+            
+            AtlasHandle = atlasHandle;
+        }
     }
     
     public bool ShouldExit { get; private set; }
@@ -93,6 +101,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         {
             var handle = new FontHandle(registeredFonts.Count);
             registeredFonts.Add(fontData);
+            logger.LogInformation("Registered font '{FontName}'", fontFile.Metadata.Name);
             return handle;
         }
     }
@@ -510,6 +519,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
     private void UpdateOpenGlData(Vector2i size)
     {
         UpdateMeshData();
+        UpdateFontData();
         UpdateFboData(size);
     }
 
@@ -531,6 +541,27 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         }
         
         logger.LogInformation("OpenGL mesh buffers updated, now at {VertexSize} vertices and {IndexSize} indices", vertexBuffer.Data.Length / Vector2.SizeInBytes, indexBuffer.Data.Length / sizeof(int));
+    }
+    
+    private void UpdateFontData()
+    {
+        lock (registeredFonts)
+        {
+            foreach (var fontData in registeredFonts.Where(x => !x.Initialized))
+            {
+                var fontFile = fontData.FontFile;
+                var atlas = fontFile.Atlas;
+                
+                // Create texture
+                var atlasHandle = GL.CreateTexture(TextureTarget.Texture2d);
+                GL.TextureStorage2D(atlasHandle, 1, SizedInternalFormat.Rgb32f, atlas.Width, atlas.Height);
+                GL.TextureSubImage2D(atlasHandle, 0, 0, 0, atlas.Width, atlas.Height, PixelFormat.Rgb, PixelType.Float, atlas.Data);
+                
+                fontData.Initialize(atlasHandle);
+                
+                logger.LogInformation("Font '{FontName}' atlas texture created", fontData.FontFile.Metadata.Name);
+            }
+        }
     }
 
     private void UpdateFboData(Vector2i size)
