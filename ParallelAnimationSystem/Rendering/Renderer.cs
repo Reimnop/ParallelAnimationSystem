@@ -137,7 +137,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         
         lineWidthEnumerator.MoveNext();
         var x = -lineWidthEnumerator.Current / 2.0f;
-        var y = fontData.FontFile.Metadata.LineHeight;
+        var y = GetHeight(str, fontData) / 2.0f;
         foreach (var run in TagParser.Parse(str))
         {
             var colorAlpha = run.Style.Color;
@@ -182,6 +182,16 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
                 x += glyph.Advance;
             }
         }
+    }
+
+    private static float GetHeight(string str, FontData fontData)
+    {
+        var y = 0.0f;
+        foreach (var run in TagParser.Parse(str))
+            foreach (var c in run.Text)
+                if (c == '\n')
+                    y += fontData.FontFile.Metadata.LineHeight;
+        return y;
     }
     
     private static IEnumerable<float> EnumerateLineWidths(string str, FontData fontData)
