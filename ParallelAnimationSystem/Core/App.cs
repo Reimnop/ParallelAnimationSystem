@@ -177,7 +177,8 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
         // Draw all alive game objects
         foreach (var gameObject in runner.AliveGameObjects)
         {
-            var mesh = meshes[gameObject.ShapeIndex][gameObject.ShapeOptionIndex];
+            // TODO: Text object
+            var mesh = meshes[gameObject.ShapeIndex == 4 ? 0 : gameObject.ShapeIndex][gameObject.ShapeOptionIndex];
             var transform = gameObject.CachedTransform;
             var z = gameObject.Depth;
             var renderMode = gameObject.RenderMode;

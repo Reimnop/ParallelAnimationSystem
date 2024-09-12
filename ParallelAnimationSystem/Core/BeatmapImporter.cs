@@ -251,10 +251,6 @@ public static class BeatmapImporter
         if (beatmapObject.Type is ObjectType.Empty or ObjectType.LegacyEmpty)
             return null;
         
-        // We don't support text objects yet, so just return null
-        if (beatmapObject.Shape == ObjectShape.Text)
-            return null;
-        
         var objectId = ((IIdentifiable<string>) beatmapObject).Id;
         var positionAnimation = CreateSequence(beatmapObject.PositionEvents, seed: objectId);
         var scaleAnimation = CreateSequence(beatmapObject.ScaleEvents, seed: objectId + "1");
@@ -302,6 +298,7 @@ public static class BeatmapImporter
 
         var shapeIndex = (int) beatmapObject.Shape;
         var shapeOptionIndex = beatmapObject.ShapeOption;
+        var text = beatmapObject.Shape == ObjectShape.Text ? beatmapObject.Text : null;
 
         var parentChainSize = 0;
         var parent = beatmapObject.Parent is IObject parentObject ? RecursivelyCreateParentTransform(parentObject, ref parentChainSize) : null;
@@ -314,7 +311,10 @@ public static class BeatmapImporter
             positionAnimation, scaleAnimation, rotationAnimation, themeColorAnimation,
             -parentPositionTimeOffset, -parentScaleTimeOffset, -parentRotationTimeOffset,
             parentAnimatePosition, parentAnimateScale, parentAnimateRotation,
-            renderMode, origin, shapeIndex, shapeOptionIndex, depth, parent);
+            renderMode, origin, 
+            shapeIndex, shapeOptionIndex, text,
+            depth, 
+            parent);
     }
 
     private static ParentTransform RecursivelyCreateParentTransform(IObject beatmapObject, ref int parentChainSize)

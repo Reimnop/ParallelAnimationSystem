@@ -23,6 +23,7 @@ public class GameObject(
     Vector2 origin,
     int shapeIndex,
     int shapeOptionIndex,
+    string? text,
     float depth,
     ParentTransform? parent)
 {
@@ -48,6 +49,8 @@ public class GameObject(
     
     public int ShapeIndex { get; } = shapeIndex;
     public int ShapeOptionIndex { get; } = shapeOptionIndex;
+    public string? Text { get; } = text;
+
     public float Depth { get; } = depth;
 
     public ParentTransform? Parent { get; } = parent;
