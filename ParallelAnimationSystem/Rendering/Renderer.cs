@@ -9,11 +9,19 @@ using OpenTK.Platform;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering.PostProcessing;
 using ParallelAnimationSystem.Util;
+using TmpIO;
 
 namespace ParallelAnimationSystem.Rendering;
 
 public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
 {
+    private class FontData(TmpFile fontFile)
+    { 
+        public TmpFile FontFile { get; } = fontFile;
+        public bool Initialized { get; private set; }
+        public int AtlasHandle { get; private set; }
+    }
+    
     public bool ShouldExit { get; private set; }
 
     private WindowHandle? windowHandle;
@@ -34,7 +42,9 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
     private readonly Hue hue = new();
     private readonly Bloom bloom = new();
     
-    // OpenGL data
+    // Graphics data
+    private readonly List<FontData> registeredFonts = [];
+    
     private int vertexArrayHandle;
     private int vertexBufferHandle;
     private int indexBufferHandle;
@@ -72,6 +82,18 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
             logger.LogInformation("Registered mesh with {VertexSize} vertices and {IndexSize} indices", vertexSize, indexSize);
             
             return new MeshHandle(vertexOffset, vertexSize, indexOffset, indexSize);
+        }
+    }
+
+    public FontHandle RegisterFont(Stream stream)
+    {
+        var fontFile = TmpRead.Read(stream);
+        var fontData = new FontData(fontFile);
+        lock (registeredFonts)
+        {
+            var handle = new FontHandle(registeredFonts.Count);
+            registeredFonts.Add(fontData);
+            return handle;
         }
     }
 

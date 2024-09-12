@@ -1,3 +1,6 @@
 [submodule "Pamx"]
 	path = Pamx
 	url = https://github.com/Reimnop/Pamx
+[submodule "TmpEmulation"]
+	path = TmpEmulation
+	url = https://github.com/Reimnop/TmpEmulation
