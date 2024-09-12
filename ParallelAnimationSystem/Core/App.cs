@@ -142,19 +142,7 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
         Debug.Assert(runner is not null);
         Debug.Assert(audioPlayer is not null);
         
-        var currentAudioTime = audioPlayer.Position.TotalSeconds;
-        
-        // If audio hasn't updated, we estimate the time using the last known time
-        if (currentAudioTime == lastAudioTime)
-        {
-            time += delta;
-        }
-        else
-        {
-            time = currentAudioTime;
-            lastAudioTime = currentAudioTime;
-        }
-        
+        var time = UpdateTime(delta);
         
         // Update runner
         runner.Process((float) time, options.WorkerCount);
@@ -192,6 +180,29 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
         
         // Submit our draw list
         SubmitDrawList(drawList);
+    }
+
+    private double UpdateTime(double delta)
+    {
+        Debug.Assert(audioPlayer is not null);
+
+        if (!audioPlayer.Playing)
+            return 0.0;
+        
+        var currentAudioTime = audioPlayer.Position.TotalSeconds;
+        
+        // If audio hasn't updated, we estimate the time using the last known time
+        if (currentAudioTime == lastAudioTime)
+        {
+            time += delta;
+        }
+        else
+        {
+            time = currentAudioTime;
+            lastAudioTime = currentAudioTime;
+        }
+        
+        return time;
     }
 
     private void SubmitDrawList(DrawList drawList)
