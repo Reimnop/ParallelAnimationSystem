@@ -214,7 +214,7 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
             else
             {
                 if (cachedTextHandles.TryGetValue(gameObject, out var textHandle))
-                    drawList.AddText(textHandle, MathUtil.CreateScale(new Vector2(1.0f / 32.0f)) * transform, color1, z);
+                    drawList.AddText(textHandle, MathUtil.CreateScale(new Vector2(1.0f / 24.0f)) * transform, color1, z);
             }
         }
         
