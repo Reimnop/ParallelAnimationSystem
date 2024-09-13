@@ -137,7 +137,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         
         lineWidthEnumerator.MoveNext();
         var x = -lineWidthEnumerator.Current / 2.0f;
-        var y = GetHeight(str, fontData) / 2.0f;
+        var y = GetHeight(str, fontData) / 2.0f - fontData.FontFile.Metadata.Ascender / fontData.FontFile.Metadata.Size;
         foreach (var run in TagParser.Parse(str))
         {
             var colorAlpha = run.Style.Color;
@@ -161,7 +161,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
                 {
                     lineWidthEnumerator.MoveNext();
                     x = -lineWidthEnumerator.Current / 2.0f;
-                    y -= fontData.FontFile.Metadata.LineHeight;
+                    y -= fontData.FontFile.Metadata.LineHeight / fontData.FontFile.Metadata.Size;
                     continue;
                 }
                 
@@ -171,26 +171,26 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
                 var glyph = glyphNullable.Value;
                 if (glyph.Width != 0.0f && glyph.Height != 0.0f)
                 {
-                    var minX = x + glyph.BearingX;
-                    var minY = y + glyph.BearingY;
-                    var maxX = minX + glyph.Width;
-                    var maxY = minY - glyph.Height;
+                    var minX = x + glyph.BearingX / fontData.FontFile.Metadata.Size;
+                    var minY = y + glyph.BearingY / fontData.FontFile.Metadata.Size;
+                    var maxX = minX + glyph.Width / fontData.FontFile.Metadata.Size;
+                    var maxY = minY - glyph.Height / fontData.FontFile.Metadata.Size;
                     var minUV = new Vector2(glyph.MinX, glyph.MinY);
                     var maxUV = new Vector2(glyph.MaxX, glyph.MaxY);
                     yield return new RenderGlyph(new Vector2(minX, minY), new Vector2(maxX, maxY), minUV, maxUV, color, boldItalic);
                 }
-                x += glyph.Advance;
+                x += (glyph.Advance + run.Style.CSpace) / fontData.FontFile.Metadata.Size;
             }
         }
     }
 
     private static float GetHeight(string str, FontData fontData)
     {
-        var y = 0.0f;
+        var y = fontData.FontFile.Metadata.LineHeight / fontData.FontFile.Metadata.Size;
         foreach (var run in TagParser.Parse(str))
             foreach (var c in run.Text)
                 if (c == '\n')
-                    y += fontData.FontFile.Metadata.LineHeight;
+                    y += fontData.FontFile.Metadata.LineHeight / fontData.FontFile.Metadata.Size;
         return y;
     }
     
@@ -212,7 +212,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
                 if (!glyphNullable.HasValue)
                     continue;
                 var glyph = glyphNullable.Value;
-                x += glyph.Advance;
+                x += (glyph.Advance + run.Style.CSpace) / fontData.FontFile.Metadata.Size;
             }
         }
         yield return x;

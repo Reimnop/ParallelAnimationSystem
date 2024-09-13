@@ -213,8 +213,9 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
             }
             else
             {
+                var textScale = MathUtil.CreateScale(Vector2.One * 1.5f);
                 if (cachedTextHandles.TryGetValue(gameObject, out var textHandle))
-                    drawList.AddText(textHandle, MathUtil.CreateScale(new Vector2(1.0f / 24.0f)) * transform, color1, z);
+                    drawList.AddText(textHandle, textScale * transform, color1, z);
             }
         }
         
