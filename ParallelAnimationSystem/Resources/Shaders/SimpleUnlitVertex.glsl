@@ -54,7 +54,7 @@ void main() {
         vec2 min = glyph.minMax.xy;
         vec2 max = glyph.minMax.zw;
         vec2 pos = mix(min, max, aPos);
-        pos.x -= italic ? (pos.y - min.y) * 0.2 : 0.0;
+        pos.x += italic ? (pos.y - min.y) * 0.2 : 0.0;
 
         gl_Position = vec4(vec2(item.mvp * vec3(pos, 1.0)), item.z, 1.0);
     } else {
