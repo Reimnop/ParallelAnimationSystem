@@ -8,32 +8,14 @@ using OpenTK.Mathematics;
 using OpenTK.Platform;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering.PostProcessing;
+using ParallelAnimationSystem.Rendering.TextProcessing;
 using ParallelAnimationSystem.Util;
 using TmpIO;
-using TmpParser;
 
 namespace ParallelAnimationSystem.Rendering;
 
 public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
 {
-    private class FontData(TmpFile fontFile, Dictionary<char, int> characterToGlyphId, Dictionary<int, TmpGlyph> glyphIdToGlyph)
-    { 
-        public TmpFile FontFile { get; } = fontFile;
-        public Dictionary<char, int> CharacterToGlyphId { get; } = characterToGlyphId;
-        public Dictionary<int, TmpGlyph> GlyphIdToGlyph { get; } = glyphIdToGlyph;
-        public bool Initialized { get; private set; }
-        public int AtlasHandle { get; private set; }
-
-        public void Initialize(int atlasHandle)
-        {
-            if (Initialized)
-                return;
-            Initialized = true;
-            
-            AtlasHandle = atlasHandle;
-        }
-    }
-    
     public bool ShouldExit { get; private set; }
 
     private WindowHandle? windowHandle;
@@ -122,111 +104,10 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         FontData fontData;
         lock (registeredFonts)
             fontData = registeredFonts[fontHandle.Index];
-        var glyphs = ShapeText(fontData, str).ToArray();
+        var glyphs = TextShaper.ShapeText(fontData, str).ToArray();
         return new TextHandle(fontHandle, glyphs);
     }
     
-    private static IEnumerable<RenderGlyph> ShapeText(FontData fontData, string str)
-    {
-        str = str
-            .Replace("\r\n", "\n")
-            .Replace("\r", "\n")
-            .Replace("<br>", "\n");
-        
-        using var lineWidthEnumerator = EnumerateLineWidths(str, fontData).GetEnumerator();
-        
-        lineWidthEnumerator.MoveNext();
-        var x = -lineWidthEnumerator.Current / 2.0f;
-        var y = GetHeight(str, fontData) / 2.0f - fontData.FontFile.Metadata.Ascender / fontData.FontFile.Metadata.Size;
-        foreach (var run in TagParser.Parse(str))
-        {
-            var colorAlpha = run.Style.Color;
-            var color = new Vector4(
-                colorAlpha.Rgb.HasValue 
-                    ? new Vector3(
-                        colorAlpha.Rgb.Value.R / 255.0f,
-                        colorAlpha.Rgb.Value.G / 255.0f,
-                        colorAlpha.Rgb.Value.B / 255.0f)
-                    : new Vector3(float.NaN), 
-                colorAlpha.A.HasValue
-                    ? colorAlpha.A.Value / 255.0f
-                    : float.NaN);
-            var bold = run.Style.Bold;
-            var italic = run.Style.Italic;
-            var boldItalic = (bold ? BoldItalic.Bold : BoldItalic.None) | (italic ? BoldItalic.Italic : BoldItalic.None);
-            
-            foreach (var c in run.Text)
-            {
-                if (c == '\n')
-                {
-                    lineWidthEnumerator.MoveNext();
-                    x = -lineWidthEnumerator.Current / 2.0f;
-                    y -= fontData.FontFile.Metadata.LineHeight / fontData.FontFile.Metadata.Size;
-                    continue;
-                }
-                
-                var glyphNullable = GetGlyph(fontData, c);
-                if (!glyphNullable.HasValue)
-                    continue;
-                var glyph = glyphNullable.Value;
-                if (glyph.Width != 0.0f && glyph.Height != 0.0f)
-                {
-                    var minX = x + glyph.BearingX / fontData.FontFile.Metadata.Size;
-                    var minY = y + glyph.BearingY / fontData.FontFile.Metadata.Size;
-                    var maxX = minX + glyph.Width / fontData.FontFile.Metadata.Size;
-                    var maxY = minY - glyph.Height / fontData.FontFile.Metadata.Size;
-                    var minUV = new Vector2(glyph.MinX, glyph.MinY);
-                    var maxUV = new Vector2(glyph.MaxX, glyph.MaxY);
-                    yield return new RenderGlyph(new Vector2(minX, minY), new Vector2(maxX, maxY), minUV, maxUV, color, boldItalic);
-                }
-                x += (glyph.Advance + run.Style.CSpace) / fontData.FontFile.Metadata.Size;
-            }
-        }
-    }
-
-    private static float GetHeight(string str, FontData fontData)
-    {
-        var y = fontData.FontFile.Metadata.LineHeight / fontData.FontFile.Metadata.Size;
-        foreach (var run in TagParser.Parse(str))
-            foreach (var c in run.Text)
-                if (c == '\n')
-                    y += fontData.FontFile.Metadata.LineHeight / fontData.FontFile.Metadata.Size;
-        return y;
-    }
-    
-    private static IEnumerable<float> EnumerateLineWidths(string str, FontData fontData)
-    {
-        var x = 0.0f;
-        foreach (var run in TagParser.Parse(str))
-        {
-            foreach (var c in run.Text)
-            {
-                if (c == '\n')
-                {
-                    yield return x;
-                    x = 0.0f;
-                    continue;
-                }
-                
-                var glyphNullable = GetGlyph(fontData, c);
-                if (!glyphNullable.HasValue)
-                    continue;
-                var glyph = glyphNullable.Value;
-                x += (glyph.Advance + run.Style.CSpace) / fontData.FontFile.Metadata.Size;
-            }
-        }
-        yield return x;
-    }
-
-    private static TmpGlyph? GetGlyph(FontData fontData, char c)
-    {
-        if (!fontData.CharacterToGlyphId.TryGetValue(c, out var glyphId))
-            return null;
-        if (!fontData.GlyphIdToGlyph.TryGetValue(glyphId, out var glyph))
-            return null;
-        return glyph;
-    }
-
     public void Initialize()
     {
         var toolkitOptions = new ToolkitOptions
