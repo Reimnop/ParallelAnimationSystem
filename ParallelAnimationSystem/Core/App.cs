@@ -144,7 +144,7 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
         logger.LogInformation("Registering fonts");
         
         using (var streamInconsolata = ResourceUtil.ReadAsStream("Resources.Fonts.Inconsolata.tmpe"))
-            fontInconsolata = renderer.RegisterFont(streamInconsolata);
+            fontInconsolata = renderer.RegisterFont(streamInconsolata, 16.0f);
     }
     
     public void Run()
@@ -213,7 +213,7 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
             }
             else
             {
-                var textScale = MathUtil.CreateScale(Vector2.One * 1.5f);
+                var textScale = MathUtil.CreateScale(Vector2.One * 1.5f / 16.0f);
                 if (cachedTextHandles.TryGetValue(gameObject, out var textHandle))
                     drawList.AddText(textHandle, textScale * transform, color1, z);
             }

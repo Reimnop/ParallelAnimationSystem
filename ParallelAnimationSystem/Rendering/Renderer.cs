@@ -81,11 +81,12 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         }
     }
 
-    public FontHandle RegisterFont(Stream stream)
+    public FontHandle RegisterFont(Stream stream, float size)
     {
         var fontFile = TmpRead.Read(stream);
         var fontData = new FontData(
             fontFile, 
+            size,
             fontFile.Characters
                 .ToDictionary(x => x.Character, x => x.GlyphId),
             fontFile.Glyphs
