@@ -14,12 +14,14 @@ namespace ParallelAnimationSystem.Core;
 
 public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<App> logger) : IDisposable
 {
+    private static readonly Matrix3 TextScale = MathUtil.CreateScale(Vector2.One * 3.0f / 32.0f);
+    
     private readonly List<List<MeshHandle>> meshes = [];
     
     private AnimationRunner? runner;
     private AudioPlayer? audioPlayer;
 
-    private readonly Dictionary<GameObject, TextHandle> cachedTextHandles = [];
+    private readonly Dictionary<GameObject, Task<TextHandle>> cachedTextHandles = [];
     private FontHandle fontInconsolata;
     
     private bool shuttingDown;
@@ -73,8 +75,9 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
                 return;
             if (string.IsNullOrWhiteSpace(go.Text))
                 return;
-            var textHandle = renderer.CreateText(go.Text, fontInconsolata);
-            cachedTextHandles.Add(go, textHandle);
+            
+            var task = Task.Run(() => renderer.CreateText(go.Text, fontInconsolata));
+            cachedTextHandles.Add(go, task);
         };
         runner.ObjectKilled += (_, go) =>
         {
@@ -213,9 +216,8 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
             }
             else
             {
-                var textScale = MathUtil.CreateScale(Vector2.One * 1.5f / 16.0f);
-                if (cachedTextHandles.TryGetValue(gameObject, out var textHandle))
-                    drawList.AddText(textHandle, textScale * transform, color1, z);
+                if (cachedTextHandles.TryGetValue(gameObject, out var task) && task.IsCompleted)
+                    drawList.AddText(task.Result, TextScale * transform, color1, z);
             }
         }
         
