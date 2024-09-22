@@ -235,7 +235,7 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
     private double CalculateTime(AudioPlayer audioPlayer, double delta)
     {
         if (!audioPlayer.Playing)
-            return 0.0;
+            return time;
         
         var currentAudioTime = audioPlayer.Position.TotalSeconds;
         
