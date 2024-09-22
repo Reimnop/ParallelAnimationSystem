@@ -61,7 +61,7 @@ public class GameObject(
 
     public Matrix3 CalculateTransform(float time, object? context = null)
     {
-        var parentMatrix = parents.Count > 0
+        var parentMatrix = Parents.Count > 0
             ? CalculateParentTransform(
                 Parents, 
                 time, 
