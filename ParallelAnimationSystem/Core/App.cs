@@ -74,7 +74,7 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
         
         // Create animation runner
         logger.LogInformation("Initializing animation runner");
-        var beatmapImporter = new BeatmapImporter(seed);
+        var beatmapImporter = new BeatmapImporter(seed, logger);
         runner = beatmapImporter.CreateRunner(beatmap);
         runner.ObjectSpawned += (_, go) =>
         {

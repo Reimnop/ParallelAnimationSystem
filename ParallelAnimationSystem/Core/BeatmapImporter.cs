@@ -1,5 +1,6 @@
 using System.IO.Hashing;
 using System.Text;
+using Microsoft.Extensions.Logging;
 using OpenTK.Mathematics;
 using Pamx;
 using Pamx.Common;
@@ -12,7 +13,7 @@ using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core;
 
-public class BeatmapImporter(ulong randomSeed)
+public class BeatmapImporter(ulong randomSeed, ILogger logger)
 {
     public AnimationRunner CreateRunner(IBeatmap beatmap)
     {
@@ -291,9 +292,19 @@ public class BeatmapImporter(ulong randomSeed)
         var shapeIndex = (int) beatmapObject.Shape;
         var shapeOptionIndex = beatmapObject.ShapeOption;
         var text = beatmapObject.Shape == ObjectShape.Text ? beatmapObject.Text : null;
-
+        
         var parentChainSize = 0;
-        var parent = beatmapObject.Parent is IObject parentObject ? RecursivelyCreateParentTransform(parentObject, ref parentChainSize) : null;
+
+        ParentTransform? parent;
+        try
+        {
+            parent = beatmapObject.Parent is IObject parentObject ? RecursivelyCreateParentTransform(parentObject, ref parentChainSize, []) : null;
+        }
+        catch (InvalidOperationException e)
+        {
+            logger.LogError(e, "Failed to create parent transform for object '{ObjectId}'", objectId);
+            return null;
+        }
         
         var depth = MathHelper.MapRange(beatmapObject.RenderDepth + parentChainSize * beatmapObject.RenderDepth * 0.0005f - i * 0.00001f, -100.0f, 100.0f, 0.0f, 1.0f);
         
@@ -309,11 +320,14 @@ public class BeatmapImporter(ulong randomSeed)
             parent);
     }
 
-    private ParentTransform RecursivelyCreateParentTransform(IObject beatmapObject, ref int parentChainSize)
+    private ParentTransform RecursivelyCreateParentTransform(IObject beatmapObject, ref int parentChainSize, HashSet<string> visited)
     {
         parentChainSize++;
         
         var objectId = ((IIdentifiable<string>) beatmapObject).Id;
+        if (!visited.Add(objectId))
+            throw new InvalidOperationException("Circular parent reference detected");
+
         var positionAnimation = CreateSequence(beatmapObject.PositionEvents, seed: objectId);
         var scaleAnimation = CreateSequence(beatmapObject.ScaleEvents, seed: objectId + "1");
         var rotationAnimation = CreateRotationSequence(beatmapObject.RotationEvents, true, objectId + "2");
@@ -326,7 +340,7 @@ public class BeatmapImporter(ulong randomSeed)
         var parentAnimateScale = beatmapObject.ParentType.HasFlag(ParentType.Scale);
         var parentAnimateRotation = beatmapObject.ParentType.HasFlag(ParentType.Rotation);
         
-        var parent = beatmapObject.Parent is IObject parentObject ? RecursivelyCreateParentTransform(parentObject, ref parentChainSize) : null;
+        var parent = beatmapObject.Parent is IObject parentObject ? RecursivelyCreateParentTransform(parentObject, ref parentChainSize, visited) : null;
         
         return new ParentTransform(
             -beatmapObject.StartTime,
