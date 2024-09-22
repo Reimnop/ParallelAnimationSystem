@@ -1,4 +1,3 @@
-using System.Drawing;
 using System.IO.Hashing;
 using System.Text;
 using OpenTK.Mathematics;
@@ -13,9 +12,9 @@ using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core;
 
-public static class BeatmapImporter
+public class BeatmapImporter(ulong randomSeed)
 {
-    public static AnimationRunner CreateRunner(IBeatmap beatmap)
+    public AnimationRunner CreateRunner(IBeatmap beatmap)
     {
         // Convert all the objects in the beatmap to GameObjects
         var gameObjects = CreateGameObjects(beatmap);
@@ -43,7 +42,7 @@ public static class BeatmapImporter
             hueSequence);
     }
     
-    private static Sequence<BloomData, BloomData> CreateBloomSequence(IList<FixedKeyframe<BloomData>> bloomEvents)
+    private Sequence<BloomData, BloomData> CreateBloomSequence(IList<FixedKeyframe<BloomData>> bloomEvents)
     {
         var keyframes = bloomEvents
             .Select(x =>
@@ -56,7 +55,7 @@ public static class BeatmapImporter
         return new Sequence<BloomData, BloomData>(keyframes, InterpolateBloomData);
     }
 
-    private static BloomData InterpolateBloomData(BloomData a, BloomData b, float t, object? context)
+    private BloomData InterpolateBloomData(BloomData a, BloomData b, float t, object? context)
     {
         return new BloomData
         {
@@ -65,7 +64,7 @@ public static class BeatmapImporter
         };
     }
 
-    private static Sequence<float, float> CreateHueSequence(IList<FixedKeyframe<float>> hueEvents)
+    private Sequence<float, float> CreateHueSequence(IList<FixedKeyframe<float>> hueEvents)
     {
         var keyframes = hueEvents
             .Select(x =>
@@ -78,7 +77,7 @@ public static class BeatmapImporter
         return new Sequence<float, float>(keyframes, InterpolateFloat);
     }
     
-    private static Sequence<Vector2, Vector2> CreateCameraPositionSequence(IList<FixedKeyframe<System.Numerics.Vector2>> cameraPositionEvents)
+    private Sequence<Vector2, Vector2> CreateCameraPositionSequence(IList<FixedKeyframe<System.Numerics.Vector2>> cameraPositionEvents)
     {
         var keyframes = cameraPositionEvents
             .Select(x =>
@@ -91,7 +90,7 @@ public static class BeatmapImporter
         return new Sequence<Vector2, Vector2>(keyframes, InterpolateVector2);
     }
     
-    private static Sequence<float, float> CreateCameraScaleSequence(IList<FixedKeyframe<float>> cameraScaleEvents)
+    private Sequence<float, float> CreateCameraScaleSequence(IList<FixedKeyframe<float>> cameraScaleEvents)
     {
         var keyframes = cameraScaleEvents
             .Select(x =>
@@ -104,7 +103,7 @@ public static class BeatmapImporter
         return new Sequence<float, float>(keyframes, InterpolateFloat);
     }
     
-    private static Sequence<float, float> CreateCameraRotationSequence(IList<FixedKeyframe<float>> cameraScaleEvents)
+    private Sequence<float, float> CreateCameraRotationSequence(IList<FixedKeyframe<float>> cameraScaleEvents)
         {
             var keyframes = cameraScaleEvents
                 .Select(x =>
@@ -117,7 +116,7 @@ public static class BeatmapImporter
             return new Sequence<float, float>(keyframes, InterpolateFloat);
         }
 
-    private static Sequence<ITheme, ThemeColors> CreateThemeSequence(IList<FixedKeyframe<IReference<ITheme>>> themeEvents)
+    private Sequence<ITheme, ThemeColors> CreateThemeSequence(IList<FixedKeyframe<IReference<ITheme>>> themeEvents)
     {
         var keyframes = themeEvents
             .Where(x => x.Value.Value is not null)
@@ -133,7 +132,7 @@ public static class BeatmapImporter
         return new Sequence<ITheme, ThemeColors>(keyframes, InterpolateTheme);
     }
 
-    private static ThemeColors InterpolateTheme(ITheme a, ITheme b, float t, object? context)
+    private ThemeColors InterpolateTheme(ITheme a, ITheme b, float t, object? context)
     {
         var themeColors = new ThemeColors();
         themeColors.Background = InterpolateColor4(a.Background.ToColor4(), b.Background.ToColor4(), t);
@@ -150,7 +149,7 @@ public static class BeatmapImporter
         return themeColors;
     }
 
-    private static Color4<Rgba> InterpolateColor4(Color4<Rgba> a, Color4<Rgba> b, float t)
+    private Color4<Rgba> InterpolateColor4(Color4<Rgba> a, Color4<Rgba> b, float t)
     {
         return new Color4<Rgba>(
             MathUtil.Lerp(a.X, b.X, t),
@@ -159,7 +158,7 @@ public static class BeatmapImporter
             MathUtil.Lerp(a.W, b.W, t));
     }
 
-    private static IEnumerable<GameObject> CreateGameObjects(IBeatmap beatmap)
+    private IEnumerable<GameObject> CreateGameObjects(IBeatmap beatmap)
     {
         return beatmap.Objects
             .Concat(beatmap.PrefabObjects
@@ -168,15 +167,8 @@ public static class BeatmapImporter
             .Select(x => CreateGameObject(x.Index, x.Value))
             .OfType<GameObject>();
     }
-    
-    private static IEnumerable<(int Index, T Value)> Indexed<T>(this IEnumerable<T> enumerable)
-    {
-        var i = 0;
-        foreach (var value in enumerable)
-            yield return (i++, value);
-    }
         
-    private static IEnumerable<IObject> ExpandPrefabObject(IPrefabObject prefabObject)
+    private IEnumerable<IObject> ExpandPrefabObject(IPrefabObject prefabObject)
     {
         // Create a global empty object to act as the parent
         var parent = Asset.CreateObject();
@@ -245,7 +237,7 @@ public static class BeatmapImporter
             yield return newObj;
     }
 
-    private static GameObject? CreateGameObject(int i, IObject beatmapObject)
+    private GameObject? CreateGameObject(int i, IObject beatmapObject)
     {
         // We can skip empty objects to save memory
         if (beatmapObject.Type is ObjectType.Empty or ObjectType.LegacyEmpty)
@@ -317,7 +309,7 @@ public static class BeatmapImporter
             parent);
     }
 
-    private static ParentTransform RecursivelyCreateParentTransform(IObject beatmapObject, ref int parentChainSize)
+    private ParentTransform RecursivelyCreateParentTransform(IObject beatmapObject, ref int parentChainSize)
     {
         parentChainSize++;
         
@@ -344,7 +336,7 @@ public static class BeatmapImporter
             parent);
     }
 
-    private static Sequence<Vector2, Vector2> CreateSequence(
+    private Sequence<Vector2, Vector2> CreateSequence(
         IEnumerable<Pamx.Common.Data.Keyframe<System.Numerics.Vector2>> events,
         bool additive = false,
         string seed = "")
@@ -352,7 +344,7 @@ public static class BeatmapImporter
         return new Sequence<Vector2, Vector2>(EnumerateSequenceKeyframes(events, additive, seed), InterpolateVector2);
     }
     
-    private static Sequence<float, float> CreateRotationSequence(
+    private Sequence<float, float> CreateRotationSequence(
         IEnumerable<Pamx.Common.Data.Keyframe<float>> events,
         bool additive = false,
         string seed = "")
@@ -360,7 +352,7 @@ public static class BeatmapImporter
         return new Sequence<float, float>(EnumerateRotationSequenceKeyframes(events, additive, seed), InterpolateFloat);
     }
     
-    private static Sequence<ThemeColor, (Color4<Rgba>, Color4<Rgba>)> CreateThemeColorSequence(IEnumerable<FixedKeyframe<ThemeColor>> events)
+    private Sequence<ThemeColor, (Color4<Rgba>, Color4<Rgba>)> CreateThemeColorSequence(IEnumerable<FixedKeyframe<ThemeColor>> events)
     {
         var keyframes = events.Select(e =>
         {
@@ -372,7 +364,7 @@ public static class BeatmapImporter
         return new Sequence<ThemeColor, (Color4<Rgba>, Color4<Rgba>)>(keyframes, InterpolateThemeColor);
     }
 
-    private static IEnumerable<Animation.Keyframe<Vector2>> EnumerateSequenceKeyframes(
+    private IEnumerable<Animation.Keyframe<Vector2>> EnumerateSequenceKeyframes(
         IEnumerable<Pamx.Common.Data.Keyframe<System.Numerics.Vector2>> events,
         bool additive = false,
         string seed = "")
@@ -390,7 +382,7 @@ public static class BeatmapImporter
         }
     }
     
-    private static IEnumerable<Animation.Keyframe<float>> EnumerateRotationSequenceKeyframes(
+    private IEnumerable<Animation.Keyframe<float>> EnumerateRotationSequenceKeyframes(
         IEnumerable<Pamx.Common.Data.Keyframe<float>> events,
         bool additive = false,
         string seed = "")
@@ -407,19 +399,19 @@ public static class BeatmapImporter
         }
     }
 
-    private static Vector2 InterpolateVector2(Vector2 a, Vector2 b, float t, object? context)
+    private Vector2 InterpolateVector2(Vector2 a, Vector2 b, float t, object? context)
     {
         return new Vector2(
             MathUtil.Lerp(a.X, b.X, t),
             MathUtil.Lerp(a.Y, b.Y, t));
     }
     
-    private static float InterpolateFloat(float a, float b, float t, object? context)
+    private float InterpolateFloat(float a, float b, float t, object? context)
     {
         return MathUtil.Lerp(a, b, t);
     }
     
-    private static (Color4<Rgba>, Color4<Rgba>) InterpolateThemeColor(ThemeColor a, ThemeColor b, float t, object? context)
+    private (Color4<Rgba>, Color4<Rgba>) InterpolateThemeColor(ThemeColor a, ThemeColor b, float t, object? context)
     {
         if (context is not ThemeColors colors)
             throw new ArgumentException($"Context is not of type {typeof(ThemeColors)}");
@@ -445,7 +437,7 @@ public static class BeatmapImporter
         return (color1, color2);
     }
 
-    private static float ParseRandomFloat(Pamx.Common.Data.Keyframe<float> keyframe, string seed, int seed2)
+    private float ParseRandomFloat(Pamx.Common.Data.Keyframe<float> keyframe, string seed, int seed2)
         => keyframe.RandomMode switch
         {
             RandomMode.None => keyframe.Value,
@@ -455,7 +447,7 @@ public static class BeatmapImporter
             _ => keyframe.Value
         };
 
-    private static System.Numerics.Vector2 ParseRandomVector2(Pamx.Common.Data.Keyframe<System.Numerics.Vector2> keyframe, string seed, int seed2)
+    private System.Numerics.Vector2 ParseRandomVector2(Pamx.Common.Data.Keyframe<System.Numerics.Vector2> keyframe, string seed, int seed2)
         => keyframe.RandomMode switch
         {
             RandomMode.None => keyframe.Value,
@@ -470,7 +462,7 @@ public static class BeatmapImporter
             _ => keyframe.Value
         };
     
-    private static float RoundToNearest(float value, float nearest)
+    private float RoundToNearest(float value, float nearest)
     {
         if (nearest == 0.0f)
             return value;
@@ -478,10 +470,13 @@ public static class BeatmapImporter
         return MathF.Round(value / nearest) * nearest;
     }
     
-    private static float RandomRange(float min, float max, string seed, int seed2)
+    private float RandomRange(float min, float max, string seed, int seed2)
     {
         // Use xxHash to generate a random number
         var hash = new XxHash32();
+        
+        // Hash the base seed
+        hash.Append(BitConverter.GetBytes(randomSeed));
         
         // Hash the seed and the seed2
         hash.Append(Encoding.UTF8.GetBytes(seed));
@@ -495,10 +490,5 @@ public static class BeatmapImporter
         var hashValue = hash.GetCurrentHashAsUInt32();
         
         return (float) MathUtil.Lerp(min, max, hashValue / (double) uint.MaxValue);
-    }
-    
-    private static Color4<Rgba> ToColor4(this Color color)
-    {
-        return new Color4<Rgba>(color.R / 255.0f, color.G / 255.0f, color.B / 255.0f, color.A / 255.0f);
     }
 }

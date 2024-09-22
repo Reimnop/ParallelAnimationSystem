@@ -65,10 +65,17 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
             LsMigration.MigrateBeatmap(beatmap);
         else
             VgMigration.MigrateBeatmap(beatmap);
+
+        var seed = options.Seed < 0
+            ? (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds()
+            : (ulong) options.Seed;
+        
+        logger.LogInformation("Using seed '{Seed}'", seed);
         
         // Create animation runner
         logger.LogInformation("Initializing animation runner");
-        runner = BeatmapImporter.CreateRunner(beatmap);
+        var beatmapImporter = new BeatmapImporter(seed);
+        runner = beatmapImporter.CreateRunner(beatmap);
         runner.ObjectSpawned += (_, go) =>
         {
             if (go.ShapeIndex != 4)
