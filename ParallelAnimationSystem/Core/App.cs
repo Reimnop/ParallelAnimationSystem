@@ -77,22 +77,28 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
         logger.LogInformation("Initializing animation runner");
         var beatmapImporter = new BeatmapImporter(seed, logger);
         runner = beatmapImporter.CreateRunner(beatmap);
-        runner.ObjectSpawned += (_, go) =>
+
+        if (options.EnableTextRendering)
         {
-            if (go.ShapeIndex != 4)
-                return;
-            if (string.IsNullOrWhiteSpace(go.Text))
-                return;
+            logger.LogWarning("Experimental text rendering is enabled! Things MIGHT break!");
             
-            var task = Task.Run(() => renderer.CreateText(go.Text, fonts, "Inconsolata SDF"));
-            cachedTextHandles.Add(go, task);
-        };
-        runner.ObjectKilled += (_, go) =>
-        {
-            if (go.ShapeIndex != 4)
-                return;
-            cachedTextHandles.Remove(go);
-        };
+            runner.ObjectSpawned += (_, go) =>
+            {
+                if (go.ShapeIndex != 4)
+                    return;
+                if (string.IsNullOrWhiteSpace(go.Text))
+                    return;
+            
+                var task = Task.Run(() => renderer.CreateText(go.Text, fonts, "Inconsolata SDF"));
+                cachedTextHandles.Add(go, task);
+            };
+            runner.ObjectKilled += (_, go) =>
+            {
+                if (go.ShapeIndex != 4)
+                    return;
+                cachedTextHandles.Remove(go);
+            };
+        }
         
         logger.LogInformation("Loaded {ObjectCount} objects", runner.ObjectCount);
         
