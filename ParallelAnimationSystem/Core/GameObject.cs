@@ -23,9 +23,9 @@ public class GameObject(
     Vector2 origin,
     int shapeIndex,
     int shapeOptionIndex,
-    string? text,
     float depth,
-    ParentTransform? parent)
+    string? text,
+    List<ParentTransform> parents)
 {
     public float StartTime { get; } = startTime;
     public float KillTime { get; } = killTime;
@@ -49,20 +49,21 @@ public class GameObject(
     
     public int ShapeIndex { get; } = shapeIndex;
     public int ShapeOptionIndex { get; } = shapeOptionIndex;
-    public string? Text { get; } = text;
 
     public float Depth { get; } = depth;
+    
+    public string? Text { get; } = text;
 
-    public ParentTransform? Parent { get; } = parent;
+    public List<ParentTransform> Parents { get; } = parents;
     
     public Matrix3 CachedTransform { get; private set; } = Matrix3.Identity;
     public (Color4<Rgba>, Color4<Rgba>) CachedThemeColor { get; private set; } = (Color4.White, Color4.White);
 
     public Matrix3 CalculateTransform(float time, object? context = null)
     {
-        var parentMatrix = Parent is not null
+        var parentMatrix = parents.Count > 0
             ? CalculateParentTransform(
-                Parent, 
+                Parents, 
                 time, 
                 ParentPositionTimeOffset, ParentScaleTimeOffset, ParentRotationTimeOffset, 
                 ParentAnimatePosition, ParentAnimateScale, ParentAnimateRotation,
@@ -85,42 +86,47 @@ public class GameObject(
     }
     
     private static Matrix3 CalculateParentTransform(
-        ParentTransform transform,
+        List<ParentTransform> parents,
         float time, 
         float positionTimeOffset, float scaleTimeOffset, float rotationTimeOffset,
         bool animatePosition, bool animateScale, bool animateRotation,
         object? context = null)
     {
         var matrix = Matrix3.Identity;
-        
-        if (animateScale)
-        {
-            var scale = transform.ScaleAnimation.Interpolate(time + transform.TimeOffset + scaleTimeOffset, context);
-            matrix *= MathUtil.CreateScale(scale);
-        }
-        
-        if (animateRotation)
-        {
-            var rotation = transform.RotationAnimation.Interpolate(time + transform.TimeOffset + rotationTimeOffset, context);
-            matrix *= MathUtil.CreateRotation(rotation);
-        }
-        
-        if (animatePosition)
-        {
-            var position = transform.PositionAnimation.Interpolate(time + transform.TimeOffset + positionTimeOffset, context);
-            matrix *= MathUtil.CreateTranslation(position);
-        }
 
-        var parent = transform.Parent;
-        var parentTransform = parent is not null 
-            ? CalculateParentTransform(
-                parent, 
-                time, 
-                transform.ParentPositionTimeOffset, transform.ParentScaleTimeOffset, transform.ParentRotationTimeOffset, 
-                transform.ParentAnimatePosition, transform.ParentAnimateScale, transform.ParentAnimateRotation,
-                context) 
-            : Matrix3.Identity;
+        foreach (var parent in parents)
+        {
+            var currentMatrix = Matrix3.Identity;
+            
+            if (animateScale)
+            {
+                var scale = parent.ScaleAnimation.Interpolate(time + parent.TimeOffset + scaleTimeOffset, context);
+                currentMatrix *= MathUtil.CreateScale(scale);
+            }
         
-        return matrix * parentTransform;
+            if (animateRotation)
+            {
+                var rotation = parent.RotationAnimation.Interpolate(time + parent.TimeOffset + rotationTimeOffset, context);
+                currentMatrix *= MathUtil.CreateRotation(rotation);
+            }
+        
+            if (animatePosition)
+            {
+                var position = parent.PositionAnimation.Interpolate(time + parent.TimeOffset + positionTimeOffset, context);
+                currentMatrix *= MathUtil.CreateTranslation(position);
+            }
+            
+            positionTimeOffset = parent.ParentPositionTimeOffset;
+            scaleTimeOffset = parent.ParentScaleTimeOffset;
+            rotationTimeOffset = parent.ParentRotationTimeOffset;
+            
+            animatePosition = parent.ParentAnimatePosition;
+            animateScale = parent.ParentAnimateScale;
+            animateRotation = parent.ParentAnimateRotation;
+            
+            matrix *= currentMatrix;
+        }
+        
+        return matrix;
     }
 }

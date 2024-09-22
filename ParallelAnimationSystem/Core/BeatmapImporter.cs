@@ -292,13 +292,12 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         var shapeIndex = (int) beatmapObject.Shape;
         var shapeOptionIndex = beatmapObject.ShapeOption;
         var text = beatmapObject.Shape == ObjectShape.Text ? beatmapObject.Text : null;
-        
-        var parentChainSize = 0;
 
-        ParentTransform? parent;
+        var parentTransforms = new List<ParentTransform>();
         try
         {
-            parent = beatmapObject.Parent is IObject parentObject ? RecursivelyCreateParentTransform(parentObject, ref parentChainSize, []) : null;
+            if (beatmapObject.Parent is IObject parentObject)
+                RecursivelyCreateParentTransform(parentObject, [], parentTransforms);
         }
         catch (InvalidOperationException e)
         {
@@ -306,7 +305,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             return null;
         }
         
-        var depth = MathHelper.MapRange(beatmapObject.RenderDepth + parentChainSize * beatmapObject.RenderDepth * 0.0005f - i * 0.00001f, -100.0f, 100.0f, 0.0f, 1.0f);
+        var depth = MathHelper.MapRange(beatmapObject.RenderDepth + parentTransforms.Count * beatmapObject.RenderDepth * 0.0005f - i * 0.00001f, -100.0f, 100.0f, 0.0f, 1.0f);
         
         return new GameObject(
             startTime,
@@ -315,15 +314,13 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             -parentPositionTimeOffset, -parentScaleTimeOffset, -parentRotationTimeOffset,
             parentAnimatePosition, parentAnimateScale, parentAnimateRotation,
             renderMode, origin, 
-            shapeIndex, shapeOptionIndex, text,
-            depth, 
-            parent);
+            shapeIndex, shapeOptionIndex, depth,
+            text,
+            parentTransforms);
     }
 
-    private ParentTransform RecursivelyCreateParentTransform(IObject beatmapObject, ref int parentChainSize, HashSet<string> visited)
+    private void RecursivelyCreateParentTransform(IObject beatmapObject, HashSet<string> visited, List<ParentTransform> parentTransforms)
     {
-        parentChainSize++;
-        
         var objectId = ((IIdentifiable<string>) beatmapObject).Id;
         if (!visited.Add(objectId))
             throw new InvalidOperationException("Circular parent reference detected");
@@ -331,7 +328,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         var positionAnimation = CreateSequence(beatmapObject.PositionEvents, seed: objectId);
         var scaleAnimation = CreateSequence(beatmapObject.ScaleEvents, seed: objectId + "1");
         var rotationAnimation = CreateRotationSequence(beatmapObject.RotationEvents, true, objectId + "2");
-
+        
         var parentPositionTimeOffset = beatmapObject.ParentOffset.Position;
         var parentScaleTimeOffset = beatmapObject.ParentOffset.Scale;
         var parentRotationTimeOffset = beatmapObject.ParentOffset.Rotation;
@@ -340,14 +337,14 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         var parentAnimateScale = beatmapObject.ParentType.HasFlag(ParentType.Scale);
         var parentAnimateRotation = beatmapObject.ParentType.HasFlag(ParentType.Rotation);
         
-        var parent = beatmapObject.Parent is IObject parentObject ? RecursivelyCreateParentTransform(parentObject, ref parentChainSize, visited) : null;
-        
-        return new ParentTransform(
+        parentTransforms.Add(new ParentTransform(
             -beatmapObject.StartTime,
             positionAnimation, scaleAnimation, rotationAnimation,
             -parentPositionTimeOffset, -parentScaleTimeOffset, -parentRotationTimeOffset,
-            parentAnimatePosition, parentAnimateScale, parentAnimateRotation,
-            parent);
+            parentAnimatePosition, parentAnimateScale, parentAnimateRotation));
+
+        if (beatmapObject.Parent is IObject parentObject)
+            RecursivelyCreateParentTransform(parentObject, visited, parentTransforms);
     }
 
     private Sequence<Vector2, Vector2> CreateSequence(
