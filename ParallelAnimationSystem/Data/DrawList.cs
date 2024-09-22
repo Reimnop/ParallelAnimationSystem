@@ -4,6 +4,7 @@ using ParallelAnimationSystem.Rendering;
 
 namespace ParallelAnimationSystem.Data;
 
+// This should never be instantiated directly, but rather through the Renderer
 public class DrawList : IEnumerable<DrawData>
 {
     public int Count => drawData.Count;
@@ -32,5 +33,13 @@ public class DrawList : IEnumerable<DrawData>
     IEnumerator IEnumerable.GetEnumerator()
     {
         return GetEnumerator();
+    }
+
+    public void Reset()
+    {
+        CameraData = new CameraData(Vector2.Zero, 10.0f, 0.0f);
+        PostProcessingData = default;
+        ClearColor = Color4.Black;
+        drawData.Clear();
     }
 }

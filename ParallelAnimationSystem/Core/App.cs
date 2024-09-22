@@ -209,18 +209,17 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
         
         // Start queueing up draw data
         var bloomData = runner.Bloom;
-        var drawList = new DrawList
-        {
-            ClearColor = runner.BackgroundColor,
-            CameraData = new CameraData(
-                runner.CameraPosition,
-                runner.CameraScale,
-                runner.CameraRotation),
-            PostProcessingData = new PostProcessingData(
-                runner.Hue,
-                bloomData.Intensity / (bloomData.Intensity + 1.0f),
-                bloomData.Diffusion / (bloomData.Diffusion + 1.0f)), 
-        };
+        var drawList = renderer.GetDrawList();
+        
+        drawList.ClearColor = runner.BackgroundColor;
+        drawList.CameraData = new CameraData(
+            runner.CameraPosition,
+            runner.CameraScale,
+            runner.CameraRotation);
+        drawList.PostProcessingData = new PostProcessingData(
+            runner.Hue,
+            bloomData.Intensity / (bloomData.Intensity + 1.0f),
+            bloomData.Diffusion / (bloomData.Diffusion + 1.0f));
 
         // Draw all alive game objects
         foreach (var gameObject in runner.AliveGameObjects)

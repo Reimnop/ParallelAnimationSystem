@@ -28,6 +28,9 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
     // Synchronization
     private readonly object meshDataLock = new();
     
+    // Draw list pool
+    private readonly ConcurrentQueue<DrawList> drawListPool = [];
+    
     // Rendering data
     private readonly ConcurrentQueue<DrawList> drawListQueue = [];
     private readonly Buffer vertexBuffer = new();
@@ -45,9 +48,9 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
     private int vertexArrayHandle;
     private int vertexBufferHandle;
     private int indexBufferHandle;
-    private int multiDrawIndirectBufferHandle;
-    private int multiDrawStorageBufferHandle;
-    private int multiDrawGlyphBufferHandle;
+    private int multiDrawIndirectBufferHandle, multiDrawIndirectBufferSize;
+    private int multiDrawStorageBufferHandle, multiDrawStorageBufferSize;
+    private int multiDrawGlyphBufferHandle, multiDrawGlyphBufferSize;
     private int programHandle;
     private int fontAtlasesUniformLocation;
     
@@ -186,6 +189,13 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         logger.LogInformation("OpenGL initialized");
     }
 
+    public DrawList GetDrawList()
+    {
+        if (!drawListPool.TryDequeue(out var drawList))
+            drawList = new DrawList();
+        return drawList;
+    }
+
     public void SubmitDrawList(DrawList drawList)
     {
         drawListQueue.Enqueue(drawList);
@@ -272,7 +282,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         GL.DeleteShader(fragmentShader);
         
         // Get uniform locations
-        GL.GetUniformLocation(programHandle, "uFontAtlases");
+        fontAtlasesUniformLocation = GL.GetUniformLocation(programHandle, "uFontAtlases");
         
         // Initialize fbos
         // Initialize scene fbo
@@ -486,6 +496,10 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         
         Debug.Assert(glContextHandle is not null);
         Toolkit.OpenGL.SwapBuffers(glContextHandle);
+        
+        // Return draw list to pool
+        drawList.Reset();
+        drawListPool.Enqueue(drawList);
     }
 
     private void RenderDrawDataList(List<DrawData> drawDataList, Matrix3 camera)
@@ -510,6 +524,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
                 BaseVertex = renderType == RenderType.Text ? baseFontMeshHandle.VertexOffset : mesh.VertexOffset,
                 BaseInstance = 0
             });
+            
             multiDrawStorageBuffer.Append(new MultiDrawItem
             {
                 MvpRow1 = mvp.Row0,
@@ -522,23 +537,48 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
                 RenderType = (int) renderType,
                 GlyphOffset = multiDrawGlyphBuffer.Data.Length / Unsafe.SizeOf<RenderGlyph>(),
             });
+            
             if (renderType == RenderType.Text)
-            {
-                foreach (var glyph in text.Glyphs)
-                    multiDrawGlyphBuffer.Append(glyph);
-            }
+                multiDrawGlyphBuffer.Append<RenderGlyph>(text.Glyphs);
         }
         
         // Upload buffers to GPU
         var multiDrawIndirectBufferData = multiDrawIndirectBuffer.Data;
         var multiDrawStorageBufferData = multiDrawStorageBuffer.Data;
         var multiDrawGlyphBufferData = multiDrawGlyphBuffer.Data;
+        
         if (multiDrawIndirectBufferData.Length > 0)
-            GL.NamedBufferData(multiDrawIndirectBufferHandle, multiDrawIndirectBufferData.Length, multiDrawIndirectBufferData, VertexBufferObjectUsage.DynamicDraw);
+        {
+            if (multiDrawIndirectBufferData.Length > multiDrawIndirectBufferSize)
+            {
+                multiDrawIndirectBufferSize = multiDrawIndirectBufferData.Length;
+                GL.NamedBufferData(multiDrawIndirectBufferHandle, multiDrawIndirectBufferData.Length, multiDrawIndirectBufferData, VertexBufferObjectUsage.DynamicDraw);
+            }
+            else
+                GL.NamedBufferSubData(multiDrawIndirectBufferHandle, IntPtr.Zero, multiDrawIndirectBufferData.Length, multiDrawIndirectBufferData);
+        }
+
         if (multiDrawStorageBufferData.Length > 0)
-            GL.NamedBufferData(multiDrawStorageBufferHandle, multiDrawStorageBufferData.Length, multiDrawStorageBufferData, VertexBufferObjectUsage.DynamicDraw);
+        {
+            if (multiDrawStorageBufferData.Length > multiDrawStorageBufferSize)
+            {
+                multiDrawStorageBufferSize = multiDrawStorageBufferData.Length;
+                GL.NamedBufferData(multiDrawStorageBufferHandle, multiDrawStorageBufferData.Length, multiDrawStorageBufferData, VertexBufferObjectUsage.DynamicDraw);
+            }
+            else
+                GL.NamedBufferSubData(multiDrawStorageBufferHandle, IntPtr.Zero, multiDrawStorageBufferData.Length, multiDrawStorageBufferData);
+        }
+
         if (multiDrawGlyphBufferData.Length > 0)
-            GL.NamedBufferData(multiDrawGlyphBufferHandle, multiDrawGlyphBufferData.Length, multiDrawGlyphBufferData, VertexBufferObjectUsage.DynamicDraw);
+        {
+            if (multiDrawGlyphBufferData.Length > multiDrawGlyphBufferSize)
+            {
+                multiDrawGlyphBufferSize = multiDrawGlyphBufferData.Length;
+                GL.NamedBufferData(multiDrawGlyphBufferHandle, multiDrawGlyphBufferData.Length, multiDrawGlyphBufferData, VertexBufferObjectUsage.DynamicDraw);
+            }
+            else
+                GL.NamedBufferSubData(multiDrawGlyphBufferHandle, IntPtr.Zero, multiDrawGlyphBufferData.Length, multiDrawGlyphBufferData);
+        }
 
         // Draw
         GL.MultiDrawElementsIndirect(
