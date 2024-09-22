@@ -21,7 +21,7 @@ public class AudioPlayer : IDisposable
         }
     }
     
-    public bool Playing => AL.GetSource(sourceHandle, ALGetSourcei.SourceState) == (int)ALSourceState.Playing;
+    public bool Playing => AL.GetSource(sourceHandle, ALGetSourcei.SourceState) == (int) ALSourceState.Playing;
     
     private readonly AudioSystem audioSystem;
     private readonly int sourceHandle;

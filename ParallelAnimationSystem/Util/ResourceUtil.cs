@@ -15,4 +15,15 @@ public static class ResourceUtil
         using var reader = new StreamReader(stream);
         return reader.ReadToEnd();
     }
+    
+    public static Stream ReadAsStream(string path)
+    {
+        var assembly = typeof(App).Assembly;
+        path = $"{assembly.GetName().Name}.{path}";
+        
+        var stream = assembly.GetManifestResourceStream(path);
+        if (stream is null)
+            throw new InvalidOperationException($"File '{path}' not found");
+        return stream;
+    }
 }

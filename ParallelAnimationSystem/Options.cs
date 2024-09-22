@@ -19,4 +19,10 @@ public class Options
     
     [Option("workers", Required = false, Default = 4, HelpText = "Number of worker threads, set to -1 to use all available threads")]
     public int WorkerCount { get; set; }
+    
+    [Option("seed", Required = false, Default = -1, HelpText = "Seed for the random number generator, set to -1 to use a random seed")]
+    public long Seed { get; set; }
+    
+    [Option("experimental-enable-text-rendering", Required = false, Default = false, HelpText = "Enable experimental text rendering")]
+    public bool EnableTextRendering { get; set; }
 }
