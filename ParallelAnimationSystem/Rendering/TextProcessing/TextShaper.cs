@@ -1,9 +1,10 @@
 using OpenTK.Mathematics;
+using ParallelAnimationSystem.Util;
 using TmpParser;
 
 namespace ParallelAnimationSystem.Rendering.TextProcessing;
 
-public static class TextShaper
+public class TextShaper(List<FontData> registeredFonts)
 {
     private class ShapingState
     {
@@ -13,7 +14,7 @@ public static class TextShaper
         public HorizontalAlignment? CurrentAlignment { get; set; }
     }
     
-    public static IEnumerable<RenderGlyph> ShapeText(FontData fontData, string str)
+    public IEnumerable<RenderGlyph> ShapeText(FontStack fontStack, string str)
     {
         var tokens = TagParser.EnumerateTokens(str);
         var elements = TagParser.EnumerateElements(tokens);
@@ -22,7 +23,7 @@ public static class TextShaper
         var state = new ShapingState();
         
         var linesOfShapedGlyphs = lines
-            .Select(line => ShapeLinePartial(fontData, line, state))
+            .Select(line => ShapeLinePartial(fontStack, line, state))
             .ToList();
         
         if (linesOfShapedGlyphs.Count == 0)
@@ -45,7 +46,6 @@ public static class TextShaper
         }
         
         // Output render glyphs
-        var glyphSizeMultiplier = fontData.Size / fontData.FontFile.Metadata.Size;
         var y = linesOfShapedGlyphs.Sum(line => line.Height) / 2.0f - linesOfShapedGlyphs[0].Ascender;
         foreach (var line in linesOfShapedGlyphs)
         {
@@ -68,16 +68,17 @@ public static class TextShaper
                         : float.NaN);
                 
                 var x = shapedGlyph.Position;
-                var glyph = fontData.GlyphIdToGlyph[shapedGlyph.GlyphId];
+                var font = registeredFonts[shapedGlyph.FontIndex];
+                var glyph = font.GlyphIdToGlyph[shapedGlyph.GlyphId];
                 if (glyph.Width != 0.0f && glyph.Height != 0.0f)
                 {
-                    var minX = x + glyph.BearingX * shapedGlyph.Size * glyphSizeMultiplier;
-                    var minY = y + glyph.BearingY * shapedGlyph.Size * glyphSizeMultiplier;
-                    var maxX = minX + glyph.Width * shapedGlyph.Size * glyphSizeMultiplier;
-                    var maxY = minY - glyph.Height * shapedGlyph.Size * glyphSizeMultiplier;
+                    var minX = x + glyph.BearingX / font.Metadata.Size * shapedGlyph.Size;
+                    var minY = y + glyph.BearingY / font.Metadata.Size * shapedGlyph.Size;
+                    var maxX = minX + glyph.Width / font.Metadata.Size * shapedGlyph.Size;
+                    var maxY = minY - glyph.Height / font.Metadata.Size * shapedGlyph.Size;
                     var minUV = new Vector2(glyph.MinX, glyph.MinY);
                     var maxUV = new Vector2(glyph.MaxX, glyph.MaxY);
-                    yield return new RenderGlyph(new Vector2(minX, minY), new Vector2(maxX, maxY), minUV, maxUV, color, boldItalic);
+                    yield return new RenderGlyph(new Vector2(minX, minY), new Vector2(maxX, maxY), minUV, maxUV, color, boldItalic, shapedGlyph.FontIndex);
                 }
             }
             
@@ -86,10 +87,8 @@ public static class TextShaper
     }
 
     // Shape a line of text, without X offset (that'll be done in a later phase)
-    private static TmpLine ShapeLinePartial(FontData fontData, IEnumerable<IElement> line, ShapingState state)
+    private TmpLine ShapeLinePartial(FontStack fontStack, IEnumerable<IElement> line, ShapingState state)
     {
-        var glyphSizeMultiplier = fontData.Size / fontData.FontFile.Metadata.Size;
-        
         var glyphs = new List<ShapedGlyph>();
         var x = 0.0f;
         var width = 0.0f;
@@ -102,22 +101,33 @@ public static class TextShaper
             {
                 foreach (var c in textElement.Value)
                 {
-                    var glyphId = GetGlyph(fontData, c);
-                    if (!glyphId.HasValue)
+                    var rawGlyph = GetGlyph(fontStack, c);
+                    if (!rawGlyph.HasValue)
                         continue;
                     
-                    var currentSize = ResolveMeasurement(state.CurrentSize, fontData.Size, fontData.Size) / fontData.Size;
-                    var currentCSpace = ResolveMeasurement(state.CurrentCSpace, fontData.Size, fontData.Size);
+                    var (glyphId, fontHandleIndex) = rawGlyph.Value;
+                    var fontHandle = fontStack.Fonts[fontHandleIndex];
+                    var font = registeredFonts[fontHandle.Index];
                     
-                    var glyph = fontData.GlyphIdToGlyph[glyphId.Value];
-                    var shapedGlyph = new ShapedGlyph(x, glyphId.Value, currentSize, state.CurrentStyle);
+                    var currentSize = ResolveMeasurement(state.CurrentSize, fontStack.Size, fontStack.Size);
+                    var currentCSpace = ResolveMeasurement(state.CurrentCSpace, fontStack.Size, fontStack.Size);
+                    
+                    var glyph = font.GlyphIdToGlyph[glyphId];
+                    var shapedGlyph = new ShapedGlyph(x, fontHandle.Index, glyphId, currentSize, state.CurrentStyle);
                     glyphs.Add(shapedGlyph);
-                    x += glyph.Advance * currentSize * glyphSizeMultiplier + currentCSpace * currentSize;
                     
-                    width = Math.Max(width, shapedGlyph.Position + glyph.Advance * currentSize * glyphSizeMultiplier);
-                    height = Math.Max(height, fontData.FontFile.Metadata.LineHeight * currentSize * glyphSizeMultiplier);
-                    ascender = Math.Max(ascender, fontData.FontFile.Metadata.Ascender * currentSize * glyphSizeMultiplier);
-                    descender = Math.Min(descender, fontData.FontFile.Metadata.Descender * currentSize * glyphSizeMultiplier);
+                    // Calculate advance
+                    var normalizedAdvance = glyph.Advance / font.Metadata.Size;
+                    x += normalizedAdvance * currentSize + currentCSpace;
+                    
+                    var normalizedLineHeight = font.Metadata.LineHeight / font.Metadata.Size;
+                    var normalizedAscender = font.Metadata.Ascender / font.Metadata.Size;
+                    var normalizedDescender = font.Metadata.Descender / font.Metadata.Size;
+                    
+                    width = Math.Max(width, shapedGlyph.Position + normalizedAdvance * currentSize);
+                    height = Math.Max(height, normalizedLineHeight * currentSize);
+                    ascender = Math.Max(ascender, normalizedAscender * currentSize);
+                    descender = Math.Min(descender, normalizedDescender * currentSize);
                 }
             }
             
@@ -147,7 +157,7 @@ public static class TextShaper
 
             if (element is PosElement posElement)
             {
-                x += ResolveMeasurement(posElement.Value, fontData.Size, 0.0f);
+                x += ResolveMeasurement(posElement.Value, fontStack.Size, 0.0f);
             }
 
             if (element is SizeElement sizeElement)
@@ -156,15 +166,21 @@ public static class TextShaper
             }
         }
         
-        var lastCurrentSize = ResolveMeasurement(state.CurrentSize, fontData.Size, fontData.Size);
-        height = height == 0.0f ? fontData.FontFile.Metadata.LineHeight * lastCurrentSize * glyphSizeMultiplier : height;
-        ascender = ascender == 0.0f ? fontData.FontFile.Metadata.Ascender * lastCurrentSize * glyphSizeMultiplier : ascender;
-        descender = descender == 0.0f ? fontData.FontFile.Metadata.Descender * lastCurrentSize * glyphSizeMultiplier : descender;
+        var lastCurrentSize = ResolveMeasurement(state.CurrentSize, fontStack.Size, fontStack.Size);
+        var firstFontHandle = fontStack.Fonts[0];
+        var firstFont = registeredFonts[firstFontHandle.Index];
+        var normalizedLastLineHeight = firstFont.Metadata.LineHeight / firstFont.Metadata.Size;
+        var normalizedLastAscender = firstFont.Metadata.Ascender / firstFont.Metadata.Size;
+        var normalizedLastDescender = firstFont.Metadata.Descender / firstFont.Metadata.Size;
+        
+        height = height == 0.0f ? normalizedLastLineHeight * lastCurrentSize : height;
+        ascender = ascender == 0.0f ? normalizedLastAscender * lastCurrentSize : ascender;
+        descender = descender == 0.0f ? normalizedLastDescender * lastCurrentSize : descender;
         
         return new TmpLine(ascender, descender, width, height, state.CurrentAlignment, glyphs.ToArray());
     }
 
-    private static float ResolveMeasurement(Measurement measurement, float baseEm, float basePercent)
+    private float ResolveMeasurement(Measurement measurement, float baseEm, float basePercent)
         => measurement.Unit switch
         {
             Unit.Pixel => measurement.Value,
@@ -173,10 +189,11 @@ public static class TextShaper
             _ => throw new ArgumentOutOfRangeException(nameof(measurement)),
         };
 
-    private static int? GetGlyph(FontData fontData, char c)
+    private (int GlyphId, int FontHandleIndex)? GetGlyph(FontStack fontStack, char c)
     {
-        if (!fontData.CharacterToGlyphId.TryGetValue(c, out var glyphId))
-            return null;
-        return glyphId;
+        foreach (var (i, fontHandle) in fontStack.Fonts.Indexed())
+            if (registeredFonts[fontHandle.Index].CharacterToGlyphId.TryGetValue(c, out var glyphId))
+                return (glyphId, i);
+        return null;
     }
 }

@@ -2,7 +2,7 @@
 
 layout(location = 0) out vec4 oFragColor;
 
-uniform sampler2D uFontAtlas;
+uniform sampler2D uFontAtlases[12];
 
 in vec2 vUv;
 in vec2 vUvNormalized;
@@ -11,6 +11,7 @@ in vec4 vColor2;
 in flat int vRenderMode;
 in flat int vRenderType;
 in flat int vBold;
+in flat int vFontIndex;
 
 vec4 getColor(vec4 color1, vec4 color2, int mode, vec2 uv) {
     // mode 0: color1
@@ -54,7 +55,7 @@ vec4 getColor() {
 
 void main() {
     if (vRenderType == 1) {
-        vec3 msdf = texture(uFontAtlas, vUv).rgb;
+        vec3 msdf = texture(uFontAtlases[vFontIndex], vUv).rgb;
         float distance = median(msdf.r, msdf.g, msdf.b);
         float pxDistance = screenPxRange() * (distance - (vBold == 0 ? 0.5 : 0.3));
         float alpha = clamp(pxDistance + 0.5, 0.0, 1.0);

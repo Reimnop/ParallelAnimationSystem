@@ -16,6 +16,8 @@ namespace ParallelAnimationSystem.Rendering;
 
 public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
 {
+    private const int MaxFonts = 12;
+    
     public bool ShouldExit { get; private set; }
 
     private WindowHandle? windowHandle;
@@ -47,6 +49,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
     private int multiDrawStorageBufferHandle;
     private int multiDrawGlyphBufferHandle;
     private int programHandle;
+    private int fontAtlasesUniformLocation;
     
     private Vector2i currentFboSize;
     private int fboTextureHandle, fboDepthBufferHandle;
@@ -81,12 +84,11 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         }
     }
 
-    public FontHandle RegisterFont(Stream stream, float size)
+    public FontHandle RegisterFont(Stream stream)
     {
         var fontFile = TmpRead.Read(stream);
         var fontData = new FontData(
-            fontFile, 
-            size,
+            fontFile,
             fontFile.Characters
                 .ToDictionary(x => x.Character, x => x.GlyphId),
             fontFile.Glyphs
@@ -100,13 +102,13 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         }
     }
 
-    public TextHandle CreateText(string str, FontHandle fontHandle)
+    public TextHandle CreateText(string str, FontStack fontStack)
     {
-        FontData fontData;
         lock (registeredFonts)
-            fontData = registeredFonts[fontHandle.Index];
-        var glyphs = TextShaper.ShapeText(fontData, str).ToArray();
-        return new TextHandle(fontHandle, glyphs);
+        {
+            var textShaper = new TextShaper(registeredFonts);
+            return new TextHandle(textShaper.ShapeText(fontStack, str).ToArray());
+        }
     }
     
     public void Initialize()
@@ -269,6 +271,9 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         GL.DeleteShader(vertexShader);
         GL.DeleteShader(fragmentShader);
         
+        // Get uniform locations
+        GL.GetUniformLocation(programHandle, "uFontAtlases");
+        
         // Initialize fbos
         // Initialize scene fbo
         fboTextureHandle = GL.CreateTexture(TextureTarget.Texture2dMultisample);
@@ -407,10 +412,18 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         GL.UseProgram(programHandle);
         
         // Bind atlas texture
-        FontData fontData;
         lock (registeredFonts)
-            fontData = registeredFonts[0]; // TODO: Support multiple fonts
-        GL.BindTextureUnit(0, fontData.AtlasHandle);
+        {
+            if (registeredFonts.Count > MaxFonts)
+                throw new NotSupportedException($"The system has a limit of {MaxFonts} fonts, consider raising the limit");
+
+            for (var i = 0; i < registeredFonts.Count; i++)
+            {
+                var fontData = registeredFonts[i];
+                GL.Uniform1i(fontAtlasesUniformLocation + i, 1, i);
+                GL.BindTextureUnit((uint) i, fontData.AtlasHandle);
+            }
+        }
         
         // Bind indirect buffer
         GL.BindBuffer(BufferTarget.DrawIndirectBuffer, multiDrawIndirectBufferHandle);

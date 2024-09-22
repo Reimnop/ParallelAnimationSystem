@@ -9,6 +9,7 @@ out vec4 vColor2;
 out flat int vRenderMode;
 out flat int vRenderType;
 out flat int vBold;
+out flat int vFontIndex;
 
 struct MultiDrawItem {
     mat3 mvp;
@@ -25,6 +26,7 @@ struct RenderGlyph {
     vec4 uv;
     vec4 color; // NaN = inherit
     int boldItalic;
+    int fontIndex;
 };
 
 layout(std430, binding = 0) buffer MultiDrawBuffer {
@@ -48,6 +50,7 @@ void main() {
         vColor1 = item.color1;
         vColor2 = glyph.color;
         vBold = (glyph.boldItalic & 1) != 0 ? 1 : 0;
+        vFontIndex = glyph.fontIndex;
 
         bool italic = (glyph.boldItalic & 2) != 0;
 

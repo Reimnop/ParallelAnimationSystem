@@ -8,6 +8,7 @@ using ParallelAnimationSystem.Audio;
 using ParallelAnimationSystem.Audio.Stream;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering;
+using ParallelAnimationSystem.Rendering.TextProcessing;
 using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core;
@@ -22,7 +23,7 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
     private AudioPlayer? audioPlayer;
 
     private readonly Dictionary<GameObject, Task<TextHandle>> cachedTextHandles = [];
-    private FontHandle fontInconsolata;
+    private FontStack inconsolata;
     
     private bool shuttingDown;
 
@@ -83,7 +84,7 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
             if (string.IsNullOrWhiteSpace(go.Text))
                 return;
             
-            var task = Task.Run(() => renderer.CreateText(go.Text, fontInconsolata));
+            var task = Task.Run(() => renderer.CreateText(go.Text, inconsolata));
             cachedTextHandles.Add(go, task);
         };
         runner.ObjectKilled += (_, go) =>
@@ -152,9 +153,18 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
     private void RegisterFonts()
     {
         logger.LogInformation("Registering fonts");
-        
-        using (var streamInconsolata = ResourceUtil.ReadAsStream("Resources.Fonts.Inconsolata.tmpe"))
-            fontInconsolata = renderer.RegisterFont(streamInconsolata, 16.0f);
+
+        var inconsolata = ReadFont("Resources.Fonts.Inconsolata.tmpe");
+        var arialuni = ReadFont("Resources.Fonts.Arialuni.tmpe");
+        var seguisym = ReadFont("Resources.Fonts.Seguisym.tmpe");
+        var code2000 = ReadFont("Resources.Fonts.Code2000.tmpe");
+        this.inconsolata = new FontStack("Inconsolata SDF", 16.0f, [inconsolata, arialuni, seguisym, code2000]);
+    }
+
+    private FontHandle ReadFont(string path)
+    {
+        using var stream = ResourceUtil.ReadAsStream(path);
+        return renderer.RegisterFont(stream);
     }
     
     public void Run()
