@@ -4,7 +4,7 @@ using TmpParser;
 
 namespace ParallelAnimationSystem.Rendering.TextProcessing;
 
-public class TextShaper(List<FontData> registeredFonts)
+public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictionary<string, FontStack> fontStacks, string defaultFontName)
 {
     private class ShapingState
     {
@@ -12,18 +12,22 @@ public class TextShaper(List<FontData> registeredFonts)
         public Measurement CurrentCSpace { get; set; }
         public Measurement CurrentSize { get; set; } = new(1.0f, Unit.Em);
         public HorizontalAlignment? CurrentAlignment { get; set; }
+        public required FontStack CurrentFontStack { get; set; }
     }
     
-    public IEnumerable<RenderGlyph> ShapeText(FontStack fontStack, string str)
+    public IEnumerable<RenderGlyph> ShapeText(string str)
     {
         var tokens = TagParser.EnumerateTokens(str);
         var elements = TagParser.EnumerateElements(tokens);
         var lines = TagParser.EnumerateLines(elements);
 
-        var state = new ShapingState();
+        var state = new ShapingState
+        {
+            CurrentFontStack = fontStacks[defaultFontName.ToLowerInvariant()],
+        };
         
         var linesOfShapedGlyphs = lines
-            .Select(line => ShapeLinePartial(fontStack, line, state))
+            .Select(line => ShapeLinePartial(line, state))
             .ToList();
         
         if (linesOfShapedGlyphs.Count == 0)
@@ -87,7 +91,7 @@ public class TextShaper(List<FontData> registeredFonts)
     }
 
     // Shape a line of text, without X offset (that'll be done in a later phase)
-    private TmpLine ShapeLinePartial(FontStack fontStack, IEnumerable<IElement> line, ShapingState state)
+    private TmpLine ShapeLinePartial(IEnumerable<IElement> line, ShapingState state)
     {
         var glyphs = new List<ShapedGlyph>();
         var x = 0.0f;
@@ -101,6 +105,7 @@ public class TextShaper(List<FontData> registeredFonts)
             {
                 foreach (var c in textElement.Value)
                 {
+                    var fontStack = state.CurrentFontStack;
                     var rawGlyph = GetGlyph(fontStack, c);
                     if (!rawGlyph.HasValue)
                         continue;
@@ -157,6 +162,7 @@ public class TextShaper(List<FontData> registeredFonts)
 
             if (element is PosElement posElement)
             {
+                var fontStack = state.CurrentFontStack;
                 x += ResolveMeasurement(posElement.Value, fontStack.Size, 0.0f);
             }
 
@@ -164,10 +170,18 @@ public class TextShaper(List<FontData> registeredFonts)
             {
                 state.CurrentSize = sizeElement.Value;
             }
+
+            if (element is FontElement fontElement)
+            {
+                var fontName = fontElement.Value?.ToLowerInvariant();
+                if (!string.IsNullOrEmpty(fontName) && fontStacks.TryGetValue(fontName, out var fontStack))
+                    state.CurrentFontStack = fontStack;
+            }
         }
         
-        var lastCurrentSize = ResolveMeasurement(state.CurrentSize, fontStack.Size, fontStack.Size);
-        var firstFontHandle = fontStack.Fonts[0];
+        var lastFontStack = state.CurrentFontStack;
+        var lastCurrentSize = ResolveMeasurement(state.CurrentSize, lastFontStack.Size, lastFontStack.Size);
+        var firstFontHandle = lastFontStack.Fonts[0];
         var firstFont = registeredFonts[firstFontHandle.Index];
         var normalizedLastLineHeight = firstFont.Metadata.LineHeight / firstFont.Metadata.Size;
         var normalizedLastAscender = firstFont.Metadata.Ascender / firstFont.Metadata.Size;

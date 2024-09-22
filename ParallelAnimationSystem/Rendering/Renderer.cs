@@ -102,12 +102,12 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         }
     }
 
-    public TextHandle CreateText(string str, FontStack fontStack)
+    public TextHandle CreateText(string str, IEnumerable<FontStack> fontStacks, string defaultFontName)
     {
         lock (registeredFonts)
         {
-            var textShaper = new TextShaper(registeredFonts);
-            return new TextHandle(textShaper.ShapeText(fontStack, str).ToArray());
+            var textShaper = new TextShaper(registeredFonts, fontStacks.ToDictionary(x => x.Name.ToLowerInvariant()), defaultFontName);
+            return new TextHandle(textShaper.ShapeText(str).ToArray());
         }
     }
     

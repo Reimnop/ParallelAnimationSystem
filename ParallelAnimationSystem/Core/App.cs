@@ -23,7 +23,7 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
     private AudioPlayer? audioPlayer;
 
     private readonly Dictionary<GameObject, Task<TextHandle>> cachedTextHandles = [];
-    private FontStack inconsolata;
+    private readonly List<FontStack> fonts = [];
     
     private bool shuttingDown;
 
@@ -84,7 +84,7 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
             if (string.IsNullOrWhiteSpace(go.Text))
                 return;
             
-            var task = Task.Run(() => renderer.CreateText(go.Text, inconsolata));
+            var task = Task.Run(() => renderer.CreateText(go.Text, fonts, "Inconsolata SDF"));
             cachedTextHandles.Add(go, task);
         };
         runner.ObjectKilled += (_, go) =>
@@ -158,7 +158,10 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
         var arialuni = ReadFont("Resources.Fonts.Arialuni.tmpe");
         var seguisym = ReadFont("Resources.Fonts.Seguisym.tmpe");
         var code2000 = ReadFont("Resources.Fonts.Code2000.tmpe");
-        this.inconsolata = new FontStack("Inconsolata SDF", 16.0f, [inconsolata, arialuni, seguisym, code2000]);
+        fonts.Add(new FontStack("Inconsolata SDF", 16.0f, [inconsolata, arialuni, seguisym, code2000]));
+        
+        var liberationSans = ReadFont("Resources.Fonts.LiberationSans.tmpe");
+        fonts.Add(new FontStack("LiberationSans SDF", 16.0f, [liberationSans, arialuni, seguisym, code2000]));
     }
 
     private FontHandle ReadFont(string path)
