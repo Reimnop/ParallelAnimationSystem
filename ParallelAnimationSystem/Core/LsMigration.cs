@@ -32,6 +32,12 @@ public static class LsMigration
                     o.ColorEvents[i] = oldColorKeyframe;
                 }
             }
+
+            if (o.Shape == ObjectShape.Text)
+            {
+                // Since legacy uses a different font, we need to change the font here
+                o.Text = $"<font=\"Inconsolata SDF\">{o.Text}";
+            }
         }
         
         // Migrate bloom keyframes

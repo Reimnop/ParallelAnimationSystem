@@ -89,7 +89,7 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
                 if (string.IsNullOrWhiteSpace(go.Text))
                     return;
             
-                var task = Task.Run(() => renderer.CreateText(go.Text, fonts, "Inconsolata SDF"));
+                var task = Task.Run(() => renderer.CreateText(go.Text, fonts, "NotoSans SDF"));
                 cachedTextHandles.Add(go, task);
             };
             runner.ObjectKilled += (_, go) =>
@@ -168,6 +168,9 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
         
         var liberationSans = ReadFont("Resources.Fonts.LiberationSans.tmpe");
         fonts.Add(new FontStack("LiberationSans SDF", 16.0f, [liberationSans, arialuni, seguisym, code2000]));
+        
+        var notoSans = ReadFont("Resources.Fonts.NotoSans.tmpe");
+        fonts.Add(new FontStack("NotoSans SDF", 16.0f, [notoSans, arialuni, seguisym, code2000]));
     }
 
     private FontHandle ReadFont(string path)
