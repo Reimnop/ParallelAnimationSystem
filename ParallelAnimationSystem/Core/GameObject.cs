@@ -71,6 +71,8 @@ public class GameObject(
                 ParentAnimatePosition, ParentAnimateScale, ParentAnimateRotation,
                 context)
             : Matrix3.Identity;
+        
+        // TODO: Not a thing in legacy
         var originMatrix = ShapeIndex == 4 ? Matrix3.Identity : MathUtil.CreateTranslation(Origin);
         
         // Apply text scale if the shape is text

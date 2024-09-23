@@ -88,6 +88,7 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
                 if (string.IsNullOrWhiteSpace(go.Text))
                     return;
 
+                // TODO: Not a thing in legacy
                 var horizontalAlignment = go.Origin.X switch
                 {
                     -0.5f => HorizontalAlignment.Left,
