@@ -3,7 +3,7 @@ using ParallelAnimationSystem.Core.Animation;
 
 namespace ParallelAnimationSystem.Core;
 
-public record struct ParentTransform(
+public record ParentTransform(
     float TimeOffset,
     Sequence<Vector2, Vector2> PositionAnimation,
     Sequence<Vector2, Vector2> ScaleAnimation,
