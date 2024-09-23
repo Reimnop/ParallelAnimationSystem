@@ -512,8 +512,17 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         multiDrawGlyphBuffer.Clear();
         
         // Append data
-        foreach (var (renderType, mesh, text, transform, color1, color2, z, renderMode) in drawDataList)
+        foreach (var drawData in drawDataList)
         {
+            var renderType = drawData.RenderType;
+            var mesh = drawData.Mesh;
+            var text = drawData.Text;
+            var transform = drawData.Transform;
+            var color1 = drawData.Color1;
+            var color2 = drawData.Color2;
+            var z = drawData.Z;
+            var renderMode = drawData.RenderMode;
+            
             var mvp = transform * camera;
 
             multiDrawIndirectBuffer.Append(new DrawElementsIndirectCommand

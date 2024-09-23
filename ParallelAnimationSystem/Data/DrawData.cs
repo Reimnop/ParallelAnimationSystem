@@ -3,12 +3,14 @@ using ParallelAnimationSystem.Rendering;
 
 namespace ParallelAnimationSystem.Data;
 
-public record struct DrawData(
-    RenderType RenderType,
-    MeshHandle Mesh,
-    TextHandle Text,
-    Matrix3 Transform,
-    Color4<Rgba> Color1,
-    Color4<Rgba> Color2,
-    float Z,
-    RenderMode RenderMode);
+public class DrawData
+{
+    public RenderType RenderType { get; set; }
+    public MeshHandle Mesh { get; set; }
+    public TextHandle Text { get; set; }
+    public Matrix3 Transform { get; set; }
+    public Color4<Rgba> Color1 { get; set; }
+    public Color4<Rgba> Color2 { get; set; }
+    public float Z { get; set; }
+    public RenderMode RenderMode { get; set; }
+}
