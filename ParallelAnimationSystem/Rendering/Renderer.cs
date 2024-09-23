@@ -11,6 +11,7 @@ using ParallelAnimationSystem.Rendering.PostProcessing;
 using ParallelAnimationSystem.Rendering.TextProcessing;
 using ParallelAnimationSystem.Util;
 using TmpIO;
+using TmpParser;
 
 namespace ParallelAnimationSystem.Rendering;
 
@@ -105,12 +106,12 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         }
     }
 
-    public TextHandle CreateText(string str, IEnumerable<FontStack> fontStacks, string defaultFontName)
+    public TextHandle CreateText(string str, IEnumerable<FontStack> fontStacks, string defaultFontName, HorizontalAlignment horizontalAlignment, VerticalAlignment verticalAlignment)
     {
         lock (registeredFonts)
         {
             var textShaper = new TextShaper(registeredFonts, fontStacks.ToDictionary(x => x.Name.ToLowerInvariant()), defaultFontName);
-            return new TextHandle(textShaper.ShapeText(str).ToArray());
+            return new TextHandle(textShaper.ShapeText(str, horizontalAlignment, verticalAlignment).ToArray());
         }
     }
     

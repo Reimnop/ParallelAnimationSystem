@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using OpenTK.Mathematics;
 using ParallelAnimationSystem.Util;
 using TmpParser;
@@ -15,7 +16,7 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
         public required FontStack CurrentFontStack { get; set; }
     }
     
-    public IEnumerable<RenderGlyph> ShapeText(string str)
+    public IEnumerable<RenderGlyph> ShapeText(string str, HorizontalAlignment horizontalAlignment, VerticalAlignment verticalAlignment)
     {
         var tokens = TagParser.EnumerateTokens(str);
         var elements = TagParser.EnumerateElements(tokens);
@@ -36,13 +37,13 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
         // Offset lines according to alignment
         foreach (var line in linesOfShapedGlyphs)
         {
-            var alignment = line.Alignment ?? HorizontalAlignment.Center;
+            var alignment = line.Alignment ?? horizontalAlignment;
             var xOffset = alignment switch
             {
                 HorizontalAlignment.Left => 0.0f,
                 HorizontalAlignment.Center => -line.Width / 2.0f,
                 HorizontalAlignment.Right => -line.Width,
-                _ => throw new ArgumentOutOfRangeException()
+                _ => throw new ArgumentOutOfRangeException(),
             };
             var glyphs = line.Glyphs;
             for (var i = 0; i < glyphs.Length; i++)
@@ -50,7 +51,16 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
         }
         
         // Output render glyphs
-        var y = linesOfShapedGlyphs.Sum(line => line.Height) / 2.0f - linesOfShapedGlyphs[0].Ascender;
+        var paragraphHeight = linesOfShapedGlyphs.Sum(line => line.Height);
+        var yOffset = verticalAlignment switch
+        {
+            VerticalAlignment.Top => paragraphHeight,
+            VerticalAlignment.Center => paragraphHeight / 2.0f,
+            VerticalAlignment.Bottom => 0.0f,
+            _ => throw new ArgumentOutOfRangeException(nameof(verticalAlignment)),
+        };
+        
+        var y = yOffset - linesOfShapedGlyphs[0].Ascender;
         foreach (var line in linesOfShapedGlyphs)
         {
             foreach (var shapedGlyph in line.Glyphs)

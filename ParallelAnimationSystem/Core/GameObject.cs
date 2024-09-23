@@ -27,6 +27,8 @@ public class GameObject(
     string? text,
     List<ParentTransform> parents)
 {
+    private static readonly Matrix3 TextScale = MathUtil.CreateScale(Vector2.One * 3.0f / 32.0f);
+    
     public float StartTime { get; } = startTime;
     public float KillTime { get; } = killTime;
 
@@ -69,8 +71,13 @@ public class GameObject(
                 ParentAnimatePosition, ParentAnimateScale, ParentAnimateRotation,
                 context)
             : Matrix3.Identity;
-        var originMatrix = MathUtil.CreateTranslation(Origin);
+        var originMatrix = ShapeIndex == 4 ? Matrix3.Identity : MathUtil.CreateTranslation(Origin);
+        
+        // Apply text scale if the shape is text
+        var additionalScale = ShapeIndex == 4 ? TextScale : Matrix3.Identity;
+        
         var matrix = 
+            additionalScale *
             MathUtil.CreateScale(ScaleAnimation.Interpolate(time - StartTime, context)) *
             MathUtil.CreateRotation(RotationAnimation.Interpolate(time - StartTime, context)) *
             MathUtil.CreateTranslation(PositionAnimation.Interpolate(time - StartTime, context));

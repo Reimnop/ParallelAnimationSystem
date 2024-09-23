@@ -10,13 +10,12 @@ using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.TextProcessing;
 using ParallelAnimationSystem.Util;
+using TmpParser;
 
 namespace ParallelAnimationSystem.Core;
 
 public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<App> logger) : IDisposable
 {
-    private static readonly Matrix3 TextScale = MathUtil.CreateScale(Vector2.One * 3.0f / 32.0f);
-    
     private readonly List<List<MeshHandle>> meshes = [];
     
     private AnimationRunner? runner;
@@ -88,8 +87,22 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
                     return;
                 if (string.IsNullOrWhiteSpace(go.Text))
                     return;
+
+                var horizontalAlignment = go.Origin.X switch
+                {
+                    -0.5f => HorizontalAlignment.Left,
+                    0.5f => HorizontalAlignment.Right,
+                    _ => HorizontalAlignment.Center,
+                };
+
+                var verticalAlignment = go.Origin.Y switch
+                {
+                    -0.5f => VerticalAlignment.Top,
+                    0.5f => VerticalAlignment.Bottom,
+                    _ => VerticalAlignment.Center,
+                };
             
-                var task = Task.Run(() => renderer.CreateText(go.Text, fonts, "NotoSans SDF"));
+                var task = Task.Run(() => renderer.CreateText(go.Text, fonts, "NotoMono SDF", horizontalAlignment, verticalAlignment));
                 cachedTextHandles.Add(go, task);
             };
             runner.ObjectKilled += (_, go) =>
@@ -169,8 +182,8 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
         var liberationSans = ReadFont("Resources.Fonts.LiberationSans.tmpe");
         fonts.Add(new FontStack("LiberationSans SDF", 16.0f, [liberationSans, arialuni, seguisym, code2000]));
         
-        var notoSans = ReadFont("Resources.Fonts.NotoSans.tmpe");
-        fonts.Add(new FontStack("NotoSans SDF", 16.0f, [notoSans, arialuni, seguisym, code2000]));
+        var notoMono = ReadFont("Resources.Fonts.NotoMono.tmpe");
+        fonts.Add(new FontStack("NotoMono SDF", 16.0f, [notoMono, arialuni, seguisym, code2000]));
     }
 
     private FontHandle ReadFont(string path)
@@ -245,7 +258,7 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
             else
             {
                 if (cachedTextHandles.TryGetValue(gameObject, out var task) && task.IsCompleted)
-                    drawList.AddText(task.Result, TextScale * transform, color1, z);
+                    drawList.AddText(task.Result, transform, color1, z);
             }
         }
         

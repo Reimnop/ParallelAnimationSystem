@@ -39,4 +39,4 @@ This project is licensed under the GPLv3 License - see the [LICENSE](LICENSE) fi
 - [Project Arrhythmia](https://store.steampowered.com/app/440310/Project_Arrhythmia/)
 - [OpenTK](https://opentk.net/)
 - [msdfgen](https://github.com/Chlumsky/msdfgen)
-- Fonts provided by [Google Fonts](https://fonts.google.com/), [DaFont](https://www.dafont.com/) and [Code2000](https://www.code2001.com/code2000_page.htm)
+- Fonts provided by [Google Fonts](https://fonts.google.com/), [DaFont](https://www.dafont.com/), [Fontsource](https://fontsource.org/), and [Code2000](https://www.code2001.com/code2000_page.htm)

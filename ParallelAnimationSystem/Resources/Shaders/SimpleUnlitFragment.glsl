@@ -57,7 +57,7 @@ void main() {
     if (vRenderType == 1) {
         vec3 msdf = texture(uFontAtlases[vFontIndex], vUv).rgb;
         float distance = median(msdf.r, msdf.g, msdf.b);
-        float pxDistance = screenPxRange() * (distance - (vBold == 0 ? 0.5 : 0.3));
+        float pxDistance = screenPxRange() * (distance - (vBold == 0 ? 0.5 : 0.2));
         float alpha = clamp(pxDistance + 0.5, 0.0, 1.0);
         vec4 color = getColor();
         oFragColor = vec4(color.rgb, color.a * alpha);
