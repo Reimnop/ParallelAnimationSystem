@@ -106,6 +106,7 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
         // TODO: When we have streaming audio, don't dispose the stream here
         using var audioStream = new VorbisAudioStream(options.AudioPath);
         audioPlayer = audio.CreatePlayer(audioStream);
+        audioPlayer.Pitch = options.Speed;
     }
 
     private void RegisterMeshes()
@@ -261,7 +262,7 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
         // If audio hasn't updated, we estimate the time using the last known time
         if (currentAudioTime == lastAudioTime)
         {
-            time += delta;
+            time += delta * audioPlayer.Pitch;
         }
         else
         {

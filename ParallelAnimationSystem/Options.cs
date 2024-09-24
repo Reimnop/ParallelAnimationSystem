@@ -23,6 +23,9 @@ public class Options
     [Option("seed", Required = false, Default = -1, HelpText = "Seed for the random number generator, set to -1 to use a random seed")]
     public long Seed { get; set; }
     
+    [Option("speed", Required = false, Default = 1.0f, HelpText = "Sets the playback speed")]
+    public float Speed { get; set; } = 1.0f;
+    
     [Option("experimental-enable-text-rendering", Required = false, Default = false, HelpText = "Enable experimental text rendering")]
     public bool EnableTextRendering { get; set; }
 }

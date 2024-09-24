@@ -21,6 +21,12 @@ public class AudioPlayer : IDisposable
         }
     }
     
+    public float Pitch
+    {
+        get => AL.GetSource(sourceHandle, ALSourcef.Pitch);
+        set => AL.Source(sourceHandle, ALSourcef.Pitch, value);
+    }
+    
     public bool Playing => AL.GetSource(sourceHandle, ALGetSourcei.SourceState) == (int) ALSourceState.Playing;
     
     private readonly AudioSystem audioSystem;
