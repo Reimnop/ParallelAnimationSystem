@@ -2,7 +2,9 @@ using OpenTK.Mathematics;
 using Pamx.Common.Data;
 using ParallelAnimationSystem.Core.Animation;
 using ParallelAnimationSystem.Data;
+using ParallelAnimationSystem.Rendering.TextProcessing;
 using ParallelAnimationSystem.Util;
+using TmpParser;
 
 namespace ParallelAnimationSystem.Core;
 
@@ -25,6 +27,8 @@ public class GameObject(
     int shapeOptionIndex,
     float depth,
     string? text,
+    HorizontalAlignment horizontalAlignment,
+    VerticalAlignment verticalAlignment,
     List<ParentTransform> parents)
 {
     private static readonly Matrix3 TextScale = MathUtil.CreateScale(Vector2.One * 3.0f / 32.0f);
@@ -55,6 +59,8 @@ public class GameObject(
     public float Depth { get; } = depth;
     
     public string? Text { get; } = text;
+    public HorizontalAlignment HorizontalAlignment { get; } = horizontalAlignment;
+    public VerticalAlignment VerticalAlignment { get; } = verticalAlignment;
 
     public List<ParentTransform> Parents { get; } = parents;
     
@@ -72,8 +78,7 @@ public class GameObject(
                 context)
             : Matrix3.Identity;
         
-        // TODO: Not a thing in legacy
-        var originMatrix = ShapeIndex == 4 ? Matrix3.Identity : MathUtil.CreateTranslation(Origin);
+        var originMatrix = MathUtil.CreateTranslation(Origin);
         
         // Apply text scale if the shape is text
         var additionalScale = ShapeIndex == 4 ? TextScale : Matrix3.Identity;

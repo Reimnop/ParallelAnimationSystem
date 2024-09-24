@@ -75,7 +75,7 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
         // Create animation runner
         logger.LogInformation("Initializing animation runner");
         var beatmapImporter = new BeatmapImporter(seed, logger);
-        runner = beatmapImporter.CreateRunner(beatmap);
+        runner = beatmapImporter.CreateRunner(beatmap, format == LevelFormat.Lsb);
 
         if (options.EnableTextRendering)
         {
@@ -87,23 +87,7 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
                     return;
                 if (string.IsNullOrWhiteSpace(go.Text))
                     return;
-
-                // TODO: Not a thing in legacy
-                var horizontalAlignment = go.Origin.X switch
-                {
-                    -0.5f => HorizontalAlignment.Left,
-                    0.5f => HorizontalAlignment.Right,
-                    _ => HorizontalAlignment.Center,
-                };
-
-                var verticalAlignment = go.Origin.Y switch
-                {
-                    -0.5f => VerticalAlignment.Top,
-                    0.5f => VerticalAlignment.Bottom,
-                    _ => VerticalAlignment.Center,
-                };
-            
-                var task = Task.Run(() => renderer.CreateText(go.Text, fonts, "NotoMono SDF", horizontalAlignment, verticalAlignment));
+                var task = Task.Run(() => renderer.CreateText(go.Text, fonts, "NotoMono SDF", go.HorizontalAlignment, go.VerticalAlignment));
                 cachedTextHandles.Add(go, task);
             };
             runner.ObjectKilled += (_, go) =>

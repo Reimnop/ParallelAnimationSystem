@@ -9,16 +9,18 @@ using Pamx.Common.Enum;
 using Pamx.Common.Implementation;
 using ParallelAnimationSystem.Core.Animation;
 using ParallelAnimationSystem.Data;
+using ParallelAnimationSystem.Rendering.TextProcessing;
 using ParallelAnimationSystem.Util;
+using TmpParser;
 
 namespace ParallelAnimationSystem.Core;
 
 public class BeatmapImporter(ulong randomSeed, ILogger logger)
 {
-    public AnimationRunner CreateRunner(IBeatmap beatmap)
+    public AnimationRunner CreateRunner(IBeatmap beatmap, bool isLsb)
     {
         // Convert all the objects in the beatmap to GameObjects
-        var gameObjects = CreateGameObjects(beatmap);
+        var gameObjects = CreateGameObjects(beatmap, isLsb);
         
         // Get theme sequence
         var themeColorSequence = CreateThemeSequence(beatmap.Events.Theme);
@@ -159,13 +161,13 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             MathUtil.Lerp(a.W, b.W, t));
     }
 
-    private IEnumerable<GameObject> CreateGameObjects(IBeatmap beatmap)
+    private IEnumerable<GameObject> CreateGameObjects(IBeatmap beatmap, bool isLsb)
     {
         return beatmap.Objects
             .Concat(beatmap.PrefabObjects
                 .SelectMany(ExpandPrefabObject))
             .Indexed()
-            .Select(x => CreateGameObject(x.Index, x.Value))
+            .Select(x => CreateGameObject(x.Index, x.Value, isLsb))
             .OfType<GameObject>();
     }
         
@@ -238,7 +240,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             yield return newObj;
     }
 
-    private GameObject? CreateGameObject(int i, IObject beatmapObject)
+    private GameObject? CreateGameObject(int i, IObject beatmapObject, bool isLsb)
     {
         // We can skip empty objects to save memory
         if (beatmapObject.Type is ObjectType.Empty or ObjectType.LegacyEmpty)
@@ -292,6 +294,27 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         var shapeIndex = (int) beatmapObject.Shape;
         var shapeOptionIndex = beatmapObject.ShapeOption;
         var text = beatmapObject.Shape == ObjectShape.Text ? beatmapObject.Text : null;
+        var horizontalAlignment = HorizontalAlignment.Center;
+        var verticalAlignment = VerticalAlignment.Center;
+
+        if (!isLsb && beatmapObject.Shape == ObjectShape.Text)
+        {
+            horizontalAlignment = beatmapObject.Origin.X switch
+            {
+                -0.5f => HorizontalAlignment.Left,
+                0.5f => HorizontalAlignment.Right,
+                _ => HorizontalAlignment.Center,
+            };
+            
+            verticalAlignment = beatmapObject.Origin.Y switch
+            {
+                -0.5f => VerticalAlignment.Top,
+                0.5f => VerticalAlignment.Bottom,
+                _ => VerticalAlignment.Center,
+            };
+            
+            origin = new Vector2(0.0f);
+        }
 
         var parentTransforms = new List<ParentTransform>();
         try
@@ -315,7 +338,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             parentAnimatePosition, parentAnimateScale, parentAnimateRotation,
             renderMode, origin, 
             shapeIndex, shapeOptionIndex, depth,
-            text,
+            text, horizontalAlignment, verticalAlignment,
             parentTransforms);
     }
 
