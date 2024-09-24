@@ -313,7 +313,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
                 _ => VerticalAlignment.Center,
             };
             
-            origin = new Vector2(0.0f);
+            origin = Vector2.Zero;
         }
 
         var parentTransforms = new List<ParentTransform>();
