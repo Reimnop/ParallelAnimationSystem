@@ -20,8 +20,8 @@ public class AnimationRunner
     
     public int ObjectCount => startTimeSortedGameObjects.Count;
 
-    private readonly List<GameObject> startTimeSortedGameObjects;
-    private readonly List<GameObject> killTimeSortedGameObjects;
+    private readonly List<GameObject> startTimeSortedGameObjects = [];
+    private readonly List<GameObject> killTimeSortedGameObjects = [];
     private int spawnIndex;
     private int killIndex;
     private readonly HashSet<GameObject> aliveGameObjects = [];
@@ -52,12 +52,12 @@ public class AnimationRunner
         this.cameraRotationAnimation = cameraRotationAnimation;
         this.bloomSequence = bloomSequence;
         this.hueSequence = hueSequence;
-        
-        // A bit expensive, but we have to copy the enumerable to a list
-        // to prevent multiple enumeration
-        var goList = gameObjects.ToList();
-        startTimeSortedGameObjects = goList.ToList();
-        killTimeSortedGameObjects = goList.ToList();
+
+        foreach (var gameObject in gameObjects)
+        {
+            startTimeSortedGameObjects.Add(gameObject);
+            killTimeSortedGameObjects.Add(gameObject);
+        }
         
         // Sort them
         startTimeSortedGameObjects.Sort((x, y) => x.StartTime.CompareTo(y.StartTime));
