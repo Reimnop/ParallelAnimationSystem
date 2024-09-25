@@ -221,8 +221,8 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
             runner.CameraRotation);
         drawList.PostProcessingData = new PostProcessingData(
             runner.Hue,
-            bloomData.Intensity / (bloomData.Intensity + 1.0f),
-            bloomData.Diffusion / (bloomData.Diffusion + 1.0f));
+            bloomData.Intensity / (bloomData.Intensity + 2.0f),
+            bloomData.Diffusion / (bloomData.Diffusion + 2.0f));
 
         // Draw all alive game objects
         foreach (var gameObject in runner.AliveGameObjects)
