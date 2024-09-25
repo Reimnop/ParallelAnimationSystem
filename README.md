@@ -1,7 +1,7 @@
 # Parallel Animation System 🔥
 
 > The Parallel Animation System **(PAS)** is an app designed to emulate Project Arrhythmia at
-> ⚡ **lightning speed** ⚡. It supports most of PA's animation features, while being lightweight
+> ⚡ **lightning speed** ⚡. It supports most of PA's animation features while being lightweight
 > and extremely fast.
 
 ## Features
@@ -12,7 +12,7 @@
 - 💅 High quality rendering
 - 🗿 **Based as hell**
 
-## Building
+## Usage
 
 ### Dependencies
 
@@ -25,11 +25,59 @@
     git clone https://github.com/Reimnop/ParallelAnimationSystem.git --recursive
     ```
    
-2. Run it!
+2. Navigate to the cloned folder and run the project:
     ```sh
     dotnet run --project ParallelAnimationSystem
     ```
-   
+
+This will run ParallelAnimationSystem and also build the PAS executable file in `ParallelAnimationSystem\ParallelAnimationSystem\bin`.
+    
+### Arguments
+
+Parallel Animation System takes the following command line arguments:
+
+| Argument | Default | Description |
+| --- | --- | --- |
+| -l, --level | Required | Path to the level file (.lsb or .vgd) |
+| -a, --audio | Required | Path to the audio file |
+| --format | *automatic* | The format of the level file (lsb/vgd) |
+| --vsync | false | Enable VSync |
+| --workers | 4 | Number of worker threads, set to -1 to use all available threads |
+| --seed | -1 | Seed for the random number generator, set to -1 to use a random seed |
+| --speed | 1 | Sets the playback speed |
+| --experimental-enable-text-rendering  | false | Enable experimental text rendering |
+| --help |  | Display help screen with list of arguments |
+| --version |  | Display version information |
+
+Example usage:
+ ```sh
+ dotnet run --project ParallelAnimationSystem -- -l level.vgd -a audio.ogg
+ ```
+
+Or, when running the executable directly:
+```sh
+ ParallelAnimationSystem.exe -l level.vgd -a audio.ogg
+ ```
+
+## Troubleshooting
+
+### Build errors after pulling
+
+When updating your local repository, run `git pull --recurse-submodules` to ensure all submodules are updated when pulling changes.
+
+If you encounter build errors after running git pull, run `git submodule update` to ensure submodules are updated.
+
+### GPU compatibility
+
+Certain GPUs, such as Intel integrated graphics, are not currently supported by Parallel Animation System.
+
+If your machine has multiple GPUs and you experience any issues running Parallel Animation System, ensure PAS is configured to use the non-Intel GPU.
+(For Windows, this is done by adding the PAS executable in the system Graphics settings and setting it to use "high performance".)
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit issues, fork the repository, and send pull requests.
+
 ## License
 
 This project is licensed under the GPLv3 License - see the [LICENSE](LICENSE) file for details.
