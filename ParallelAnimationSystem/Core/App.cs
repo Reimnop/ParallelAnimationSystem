@@ -90,6 +90,7 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
                 var task = Task.Run(() => renderer.CreateText(go.Text, fonts, "NotoMono SDF", go.HorizontalAlignment, go.VerticalAlignment));
                 cachedTextHandles.Add(go, task);
             };
+            
             runner.ObjectKilled += (_, go) =>
             {
                 if (go.ShapeIndex != 4)
