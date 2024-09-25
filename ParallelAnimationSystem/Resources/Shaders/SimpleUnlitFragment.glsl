@@ -55,12 +55,18 @@ vec4 getColor() {
 
 void main() {
     if (vRenderType == 1) {
-        vec3 msdf = texture(uFontAtlases[vFontIndex], vUv).rgb;
-        float distance = median(msdf.r, msdf.g, msdf.b);
-        float pxDistance = screenPxRange() * (distance - (vBold == 0 ? 0.5 : 0.2));
-        float alpha = clamp(pxDistance + 0.5, 0.0, 1.0);
         vec4 color = getColor();
-        oFragColor = vec4(color.rgb, color.a * alpha);
+
+        // Output solid color if font index is < 0
+        if (vFontIndex < 0) {
+            oFragColor = color;
+        } else {
+            vec3 msdf = texture(uFontAtlases[vFontIndex], vUv).rgb;
+            float distance = median(msdf.r, msdf.g, msdf.b);
+            float pxDistance = screenPxRange() * (distance - (vBold == 0 ? 0.5 : 0.2));
+            float alpha = clamp(pxDistance + 0.5, 0.0, 1.0);
+            oFragColor = vec4(color.rgb, color.a * alpha);
+        }
     } else {
         oFragColor = getColor(vColor1, vColor2, vRenderMode, vUv);
     }

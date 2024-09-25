@@ -490,7 +490,8 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
             BlitFramebufferFilter.Linear);
         
         // Do post-processing
-        var finalTexture = HandlePostProcessing(drawList.PostProcessingData, postProcessTextureHandle1, postProcessTextureHandle2);
+        // var finalTexture = HandlePostProcessing(drawList.PostProcessingData, postProcessTextureHandle1, postProcessTextureHandle2);
+        var finalTexture = postProcessTextureHandle1;
         
         // Bind final texture to post process fbo
         GL.NamedFramebufferTexture(postProcessFboHandle, FramebufferAttachment.ColorAttachment0, finalTexture, 0);

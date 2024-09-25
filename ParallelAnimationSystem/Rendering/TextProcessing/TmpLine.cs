@@ -9,4 +9,5 @@ public record TmpLine(
     float Height,
     float AdvanceY,
     HorizontalAlignment? Alignment,
-    ShapedGlyph[] Glyphs);
+    ShapedGlyph[] Glyphs,
+    Mark[] Marks);

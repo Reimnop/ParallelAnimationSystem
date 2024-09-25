@@ -13,6 +13,7 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
         public Measurement CurrentSize { get; set; } = new(1.0f, Unit.Em);
         public Measurement CurrentLineHeight { get; set; } = new(1.0f, Unit.Em);
         public HorizontalAlignment? CurrentAlignment { get; set; }
+        public ColorAlpha CurrentMarkColor { get; set; }
         public required FontStack CurrentFontStack { get; set; }
     }
     
@@ -48,6 +49,15 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
             var glyphs = line.Glyphs;
             for (var i = 0; i < glyphs.Length; i++)
                 glyphs[i] = glyphs[i] with { Position = glyphs[i].Position + xOffset };
+            var marks = line.Marks;
+            for (var i = 0; i < marks.Length; i++)
+            {
+                marks[i] = marks[i] with
+                {
+                    MinX = marks[i].MinX + xOffset,
+                    MaxX = marks[i].MaxX + xOffset,
+                };
+            }
         }
         
         // Output render glyphs
@@ -95,6 +105,31 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
                     yield return new RenderGlyph(new Vector2(minX, minY), new Vector2(maxX, maxY), minUV, maxUV, color, boldItalic, shapedGlyph.FontIndex);
                 }
             }
+
+            foreach (var mark in line.Marks)
+            {
+                var colorAlpha = mark.Color;
+                var color = new Vector4(
+                    colorAlpha.Rgb.HasValue 
+                        ? new Vector3(
+                            colorAlpha.Rgb.Value.R / 255.0f,
+                            colorAlpha.Rgb.Value.G / 255.0f,
+                            colorAlpha.Rgb.Value.B / 255.0f)
+                        : new Vector3(float.NaN), 
+                    colorAlpha.A.HasValue
+                        ? colorAlpha.A.Value / 255.0f
+                        : float.NaN);
+                
+                // Discard marks with 0 alpha since we can't see them anyway
+                if (color.W == 0.0f)
+                    continue;
+                
+                var minX = mark.MinX;
+                var minY = y + mark.MinY;
+                var maxX = mark.MaxX;
+                var maxY = y + mark.MaxY;
+                yield return new RenderGlyph(new Vector2(minX, minY), new Vector2(maxX, maxY), Vector2.Zero, Vector2.Zero, color, BoldItalic.None, -1);
+            }
             
             y -= line.AdvanceY;
         }
@@ -103,7 +138,12 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
     // Shape a line of text, without X offset (that'll be done in a later phase)
     private TmpLine ShapeLinePartial(IEnumerable<IElement> line, ShapingState state)
     {
+        var initialHasMark = state.CurrentMarkColor.Rgb.HasValue;
         var glyphs = new List<ShapedGlyph>();
+        var marks = new List<Mark>();
+        Mark? currentMark = initialHasMark
+            ? new Mark(0.0f, 0.0f, 0.0f, 0.0f, state.CurrentMarkColor)
+            : null;
         var x = 0.0f;
         var width = 0.0f;
         var height = 0.0f;
@@ -139,10 +179,28 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
                     var normalizedAscender = font.Metadata.Ascender / font.Metadata.Size;
                     var normalizedDescender = font.Metadata.Descender / font.Metadata.Size;
                     
-                    width = Math.Max(width, shapedGlyph.Position + normalizedAdvance * currentSize);
-                    height = Math.Max(height, normalizedLineHeight * currentSize);
-                    ascender = Math.Max(ascender, normalizedAscender * currentSize);
-                    descender = Math.Min(descender, normalizedDescender * currentSize);
+                    var glyphEnd = shapedGlyph.Position + normalizedAdvance * currentSize;
+                    var glyphHeight = normalizedLineHeight * currentSize;
+                    var glyphUpper = normalizedAscender * currentSize;
+                    var glyphLower = normalizedDescender * currentSize;
+                    
+                    width = Math.Max(width, glyphEnd);
+                    height = Math.Max(height, glyphHeight);
+                    ascender = Math.Max(ascender, glyphUpper);
+                    descender = Math.Min(descender, glyphLower);
+
+                    if (currentMark.HasValue)
+                    {
+                        var currentMaxX = currentMark.Value.MaxX;
+                        var currentMinY = currentMark.Value.MinY;
+                        var currentMaxY = currentMark.Value.MaxY;
+                        currentMark = currentMark.Value with
+                        {
+                            MaxX = Math.Max(currentMaxX, glyphEnd),
+                            MinY = Math.Min(currentMinY, glyphLower),
+                            MaxY = Math.Max(currentMaxY, glyphLower + glyphHeight), // We don't use ascender here to avoid gaps
+                        };
+                    }
                 }
             }
             
@@ -186,6 +244,19 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
                 state.CurrentLineHeight = lineHeightElement.Value;
             }
 
+            if (element is MarkElement markElement)
+            {
+                // Add the current mark to the list if it has a width and height
+                if (currentMark.HasValue && currentMark.Value.Width != 0.0f && currentMark.Value.Height != 0.0f)
+                    marks.Add(currentMark.Value);
+
+                var hasMark = markElement.Value.Rgb.HasValue;
+                currentMark = hasMark
+                    ? new Mark(x, 0.0f, x, 0.0f, markElement.Value)
+                    : null;
+                state.CurrentMarkColor = markElement.Value;
+            }
+
             if (element is FontElement fontElement)
             {
                 var fontName = fontElement.Value?.ToLowerInvariant();
@@ -193,6 +264,9 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
                     state.CurrentFontStack = fontStack;
             }
         }
+        
+        if (currentMark.HasValue && currentMark.Value.Width != 0.0f && currentMark.Value.Height != 0.0f)
+            marks.Add(currentMark.Value);
         
         var lastFontStack = state.CurrentFontStack;
         var lastCurrentSize = ResolveMeasurement(state.CurrentSize, lastFontStack.Size, lastFontStack.Size);
@@ -208,7 +282,7 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
         
         var advanceY = ResolveMeasurement(state.CurrentLineHeight, height, height);
         
-        return new TmpLine(ascender, descender, width, height, advanceY, state.CurrentAlignment, glyphs.ToArray());
+        return new TmpLine(ascender, descender, width, height, advanceY, state.CurrentAlignment, glyphs.ToArray(), marks.ToArray());
     }
 
     private float ResolveMeasurement(Measurement measurement, float baseEm, float basePercent)
