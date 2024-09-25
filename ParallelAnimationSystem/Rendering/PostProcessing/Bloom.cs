@@ -62,7 +62,7 @@ public class Bloom : IDisposable
         // Prefilter to mip 0
         GL.UseProgram(prefilterProgram);
         
-        GL.BindImageTexture(0, inputTexture, 0, false, 0, BufferAccess.ReadOnly, InternalFormat.Rgba8);
+        GL.BindImageTexture(0, inputTexture, 0, false, 0, BufferAccess.ReadOnly, InternalFormat.Rgba16f);
         GL.BindImageTexture(1, mipChain[0], 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f);
         GL.Uniform2i(prefilterSizeUniformLocation, 1, size);
         
@@ -138,9 +138,9 @@ public class Bloom : IDisposable
         
         // Combine result with input
         GL.UseProgram(combineProgram);
-        GL.BindImageTexture(0, inputTexture, 0, false, 0, BufferAccess.ReadOnly, InternalFormat.Rgba8);
+        GL.BindImageTexture(0, inputTexture, 0, false, 0, BufferAccess.ReadOnly, InternalFormat.Rgba16f);
         GL.BindImageTexture(1, mipChain[0], 0, false, 0, BufferAccess.ReadOnly, InternalFormat.Rgba16f);
-        GL.BindImageTexture(2, outputTexture, 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba8);
+        GL.BindImageTexture(2, outputTexture, 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f);
         GL.Uniform2i(combineSizeUniformLocation, 1, size);
         GL.Uniform1f(combineIntensityUniformLocation, intensity);
         

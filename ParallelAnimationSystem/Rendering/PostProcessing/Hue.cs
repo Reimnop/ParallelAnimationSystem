@@ -38,8 +38,8 @@ public class Hue : IDisposable
         
         GL.UseProgram(program);
         
-        GL.BindImageTexture(0, inputTexture, 0, false, 0, BufferAccess.ReadOnly, InternalFormat.Rgba8);
-        GL.BindImageTexture(1, outputTexture, 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba8);
+        GL.BindImageTexture(0, inputTexture, 0, false, 0, BufferAccess.ReadOnly, InternalFormat.Rgba16f);
+        GL.BindImageTexture(1, outputTexture, 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f);
         GL.Uniform2i(sizeUniformLocation, 1, size);
         GL.Uniform1f(hueShiftAngleUniformLocation, shiftAngle);
         

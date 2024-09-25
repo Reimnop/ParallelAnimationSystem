@@ -18,6 +18,7 @@ namespace ParallelAnimationSystem.Rendering;
 public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
 {
     private const int MaxFonts = 12;
+    private const int MsaaSamples = 4;
     
     public bool ShouldExit { get; private set; }
 
@@ -288,10 +289,10 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         // Initialize fbos
         // Initialize scene fbo
         fboTextureHandle = GL.CreateTexture(TextureTarget.Texture2dMultisample);
-        GL.TextureStorage2DMultisample(fboTextureHandle, 4, SizedInternalFormat.Rgba8, size.X, size.Y, true);
+        GL.TextureStorage2DMultisample(fboTextureHandle, MsaaSamples, SizedInternalFormat.Rgba16f, size.X, size.Y, true);
         
         fboDepthBufferHandle = GL.CreateRenderbuffer();
-        GL.NamedRenderbufferStorageMultisample(fboDepthBufferHandle, 4, InternalFormat.DepthComponent32f, size.X, size.Y);
+        GL.NamedRenderbufferStorageMultisample(fboDepthBufferHandle, MsaaSamples, InternalFormat.DepthComponent32f, size.X, size.Y);
         
         fboHandle = GL.CreateFramebuffer();
         GL.NamedFramebufferTexture(fboHandle, FramebufferAttachment.ColorAttachment0, fboTextureHandle, 0);
@@ -299,10 +300,10 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         
         // Initialize post process fbo
         postProcessTextureHandle1 = GL.CreateTexture(TextureTarget.Texture2d);
-        GL.TextureStorage2D(postProcessTextureHandle1, 1, SizedInternalFormat.Rgba8, size.X, size.Y);
+        GL.TextureStorage2D(postProcessTextureHandle1, 1, SizedInternalFormat.Rgba16f, size.X, size.Y);
         
         postProcessTextureHandle2 = GL.CreateTexture(TextureTarget.Texture2d);
-        GL.TextureStorage2D(postProcessTextureHandle2, 1, SizedInternalFormat.Rgba8, size.X, size.Y);
+        GL.TextureStorage2D(postProcessTextureHandle2, 1, SizedInternalFormat.Rgba16f, size.X, size.Y);
         
         postProcessFboHandle = GL.CreateFramebuffer();
         // We will bind the texture later
@@ -682,16 +683,16 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         
         // Create new textures
         fboTextureHandle = GL.CreateTexture(TextureTarget.Texture2dMultisample);
-        GL.TextureStorage2DMultisample(fboTextureHandle, 4, SizedInternalFormat.Rgba8, size.X, size.Y, true);
+        GL.TextureStorage2DMultisample(fboTextureHandle, MsaaSamples, SizedInternalFormat.Rgba16f, size.X, size.Y, true);
         
         fboDepthBufferHandle = GL.CreateRenderbuffer();
-        GL.NamedRenderbufferStorageMultisample(fboDepthBufferHandle, 4, InternalFormat.DepthComponent32f, size.X, size.Y);
+        GL.NamedRenderbufferStorageMultisample(fboDepthBufferHandle, MsaaSamples, InternalFormat.DepthComponent32f, size.X, size.Y);
         
         postProcessTextureHandle1 = GL.CreateTexture(TextureTarget.Texture2d);
-        GL.TextureStorage2D(postProcessTextureHandle1, 1, SizedInternalFormat.Rgba8, size.X, size.Y);
+        GL.TextureStorage2D(postProcessTextureHandle1, 1, SizedInternalFormat.Rgba16f, size.X, size.Y);
         
         postProcessTextureHandle2 = GL.CreateTexture(TextureTarget.Texture2d);
-        GL.TextureStorage2D(postProcessTextureHandle2, 1, SizedInternalFormat.Rgba8, size.X, size.Y);
+        GL.TextureStorage2D(postProcessTextureHandle2, 1, SizedInternalFormat.Rgba16f, size.X, size.Y);
         
         // Bind to fbo
         GL.NamedFramebufferTexture(fboHandle, FramebufferAttachment.ColorAttachment0, fboTextureHandle, 0);

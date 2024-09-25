@@ -42,7 +42,7 @@ float median(float r, float g, float b) {
 float screenPxRange() {
     vec2 unitRange = vec2(2.0) / vec2(32.0); // TODO: Don't hardcode this: pxRange / fontSize
     vec2 screenTexSize = vec2(1.0) / fwidth(vUvNormalized);
-    return max(dot(unitRange, screenTexSize), 1.0);
+    return max(dot(unitRange, screenTexSize), 0.0);
 }
 
 vec4 getColor() {

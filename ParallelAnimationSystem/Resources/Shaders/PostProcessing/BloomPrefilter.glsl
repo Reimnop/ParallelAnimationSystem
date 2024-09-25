@@ -2,7 +2,7 @@
 
 layout(local_size_x = 8, local_size_y = 8) in;
 
-layout(rgba8, binding = 0) uniform image2D uImageInput;
+layout(rgba16f, binding = 0) uniform image2D uImageInput;
 layout(rgba16f, binding = 1) uniform image2D uImageOutput;
 
 uniform ivec2 uSize;
