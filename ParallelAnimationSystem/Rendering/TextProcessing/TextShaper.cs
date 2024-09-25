@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using OpenTK.Mathematics;
 using ParallelAnimationSystem.Util;
 using TmpParser;
@@ -12,6 +11,7 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
         public Style CurrentStyle { get; set; }
         public Measurement CurrentCSpace { get; set; }
         public Measurement CurrentSize { get; set; } = new(1.0f, Unit.Em);
+        public Measurement CurrentLineHeight { get; set; } = new(1.0f, Unit.Em);
         public HorizontalAlignment? CurrentAlignment { get; set; }
         public required FontStack CurrentFontStack { get; set; }
     }
@@ -51,7 +51,7 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
         }
         
         // Output render glyphs
-        var paragraphHeight = linesOfShapedGlyphs.Sum(line => line.Height);
+        var paragraphHeight = linesOfShapedGlyphs.Sum(line => line.AdvanceY);
         var yOffset = verticalAlignment switch
         {
             VerticalAlignment.Top => paragraphHeight,
@@ -96,7 +96,7 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
                 }
             }
             
-            y -= line.Height;
+            y -= line.AdvanceY;
         }
     }
 
@@ -180,6 +180,11 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
             {
                 state.CurrentSize = sizeElement.Value;
             }
+            
+            if (element is LineHeightElement lineHeightElement)
+            {
+                state.CurrentLineHeight = lineHeightElement.Value;
+            }
 
             if (element is FontElement fontElement)
             {
@@ -201,7 +206,9 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
         ascender = ascender == 0.0f ? normalizedLastAscender * lastCurrentSize : ascender;
         descender = descender == 0.0f ? normalizedLastDescender * lastCurrentSize : descender;
         
-        return new TmpLine(ascender, descender, width, height, state.CurrentAlignment, glyphs.ToArray());
+        var advanceY = ResolveMeasurement(state.CurrentLineHeight, height, height);
+        
+        return new TmpLine(ascender, descender, width, height, advanceY, state.CurrentAlignment, glyphs.ToArray());
     }
 
     private float ResolveMeasurement(Measurement measurement, float baseEm, float basePercent)
