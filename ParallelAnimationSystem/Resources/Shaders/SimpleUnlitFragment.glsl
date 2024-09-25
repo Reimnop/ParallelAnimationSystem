@@ -49,7 +49,7 @@ vec4 getColor() {
     float r = isnan(vColor2.r) ? vColor1.r : vColor2.r;
     float g = isnan(vColor2.g) ? vColor1.g : vColor2.g;
     float b = isnan(vColor2.b) ? vColor1.b : vColor2.b;
-    float a = isnan(vColor2.a) ? vColor1.a : vColor2.a;
+    float a = isnan(vColor2.a) ? vColor1.a : min(vColor2.a, vColor1.a);
     return vec4(r, g, b, a);
 }
 

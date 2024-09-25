@@ -55,6 +55,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
     private int multiDrawGlyphBufferHandle, multiDrawGlyphBufferSize;
     private int programHandle;
     private int fontAtlasesUniformLocation;
+    private int fontAtlasSampler;
     
     private Vector2i currentFboSize;
     private int fboTextureHandle, fboDepthBufferHandle;
@@ -286,6 +287,11 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         // Get uniform locations
         fontAtlasesUniformLocation = GL.GetUniformLocation(programHandle, "uFontAtlases");
         
+        // Initialize font atlas sampler
+        fontAtlasSampler = GL.CreateSampler();
+        GL.SamplerParameteri(fontAtlasSampler, SamplerParameterI.TextureMinFilter, (int) TextureMinFilter.Linear);
+        GL.SamplerParameteri(fontAtlasSampler, SamplerParameterI.TextureMagFilter, (int) TextureMagFilter.Linear);
+        
         // Initialize fbos
         // Initialize scene fbo
         fboTextureHandle = GL.CreateTexture(TextureTarget.Texture2dMultisample);
@@ -329,6 +335,8 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         GL.DeleteBuffer(multiDrawGlyphBufferHandle);
         
         GL.DeleteProgram(programHandle);
+        GL.DeleteSampler(fontAtlasSampler);
+        
         GL.DeleteBuffer(vertexBufferHandle);
         GL.DeleteBuffer(indexBufferHandle);
         GL.DeleteVertexArray(vertexArrayHandle);
@@ -434,6 +442,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
                 var fontData = registeredFonts[i];
                 GL.Uniform1i(fontAtlasesUniformLocation + i, 1, i);
                 GL.BindTextureUnit((uint) i, fontData.AtlasHandle);
+                GL.BindSampler((uint) i, fontAtlasSampler);
             }
         }
         
