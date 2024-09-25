@@ -38,8 +38,8 @@ Parallel Animation System takes the following command line arguments:
 
 | Argument | Default | Description |
 | --- | --- | --- |
-| -l, --level | Required | Path to the level file (.lsb or .vgd) |
-| -a, --audio | Required | Path to the audio file |
+| -l, --level | **required** | Path to the level file (.lsb or .vgd) |
+| -a, --audio | **required** | Path to the audio file |
 | --format | *automatic* | The format of the level file (lsb/vgd) |
 | --vsync | false | Enable VSync |
 | --workers | 4 | Number of worker threads, set to -1 to use all available threads |
