@@ -5,7 +5,7 @@ namespace ParallelAnimationSystem.Rendering;
 public class FontData(TmpFile fontFile, Dictionary<char, int> characterToGlyphId, Dictionary<int, TmpGlyph> glyphIdToGlyph)
 { 
     public TmpFile FontFile { get; } = fontFile;
-    public TmpMetadata Metadata => FontFile.Metadata;
+    public TmpMetadata Metadata { get; } = fontFile.Metadata;
     public Dictionary<char, int> CharacterToGlyphId { get; } = characterToGlyphId;
     public Dictionary<int, TmpGlyph> GlyphIdToGlyph { get; } = glyphIdToGlyph;
     public bool Initialized { get; private set; }

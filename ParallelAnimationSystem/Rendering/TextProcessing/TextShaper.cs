@@ -175,12 +175,12 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
                     var normalizedAdvance = glyph.Advance / font.Metadata.Size;
                     x += normalizedAdvance * currentSize + currentCSpace;
                     
-                    var normalizedLineHeight = font.Metadata.LineHeight / font.Metadata.Size;
                     var normalizedAscender = font.Metadata.Ascender / font.Metadata.Size;
                     var normalizedDescender = font.Metadata.Descender / font.Metadata.Size;
+                    var normalizedGlyphHeight = normalizedAscender - normalizedDescender;
                     
                     var glyphEnd = shapedGlyph.Position + normalizedAdvance * currentSize;
-                    var glyphHeight = normalizedLineHeight * currentSize;
+                    var glyphHeight = normalizedGlyphHeight * currentSize;
                     var glyphUpper = normalizedAscender * currentSize;
                     var glyphLower = normalizedDescender * currentSize;
                     
@@ -198,7 +198,7 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
                         {
                             MaxX = Math.Max(currentMaxX, glyphEnd),
                             MinY = Math.Min(currentMinY, glyphLower),
-                            MaxY = Math.Max(currentMaxY, glyphLower + glyphHeight), // We don't use ascender here to avoid gaps
+                            MaxY = Math.Max(currentMaxY, glyphUpper),
                         };
                     }
                 }
