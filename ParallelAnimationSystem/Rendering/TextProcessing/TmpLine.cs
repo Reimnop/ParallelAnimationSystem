@@ -7,7 +7,6 @@ public record TmpLine(
     float Descender,
     float Width,
     float Height,
-    float AdvanceY,
     HorizontalAlignment? Alignment,
     ShapedGlyph[] Glyphs,
     Mark[] Marks);

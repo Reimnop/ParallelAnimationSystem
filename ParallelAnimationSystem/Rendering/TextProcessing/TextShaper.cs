@@ -87,8 +87,10 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
         };
 
         var y = yOffset - linesOfShapedGlyphs[0].Ascender;
-        foreach (var line in linesOfShapedGlyphs)
+        for (var i = 0; i < linesOfShapedGlyphs.Count; i++)
         {
+            var line = linesOfShapedGlyphs[i];
+            
             foreach (var shapedGlyph in line.Glyphs)
             {
                 var bold = shapedGlyph.Style.Bold;
@@ -147,7 +149,8 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
                 yield return new RenderGlyph(new Vector2(minX, minY), new Vector2(maxX, maxY), Vector2.Zero, Vector2.Zero, color, BoldItalic.None, -1);
             }
             
-            y -= line.AdvanceY;
+            if (i + 1 < linesOfShapedGlyphs.Count)
+                y -= linesOfShapedGlyphs[i + 1].Height;
         }
     }
 
@@ -297,9 +300,9 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
         ascender = ascender == 0.0f ? normalizedLastAscender * lastCurrentSize : ascender;
         descender = descender == 0.0f ? normalizedLastDescender * lastCurrentSize : descender;
         
-        var advanceY = ResolveMeasurement(state.CurrentLineHeight, height, height);
+        height = ResolveMeasurement(state.CurrentLineHeight, height, height);
         
-        return new TmpLine(ascender, descender, width, height, advanceY, state.CurrentAlignment, glyphs.ToArray(), marks.ToArray());
+        return new TmpLine(ascender, descender, width, height, state.CurrentAlignment, glyphs.ToArray(), marks.ToArray());
     }
 
     private float ResolveMeasurement(Measurement measurement, float baseEm, float basePercent)
@@ -326,7 +329,7 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
 
         var height = lines[0].Ascender;
         for (var i = 0; i < lines.Count - 1; i++)
-            height += lines[i].AdvanceY;
+            height += lines[i].Height;
         height -= lines[^1].Descender;
         return height;
     }
