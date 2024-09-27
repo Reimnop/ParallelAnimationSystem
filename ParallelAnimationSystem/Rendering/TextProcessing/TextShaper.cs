@@ -4,7 +4,7 @@ using TmpParser;
 
 namespace ParallelAnimationSystem.Rendering.TextProcessing;
 
-public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictionary<string, FontStack> fontStacks, string defaultFontName)
+public class TextShaper(Func<IFontHandle, int> getFontIndex, IReadOnlyList<FontData> registeredFonts, IReadOnlyDictionary<string, FontStack> fontStacks, string defaultFontName)
 {
     private class ShapingState
     {
@@ -181,14 +181,14 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
                     
                     var (glyphId, fontHandleIndex) = rawGlyph.Value;
                     var fontHandle = fontStack.Fonts[fontHandleIndex];
-                    var font = registeredFonts[fontHandle.Index];
+                    var font = registeredFonts[getFontIndex(fontHandle)];
                     
                     var currentSize = ResolveMeasurement(state.CurrentSize, fontStack.Size, fontStack.Size);
                     var currentCSpace = ResolveMeasurement(state.CurrentCSpace, fontStack.Size, fontStack.Size);
                     
                     var glyph = font.GlyphIdToGlyph[glyphId];
                     var glyphPosition = x;
-                    var shapedGlyph = new ShapedGlyph(glyphPosition, fontHandle.Index, glyphId, currentSize, state.CurrentStyle);
+                    var shapedGlyph = new ShapedGlyph(glyphPosition, getFontIndex(fontHandle), glyphId, currentSize, state.CurrentStyle);
                     glyphs.Add(shapedGlyph);
                     
                     // Calculate advance
@@ -291,7 +291,7 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
         var lastFontStack = state.CurrentFontStack;
         var lastCurrentSize = ResolveMeasurement(state.CurrentSize, lastFontStack.Size, lastFontStack.Size);
         var firstFontHandle = lastFontStack.Fonts[0];
-        var firstFont = registeredFonts[firstFontHandle.Index];
+        var firstFont = registeredFonts[getFontIndex(firstFontHandle)];
         var normalizedLastLineHeight = firstFont.Metadata.LineHeight / firstFont.Metadata.Size;
         var normalizedLastAscender = firstFont.Metadata.Ascender / firstFont.Metadata.Size;
         var normalizedLastDescender = firstFont.Metadata.Descender / firstFont.Metadata.Size;
@@ -317,7 +317,7 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
     private (int GlyphId, int FontHandleIndex)? GetGlyph(FontStack fontStack, char c)
     {
         foreach (var (i, fontHandle) in fontStack.Fonts.Indexed())
-            if (registeredFonts[fontHandle.Index].CharacterToGlyphId.TryGetValue(c, out var glyphId))
+            if (registeredFonts[getFontIndex(fontHandle)].CharacterToGlyphId.TryGetValue(c, out var glyphId))
                 return (glyphId, i);
         return null;
     }

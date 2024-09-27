@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging;
-using OpenTK.Mathematics;
 using Pamx.Ls;
 using Pamx.Vg;
 using ParallelAnimationSystem.Audio;
@@ -10,18 +9,17 @@ using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.TextProcessing;
 using ParallelAnimationSystem.Util;
-using TmpParser;
 
 namespace ParallelAnimationSystem.Core;
 
-public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<App> logger) : IDisposable
+public class App(Options options, IRenderer renderer, AudioSystem audio, ILogger<App> logger) : IDisposable
 {
-    private readonly List<List<MeshHandle>> meshes = [];
+    private readonly List<List<IMeshHandle>> meshes = [];
     
     private AnimationRunner? runner;
     private AudioPlayer? audioPlayer;
 
-    private readonly Dictionary<GameObject, Task<TextHandle>> cachedTextHandles = [];
+    private readonly Dictionary<GameObject, Task<ITextHandle>> cachedTextHandles = [];
     private readonly List<FontStack> fonts = [];
     
     private bool shuttingDown;
@@ -173,7 +171,7 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
         fonts.Add(new FontStack("NotoMono SDF", 16.0f, [notoMono, arialuni, seguisym, code2000]));
     }
 
-    private FontHandle ReadFont(string path)
+    private IFontHandle ReadFont(string path)
     {
         using var stream = ResourceUtil.ReadAsStream(path);
         return renderer.RegisterFont(stream);
@@ -274,7 +272,7 @@ public class App(Options options, Renderer renderer, AudioSystem audio, ILogger<
         return time;
     }
 
-    private void SubmitDrawList(DrawList drawList)
+    private void SubmitDrawList(IDrawList drawList)
     {
         // If we already have more than 2 draw lists queued, wait until we don't
         while (renderer.QueuedDrawListCount > 2 && !shuttingDown)

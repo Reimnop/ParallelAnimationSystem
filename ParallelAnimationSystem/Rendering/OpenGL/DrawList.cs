@@ -1,11 +1,11 @@
 using System.Collections;
 using OpenTK.Mathematics;
-using ParallelAnimationSystem.Rendering;
+using ParallelAnimationSystem.Data;
 
-namespace ParallelAnimationSystem.Data;
+namespace ParallelAnimationSystem.Rendering.OpenGL;
 
 // This should never be instantiated directly, but rather through the Renderer
-public class DrawList : IEnumerable<DrawData>
+public class DrawList : IDrawList, IEnumerable<DrawData>
 {
     public int Count => count;
     
@@ -16,7 +16,7 @@ public class DrawList : IEnumerable<DrawData>
     private readonly List<DrawData> drawDataList = [];
     private int count;
     
-    public void AddMesh(MeshHandle mesh, Matrix3 transform, Color4<Rgba> color1, Color4<Rgba> color2, float z, RenderMode renderMode)
+    public void AddMesh(IMeshHandle mesh, Matrix3 transform, Color4<Rgba> color1, Color4<Rgba> color2, float z, RenderMode renderMode)
     {
         DrawData drawData;
         if (drawDataList.Count > count)
@@ -38,7 +38,7 @@ public class DrawList : IEnumerable<DrawData>
         drawData.RenderMode = renderMode;
     }
     
-    public void AddText(TextHandle text, Matrix3 transform, Color4<Rgba> color, float z)
+    public void AddText(ITextHandle text, Matrix3 transform, Color4<Rgba> color, float z)
     {
         DrawData drawData;
         if (drawDataList.Count > count)

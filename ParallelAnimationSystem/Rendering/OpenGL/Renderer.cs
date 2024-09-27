@@ -7,16 +7,20 @@ using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Platform;
 using ParallelAnimationSystem.Data;
-using ParallelAnimationSystem.Rendering.PostProcessing;
+using ParallelAnimationSystem.Rendering.OpenGL.PostProcessing;
 using ParallelAnimationSystem.Rendering.TextProcessing;
 using ParallelAnimationSystem.Util;
 using TmpIO;
 using TmpParser;
 
-namespace ParallelAnimationSystem.Rendering;
+namespace ParallelAnimationSystem.Rendering.OpenGL;
 
-public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
+public class Renderer(Options options, ILogger<Renderer> logger) : IRenderer
 {
+    private record MeshHandle(int VertexOffset, int VertexCount, int IndexOffset, int IndexCount) : IMeshHandle;
+    private record FontHandle(int Index) : IFontHandle;
+    private record TextHandle(RenderGlyph[] Glyphs) : ITextHandle;
+    
     private const int MaxFonts = 12;
     private const int MsaaSamples = 4;
     
@@ -45,7 +49,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
     
     // Graphics data
     private readonly List<FontData> registeredFonts = [];
-    private MeshHandle baseFontMeshHandle;
+    private IMeshHandle baseFontMeshHandle;
     
     private int vertexArrayHandle;
     private int vertexBufferHandle;
@@ -70,7 +74,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
     private readonly Buffer multiDrawStorageBuffer = new();
     private readonly Buffer multiDrawGlyphBuffer = new();
     
-    public MeshHandle RegisterMesh(ReadOnlySpan<Vector2> vertices, ReadOnlySpan<int> indices)
+    public IMeshHandle RegisterMesh(ReadOnlySpan<Vector2> vertices, ReadOnlySpan<int> indices)
     {
         lock (meshDataLock)
         {
@@ -78,19 +82,19 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
 
             var vertexOffset = vertexBuffer.Data.Length / Vector2.SizeInBytes;
             var indexOffset = indexBuffer.Data.Length / sizeof(int);
-            var vertexSize = vertices.Length;
-            var indexSize = indices.Length;
+            var vertexCount = vertices.Length;
+            var indexCount = indices.Length;
             
             vertexBuffer.Append(vertices);
             indexBuffer.Append(indices);
             
-            logger.LogInformation("Registered mesh with {VertexSize} vertices and {IndexSize} indices", vertexSize, indexSize);
+            logger.LogInformation("Registered mesh with {VertexCount} vertices and {IndexCount} indices", vertexCount, indexCount);
             
-            return new MeshHandle(vertexOffset, vertexSize, indexOffset, indexSize);
+            return new MeshHandle(vertexOffset, vertexCount, indexOffset, indexCount);
         }
     }
 
-    public FontHandle RegisterFont(Stream stream)
+    public IFontHandle RegisterFont(Stream stream)
     {
         var fontFile = TmpRead.Read(stream);
         var fontData = new FontData(
@@ -108,15 +112,16 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         }
     }
 
-    public TextHandle CreateText(string str, IEnumerable<FontStack> fontStacks, string defaultFontName, HorizontalAlignment horizontalAlignment, VerticalAlignment verticalAlignment)
+    public ITextHandle CreateText(string str, IEnumerable<FontStack> fontStacks, string defaultFontName, HorizontalAlignment horizontalAlignment, VerticalAlignment verticalAlignment)
     {
         lock (registeredFonts)
         {
-            var textShaper = new TextShaper(registeredFonts, fontStacks.ToDictionary(x => x.Name.ToLowerInvariant()), defaultFontName);
-            return new TextHandle(textShaper.ShapeText(str, horizontalAlignment, verticalAlignment).ToArray());
+            var textShaper = new TextShaper(fontHandle => ((FontHandle) fontHandle).Index, registeredFonts, fontStacks.ToDictionary(x => x.Name.ToLowerInvariant()), defaultFontName);
+            var shapedText = textShaper.ShapeText(str, horizontalAlignment, verticalAlignment);
+            return new TextHandle(shapedText.ToArray());
         }
     }
-    
+
     public void Initialize()
     {
         var toolkitOptions = new ToolkitOptions
@@ -192,16 +197,16 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         logger.LogInformation("OpenGL initialized");
     }
 
-    public DrawList GetDrawList()
+    public IDrawList GetDrawList()
     {
         if (!drawListPool.TryDequeue(out var drawList))
             drawList = new DrawList();
         return drawList;
     }
 
-    public void SubmitDrawList(DrawList drawList)
+    public void SubmitDrawList(IDrawList drawList)
     {
-        drawListQueue.Enqueue(drawList);
+        drawListQueue.Enqueue((DrawList) drawList);
     }
 
     private void InitializeOpenGlData(Vector2i size)
@@ -522,12 +527,12 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
         multiDrawStorageBuffer.Clear();
         multiDrawGlyphBuffer.Clear();
         
+        var baseFontMesh = (MeshHandle) baseFontMeshHandle;
+        
         // Append data
         foreach (var drawData in drawDataList)
         {
             var renderType = drawData.RenderType;
-            var mesh = drawData.Mesh;
-            var text = drawData.Text;
             var transform = drawData.Transform;
             var color1 = drawData.Color1;
             var color2 = drawData.Color2;
@@ -535,15 +540,6 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
             var renderMode = drawData.RenderMode;
             
             var mvp = transform * camera;
-
-            multiDrawIndirectBuffer.Append(new DrawElementsIndirectCommand
-            {
-                Count = renderType == RenderType.Text ? baseFontMeshHandle.IndexCount : mesh.IndexCount,
-                InstanceCount = renderType == RenderType.Text ? text.Glyphs.Length : 1,
-                FirstIndex = renderType == RenderType.Text ? baseFontMeshHandle.IndexOffset : mesh.IndexOffset,
-                BaseVertex = renderType == RenderType.Text ? baseFontMeshHandle.VertexOffset : mesh.VertexOffset,
-                BaseInstance = 0
-            });
             
             multiDrawStorageBuffer.Append(new MultiDrawItem
             {
@@ -557,9 +553,33 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IDisposable
                 RenderType = (int) renderType,
                 GlyphOffset = multiDrawGlyphBuffer.Data.Length / Unsafe.SizeOf<RenderGlyph>(),
             });
-            
-            if (renderType == RenderType.Text)
-                multiDrawGlyphBuffer.Append<RenderGlyph>(text.Glyphs);
+
+            switch (renderType)
+            {
+                case RenderType.Mesh when drawData.Mesh is MeshHandle mesh:
+                    multiDrawIndirectBuffer.Append(new DrawElementsIndirectCommand
+                    {
+                        Count = mesh.IndexCount,
+                        InstanceCount = 1,
+                        FirstIndex = mesh.IndexOffset,
+                        BaseVertex = mesh.VertexOffset,
+                        BaseInstance = 0
+                    });
+                    break;
+                case RenderType.Text when drawData.Text is TextHandle text:
+                    multiDrawIndirectBuffer.Append(new DrawElementsIndirectCommand
+                    {
+                        Count = baseFontMesh.IndexCount,
+                        InstanceCount = text.Glyphs.Length,
+                        FirstIndex = baseFontMesh.IndexOffset,
+                        BaseVertex = baseFontMesh.VertexOffset,
+                        BaseInstance = 0
+                    });
+                    multiDrawGlyphBuffer.Append<RenderGlyph>(text.Glyphs);
+                    break;
+                default:
+                    throw new InvalidOperationException($"Unsupported or invalid data for render type '{renderType}'");
+            }
         }
         
         // Upload buffers to GPU

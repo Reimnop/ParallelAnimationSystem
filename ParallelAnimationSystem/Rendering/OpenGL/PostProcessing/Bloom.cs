@@ -2,7 +2,7 @@ using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using ParallelAnimationSystem.Util;
 
-namespace ParallelAnimationSystem.Rendering.PostProcessing;
+namespace ParallelAnimationSystem.Rendering.OpenGL.PostProcessing;
 
 public class Bloom : IDisposable
 {
