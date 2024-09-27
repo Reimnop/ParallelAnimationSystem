@@ -19,9 +19,25 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
     
     public IEnumerable<RenderGlyph> ShapeText(string str, HorizontalAlignment horizontalAlignment, VerticalAlignment verticalAlignment)
     {
+        if (str.EndsWith('\n'))
+            str = str[..^1]; // ONLY remove the VERY last newline (TMP quirk)
+        
         var tokens = TagParser.EnumerateTokens(str);
         var elements = TagParser.EnumerateElements(tokens);
-        var lines = TagParser.EnumerateLines(elements);
+        var lines = TagParser.EnumerateLines(elements)
+            .Select(x => x.ToList())
+            .ToList();
+        
+        // Trim the end of each line
+        foreach (var line in lines)
+        {
+            TextElement? lastTextElement = null;
+            foreach (var element in line)
+                if (element is TextElement textElement)
+                    lastTextElement = textElement;
+            if (lastTextElement is not null)
+                lastTextElement.Value = lastTextElement.Value.TrimEnd();
+        }
 
         var state = new ShapingState
         {
@@ -61,7 +77,7 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
         }
         
         // Output render glyphs
-        var paragraphHeight = linesOfShapedGlyphs.Sum(line => line.AdvanceY);
+        var paragraphHeight = GetParagraphHeight(linesOfShapedGlyphs);
         var yOffset = verticalAlignment switch
         {
             VerticalAlignment.Top => paragraphHeight,
@@ -69,7 +85,7 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
             VerticalAlignment.Bottom => 0.0f,
             _ => throw new ArgumentOutOfRangeException(nameof(verticalAlignment)),
         };
-        
+
         var y = yOffset - linesOfShapedGlyphs[0].Ascender;
         foreach (var line in linesOfShapedGlyphs)
         {
@@ -168,7 +184,8 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
                     var currentCSpace = ResolveMeasurement(state.CurrentCSpace, fontStack.Size, fontStack.Size);
                     
                     var glyph = font.GlyphIdToGlyph[glyphId];
-                    var shapedGlyph = new ShapedGlyph(x, fontHandle.Index, glyphId, currentSize, state.CurrentStyle);
+                    var glyphPosition = x;
+                    var shapedGlyph = new ShapedGlyph(glyphPosition, fontHandle.Index, glyphId, currentSize, state.CurrentStyle);
                     glyphs.Add(shapedGlyph);
                     
                     // Calculate advance
@@ -179,7 +196,7 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
                     var normalizedDescender = font.Metadata.Descender / font.Metadata.Size;
                     var normalizedGlyphHeight = normalizedAscender - normalizedDescender;
                     
-                    var glyphEnd = shapedGlyph.Position + normalizedAdvance * currentSize;
+                    var glyphEnd = glyphPosition + normalizedAdvance * currentSize;
                     var glyphHeight = normalizedGlyphHeight * currentSize;
                     var glyphUpper = normalizedAscender * currentSize;
                     var glyphLower = normalizedDescender * currentSize;
@@ -300,5 +317,17 @@ public class TextShaper(IReadOnlyList<FontData> registeredFonts, IReadOnlyDictio
             if (registeredFonts[fontHandle.Index].CharacterToGlyphId.TryGetValue(c, out var glyphId))
                 return (glyphId, i);
         return null;
+    }
+    
+    private static float GetParagraphHeight(IReadOnlyList<TmpLine> lines)
+    {
+        if (lines.Count == 0)
+            return 0.0f;
+
+        var height = lines[0].Ascender;
+        for (var i = 0; i < lines.Count - 1; i++)
+            height += lines[i].AdvanceY;
+        height -= lines[^1].Descender;
+        return height;
     }
 }
