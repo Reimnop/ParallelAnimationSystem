@@ -127,7 +127,9 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
     {
         lock (registeredFonts)
         {
-            var textShaper = new TextShaper(
+            var textShaper = new TextShaper<RenderGlyph>(
+                (min, max, minUV, maxUV, color, boldItalic, fontIndex) 
+                    => new RenderGlyph(min, max, minUV, maxUV, color, boldItalic, fontIndex),
                 (x, c) =>
                 {
                     var fontHandle = (FontHandle)x;

@@ -5,7 +5,10 @@ using TmpParser;
 
 namespace ParallelAnimationSystem.Rendering.TextProcessing;
 
-public class TextShaper(
+public delegate T RenderGlyphFactory<out T>(Vector2 min, Vector2 max, Vector2 minUV, Vector2 maxUV, Vector4 color, BoldItalic boldItalic, int fontIndex);
+
+public class TextShaper<T>(
+    RenderGlyphFactory<T> renderGlyphFactory,
     Func<IFontHandle, char, TmpCharacter?> getCharacterFromOrdinal,
     Func<IFontHandle, int, TmpGlyph?> getGlyphFromGlyphId,
     Func<IFontHandle, TmpMetadata> getFontMetadata,
@@ -31,7 +34,7 @@ public class TextShaper(
     private readonly Dictionary<string, FontStack> fontStackLookup = fontStacks
         .ToDictionary(x => x.Name.ToLowerInvariant());
     
-    public IEnumerable<RenderGlyph> ShapeText(string str, HorizontalAlignment horizontalAlignment, VerticalAlignment verticalAlignment)
+    public IEnumerable<T> ShapeText(string str, HorizontalAlignment horizontalAlignment, VerticalAlignment verticalAlignment)
     {
         if (str.EndsWith('\n'))
             str = str[..^1]; // ONLY remove the VERY last newline (TMP quirk)
@@ -137,7 +140,7 @@ public class TextShaper(
                     var maxY = minY - glyph.Height / metadata.Size * shapedGlyph.Size;
                     var minUV = new Vector2(glyph.MinX, glyph.MinY);
                     var maxUV = new Vector2(glyph.MaxX, glyph.MaxY);
-                    yield return new RenderGlyph(new Vector2(minX, minY), new Vector2(maxX, maxY), minUV, maxUV, color, boldItalic, shapedGlyph.FontIndex);
+                    yield return renderGlyphFactory(new Vector2(minX, minY), new Vector2(maxX, maxY), minUV, maxUV, color, boldItalic, shapedGlyph.FontIndex);
                 }
             }
 
@@ -163,7 +166,7 @@ public class TextShaper(
                 var minY = y + mark.MinY;
                 var maxX = mark.MaxX;
                 var maxY = y + mark.MaxY;
-                yield return new RenderGlyph(new Vector2(minX, minY), new Vector2(maxX, maxY), Vector2.Zero, Vector2.Zero, color, BoldItalic.None, -1);
+                yield return renderGlyphFactory(new Vector2(minX, minY), new Vector2(maxX, maxY), Vector2.Zero, Vector2.Zero, color, BoldItalic.None, -1);
             }
             
             if (i + 1 < linesOfShapedGlyphs.Count)

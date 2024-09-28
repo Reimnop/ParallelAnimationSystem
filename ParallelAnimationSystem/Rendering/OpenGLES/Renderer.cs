@@ -54,16 +54,28 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
     private readonly ConcurrentQueue<DrawList> drawListQueue = [];
     
     // Graphics data
-    private readonly ConcurrentQueue<Action> meshInitializers = [];
+    private readonly ConcurrentQueue<Action> initializers = [];
     
     private readonly List<FontHandle> registeredFonts = [];
     private IMeshHandle? baseFontMeshHandle;
     
     private int programHandle;
     private int mvpUniformLocation, zUniformLocation, renderModeUniformLocation, color1UniformLocation, color2UniformLocation;
+    private int glyphProgramHandle;
+    private int 
+        glyphMvpUniformLocation, 
+        glyphZUniformLocation, 
+        glyphMinMaxUniformLocation, 
+        glyphUvUniformLocation, 
+        glyphBoldItalicUniformLocation,
+        glyphFontAtlasesUniformLocation,
+        glyphGlyphColorUniformLocation,
+        glyphFontIndexUniformLocation;
     
-    private int fboTextureHandle, fboDepthBufferHandle;
+    private int fboColorBufferHandle, fboDepthBufferHandle;
     private int fboHandle;
+    private int postProcessTextureHandle;
+    private int postProcessFboHandle;
     private Vector2i currentFboSize;
     
     // Temporary draw data lists
@@ -157,9 +169,70 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
 
     private void InitializeOpenGlData(Vector2i initialSize)
     {
+        // Create main program handle
+        programHandle = CreateShaderProgram("Shaders/UnlitVertex.glsl", "Shaders/UnlitFragment.glsl");
+        
+        // Get uniform locations
+        mvpUniformLocation = GL.GetUniformLocation(programHandle, "uMvp");
+        zUniformLocation = GL.GetUniformLocation(programHandle, "uZ");
+        renderModeUniformLocation = GL.GetUniformLocation(programHandle, "uRenderMode");
+        color1UniformLocation = GL.GetUniformLocation(programHandle, "uColor1");
+        color2UniformLocation = GL.GetUniformLocation(programHandle, "uColor2");
+        
+        // Create glyph program handle
+        glyphProgramHandle = CreateShaderProgram("Shaders/TextVertex.glsl", "Shaders/TextFragment.glsl");
+        
+        // Get glyph uniform locations
+        glyphMvpUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uMvp");
+        glyphZUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uZ");
+        glyphMinMaxUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uMinMax");
+        glyphUvUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uUv");
+        glyphBoldItalicUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uBoldItalic");
+        glyphFontAtlasesUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uFontAtlases");
+        glyphGlyphColorUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uGlyphColor");
+        glyphFontIndexUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uFontIndex");
+        
+        // Initialize FBO
+        fboColorBufferHandle = GL.GenRenderbuffer();
+        GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, fboColorBufferHandle);
+        GL.RenderbufferStorageMultisample(RenderbufferTarget.Renderbuffer, MsaaSamples, InternalFormat.Rgba16f, initialSize.X, initialSize.Y);
+        
+        fboDepthBufferHandle = GL.GenRenderbuffer();
+        GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, fboDepthBufferHandle);
+        GL.RenderbufferStorageMultisample(RenderbufferTarget.Renderbuffer, MsaaSamples, InternalFormat.DepthComponent32f, initialSize.X, initialSize.Y);
+        
+        fboHandle = GL.GenFramebuffer();
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, fboHandle);
+        GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, RenderbufferTarget.Renderbuffer, fboColorBufferHandle);
+        GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, fboDepthBufferHandle);
+        
+        // Check FBO status
+        var fboStatus = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
+        if (fboStatus != FramebufferStatus.FramebufferComplete)
+            throw new InvalidOperationException($"Framebuffer is not complete: {fboStatus}");
+        
+        // Initialize post-process FBO
+        postProcessTextureHandle = GL.GenTexture();
+        GL.BindTexture(TextureTarget.Texture2d, postProcessTextureHandle);
+        GL.TexStorage2D(TextureTarget.Texture2d, 1, SizedInternalFormat.Rgba16f, initialSize.X, initialSize.Y);
+        
+        postProcessFboHandle = GL.GenFramebuffer();
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, postProcessFboHandle);
+        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, postProcessTextureHandle, 0);
+        
+        // Check post-process FBO status
+        var postProcessFboStatus = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
+        if (postProcessFboStatus != FramebufferStatus.FramebufferComplete)
+            throw new InvalidOperationException($"Post-process framebuffer is not complete: {postProcessFboStatus}");
+        
+        currentFboSize = initialSize;
+    }
+
+    private int CreateShaderProgram(string vertexShaderResourceName, string fragmentShaderResourceName)
+    {
         // Initialize shader program
-        var vertexShaderSource = resourceManager.LoadGraphicsResourceString("Shaders/UberVertex.glsl");
-        var fragmentShaderSource = resourceManager.LoadGraphicsResourceString("Shaders/UberFragment.glsl");
+        var vertexShaderSource = resourceManager.LoadGraphicsResourceString(vertexShaderResourceName);
+        var fragmentShaderSource = resourceManager.LoadGraphicsResourceString(fragmentShaderResourceName);
         
         var vertexShader = GL.CreateShader(ShaderType.VertexShader);
         GL.ShaderSource(vertexShader, vertexShaderSource);
@@ -183,7 +256,7 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
             throw new InvalidOperationException($"Fragment shader compilation failed: {infoLog}");
         }
         
-        programHandle = GL.CreateProgram();
+        var programHandle = GL.CreateProgram();
         GL.AttachShader(programHandle, vertexShader);
         GL.AttachShader(programHandle, fragmentShader);
         GL.LinkProgram(programHandle);
@@ -199,35 +272,7 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
         GL.DeleteShader(vertexShader);
         GL.DeleteShader(fragmentShader);
         
-        // Get uniform locations
-        mvpUniformLocation = GL.GetUniformLocation(programHandle, "uMvp");
-        zUniformLocation = GL.GetUniformLocation(programHandle, "uZ");
-        renderModeUniformLocation = GL.GetUniformLocation(programHandle, "uRenderMode");
-        color1UniformLocation = GL.GetUniformLocation(programHandle, "uColor1");
-        color2UniformLocation = GL.GetUniformLocation(programHandle, "uColor2");
-        
-        // Initialize FBO
-        fboTextureHandle = GL.GenTexture();
-        GL.BindTexture(TextureTarget.Texture2d, fboTextureHandle);
-        GL.TexImage2D(TextureTarget.Texture2d, 0, InternalFormat.Rgba, initialSize.X, initialSize.Y, 0, PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
-        GL.TexParameteri(TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, (int) TextureMinFilter.Linear);
-        GL.TexParameteri(TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, (int) TextureMagFilter.Linear);
-        
-        fboDepthBufferHandle = GL.GenRenderbuffer();
-        GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, fboDepthBufferHandle);
-        GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, InternalFormat.DepthComponent32f, initialSize.X, initialSize.Y);
-        
-        fboHandle = GL.GenFramebuffer();
-        GL.BindFramebuffer(FramebufferTarget.Framebuffer, fboHandle);
-        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, fboTextureHandle, 0);
-        GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, fboDepthBufferHandle);
-        
-        // Check FBO status
-        var fboStatus = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
-        if (fboStatus != FramebufferStatus.FramebufferComplete)
-            throw new InvalidOperationException($"Framebuffer is not complete: {fboStatus}");
-        
-        currentFboSize = initialSize;
+        return programHandle;
     }
 
     public IMeshHandle RegisterMesh(ReadOnlySpan<Vector2> vertices, ReadOnlySpan<int> indices)
@@ -263,7 +308,7 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
             meshHandle.Count = indicesBuffer.Length;
         };
         
-        meshInitializers.Enqueue(intializer);
+        initializers.Enqueue(intializer);
         logger.LogInformation("Registered mesh with {VertexCount} vertices and {IndexCount} indices", vertices.Length, indices.Length);
         
         return meshHandle;
@@ -279,6 +324,21 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
                 fontFile.Characters.ToDictionary(x => x.Character),
                 fontFile.Glyphs.ToDictionary(x => x.Id));
             registeredFonts.Add(fontHandle);
+
+            var initializer = () =>
+            {
+                var atlasHandle = GL.GenTexture();
+                GL.BindTexture(TextureTarget.Texture2d, atlasHandle);
+                GL.TexStorage2D(TextureTarget.Texture2d, 1, SizedInternalFormat.Rgb32f, fontFile.Atlas.Width, fontFile.Atlas.Height);
+                GL.TexSubImage2D(TextureTarget.Texture2d, 0, 0, 0, fontFile.Atlas.Width, fontFile.Atlas.Height, PixelFormat.Rgb, PixelType.Float, fontFile.Atlas.Data);
+                GL.TexParameteri(TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Linear);
+                GL.TexParameteri(TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
+                
+                fontHandle.Initialize(atlasHandle);
+            };
+            initializers.Enqueue(initializer);
+            
+            logger.LogInformation("Registered font '{FontName}'", fontFile.Metadata.Name);
             return fontHandle;
         }
     }
@@ -290,8 +350,32 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
         HorizontalAlignment horizontalAlignment,
         VerticalAlignment verticalAlignment)
     {
-        // TODO: Implement text rendering
-        return null;
+        lock (registeredFonts)
+        {
+            var textShaper = new TextShaper<RenderGlyph>(
+                (min, max, minUV, maxUV, color, boldItalic, fontIndex) 
+                    => new RenderGlyph(min, max, minUV, maxUV, color, boldItalic, fontIndex),
+                (x, c) =>
+                {
+                    var fontHandle = (FontHandle)x;
+                    if (fontHandle.OrdinalToCharacter.TryGetValue(c, out var character))
+                        return character;
+                    return null;
+                },
+                (x, glyphId) =>
+                {
+                    var fontHandle = (FontHandle)x;
+                    if (fontHandle.GlyphIdToGlyph.TryGetValue(glyphId, out var glyph))
+                        return glyph;
+                    return null;
+                },
+                x => ((FontHandle)x).Metadata,
+                registeredFonts,
+                fontStacks,
+                defaultFontName);
+            var shapedText = textShaper.ShapeText(str, horizontalAlignment, verticalAlignment);
+            return new TextHandle(shapedText.ToArray());
+        }
     }
 
     public IDrawList GetDrawList()
@@ -379,9 +463,6 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
         GL.ClearColor(drawList.ClearColor);
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
         
-        // Use our program
-        GL.UseProgram(programHandle);
-        
         // Opaque pass, disable blending, enable depth testing
         GL.Disable(EnableCap.Blend);
         GL.Enable(EnableCap.DepthTest);
@@ -400,10 +481,27 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
         // Restore depth write state
         GL.DepthMask(true);
         
-        // Blit FBO to screen
+        // Blit FBO to post-process FBO
         GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, fboHandle);
+        GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, postProcessFboHandle);
+        GL.BlitFramebuffer(
+            0, 0, 
+            size.X, size.Y, 
+            0, 0, 
+            size.X, size.Y, 
+            ClearBufferMask.ColorBufferBit, 
+            BlitFramebufferFilter.Linear);
+        
+        // Blit post-process FBO to screen
+        GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, postProcessFboHandle);
         GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);
-        GL.BlitFramebuffer(0, 0, size.X, size.Y, 0, 0, size.X, size.Y, ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Linear);
+        GL.BlitFramebuffer(
+            0, 0, 
+            size.X, size.Y, 
+            0, 0, 
+            size.X, size.Y, 
+            ClearBufferMask.ColorBufferBit, 
+            BlitFramebufferFilter.Linear);
         
         // Swap buffers
         Debug.Assert(glContextHandle is not null);
@@ -414,31 +512,76 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
     {
         foreach (var drawData in drawDataList)
         {
-            var mesh = drawData.Mesh;
-            if (mesh is not MeshHandle meshHandle)
-                continue;
-            
             var transform = drawData.Transform * camera;
             var color1 = drawData.Color1;
             var color2 = drawData.Color2;
             
-            // Set transform
-            unsafe
+            switch (drawData.RenderType)
             {
-                GL.UniformMatrix3fv(mvpUniformLocation, 1, false, (float*)&transform);
+                case RenderType.Mesh when drawData.Mesh is MeshHandle meshHandle:
+                    // Use our program
+                    GL.UseProgram(programHandle);
+            
+                    // Set transform
+                    unsafe
+                    {
+                        GL.UniformMatrix3fv(mvpUniformLocation, 1, false, (float*)&transform);
+                    }
+            
+                    GL.Uniform1f(zUniformLocation, drawData.Z);
+                    GL.Uniform1i(renderModeUniformLocation, (int) drawData.RenderMode);
+                    GL.Uniform4f(color1UniformLocation, color1.X, color1.Y, color1.Z, color1.W);
+                    GL.Uniform4f(color2UniformLocation, color2.X, color2.Y, color2.Z, color2.W);
+            
+                    // Bind our buffers
+                    GL.BindVertexArray(meshHandle.VertexArrayHandle);
+                    GL.BindBuffer(BufferTarget.ElementArrayBuffer, meshHandle.IndexBufferHandle);
+            
+                    // Draw
+                    GL.DrawElements(PrimitiveType.Triangles, meshHandle.Count, DrawElementsType.UnsignedInt, IntPtr.Zero);
+                    break;
+                case RenderType.Text when drawData.Text is TextHandle textHandle:
+                    // Use our program
+                    GL.UseProgram(glyphProgramHandle);
+                    
+                    unsafe
+                    {
+                        GL.UniformMatrix3fv(glyphMvpUniformLocation, 1, false, (float*)&transform);
+                    }
+                    GL.Uniform1f(glyphZUniformLocation, drawData.Z);
+                    
+                    // Set textures
+                    lock (registeredFonts)
+                        foreach (var (i, fontHandle) in registeredFonts.Indexed())
+                        {
+                            GL.ActiveTexture((TextureUnit)((int)TextureUnit.Texture0 + i));
+                            GL.BindTexture(TextureTarget.Texture2d, fontHandle.AtlasHandle);
+                            GL.Uniform1i(glyphFontAtlasesUniformLocation + i, i);
+                        }
+                    
+                    var baseFontMeshHandle = this.baseFontMeshHandle as MeshHandle;
+                    Debug.Assert(baseFontMeshHandle is not null);
+
+                    foreach (var glyph in textHandle.Glyphs)
+                    {
+                        var glyphColor = new Vector4(
+                            float.IsNaN(glyph.Color.X) ? color1.X : glyph.Color.X,
+                            float.IsNaN(glyph.Color.Y) ? color1.Y : glyph.Color.Y,
+                            float.IsNaN(glyph.Color.Z) ? color1.Z : glyph.Color.Z,
+                            float.IsNaN(glyph.Color.W) ? color1.W : MathF.Min(glyph.Color.W, color1.W));
+                        GL.Uniform4f(glyphGlyphColorUniformLocation, glyphColor.X, glyphColor.Y, glyphColor.Z, glyphColor.W);
+                        GL.Uniform4f(glyphMinMaxUniformLocation, glyph.Min.X, glyph.Min.Y, glyph.Max.X, glyph.Max.Y);
+                        GL.Uniform4f(glyphUvUniformLocation, glyph.MinUV.X, glyph.MinUV.Y, glyph.MaxUV.X, glyph.MaxUV.Y);
+                        GL.Uniform1i(glyphBoldItalicUniformLocation, (int)glyph.BoldItalic);
+                        GL.Uniform1i(glyphFontIndexUniformLocation, glyph.FontIndex);
+                        
+                        GL.BindVertexArray(baseFontMeshHandle.VertexArrayHandle);
+                        GL.BindBuffer(BufferTarget.ElementArrayBuffer, baseFontMeshHandle.IndexBufferHandle);
+                        
+                        GL.DrawElements(PrimitiveType.Triangles, baseFontMeshHandle.Count, DrawElementsType.UnsignedInt, IntPtr.Zero);
+                    }
+                    break;
             }
-            
-            GL.Uniform1f(zUniformLocation, drawData.Z);
-            GL.Uniform1i(renderModeUniformLocation, (int) drawData.RenderMode);
-            GL.Uniform4f(color1UniformLocation, color1.X, color1.Y, color1.Z, color1.W);
-            GL.Uniform4f(color2UniformLocation, color2.X, color2.Y, color2.Z, color2.W);
-            
-            // Bind our buffers
-            GL.BindVertexArray(meshHandle.VertexArrayHandle);
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, meshHandle.IndexBufferHandle);
-            
-            // Draw
-            GL.DrawElements(PrimitiveType.Triangles, meshHandle.Count, DrawElementsType.UnsignedInt, IntPtr.Zero);
         }
     }
     
@@ -455,19 +598,10 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
     
     private void UpdateOpenGlData(Vector2i size)
     {
-        UpdateMeshData();
-        UpdateFontData();
-        UpdateFboData(size);
-    }
-
-    private void UpdateMeshData()
-    {
-        while (meshInitializers.TryDequeue(out var initializer))
+        while (initializers.TryDequeue(out var initializer))
             initializer();
-    }
-    
-    private void UpdateFontData()
-    {
+        
+        UpdateFboData(size);
     }
 
     private void UpdateFboData(Vector2i size)
@@ -476,27 +610,44 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
             return;
         
         // Delete old FBO data
-        GL.DeleteTexture(fboTextureHandle);
+        GL.DeleteRenderbuffer(fboColorBufferHandle);
         GL.DeleteRenderbuffer(fboDepthBufferHandle);
         
         // Create new FBO data
-        fboTextureHandle = GL.GenTexture();
-        GL.BindTexture(TextureTarget.Texture2d, fboTextureHandle);
-        GL.TexImage2D(TextureTarget.Texture2d, 0, InternalFormat.Rgba, size.X, size.Y, 0, PixelFormat.Rgba, PixelType.UnsignedByte, IntPtr.Zero);
+        fboColorBufferHandle = GL.GenRenderbuffer();
+        GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, fboColorBufferHandle);
+        GL.RenderbufferStorageMultisample(RenderbufferTarget.Renderbuffer, MsaaSamples, InternalFormat.Rgba16f, size.X, size.Y);
         
         fboDepthBufferHandle = GL.GenRenderbuffer();
         GL.BindRenderbuffer(RenderbufferTarget.Renderbuffer, fboDepthBufferHandle);
-        GL.RenderbufferStorage(RenderbufferTarget.Renderbuffer, InternalFormat.DepthComponent32f, size.X, size.Y);
+        GL.RenderbufferStorageMultisample(RenderbufferTarget.Renderbuffer, MsaaSamples, InternalFormat.DepthComponent32f, size.X, size.Y);
         
         // Bind new data to FBO
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, fboHandle);
-        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, fboTextureHandle, 0);
-        GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, fboDepthBufferHandle);
+        GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, RenderbufferTarget.Renderbuffer, fboColorBufferHandle);
+        GL.FramebufferRenderbuffer(FramebufferTarget.Framebuffer, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, fboDepthBufferHandle);        
         
         // Check FBO status
         var fboStatus = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
         if (fboStatus != FramebufferStatus.FramebufferComplete)
             throw new InvalidOperationException($"Framebuffer is not complete: {fboStatus}");
+        
+        // Delete old post-process FBO data
+        GL.DeleteTexture(postProcessTextureHandle);
+        
+        // Create new post-process FBO data
+        postProcessTextureHandle = GL.GenTexture();
+        GL.BindTexture(TextureTarget.Texture2d, postProcessTextureHandle);
+        GL.TexStorage2D(TextureTarget.Texture2d, 1, SizedInternalFormat.Rgba16f, size.X, size.Y);
+        
+        // Bind new data to FBO
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, postProcessFboHandle);
+        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, postProcessTextureHandle, 0);
+        
+        // Check post-process FBO status
+        var postProcessFboStatus = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
+        if (postProcessFboStatus != FramebufferStatus.FramebufferComplete)
+            throw new InvalidOperationException($"Post-process framebuffer is not complete: {postProcessFboStatus}");
         
         currentFboSize = size;
         

@@ -2,7 +2,7 @@
 
 precision highp float;
 
-layout(location = 0) out highp vec4 fragColor;
+layout(location = 0) out highp vec4 oFragColor;
 
 in highp vec2 vUv;
 
@@ -33,5 +33,5 @@ vec4 getColor(vec4 color1, vec4 color2, int mode, vec2 uv) {
 }
 
 void main() {
-    fragColor = getColor(uColor1, uColor2, uRenderMode, vUv);
+    oFragColor = getColor(uColor1, uColor2, uRenderMode, vUv);
 }
