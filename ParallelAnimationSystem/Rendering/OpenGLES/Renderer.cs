@@ -506,6 +506,10 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
         // Swap buffers
         Debug.Assert(glContextHandle is not null);
         Toolkit.OpenGL.SwapBuffers(glContextHandle);
+        
+        // Return draw list to pool
+        drawList.Reset();
+        drawListPool.Enqueue(drawList);
     }
 
     private void RenderDrawDataList(IReadOnlyList<DrawData> drawDataList, Matrix3 camera)
