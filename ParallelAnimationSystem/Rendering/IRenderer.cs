@@ -15,7 +15,7 @@ public interface IRenderer : IDisposable
     IFontHandle RegisterFont(Stream stream);
     ITextHandle CreateText(
         string str, 
-        IEnumerable<FontStack> fontStacks, 
+        IReadOnlyList<FontStack> fontStacks, 
         string defaultFontName,
         HorizontalAlignment horizontalAlignment, 
         VerticalAlignment verticalAlignment);

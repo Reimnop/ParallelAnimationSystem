@@ -1,10 +1,17 @@
 using OpenTK.Mathematics;
 using ParallelAnimationSystem.Util;
+using TmpIO;
 using TmpParser;
 
 namespace ParallelAnimationSystem.Rendering.TextProcessing;
 
-public class TextShaper(Func<IFontHandle, int> getFontIndex, IReadOnlyList<FontData> registeredFonts, IReadOnlyDictionary<string, FontStack> fontStacks, string defaultFontName)
+public class TextShaper(
+    Func<IFontHandle, char, TmpCharacter?> getCharacterFromOrdinal,
+    Func<IFontHandle, int, TmpGlyph?> getGlyphFromGlyphId,
+    Func<IFontHandle, TmpMetadata> getFontMetadata,
+    IReadOnlyList<IFontHandle> registeredFonts,
+    IReadOnlyList<FontStack> fontStacks,
+    string defaultFontName)
 {
     private class ShapingState
     {
@@ -16,6 +23,13 @@ public class TextShaper(Func<IFontHandle, int> getFontIndex, IReadOnlyList<FontD
         public ColorAlpha CurrentMarkColor { get; set; }
         public required FontStack CurrentFontStack { get; set; }
     }
+
+    private readonly Dictionary<IFontHandle, int> fontIndexLookup = registeredFonts
+        .Indexed()
+        .ToDictionary(x => x.Value, x => x.Index);
+
+    private readonly Dictionary<string, FontStack> fontStackLookup = fontStacks
+        .ToDictionary(x => x.Name.ToLowerInvariant());
     
     public IEnumerable<RenderGlyph> ShapeText(string str, HorizontalAlignment horizontalAlignment, VerticalAlignment verticalAlignment)
     {
@@ -41,7 +55,7 @@ public class TextShaper(Func<IFontHandle, int> getFontIndex, IReadOnlyList<FontD
 
         var state = new ShapingState
         {
-            CurrentFontStack = fontStacks[defaultFontName.ToLowerInvariant()],
+            CurrentFontStack = fontStackLookup[defaultFontName.ToLowerInvariant()],
         };
         
         var linesOfShapedGlyphs = lines
@@ -111,13 +125,16 @@ public class TextShaper(Func<IFontHandle, int> getFontIndex, IReadOnlyList<FontD
                 
                 var x = shapedGlyph.Position;
                 var font = registeredFonts[shapedGlyph.FontIndex];
-                var glyph = font.GlyphIdToGlyph[shapedGlyph.GlyphId];
+                var glyphNullable = getGlyphFromGlyphId(font, shapedGlyph.GlyphId);
+                var glyph = glyphNullable ?? throw new InvalidOperationException($"Glyph ID '{shapedGlyph.GlyphId}' not found in font");
                 if (glyph.Width != 0.0f && glyph.Height != 0.0f)
                 {
-                    var minX = x + glyph.BearingX / font.Metadata.Size * shapedGlyph.Size;
-                    var minY = y + glyph.BearingY / font.Metadata.Size * shapedGlyph.Size;
-                    var maxX = minX + glyph.Width / font.Metadata.Size * shapedGlyph.Size;
-                    var maxY = minY - glyph.Height / font.Metadata.Size * shapedGlyph.Size;
+                    var metadata = getFontMetadata(font);
+                    
+                    var minX = x + glyph.BearingX / metadata.Size * shapedGlyph.Size;
+                    var minY = y + glyph.BearingY / metadata.Size * shapedGlyph.Size;
+                    var maxX = minX + glyph.Width / metadata.Size * shapedGlyph.Size;
+                    var maxY = minY - glyph.Height / metadata.Size * shapedGlyph.Size;
                     var minUV = new Vector2(glyph.MinX, glyph.MinY);
                     var maxUV = new Vector2(glyph.MaxX, glyph.MaxY);
                     yield return new RenderGlyph(new Vector2(minX, minY), new Vector2(maxX, maxY), minUV, maxUV, color, boldItalic, shapedGlyph.FontIndex);
@@ -181,22 +198,26 @@ public class TextShaper(Func<IFontHandle, int> getFontIndex, IReadOnlyList<FontD
                     
                     var (glyphId, fontHandleIndex) = rawGlyph.Value;
                     var fontHandle = fontStack.Fonts[fontHandleIndex];
-                    var font = registeredFonts[getFontIndex(fontHandle)];
+                    var fontIndex = fontIndexLookup[fontHandle];
+                    var font = registeredFonts[fontIndex];
                     
                     var currentSize = ResolveMeasurement(state.CurrentSize, fontStack.Size, fontStack.Size);
                     var currentCSpace = ResolveMeasurement(state.CurrentCSpace, fontStack.Size, fontStack.Size);
                     
-                    var glyph = font.GlyphIdToGlyph[glyphId];
+                    var glyphNullable = getGlyphFromGlyphId(font, glyphId);
+                    var glyph = glyphNullable ?? throw new InvalidOperationException($"Glyph ID '{glyphId}' not found in font");
+                    
                     var glyphPosition = x;
-                    var shapedGlyph = new ShapedGlyph(glyphPosition, getFontIndex(fontHandle), glyphId, currentSize, state.CurrentStyle);
+                    var shapedGlyph = new ShapedGlyph(glyphPosition, fontIndex, glyphId, currentSize, state.CurrentStyle);
                     glyphs.Add(shapedGlyph);
                     
                     // Calculate advance
-                    var normalizedAdvance = glyph.Advance / font.Metadata.Size;
+                    var metadata = getFontMetadata(font);
+                    var normalizedAdvance = glyph.Advance / metadata.Size;
                     x += normalizedAdvance * currentSize + currentCSpace;
                     
-                    var normalizedAscender = font.Metadata.Ascender / font.Metadata.Size;
-                    var normalizedDescender = font.Metadata.Descender / font.Metadata.Size;
+                    var normalizedAscender = metadata.Ascender / metadata.Size;
+                    var normalizedDescender = metadata.Descender / metadata.Size;
                     var normalizedGlyphHeight = normalizedAscender - normalizedDescender;
                     
                     var glyphEnd = glyphPosition + normalizedAdvance * currentSize;
@@ -280,7 +301,7 @@ public class TextShaper(Func<IFontHandle, int> getFontIndex, IReadOnlyList<FontD
             if (element is FontElement fontElement)
             {
                 var fontName = fontElement.Value?.ToLowerInvariant();
-                if (!string.IsNullOrEmpty(fontName) && fontStacks.TryGetValue(fontName, out var fontStack))
+                if (!string.IsNullOrEmpty(fontName) && fontStackLookup.TryGetValue(fontName, out var fontStack))
                     state.CurrentFontStack = fontStack;
             }
         }
@@ -291,10 +312,11 @@ public class TextShaper(Func<IFontHandle, int> getFontIndex, IReadOnlyList<FontD
         var lastFontStack = state.CurrentFontStack;
         var lastCurrentSize = ResolveMeasurement(state.CurrentSize, lastFontStack.Size, lastFontStack.Size);
         var firstFontHandle = lastFontStack.Fonts[0];
-        var firstFont = registeredFonts[getFontIndex(firstFontHandle)];
-        var normalizedLastLineHeight = firstFont.Metadata.LineHeight / firstFont.Metadata.Size;
-        var normalizedLastAscender = firstFont.Metadata.Ascender / firstFont.Metadata.Size;
-        var normalizedLastDescender = firstFont.Metadata.Descender / firstFont.Metadata.Size;
+        var firstFont = registeredFonts[fontIndexLookup[firstFontHandle]];
+        var firstFontMetadata = getFontMetadata(firstFont);
+        var normalizedLastLineHeight = firstFontMetadata.LineHeight / firstFontMetadata.Size;
+        var normalizedLastAscender = firstFontMetadata.Ascender / firstFontMetadata.Size;
+        var normalizedLastDescender = firstFontMetadata.Descender / firstFontMetadata.Size;
         
         height = height == 0.0f ? normalizedLastLineHeight * lastCurrentSize : height;
         ascender = ascender == 0.0f ? normalizedLastAscender * lastCurrentSize : ascender;
@@ -317,8 +339,11 @@ public class TextShaper(Func<IFontHandle, int> getFontIndex, IReadOnlyList<FontD
     private (int GlyphId, int FontHandleIndex)? GetGlyph(FontStack fontStack, char c)
     {
         foreach (var (i, fontHandle) in fontStack.Fonts.Indexed())
-            if (registeredFonts[getFontIndex(fontHandle)].CharacterToGlyphId.TryGetValue(c, out var glyphId))
-                return (glyphId, i);
+        {
+            var character = getCharacterFromOrdinal(registeredFonts[fontIndexLookup[fontHandle]], c);
+            if (character.HasValue)
+                return (character.Value.GlyphId, i);
+        }
         return null;
     }
     

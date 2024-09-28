@@ -15,45 +15,59 @@ using TmpParser;
 
 namespace ParallelAnimationSystem.Rendering.OpenGL;
 
-public class Renderer(Options options, ILogger<Renderer> logger) : IRenderer
+public class Renderer(Options options, IResourceManager resourceManager, ILogger<Renderer> logger) : IRenderer
 {
     private record MeshHandle(int VertexOffset, int VertexCount, int IndexOffset, int IndexCount) : IMeshHandle;
-    private record FontHandle(int Index) : IFontHandle;
+    private class FontHandle(TmpFile fontFile, Dictionary<char, TmpCharacter> ordinalToCharacter, Dictionary<int, TmpGlyph> glyphIdToGlyph) : IFontHandle
+    { 
+        public TmpFile FontFile { get; } = fontFile;
+        public TmpMetadata Metadata { get; } = fontFile.Metadata;
+        public Dictionary<char, TmpCharacter> OrdinalToCharacter { get; } = ordinalToCharacter;
+        public Dictionary<int, TmpGlyph> GlyphIdToGlyph { get; } = glyphIdToGlyph;
+        public bool Initialized { get; private set; }
+        public int AtlasHandle { get; private set; }
+
+        public void Initialize(int atlasHandle)
+        {
+            if (Initialized)
+                return;
+            Initialized = true;
+            
+            AtlasHandle = atlasHandle;
+        }
+    }
     private record TextHandle(RenderGlyph[] Glyphs) : ITextHandle;
     
     private const int MaxFonts = 12;
     private const int MsaaSamples = 4;
     
     public bool ShouldExit { get; private set; }
+    public int QueuedDrawListCount => drawListQueue.Count;
 
     private WindowHandle? windowHandle;
     private OpenGLContextHandle? glContextHandle;
-    
-    public int QueuedDrawListCount => drawListQueue.Count;
 
     // Synchronization
     private readonly object meshDataLock = new();
     
-    // Draw list pool
+    // Draw list stuff
     private readonly ConcurrentQueue<DrawList> drawListPool = [];
+    private readonly ConcurrentQueue<DrawList> drawListQueue = [];
     
     // Rendering data
-    private readonly ConcurrentQueue<DrawList> drawListQueue = [];
     private readonly Buffer vertexBuffer = new();
     private readonly Buffer indexBuffer = new();
     private bool newMeshData = true;
     
     // Post processors
-    private readonly Hue hue = new();
-    private readonly Bloom bloom = new();
+    private readonly Hue hue = new(resourceManager);
+    private readonly Bloom bloom = new(resourceManager);
     
     // Graphics data
-    private readonly List<FontData> registeredFonts = [];
-    private IMeshHandle baseFontMeshHandle;
+    private readonly List<FontHandle> registeredFonts = [];
+    private IMeshHandle? baseFontMeshHandle;
     
-    private int vertexArrayHandle;
-    private int vertexBufferHandle;
-    private int indexBufferHandle;
+    private int vertexArrayHandle, vertexBufferHandle, indexBufferHandle;
     private int multiDrawIndirectBufferHandle, multiDrawIndirectBufferSize;
     private int multiDrawStorageBufferHandle, multiDrawStorageBufferSize;
     private int multiDrawGlyphBufferHandle, multiDrawGlyphBufferSize;
@@ -97,26 +111,41 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IRenderer
     public IFontHandle RegisterFont(Stream stream)
     {
         var fontFile = TmpRead.Read(stream);
-        var fontData = new FontData(
-            fontFile,
-            fontFile.Characters
-                .ToDictionary(x => x.Character, x => x.GlyphId),
-            fontFile.Glyphs
-                .ToDictionary(x => x.Id));
         lock (registeredFonts)
         {
-            var handle = new FontHandle(registeredFonts.Count);
-            registeredFonts.Add(fontData);
+            var fontHandle = new FontHandle(
+                fontFile,
+                fontFile.Characters.ToDictionary(x => x.Character),
+                fontFile.Glyphs.ToDictionary(x => x.Id));
+            registeredFonts.Add(fontHandle);
             logger.LogInformation("Registered font '{FontName}'", fontFile.Metadata.Name);
-            return handle;
+            return fontHandle;
         }
     }
 
-    public ITextHandle CreateText(string str, IEnumerable<FontStack> fontStacks, string defaultFontName, HorizontalAlignment horizontalAlignment, VerticalAlignment verticalAlignment)
+    public ITextHandle CreateText(string str, IReadOnlyList<FontStack> fontStacks, string defaultFontName, HorizontalAlignment horizontalAlignment, VerticalAlignment verticalAlignment)
     {
         lock (registeredFonts)
         {
-            var textShaper = new TextShaper(fontHandle => ((FontHandle) fontHandle).Index, registeredFonts, fontStacks.ToDictionary(x => x.Name.ToLowerInvariant()), defaultFontName);
+            var textShaper = new TextShaper(
+                (x, c) =>
+                {
+                    var fontHandle = (FontHandle)x;
+                    if (fontHandle.OrdinalToCharacter.TryGetValue(c, out var character))
+                        return character;
+                    return null;
+                },
+                (x, glyphId) =>
+                {
+                    var fontHandle = (FontHandle)x;
+                    if (fontHandle.GlyphIdToGlyph.TryGetValue(glyphId, out var glyph))
+                        return glyph;
+                    return null;
+                },
+                x => ((FontHandle)x).Metadata,
+                registeredFonts,
+                fontStacks,
+                defaultFontName);
             var shapedText = textShaper.ShapeText(str, horizontalAlignment, verticalAlignment);
             return new TextHandle(shapedText.ToArray());
         }
@@ -174,7 +203,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IRenderer
         logger.LogInformation("Window created");
         
         // Get window size
-        Toolkit.Window.GetClientSize(windowHandle, out var initialWidth, out var initialHeight);
+        Toolkit.Window.GetFramebufferSize(windowHandle, out var initialWidth, out var initialHeight);
         var initialSize = new Vector2i(initialWidth, initialHeight);
         
         // Register text mesh
@@ -194,7 +223,11 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IRenderer
         // Enable multisampling
         GL.Enable(EnableCap.Multisample);
         
-        logger.LogInformation("OpenGL initialized");
+        // Log OpenGL info
+        logger.LogInformation("OpenGL: {Version}", GL.GetString(StringName.Version));
+        logger.LogInformation("Renderer: {Renderer}", GL.GetString(StringName.Renderer));
+        logger.LogInformation("Vendor: {Vendor}", GL.GetString(StringName.Vendor));
+        logger.LogInformation("Shading language: {ShadingLanguage}", GL.GetString(StringName.ShadingLanguageVersion));
     }
 
     public IDrawList GetDrawList()
@@ -217,15 +250,18 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IRenderer
         indexBufferHandle = GL.CreateBuffer();
 
         // Upload data to GPU
-        var vertexBufferData = vertexBuffer.Data;
-        var indexBufferData = indexBuffer.Data;
-        var vertexBufferSize = vertexBufferData.Length * Vector2.SizeInBytes;
-        var indexBufferSize = indexBufferData.Length * sizeof(int);
+        lock (meshDataLock)
+        {
+            var vertexBufferData = vertexBuffer.Data;
+            var indexBufferData = indexBuffer.Data;
+            var vertexBufferSize = vertexBufferData.Length * Vector2.SizeInBytes;
+            var indexBufferSize = indexBufferData.Length * sizeof(int);
         
-        GL.NamedBufferData(vertexBufferHandle, vertexBufferSize, vertexBuffer.Data, VertexBufferObjectUsage.StaticDraw);
-        GL.NamedBufferData(indexBufferHandle, indexBufferSize, indexBuffer.Data, VertexBufferObjectUsage.StaticDraw);
+            GL.NamedBufferData(vertexBufferHandle, vertexBufferSize, vertexBuffer.Data, VertexBufferObjectUsage.StaticDraw);
+            GL.NamedBufferData(indexBufferHandle, indexBufferSize, indexBuffer.Data, VertexBufferObjectUsage.StaticDraw);
         
-        newMeshData = false;
+            newMeshData = false;
+        }
         
         // Bind buffers to vertex array
         GL.EnableVertexArrayAttrib(vertexArrayHandle, 0);
@@ -241,8 +277,8 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IRenderer
         multiDrawGlyphBufferHandle = GL.CreateBuffer();
         
         // Initialize shader program
-        var vertexShaderSource = ResourceUtil.ReadAllText("Resources.Shaders.SimpleUnlitVertex.glsl");
-        var fragmentShaderSource = ResourceUtil.ReadAllText("Resources.Shaders.SimpleUnlitFragment.glsl");
+        var vertexShaderSource = resourceManager.LoadGraphicsResourceString("Shaders/UberVertex.glsl");
+        var fragmentShaderSource = resourceManager.LoadGraphicsResourceString("Shaders/UberFragment.glsl");
         
         // Create shaders
         var vertexShader = GL.CreateShader(ShaderType.VertexShader);
@@ -284,8 +320,6 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IRenderer
         }
         
         // Clean up
-        GL.DetachShader(programHandle, vertexShader);
-        GL.DetachShader(programHandle, fragmentShader);
         GL.DeleteShader(vertexShader);
         GL.DeleteShader(fragmentShader);
         
@@ -328,32 +362,6 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IRenderer
     
     public void Dispose()
     {
-        bloom.Dispose();
-        hue.Dispose();
-
-        lock (registeredFonts)
-            foreach (var fontData in registeredFonts.Where(x => x.Initialized))
-                GL.DeleteTexture(fontData.AtlasHandle);
-        
-        GL.DeleteBuffer(multiDrawIndirectBufferHandle);
-        GL.DeleteBuffer(multiDrawStorageBufferHandle);
-        GL.DeleteBuffer(multiDrawGlyphBufferHandle);
-        
-        GL.DeleteProgram(programHandle);
-        GL.DeleteSampler(fontAtlasSampler);
-        
-        GL.DeleteBuffer(vertexBufferHandle);
-        GL.DeleteBuffer(indexBufferHandle);
-        GL.DeleteVertexArray(vertexArrayHandle);
-        
-        GL.DeleteTexture(fboTextureHandle);
-        GL.DeleteRenderbuffer(fboDepthBufferHandle);
-        GL.DeleteTexture(postProcessTextureHandle1);
-        GL.DeleteTexture(postProcessTextureHandle2);
-        
-        GL.DeleteFramebuffer(fboHandle);
-        GL.DeleteFramebuffer(postProcessFboHandle);
-        
         if (windowHandle is not null && !Toolkit.Window.IsWindowDestroyed(windowHandle))
             Toolkit.Window.Destroy(windowHandle);
     }
@@ -373,7 +381,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IRenderer
         }
         
         // Get window size
-        Toolkit.Window.GetClientSize(windowHandle, out var width, out var height);
+        Toolkit.Window.GetFramebufferSize(windowHandle, out var width, out var height);
         var size = new Vector2i(width, height);
         
         RenderFrame(size);
@@ -409,7 +417,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IRenderer
                 continue;
             
             // Add to appropriate list
-            if (drawData.RenderType != RenderType.Text && drawData.Color1.W == 1.0f && drawData.Color2.W == 1.0f)
+            if (drawData.RenderType != RenderType.Text && drawData.Color1.W == 1.0f && (drawData.Color2.W == 1.0f || drawData.RenderMode == RenderMode.Normal))
                 opaqueDrawData.Add(drawData);
             else
                 transparentDrawData.Add(drawData);
@@ -527,7 +535,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IRenderer
         multiDrawStorageBuffer.Clear();
         multiDrawGlyphBuffer.Clear();
         
-        var baseFontMesh = (MeshHandle) baseFontMeshHandle;
+        var baseFontMesh = baseFontMeshHandle as MeshHandle;
         
         // Append data
         foreach (var drawData in drawDataList)
@@ -567,6 +575,7 @@ public class Renderer(Options options, ILogger<Renderer> logger) : IRenderer
                     });
                     break;
                 case RenderType.Text when drawData.Text is TextHandle text:
+                    Debug.Assert(baseFontMesh is not null);
                     multiDrawIndirectBuffer.Append(new DrawElementsIndirectCommand
                     {
                         Count = baseFontMesh.IndexCount,

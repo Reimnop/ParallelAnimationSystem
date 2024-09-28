@@ -2,8 +2,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Audio;
 using ParallelAnimationSystem.Core;
+using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering;
-using ParallelAnimationSystem.Rendering.OpenGL;
 
 namespace ParallelAnimationSystem;
 
@@ -14,7 +14,8 @@ public static class Startup
         var serviceCollection = new ServiceCollection();
         serviceCollection.AddSingleton(options);
         serviceCollection.AddLogging(x => x.AddConsole());
-        serviceCollection.AddSingleton<IRenderer, Renderer>();
+        serviceCollection.AddSingleton<IResourceManager>(_ => new EmbeddedResourceManager("OpenGLES"));
+        serviceCollection.AddSingleton<IRenderer, Rendering.OpenGLES.Renderer>();
         serviceCollection.AddSingleton<AudioSystem>();
         serviceCollection.AddSingleton<App>();
 

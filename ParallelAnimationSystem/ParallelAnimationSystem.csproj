@@ -33,12 +33,8 @@
   
   <ItemGroup>
     <ProjectReference Include="../Pamx/Pamx/Pamx.csproj" />
-    <ProjectReference Include="..\TmpEmulation\TmpIO\TmpIO.csproj" />
-    <ProjectReference Include="..\TmpEmulation\TmpParser\TmpParser.csproj" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <Folder Include="Resources\Fonts\" />
+    <ProjectReference Include="../TmpEmulation/TmpIO/TmpIO.csproj" />
+    <ProjectReference Include="../TmpEmulation/TmpParser/TmpParser.csproj" />
   </ItemGroup>
 
 </Project>

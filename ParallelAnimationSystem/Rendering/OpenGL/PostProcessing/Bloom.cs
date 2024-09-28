@@ -1,10 +1,11 @@
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
+using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Rendering.OpenGL.PostProcessing;
 
-public class Bloom : IDisposable
+public class Bloom(IResourceManager resourceManager) : IDisposable
 {
     private int prefilterProgram, downsampleProgram, blurProgram, upsampleProgram, combineProgram;
     private int 
@@ -189,9 +190,9 @@ public class Bloom : IDisposable
         return (int) MathF.Floor(MathF.Log(maxDim, 2));
     }
     
-    private static int CreateProgram(string shaderName)
+    private int CreateProgram(string shaderName)
     {
-        var shaderSource = ResourceUtil.ReadAllText($"Resources.Shaders.PostProcessing.{shaderName}.glsl");
+        var shaderSource = resourceManager.LoadGraphicsResourceString($"Shaders/PostProcessing/{shaderName}.glsl");
         var shader = GL.CreateShader(ShaderType.ComputeShader);
         GL.ShaderSource(shader, shaderSource);
         GL.CompileShader(shader);

@@ -12,7 +12,7 @@ using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core;
 
-public class App(Options options, IRenderer renderer, AudioSystem audio, ILogger<App> logger) : IDisposable
+public class App(Options options, IResourceManager resourceManager, IRenderer renderer, AudioSystem audio, ILogger<App> logger) : IDisposable
 {
     private readonly List<List<IMeshHandle>> meshes = [];
     
@@ -158,22 +158,22 @@ public class App(Options options, IRenderer renderer, AudioSystem audio, ILogger
     {
         logger.LogInformation("Registering fonts");
 
-        var inconsolata = ReadFont("Resources.Fonts.Inconsolata.tmpe");
-        var arialuni = ReadFont("Resources.Fonts.Arialuni.tmpe");
-        var seguisym = ReadFont("Resources.Fonts.Seguisym.tmpe");
-        var code2000 = ReadFont("Resources.Fonts.Code2000.tmpe");
+        var inconsolata = ReadFont("Fonts/Inconsolata.tmpe");
+        var arialuni = ReadFont("Fonts/Arialuni.tmpe");
+        var seguisym = ReadFont("Fonts/Seguisym.tmpe");
+        var code2000 = ReadFont("Fonts/Code2000.tmpe");
         fonts.Add(new FontStack("Inconsolata SDF", 16.0f, [inconsolata, arialuni, seguisym, code2000]));
         
-        var liberationSans = ReadFont("Resources.Fonts.LiberationSans.tmpe");
+        var liberationSans = ReadFont("Fonts/LiberationSans.tmpe");
         fonts.Add(new FontStack("LiberationSans SDF", 16.0f, [liberationSans, arialuni, seguisym, code2000]));
         
-        var notoMono = ReadFont("Resources.Fonts.NotoMono.tmpe");
+        var notoMono = ReadFont("Fonts/NotoMono.tmpe");
         fonts.Add(new FontStack("NotoMono SDF", 16.0f, [notoMono, arialuni, seguisym, code2000]));
     }
 
     private IFontHandle ReadFont(string path)
     {
-        using var stream = ResourceUtil.ReadAsStream(path);
+        using var stream = resourceManager.LoadResource(path);
         return renderer.RegisterFont(stream);
     }
     
