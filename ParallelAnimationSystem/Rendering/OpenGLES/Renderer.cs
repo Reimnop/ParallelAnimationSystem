@@ -108,6 +108,8 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
                 
                 var closeArgs = (CloseEventArgs) args;
                 Toolkit.Window.Destroy(closeArgs.Window);
+                
+                ShouldExit = true;
             }
         };
 
