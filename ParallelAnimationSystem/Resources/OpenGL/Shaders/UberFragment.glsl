@@ -10,7 +10,7 @@ in vec4 vColor1;
 in vec4 vColor2;
 in flat int vRenderMode;
 in flat int vRenderType;
-in flat int vBold;
+in flat int vBoldItalic;
 in flat int vFontIndex;
 
 vec4 getColor(vec4 color1, vec4 color2, int mode, vec2 uv) {
@@ -63,7 +63,7 @@ void main() {
         } else {
             vec3 msdf = texture(uFontAtlases[vFontIndex], vUv).rgb;
             float distance = median(msdf.r, msdf.g, msdf.b);
-            float pxDistance = screenPxRange() * (distance - (vBold == 0 ? 0.5 : 0.2));
+            float pxDistance = screenPxRange() * (distance - ((vBoldItalic & 1) != 0 ? 0.2 : 0.5));
             float alpha = clamp(pxDistance + 0.5, 0.0, 1.0);
             oFragColor = vec4(color.rgb, color.a * alpha);
         }

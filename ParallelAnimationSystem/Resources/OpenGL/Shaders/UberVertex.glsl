@@ -8,7 +8,7 @@ out vec4 vColor1;
 out vec4 vColor2;
 out flat int vRenderMode;
 out flat int vRenderType;
-out flat int vBold;
+out flat int vBoldItalic;
 out flat int vFontIndex;
 
 struct MultiDrawItem {
@@ -49,7 +49,7 @@ void main() {
         vUvNormalized = aPos;
         vColor1 = item.color1;
         vColor2 = glyph.color;
-        vBold = (glyph.boldItalic & 1) != 0 ? 1 : 0;
+        vBoldItalic = glyph.boldItalic;
         vFontIndex = glyph.fontIndex;
 
         bool italic = (glyph.boldItalic & 2) != 0;

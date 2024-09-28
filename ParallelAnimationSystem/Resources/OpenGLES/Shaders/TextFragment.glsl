@@ -47,8 +47,7 @@ void main() {
     } else {
         vec3 msdf = getFontAtlas(uFontIndex, vUv).rgb;
         float distance = median(msdf.r, msdf.g, msdf.b);
-        bool bold = (uBoldItalic & 1) != 0;
-        float pxDistance = screenPxRange() * (distance - (bold ? 0.5 : 0.2));
+        float pxDistance = screenPxRange() * (distance - ((uBoldItalic & 1) != 0 ? 0.2 : 0.5));
         float alpha = clamp(pxDistance + 0.5, 0.0, 1.0);
         oFragColor = vec4(uGlyphColor.rgb, uGlyphColor.a * alpha);
     }
