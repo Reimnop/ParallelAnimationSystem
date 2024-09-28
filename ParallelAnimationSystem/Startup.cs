@@ -14,8 +14,21 @@ public static class Startup
         var serviceCollection = new ServiceCollection();
         serviceCollection.AddSingleton(options);
         serviceCollection.AddLogging(x => x.AddConsole());
-        serviceCollection.AddSingleton<IResourceManager>(_ => new EmbeddedResourceManager("OpenGLES"));
-        serviceCollection.AddSingleton<IRenderer, Rendering.OpenGLES.Renderer>();
+
+        switch (options.Backend)
+        {
+            case "opengl":
+                serviceCollection.AddSingleton<IResourceManager>(_ => new EmbeddedResourceManager("OpenGL"));
+                serviceCollection.AddSingleton<IRenderer, Rendering.OpenGL.Renderer>();
+                break;
+            case "opengles":
+                serviceCollection.AddSingleton<IResourceManager>(_ => new EmbeddedResourceManager("OpenGLES"));
+                serviceCollection.AddSingleton<IRenderer, Rendering.OpenGLES.Renderer>();
+                break;
+            default:
+                throw new ArgumentException($"Unknown rendering backend '{options.Backend}'");
+        }
+        
         serviceCollection.AddSingleton<AudioSystem>();
         serviceCollection.AddSingleton<App>();
 

@@ -26,6 +26,9 @@ public class Options
     [Option("speed", Required = false, Default = 1.0f, HelpText = "Sets the playback speed")]
     public float Speed { get; set; } = 1.0f;
     
+    [Option("backend", Required = false, Default = "opengl", HelpText = "The rendering backend to use (opengl/opengles)")]
+    public required string Backend { get; set; }
+    
     [Option("experimental-enable-text-rendering", Required = false, Default = false, HelpText = "Enable experimental text rendering")]
     public bool EnableTextRendering { get; set; }
 }
