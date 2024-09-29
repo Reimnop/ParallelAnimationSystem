@@ -79,7 +79,7 @@ Ensure PAS is configured to use the non-Intel GPU.
 
 ### If your machine only uses Intel GPU(s)
 
-You can try running PAS with the OpenGL ES backend with `--backend opengles` to force PAS to use OpenGL ES through ANGLE.
+You can try running PAS with the OpenGL ES backend with `--backend opengles` to force PAS to use OpenGL ES.
 **This mode is significantly slower, but should work on most systems.**
 
 ## Contributing
@@ -95,5 +95,4 @@ This project is licensed under the GPLv3 License - see the [LICENSE](LICENSE) fi
 - [Project Arrhythmia](https://store.steampowered.com/app/440310/Project_Arrhythmia/)
 - [OpenTK](https://opentk.net/)
 - [msdfgen](https://github.com/Chlumsky/msdfgen)
-- [ANGLE](https://chromium.googlesource.com/angle/angle)
 - Fonts provided by [Google Fonts](https://fonts.google.com/), [DaFont](https://www.dafont.com/), [Fontsource](https://fontsource.org/), and [Code2000](https://www.code2001.com/code2000_page.htm)

@@ -155,6 +155,8 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
 
     public void Initialize()
     {
+        logger.LogInformation("Initializing renderer");
+        
         var toolkitOptions = new ToolkitOptions
         {
             ApplicationName = "Parallel Animation System",
