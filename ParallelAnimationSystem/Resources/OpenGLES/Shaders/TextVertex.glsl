@@ -27,13 +27,22 @@ flat out highp int vFontIndex;
 
 uniform highp mat3 uMvp;
 uniform highp float uZ;
+uniform highp vec4 uBaseColor;
+
+vec4 getGlyphColor() {
+    float r = isnan(aColor.r) ? uBaseColor.r : aColor.r;
+    float g = isnan(aColor.g) ? uBaseColor.g : aColor.g;
+    float b = isnan(aColor.b) ? uBaseColor.b : aColor.b;
+    float a = isnan(aColor.a) ? uBaseColor.a : min(uBaseColor.a, aColor.a);
+    return vec4(r, g, b, a);
+}
 
 void main() {
     vec2 vertPos = VERTICES[gl_VertexID];
     
     vUvNormalized = vertPos;
     vUv = mix(aMinUv, aMaxUv, vertPos);
-    vGlyphColor = aColor;
+    vGlyphColor = getGlyphColor();
     vBoldItalic = aBoldItalic;
     vFontIndex = aFontIndex;
     
