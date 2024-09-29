@@ -1,10 +1,11 @@
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
+using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Util;
 
-namespace ParallelAnimationSystem.Rendering.PostProcessing;
+namespace ParallelAnimationSystem.Rendering.OpenGL.PostProcessing;
 
-public class Hue : IDisposable
+public class Hue(IResourceManager resourceManager) : IDisposable
 {
     private int program;
     private int sizeUniformLocation;
@@ -13,7 +14,7 @@ public class Hue : IDisposable
     public void Initialize()
     {
         // We will use compute shaders to do post-processing
-        var shaderSource = ResourceUtil.ReadAllText("Resources.Shaders.PostProcessing.Hue.glsl");
+        var shaderSource = resourceManager.LoadGraphicsResourceString("Shaders/PostProcessing/Hue.glsl");
         var shader = GL.CreateShader(ShaderType.ComputeShader);
         GL.ShaderSource(shader, shaderSource);
         GL.CompileShader(shader);

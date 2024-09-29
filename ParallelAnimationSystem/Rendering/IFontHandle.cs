@@ -1,3 +1,3 @@
 namespace ParallelAnimationSystem.Rendering;
 
-public record struct FontHandle(int Index);
+public interface IFontHandle;

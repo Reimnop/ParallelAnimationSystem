@@ -8,7 +8,7 @@ out vec4 vColor1;
 out vec4 vColor2;
 out flat int vRenderMode;
 out flat int vRenderType;
-out flat int vBold;
+out flat int vBoldItalic;
 out flat int vFontIndex;
 
 struct MultiDrawItem {
@@ -37,6 +37,14 @@ layout(std430, binding = 1) buffer GlyphBuffer {
     RenderGlyph glyphs[];
 };
 
+vec4 getColor(vec4 glyphColor, vec4 baseColor) {
+    float r = isnan(glyphColor.r) ? baseColor.r : glyphColor.r;
+    float g = isnan(glyphColor.g) ? baseColor.g : glyphColor.g;
+    float b = isnan(glyphColor.b) ? baseColor.b : glyphColor.b;
+    float a = isnan(glyphColor.a) ? baseColor.a : min(glyphColor.a, baseColor.a);
+    return vec4(r, g, b, a);
+}
+
 void main() {
     // Get the data for this draw call
     MultiDrawItem item = multiDrawItems[gl_DrawID];
@@ -47,9 +55,8 @@ void main() {
 
         vUv = mix(glyph.uv.xy, glyph.uv.zw, aPos);
         vUvNormalized = aPos;
-        vColor1 = item.color1;
-        vColor2 = glyph.color;
-        vBold = (glyph.boldItalic & 1) != 0 ? 1 : 0;
+        vColor1 = getColor(glyph.color, item.color1);
+        vBoldItalic = glyph.boldItalic;
         vFontIndex = glyph.fontIndex;
 
         bool italic = (glyph.boldItalic & 2) != 0;

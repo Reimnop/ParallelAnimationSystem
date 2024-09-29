@@ -36,18 +36,19 @@ This will run ParallelAnimationSystem and also build the PAS executable file in 
 
 Parallel Animation System takes the following command line arguments:
 
-| Argument | Default | Description |
-| --- | --- | --- |
-| -l, --level | **required** | Path to the level file (.lsb or .vgd) |
-| -a, --audio | **required** | Path to the audio file |
-| --format | *automatic* | The format of the level file (lsb/vgd) |
-| --vsync | false | Enable VSync |
-| --workers | 4 | Number of worker threads, set to -1 to use all available threads |
-| --seed | -1 | Seed for the random number generator, set to -1 to use a random seed |
-| --speed | 1 | Sets the playback speed |
-| --experimental-enable-text-rendering  | false | Enable experimental text rendering |
-| --help |  | Display help screen with list of arguments |
-| --version |  | Display version information |
+| Argument                             | Default      | Description                                                           |
+|--------------------------------------|--------------|-----------------------------------------------------------------------|
+| -l, --level                          | **required** | Path to the level file (.lsb or .vgd).                                |
+| -a, --audio                          | **required** | Path to the audio file.                                               |
+| --format                             | *automatic*  | The format of the level file (lsb/vgd).                               |
+| --vsync                              | false        | Enable VSync.                                                         |
+| --workers                            | 4            | Number of worker threads, set to -1 to use all available threads.     |
+| --seed                               | -1           | Seed for the random number generator, set to -1 to use a random seed. |
+| --speed                              | 1            | Sets the playback speed.                                              |
+| --backend                            | opengl       | Sets the rendering backend to use (opengl/opengles).                  |
+| --experimental-enable-text-rendering | false        | Enable experimental text rendering.                                   |
+| --help                               |              | Display help screen with list of arguments.                           |
+| --version                            |              | Display version information.                                          |
 
 Example usage:
  ```sh
@@ -69,10 +70,17 @@ If you encounter build errors after running git pull, run `git submodule update`
 
 ### GPU compatibility
 
-Certain GPUs, such as Intel integrated graphics, are not currently supported by Parallel Animation System.
+Certain GPUs, such as Intel integrated graphics, are not currently supported by the OpenGL backend.
 
-If your machine has multiple GPUs and you experience any issues running Parallel Animation System, ensure PAS is configured to use the non-Intel GPU.
+### If your machine has multiple GPUs, and one of them is not Intel
+
+Ensure PAS is configured to use the non-Intel GPU.
 (For Windows, this is done by adding the PAS executable in the system Graphics settings and setting it to use "high performance".)
+
+### If your machine only uses Intel GPU(s)
+
+You can try running PAS with the OpenGL ES backend with `--backend opengles` to force PAS to use OpenGL ES through ANGLE.
+**This mode is significantly slower, but should work on most systems.**
 
 ## Contributing
 
@@ -87,4 +95,5 @@ This project is licensed under the GPLv3 License - see the [LICENSE](LICENSE) fi
 - [Project Arrhythmia](https://store.steampowered.com/app/440310/Project_Arrhythmia/)
 - [OpenTK](https://opentk.net/)
 - [msdfgen](https://github.com/Chlumsky/msdfgen)
+- [ANGLE](https://chromium.googlesource.com/angle/angle)
 - Fonts provided by [Google Fonts](https://fonts.google.com/), [DaFont](https://www.dafont.com/), [Fontsource](https://fontsource.org/), and [Code2000](https://www.code2001.com/code2000_page.htm)

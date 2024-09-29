@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace ParallelAnimationSystem.Rendering;
+namespace ParallelAnimationSystem.Rendering.OpenGL;
 
 // https://registry.khronos.org/OpenGL-Refpages/gl4/html/glMultiDrawElementsIndirect.xhtml
 [StructLayout(LayoutKind.Sequential, Size = 20)]

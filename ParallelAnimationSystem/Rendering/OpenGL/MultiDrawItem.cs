@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using OpenTK.Mathematics;
 
-namespace ParallelAnimationSystem.Data;
+namespace ParallelAnimationSystem.Rendering.OpenGL;
 
 // std430 layout
 [StructLayout(LayoutKind.Explicit, Size = 96)]
