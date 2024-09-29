@@ -45,27 +45,18 @@ float screenPxRange() {
     return max(dot(unitRange, screenTexSize), 0.0);
 }
 
-vec4 getColor() {
-    float r = isnan(vColor2.r) ? vColor1.r : vColor2.r;
-    float g = isnan(vColor2.g) ? vColor1.g : vColor2.g;
-    float b = isnan(vColor2.b) ? vColor1.b : vColor2.b;
-    float a = isnan(vColor2.a) ? vColor1.a : min(vColor2.a, vColor1.a);
-    return vec4(r, g, b, a);
-}
-
 void main() {
     if (vRenderType == 1) {
-        vec4 color = getColor();
-
         // Output solid color if font index is < 0
+        // vColor1 acts as glyph color here
         if (vFontIndex < 0) {
-            oFragColor = color;
+            oFragColor = vColor1;
         } else {
             vec3 msdf = texture(uFontAtlases[vFontIndex], vUv).rgb;
             float distance = median(msdf.r, msdf.g, msdf.b);
             float pxDistance = screenPxRange() * (distance - ((vBoldItalic & 1) != 0 ? 0.2 : 0.5));
             float alpha = clamp(pxDistance + 0.5, 0.0, 1.0);
-            oFragColor = vec4(color.rgb, color.a * alpha);
+            oFragColor = vec4(vColor1.rgb, vColor1.a * alpha);
         }
     } else {
         oFragColor = getColor(vColor1, vColor2, vRenderMode, vUv);
