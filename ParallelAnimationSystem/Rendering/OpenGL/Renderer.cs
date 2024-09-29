@@ -193,7 +193,7 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
 
         windowHandle = Toolkit.Window.Create(contextSettings);
         Toolkit.Window.SetTitle(windowHandle, "Parallel Animation System");
-        Toolkit.Window.SetClientSize(windowHandle, 1366, 768);
+        Toolkit.Window.SetClientSize(windowHandle, new Vector2i(1366, 768));
         Toolkit.Window.SetMode(windowHandle, WindowMode.Normal);
         
         // Create OpenGL context
@@ -209,8 +209,7 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
         logger.LogInformation("Window created");
         
         // Get window size
-        Toolkit.Window.GetFramebufferSize(windowHandle, out var initialWidth, out var initialHeight);
-        var initialSize = new Vector2i(initialWidth, initialHeight);
+        Toolkit.Window.GetFramebufferSize(windowHandle, out var initialSize);
         
         // Register text mesh
         baseFontMeshHandle = RegisterMesh([
@@ -387,8 +386,7 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
         }
         
         // Get window size
-        Toolkit.Window.GetFramebufferSize(windowHandle, out var width, out var height);
-        var size = new Vector2i(width, height);
+        Toolkit.Window.GetFramebufferSize(windowHandle, out var size);
         
         RenderFrame(size);
     }

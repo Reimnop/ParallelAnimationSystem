@@ -22,8 +22,7 @@
     <PackageReference Include="OpenTK.Audio.OpenAL" Version="5.0.0-pre.11" />
     <PackageReference Include="OpenTK.Graphics" Version="5.0.0-pre.11" />
     <PackageReference Include="OpenTK.Mathematics" Version="5.0.0-pre.11" />
-    <PackageReference Include="OpenTK.Platform" Version="5.0.0-pre.11" />
-    <PackageReference Include="OpenTK.Windowing.GraphicsLibraryFramework" Version="5.0.0-pre.12" />
+    <PackageReference Include="OpenTK.Platform" Version="4.0.0" /> <!-- TODO: Update when/if OpenTK merges my PR -->
     <PackageReference Include="Silk.NET.OpenAL.Soft.Native" Version="1.23.1" />
     <PackageReference Include="System.IO.Hashing" Version="8.0.0" />
   </ItemGroup>

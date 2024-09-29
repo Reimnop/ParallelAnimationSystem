@@ -1,10 +1,13 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using OpenTK.Graphics;
+using OpenTK.Graphics.Glx;
 using OpenTK.Graphics.OpenGLES2;
 using OpenTK.Mathematics;
-using OpenTK.Windowing.GraphicsLibraryFramework;
+using OpenTK.Platform;
+using OpenTK.Platform.Native;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering.TextProcessing;
 using ParallelAnimationSystem.Util;
@@ -74,41 +77,67 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
     private readonly List<DrawData> opaqueDrawData = [];
     private readonly List<DrawData> transparentDrawData = [];
     
-    private IntPtr windowHandle;
+    private WindowHandle? windowHandle;
+    private OpenGLContextHandle? glContextHandle;
     
     public unsafe void Initialize()
     {
         logger.LogInformation("Initializing renderer");
+
+        PlatformComponents.PreferredBackend = PreferredBackend.EGL;
         
-        // Initialize ES with GLFW
-        if (!GLFW.Init())
-            throw new InvalidOperationException("Could not initialize GLFW");
+        var toolkitOptions = new ToolkitOptions
+        {
+            ApplicationName = "Parallel Animation System",
+            Logger = new MelLogger<Renderer>(logger, "OpenGL: "),
+        };
+        Toolkit.Init(toolkitOptions);
         
-        GLFW.WindowHint(WindowHintClientApi.ClientApi, ClientApi.OpenGlEsApi);
-        GLFW.WindowHint(WindowHintInt.ContextVersionMajor, 3);
-        GLFW.WindowHint(WindowHintInt.ContextVersionMinor, 0);
-        GLFW.WindowHint(WindowHintInt.RedBits, 8);
-        GLFW.WindowHint(WindowHintInt.GreenBits, 8);
-        GLFW.WindowHint(WindowHintInt.BlueBits, 8);
-        GLFW.WindowHint(WindowHintInt.AlphaBits, 0);
-        GLFW.WindowHint(WindowHintInt.DepthBits, 0);
-        GLFW.WindowHint(WindowHintInt.StencilBits, 0);
-        GLFW.WindowHint(WindowHintInt.Samples, 0);
+        var contextSettings = new EGLGraphicsApiHints
+        {
+            Version = new Version(3, 0),
+#if DEBUG
+            DebugFlag = true,
+#endif
+            DepthBits = ContextDepthBits.Depth32,
+            StencilBits = ContextStencilBits.Stencil1,
+        };
+
+        EventQueue.EventRaised += (handle, type, args) =>
+        {
+            if (handle != windowHandle)
+                return;
+
+            if (type == PlatformEventType.Close)
+            {
+                logger.LogInformation("Closing window");
+                
+                var closeArgs = (CloseEventArgs) args;
+                Toolkit.Window.Destroy(closeArgs.Window);
+                
+                ShouldExit = true;
+            }
+        };
+
+        windowHandle = Toolkit.Window.Create(contextSettings);
+        Toolkit.Window.SetTitle(windowHandle, "Parallel Animation System");
+        Toolkit.Window.SetClientSize(windowHandle, new Vector2i(1366, 768));
+        Toolkit.Window.SetMode(windowHandle, WindowMode.Normal);
         
-        windowHandle = (IntPtr) GLFW.CreateWindow(1366, 768, "Parallel Animation System", null, null);
+        // Create OpenGL context
+        glContextHandle = Toolkit.OpenGL.CreateFromWindow(windowHandle);
+        Toolkit.OpenGL.SetCurrentContext(glContextHandle);
         
-        GLFW.MakeContextCurrent((Window*) windowHandle);
+        // Load OpenGL bindings
+        GLLoader.LoadBindings(Toolkit.OpenGL.GetBindingsContext(glContextHandle));
         
         // Set VSync
-        GLFW.SwapInterval(options.VSync ? 1 : 0);
+        Toolkit.OpenGL.SetSwapInterval(options.VSync ? 1 : 0);
         
-        // Load API
-        logger.LogInformation("Loading OpenGL ES bindings");
-        GLLoader.LoadBindings(new GLFWBindingsContext());
+        logger.LogInformation("Window created");
         
         // Get window size
-        GLFW.GetWindowSize((Window*) windowHandle, out var initialWidth, out var initialHeight);
-        var initialSize = new Vector2i(initialWidth, initialHeight);
+        Toolkit.Window.GetFramebufferSize(windowHandle, out var initialSize);
         
         // Initialize OpenGL data
         InitializeOpenGlData(initialSize);
@@ -377,21 +406,20 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
 
     public unsafe void ProcessFrame()
     {
-        if (ShouldExit)
-            return;
+        if (windowHandle is null)
+            throw new InvalidOperationException("Renderer has not been initialized");
         
-        GLFW.PollEvents();
+        Toolkit.Window.ProcessEvents(false);
         
-        // Check if window should close
-        if (GLFW.WindowShouldClose((Window*) windowHandle))
+        // Check if window is closed
+        if (Toolkit.Window.IsWindowDestroyed(windowHandle))
         {
             ShouldExit = true;
             return;
         }
         
         // Get window size
-        GLFW.GetWindowSize((Window*) windowHandle, out var width, out var height);
-        var size = new Vector2i(width, height);
+        Toolkit.Window.GetFramebufferSize(windowHandle, out var size);
         
         RenderFrame(size);
     }
@@ -488,10 +516,8 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
             BlitFramebufferFilter.Linear);
         
         // Swap buffers
-        unsafe
-        {
-            GLFW.SwapBuffers((Window*) windowHandle);
-        }
+        Debug.Assert(glContextHandle is not null);
+        Toolkit.OpenGL.SwapBuffers(glContextHandle);
         
         // Return draw list to pool
         drawList.Reset();
@@ -649,9 +675,7 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
 
     public void Dispose()
     {
-        unsafe
-        {
-            GLFW.DestroyWindow((Window*) windowHandle);
-        }
+        if (windowHandle is not null && !Toolkit.Window.IsWindowDestroyed(windowHandle))
+            Toolkit.Window.Destroy(windowHandle);
     }
 }
