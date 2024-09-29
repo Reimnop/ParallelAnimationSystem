@@ -596,7 +596,6 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
                     }
                     else
                     {
-                        GL.BindBuffer(BufferTarget.ArrayBuffer, textInstanceBufferHandle);
                         GL.BufferSubData(BufferTarget.ArrayBuffer, IntPtr.Zero, renderGlyphsSize, renderGlyphs);
                     }
                     
