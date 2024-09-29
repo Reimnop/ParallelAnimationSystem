@@ -21,6 +21,7 @@ public class TextShaper<T>(
         public Style CurrentStyle { get; set; }
         public Measurement CurrentCSpace { get; set; }
         public Measurement CurrentSize { get; set; } = new(1.0f, Unit.Em);
+        public Measurement CurrentVOffset { get; set; }
         public Measurement CurrentLineHeight { get; set; } = new(1.0f, Unit.Em);
         public HorizontalAlignment? CurrentAlignment { get; set; }
         public ColorAlpha CurrentMarkColor { get; set; }
@@ -135,7 +136,7 @@ public class TextShaper<T>(
                     var metadata = getFontMetadata(font);
                     
                     var minX = x + glyph.BearingX / metadata.Size * shapedGlyph.Size;
-                    var minY = y + glyph.BearingY / metadata.Size * shapedGlyph.Size;
+                    var minY = y + glyph.BearingY / metadata.Size * shapedGlyph.Size + shapedGlyph.YOffset;
                     var maxX = minX + glyph.Width / metadata.Size * shapedGlyph.Size;
                     var maxY = minY - glyph.Height / metadata.Size * shapedGlyph.Size;
                     var minUV = new Vector2(glyph.MinX, glyph.MinY);
@@ -203,15 +204,20 @@ public class TextShaper<T>(
                     var fontHandle = fontStack.Fonts[fontHandleIndex];
                     var fontIndex = fontIndexLookup[fontHandle];
                     var font = registeredFonts[fontIndex];
+                    var fontMetadata = getFontMetadata(font);
                     
                     var currentSize = ResolveMeasurement(state.CurrentSize, fontStack.Size, fontStack.Size);
                     var currentCSpace = ResolveMeasurement(state.CurrentCSpace, fontStack.Size, fontStack.Size);
+                    var currentVOffset = ResolveMeasurement(
+                        state.CurrentVOffset,
+                        fontMetadata.LineHeight / fontMetadata.Size * currentSize,
+                        fontMetadata.LineHeight / fontMetadata.Size * currentSize);
                     
                     var glyphNullable = getGlyphFromGlyphId(font, glyphId);
                     var glyph = glyphNullable ?? throw new InvalidOperationException($"Glyph ID '{glyphId}' not found in font");
                     
                     var glyphPosition = x;
-                    var shapedGlyph = new ShapedGlyph(glyphPosition, fontIndex, glyphId, currentSize, state.CurrentStyle);
+                    var shapedGlyph = new ShapedGlyph(glyphPosition, currentVOffset, fontIndex, glyphId, currentSize, state.CurrentStyle);
                     glyphs.Add(shapedGlyph);
                     
                     // Calculate advance
@@ -221,12 +227,11 @@ public class TextShaper<T>(
                     
                     var normalizedAscender = metadata.Ascender / metadata.Size;
                     var normalizedDescender = metadata.Descender / metadata.Size;
-                    var normalizedGlyphHeight = normalizedAscender - normalizedDescender;
                     
                     var glyphEnd = glyphPosition + normalizedAdvance * currentSize;
-                    var glyphHeight = normalizedGlyphHeight * currentSize;
-                    var glyphUpper = normalizedAscender * currentSize;
-                    var glyphLower = normalizedDescender * currentSize;
+                    var glyphUpper = Math.Max(normalizedAscender * currentSize, normalizedAscender * currentSize + currentVOffset);
+                    var glyphLower = Math.Min(normalizedDescender * currentSize, normalizedDescender * currentSize + currentVOffset);
+                    var glyphHeight = glyphUpper - glyphLower;
                     
                     width = Math.Max(width, glyphEnd);
                     height = Math.Max(height, glyphHeight);
@@ -283,6 +288,11 @@ public class TextShaper<T>(
                 state.CurrentSize = sizeElement.Value;
             }
             
+            if (element is VOffsetElement vOffsetElement)
+            {
+                state.CurrentVOffset = vOffsetElement.Value;
+            }
+            
             if (element is LineHeightElement lineHeightElement)
             {
                 state.CurrentLineHeight = lineHeightElement.Value;
@@ -313,17 +323,20 @@ public class TextShaper<T>(
             marks.Add(currentMark.Value);
         
         var lastFontStack = state.CurrentFontStack;
-        var lastCurrentSize = ResolveMeasurement(state.CurrentSize, lastFontStack.Size, lastFontStack.Size);
         var firstFontHandle = lastFontStack.Fonts[0];
         var firstFont = registeredFonts[fontIndexLookup[firstFontHandle]];
         var firstFontMetadata = getFontMetadata(firstFont);
-        var normalizedLastLineHeight = firstFontMetadata.LineHeight / firstFontMetadata.Size;
+        var lastCurrentSize = ResolveMeasurement(state.CurrentSize, lastFontStack.Size, lastFontStack.Size);
+        var lastVOffset = ResolveMeasurement(
+            state.CurrentVOffset,
+            firstFontMetadata.LineHeight / firstFontMetadata.Size * lastCurrentSize,
+            firstFontMetadata.LineHeight / firstFontMetadata.Size * lastCurrentSize);
         var normalizedLastAscender = firstFontMetadata.Ascender / firstFontMetadata.Size;
         var normalizedLastDescender = firstFontMetadata.Descender / firstFontMetadata.Size;
         
-        height = height == 0.0f ? normalizedLastLineHeight * lastCurrentSize : height;
-        ascender = ascender == 0.0f ? normalizedLastAscender * lastCurrentSize : ascender;
-        descender = descender == 0.0f ? normalizedLastDescender * lastCurrentSize : descender;
+        ascender = ascender == 0.0f ? Math.Max(normalizedLastAscender * lastCurrentSize, normalizedLastAscender * lastCurrentSize + lastVOffset) : ascender;
+        descender = descender == 0.0f ? Math.Min(normalizedLastDescender * lastCurrentSize, normalizedLastDescender * lastCurrentSize + lastVOffset) : descender;
+        height = height == 0.0f ? ascender - descender : height;
         
         height = ResolveMeasurement(state.CurrentLineHeight, height, height);
         
