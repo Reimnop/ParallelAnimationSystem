@@ -333,10 +333,11 @@ public class TextShaper<T>(
             firstFontMetadata.LineHeight / firstFontMetadata.Size * lastCurrentSize);
         var normalizedLastAscender = firstFontMetadata.Ascender / firstFontMetadata.Size;
         var normalizedLastDescender = firstFontMetadata.Descender / firstFontMetadata.Size;
+        var normalizedLastLineHeight = firstFontMetadata.LineHeight / firstFontMetadata.Size;
         
         ascender = ascender == 0.0f ? Math.Max(normalizedLastAscender * lastCurrentSize, normalizedLastAscender * lastCurrentSize + lastVOffset) : ascender;
         descender = descender == 0.0f ? Math.Min(normalizedLastDescender * lastCurrentSize, normalizedLastDescender * lastCurrentSize + lastVOffset) : descender;
-        height = height == 0.0f ? ascender - descender : height;
+        height = height == 0.0f ? Math.Max(normalizedLastLineHeight * lastCurrentSize, normalizedLastLineHeight * lastCurrentSize + lastVOffset) : height;
         
         height = ResolveMeasurement(state.CurrentLineHeight, height, height);
         
