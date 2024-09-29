@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGLES2;
@@ -57,20 +58,13 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
     private readonly ConcurrentQueue<Action> initializers = [];
     
     private readonly List<FontHandle> registeredFonts = [];
-    private IMeshHandle? baseFontMeshHandle;
     
     private int programHandle;
     private int mvpUniformLocation, zUniformLocation, renderModeUniformLocation, color1UniformLocation, color2UniformLocation;
     private int glyphProgramHandle;
-    private int 
-        glyphMvpUniformLocation, 
-        glyphZUniformLocation, 
-        glyphMinMaxUniformLocation, 
-        glyphUvUniformLocation, 
-        glyphBoldItalicUniformLocation,
-        glyphFontAtlasesUniformLocation,
-        glyphGlyphColorUniformLocation,
-        glyphFontIndexUniformLocation;
+    private int glyphMvpUniformLocation, glyphZUniformLocation, glyphFontAtlasesUniformLocation, glyphBaseColorUniformLocation;
+
+    private int textVertexArrayHandle, textInstanceBufferHandle, textBufferCurrentSize;
     
     private int fboColorBufferHandle, fboDepthBufferHandle;
     private int fboHandle;
@@ -146,17 +140,6 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
         Toolkit.Window.GetFramebufferSize(windowHandle, out var initialWidth, out var initialHeight);
         var initialSize = new Vector2i(initialWidth, initialHeight);
         
-        // Register text mesh
-        baseFontMeshHandle = RegisterMesh([
-            new Vector2(0.0f, 1.0f),
-            new Vector2(1.0f, 1.0f),
-            new Vector2(0.0f, 0.0f),
-            new Vector2(1.0f, 0.0f),
-        ], [
-            0, 1, 2,
-            3, 2, 1,
-        ]);
-        
         // Initialize OpenGL data
         InitializeOpenGlData(initialSize);
         
@@ -185,12 +168,43 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
         // Get glyph uniform locations
         glyphMvpUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uMvp");
         glyphZUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uZ");
-        glyphMinMaxUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uMinMax");
-        glyphUvUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uUv");
-        glyphBoldItalicUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uBoldItalic");
         glyphFontAtlasesUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uFontAtlases");
-        glyphGlyphColorUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uGlyphColor");
-        glyphFontIndexUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uFontIndex");
+        glyphBaseColorUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uBaseColor");
+        
+        // Initialize text buffers
+        var renderGlyphSize = Unsafe.SizeOf<RenderGlyph>();
+        
+        textInstanceBufferHandle = GL.GenBuffer();
+        GL.BindBuffer(BufferTarget.ArrayBuffer, textInstanceBufferHandle);
+        GL.BufferData(BufferTarget.ArrayBuffer, 1024 * renderGlyphSize, IntPtr.Zero, BufferUsage.DynamicDraw);
+        textBufferCurrentSize = 1024 * renderGlyphSize;
+        
+        textVertexArrayHandle = GL.GenVertexArray();
+        GL.BindVertexArray(textVertexArrayHandle);
+        
+        GL.EnableVertexAttribArray(0);
+        GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, renderGlyphSize, 0); // Min
+        GL.EnableVertexAttribArray(1);
+        GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, renderGlyphSize, 8); // Max
+        GL.EnableVertexAttribArray(2);
+        GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, renderGlyphSize, 16); // MinUV
+        GL.EnableVertexAttribArray(3);
+        GL.VertexAttribPointer(3, 2, VertexAttribPointerType.Float, false, renderGlyphSize, 24); // MaxUV
+        GL.EnableVertexAttribArray(4);
+        GL.VertexAttribPointer(4, 4, VertexAttribPointerType.Float, false, renderGlyphSize, 32); // Color
+        GL.EnableVertexAttribArray(5);
+        GL.VertexAttribIPointer(5, 1, VertexAttribIType.Int, renderGlyphSize, 48); // BoldItalic
+        GL.EnableVertexAttribArray(6);
+        GL.VertexAttribIPointer(6, 1, VertexAttribIType.Int, renderGlyphSize, 52); // FontIndex
+        
+        // Divisors
+        GL.VertexAttribDivisor(0, 1);
+        GL.VertexAttribDivisor(1, 1);
+        GL.VertexAttribDivisor(2, 1);
+        GL.VertexAttribDivisor(3, 1);
+        GL.VertexAttribDivisor(4, 1);
+        GL.VertexAttribDivisor(5, 1);
+        GL.VertexAttribDivisor(6, 1);
         
         // Initialize FBO
         fboColorBufferHandle = GL.GenRenderbuffer();
@@ -563,27 +577,31 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
                             GL.Uniform1i(glyphFontAtlasesUniformLocation + i, i);
                         }
                     
-                    var baseFontMeshHandle = this.baseFontMeshHandle as MeshHandle;
-                    Debug.Assert(baseFontMeshHandle is not null);
+                    // Set color
+                    GL.Uniform4f(glyphBaseColorUniformLocation, color1.X, color1.Y, color1.Z, color1.W);
 
-                    foreach (var glyph in textHandle.Glyphs)
+                    // Bind our buffers
+                    GL.BindVertexArray(textVertexArrayHandle);
+                    
+                    // Update buffer data
+                    var renderGlyphSize = Unsafe.SizeOf<RenderGlyph>();
+                    var renderGlyphs = textHandle.Glyphs;
+                    var renderGlyphsSize = renderGlyphs.Length * renderGlyphSize;
+                    
+                    GL.BindBuffer(BufferTarget.ArrayBuffer, textInstanceBufferHandle);
+                    if (renderGlyphsSize > textBufferCurrentSize)
                     {
-                        var glyphColor = new Vector4(
-                            float.IsNaN(glyph.Color.X) ? color1.X : glyph.Color.X,
-                            float.IsNaN(glyph.Color.Y) ? color1.Y : glyph.Color.Y,
-                            float.IsNaN(glyph.Color.Z) ? color1.Z : glyph.Color.Z,
-                            float.IsNaN(glyph.Color.W) ? color1.W : MathF.Min(glyph.Color.W, color1.W));
-                        GL.Uniform4f(glyphGlyphColorUniformLocation, glyphColor.X, glyphColor.Y, glyphColor.Z, glyphColor.W);
-                        GL.Uniform4f(glyphMinMaxUniformLocation, glyph.Min.X, glyph.Min.Y, glyph.Max.X, glyph.Max.Y);
-                        GL.Uniform4f(glyphUvUniformLocation, glyph.MinUV.X, glyph.MinUV.Y, glyph.MaxUV.X, glyph.MaxUV.Y);
-                        GL.Uniform1i(glyphBoldItalicUniformLocation, (int)glyph.BoldItalic);
-                        GL.Uniform1i(glyphFontIndexUniformLocation, glyph.FontIndex);
-                        
-                        GL.BindVertexArray(baseFontMeshHandle.VertexArrayHandle);
-                        GL.BindBuffer(BufferTarget.ElementArrayBuffer, baseFontMeshHandle.IndexBufferHandle);
-                        
-                        GL.DrawElements(PrimitiveType.Triangles, baseFontMeshHandle.Count, DrawElementsType.UnsignedInt, IntPtr.Zero);
+                        GL.BufferData(BufferTarget.ArrayBuffer, renderGlyphsSize, IntPtr.Zero, BufferUsage.DynamicDraw);
+                        textBufferCurrentSize = renderGlyphsSize;
                     }
+                    else
+                    {
+                        GL.BindBuffer(BufferTarget.ArrayBuffer, textInstanceBufferHandle);
+                        GL.BufferSubData(BufferTarget.ArrayBuffer, IntPtr.Zero, renderGlyphsSize, renderGlyphs);
+                    }
+                    
+                    // Draw
+                    GL.DrawArraysInstanced(PrimitiveType.Triangles, 0, 6, renderGlyphs.Length);
                     break;
             }
         }

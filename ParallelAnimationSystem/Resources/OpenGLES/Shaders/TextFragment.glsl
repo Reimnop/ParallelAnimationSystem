@@ -6,11 +6,12 @@ layout(location = 0) out highp vec4 oFragColor;
 
 in highp vec2 vUvNormalized;
 in highp vec2 vUv;
+in highp vec4 vGlyphColor;
+flat in highp int vBoldItalic;
+flat in highp int vFontIndex;
 
 uniform sampler2D uFontAtlases[12];
-uniform highp vec4 uGlyphColor;
-uniform highp int uFontIndex;
-uniform highp int uBoldItalic;
+uniform highp vec4 uBaseColor;
 
 float screenPxRange() {
     vec2 unitRange = vec2(2.0) / vec2(32.0); // TODO: Don't hardcode this: pxRange / fontSize
@@ -20,6 +21,14 @@ float screenPxRange() {
 
 float median(float r, float g, float b) {
     return max(min(r, g), min(max(r, g), b));
+}
+
+vec4 getColor() {
+    float r = isnan(vGlyphColor.r) ? uBaseColor.r : uBaseColor.r;
+    float g = isnan(vGlyphColor.g) ? uBaseColor.g : uBaseColor.g;
+    float b = isnan(vGlyphColor.b) ? uBaseColor.b : uBaseColor.b;
+    float a = isnan(vGlyphColor.a) ? uBaseColor.a : min(uBaseColor.a, vGlyphColor.a);
+    return vec4(r, g, b, a);
 }
 
 vec4 getFontAtlas(int index, vec2 uv) {
@@ -41,14 +50,16 @@ vec4 getFontAtlas(int index, vec2 uv) {
 }
 
 void main() {
+    vec4 color = getColor();
+    
     // Output solid color if font index is < 0
-    if (uFontIndex < 0) {
-        oFragColor = uGlyphColor;
+    if (vFontIndex < 0) {
+        oFragColor = color;
     } else {
-        vec3 msdf = getFontAtlas(uFontIndex, vUv).rgb;
+        vec3 msdf = getFontAtlas(vFontIndex, vUv).rgb;
         float distance = median(msdf.r, msdf.g, msdf.b);
-        float pxDistance = screenPxRange() * (distance - ((uBoldItalic & 1) != 0 ? 0.2 : 0.5));
+        float pxDistance = screenPxRange() * (distance - ((vBoldItalic & 1) != 0 ? 0.2 : 0.5));
         float alpha = clamp(pxDistance + 0.5, 0.0, 1.0);
-        oFragColor = vec4(uGlyphColor.rgb, uGlyphColor.a * alpha);
+        oFragColor = vec4(color.rgb, color.a * alpha);
     }
 }
