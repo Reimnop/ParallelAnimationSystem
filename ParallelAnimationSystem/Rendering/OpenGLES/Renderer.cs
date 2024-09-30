@@ -95,6 +95,10 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
         
         var contextSettings = new EGLGraphicsApiHints
         {
+            // We do this even if we're not using ANGLE
+            // because it's more compatible with drivers;
+            // Most drivers don't care if it's ANGLE or not
+            IsAngle = true,
             Version = new Version(3, 0),
 #if DEBUG
             DebugFlag = true,
