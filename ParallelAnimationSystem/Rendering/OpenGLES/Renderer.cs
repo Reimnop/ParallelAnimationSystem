@@ -3,12 +3,13 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using OpenTK.Graphics;
-using OpenTK.Graphics.Glx;
 using OpenTK.Graphics.OpenGLES2;
 using OpenTK.Mathematics;
 using OpenTK.Platform;
 using OpenTK.Platform.Native;
 using ParallelAnimationSystem.Data;
+using ParallelAnimationSystem.Rendering.Common;
+using ParallelAnimationSystem.Rendering.OpenGLES.PostProcessing;
 using ParallelAnimationSystem.Rendering.TextProcessing;
 using ParallelAnimationSystem.Util;
 using TmpIO;
@@ -69,9 +70,13 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
     
     private int fboColorBufferHandle, fboDepthBufferHandle;
     private int fboHandle;
-    private int postProcessTextureHandle;
+    private int postProcessTextureHandle1, postProcessTextureHandle2;
     private int postProcessFboHandle;
     private Vector2i currentFboSize;
+    
+    // Post-processing
+    private readonly Hue hue = new(resourceManager);
+    private readonly Bloom bloom = new(resourceManager);
     
     // Temporary draw data lists
     private readonly List<DrawData> opaqueDrawData = [];
@@ -229,13 +234,15 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
             throw new InvalidOperationException($"Framebuffer is not complete: {fboStatus}");
         
         // Initialize post-process FBO
-        postProcessTextureHandle = GL.GenTexture();
-        GL.BindTexture(TextureTarget.Texture2d, postProcessTextureHandle);
+        postProcessTextureHandle1 = GL.GenTexture();
+        GL.BindTexture(TextureTarget.Texture2d, postProcessTextureHandle1);
+        GL.TexStorage2D(TextureTarget.Texture2d, 1, SizedInternalFormat.Rgba16f, initialSize.X, initialSize.Y);
+        
+        postProcessTextureHandle2 = GL.GenTexture();
+        GL.BindTexture(TextureTarget.Texture2d, postProcessTextureHandle2);
         GL.TexStorage2D(TextureTarget.Texture2d, 1, SizedInternalFormat.Rgba16f, initialSize.X, initialSize.Y);
         
         postProcessFboHandle = GL.GenFramebuffer();
-        GL.BindFramebuffer(FramebufferTarget.Framebuffer, postProcessFboHandle);
-        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, postProcessTextureHandle, 0);
         
         // Check post-process FBO status
         var postProcessFboStatus = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
@@ -243,6 +250,25 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
             throw new InvalidOperationException($"Post-process framebuffer is not complete: {postProcessFboStatus}");
         
         currentFboSize = initialSize;
+        
+        // Initialize post-processing
+        var vertexShaderSource = resourceManager.LoadGraphicsResourceString("Shaders/PostProcessVertex.glsl");
+        var vertexShader = GL.CreateShader(ShaderType.VertexShader);
+        GL.ShaderSource(vertexShader, vertexShaderSource);
+        GL.CompileShader(vertexShader);
+        
+        var vertexShaderCompileStatus = GL.GetShaderi(vertexShader, ShaderParameterName.CompileStatus);
+        if (vertexShaderCompileStatus == 0)
+        {
+            GL.GetShaderInfoLog(vertexShader, out var infoLog);
+            throw new InvalidOperationException($"Failed to compile vertex shader: {infoLog}");
+        }
+        
+        hue.Initialize(vertexShader);
+        bloom.Initialize(vertexShader);
+        
+        // Clean up
+        GL.DeleteShader(vertexShader);
     }
 
     private int CreateShaderProgram(string vertexShaderResourceName, string fragmentShaderResourceName)
@@ -497,6 +523,10 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
         // Restore depth write state
         GL.DepthMask(true);
         
+        // Bind texture 1 to post-process FBO
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, postProcessFboHandle);
+        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, postProcessTextureHandle1, 0);
+        
         // Blit FBO to post-process FBO
         GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, fboHandle);
         GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, postProcessFboHandle);
@@ -507,6 +537,13 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
             size.X, size.Y, 
             ClearBufferMask.ColorBufferBit, 
             BlitFramebufferFilter.Linear);
+        
+        // Process post-process effects
+        var output = HandlePostProcessing(drawList.PostProcessingData, postProcessTextureHandle1, postProcessTextureHandle2);
+        
+        // Bind output texture to post-process FBO
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, postProcessFboHandle);
+        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, output, 0);
         
         // Blit post-process FBO to screen
         GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, postProcessFboHandle);
@@ -527,7 +564,18 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
         drawList.Reset();
         drawListPool.Enqueue(drawList);
     }
-
+    
+    private int HandlePostProcessing(PostProcessingData data, int texture1, int texture2)
+    {
+        if (hue.Process(currentFboSize, data.HueShiftAngle, texture1, texture2))
+            Swap(ref texture1, ref texture2); // Swap if we processed
+        
+        if (bloom.Process(currentFboSize, data.BloomIntensity, data.BloomDiffusion, texture1, texture2))
+            Swap(ref texture1, ref texture2);
+        
+        return texture1;
+    }
+    
     private void RenderDrawDataList(IReadOnlyList<DrawData> drawDataList, Matrix3 camera)
     {
         foreach (var drawData in drawDataList)
@@ -656,16 +704,17 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
             throw new InvalidOperationException($"Framebuffer is not complete: {fboStatus}");
         
         // Delete old post-process FBO data
-        GL.DeleteTexture(postProcessTextureHandle);
+        GL.DeleteTexture(postProcessTextureHandle1);
+        GL.DeleteTexture(postProcessTextureHandle2);
         
         // Create new post-process FBO data
-        postProcessTextureHandle = GL.GenTexture();
-        GL.BindTexture(TextureTarget.Texture2d, postProcessTextureHandle);
+        postProcessTextureHandle1 = GL.GenTexture();
+        GL.BindTexture(TextureTarget.Texture2d, postProcessTextureHandle1);
         GL.TexStorage2D(TextureTarget.Texture2d, 1, SizedInternalFormat.Rgba16f, size.X, size.Y);
         
-        // Bind new data to FBO
-        GL.BindFramebuffer(FramebufferTarget.Framebuffer, postProcessFboHandle);
-        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, postProcessTextureHandle, 0);
+        postProcessTextureHandle2 = GL.GenTexture();
+        GL.BindTexture(TextureTarget.Texture2d, postProcessTextureHandle2);
+        GL.TexStorage2D(TextureTarget.Texture2d, 1, SizedInternalFormat.Rgba16f, size.X, size.Y);
         
         // Check post-process FBO status
         var postProcessFboStatus = GL.CheckFramebufferStatus(FramebufferTarget.Framebuffer);
@@ -681,5 +730,10 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
     {
         if (windowHandle is not null && !Toolkit.Window.IsWindowDestroyed(windowHandle))
             Toolkit.Window.Destroy(windowHandle);
+    }
+    
+    private static void Swap<T>(ref T a, ref T b)
+    {
+        (a, b) = (b, a);
     }
 }

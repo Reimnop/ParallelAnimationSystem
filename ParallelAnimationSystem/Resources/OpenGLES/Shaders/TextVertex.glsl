@@ -2,7 +2,7 @@
 
 precision highp float;
 
-const vec2 VERTICES[] = vec2[](
+const highp vec2 VERTICES[] = vec2[](
     vec2(0.0, 1.0),
     vec2(1.0, 1.0),
     vec2(0.0, 0.0),

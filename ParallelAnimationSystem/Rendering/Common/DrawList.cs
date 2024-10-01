@@ -2,7 +2,7 @@ using System.Collections;
 using OpenTK.Mathematics;
 using ParallelAnimationSystem.Data;
 
-namespace ParallelAnimationSystem.Rendering;
+namespace ParallelAnimationSystem.Rendering.Common;
 
 // This should never be instantiated directly, but rather through the Renderer
 public class DrawList : IDrawList, IEnumerable<DrawData>

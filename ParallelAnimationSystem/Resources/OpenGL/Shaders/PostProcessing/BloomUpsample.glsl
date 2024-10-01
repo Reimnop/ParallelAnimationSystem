@@ -13,7 +13,7 @@ void main() {
 
     // Skip if out of bounds
     if (coords.x >= uOutputSize.x || coords.y >= uOutputSize.y)
-    return;
+        return;
 
     // Calculate UV and pixel size
     vec2 uv = (vec2(coords) + 0.5) / vec2(uOutputSize);

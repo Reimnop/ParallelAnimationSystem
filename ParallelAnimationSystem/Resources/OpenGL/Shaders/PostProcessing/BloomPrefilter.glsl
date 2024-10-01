@@ -21,7 +21,7 @@ void main() {
     float luminance = dot(color.rgb, vec3(0.299, 0.587, 0.114));
     
     // Apply threshold (smooth)
-    color.rgb *= smoothstep(0.5, 0.8, luminance);
+    color.rgb *= smoothstep(0.5, 1.0, luminance);
     color.a = 1.0;
     
     // Store result

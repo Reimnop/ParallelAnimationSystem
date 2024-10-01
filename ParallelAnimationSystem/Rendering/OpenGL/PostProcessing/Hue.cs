@@ -28,7 +28,6 @@ public class Hue(IResourceManager resourceManager) : IDisposable
         hueShiftAngleUniformLocation = GL.GetUniformLocation(program, "uHueShiftAngle");
         
         // Clean up
-        GL.DetachShader(program, shader);
         GL.DeleteShader(shader);
     }
     

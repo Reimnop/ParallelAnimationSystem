@@ -186,8 +186,8 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
     
     private static int CalculateMipLevels(Vector2i size)
     {
-        var maxDim = Math.Max(size.X, size.Y);
-        return (int) MathF.Floor(MathF.Log(maxDim, 2));
+        var minDim = Math.Min(size.X, size.Y);
+        return (int) MathF.Floor(MathF.Log(minDim, 2));
     }
     
     private int CreateProgram(string shaderName)
@@ -201,7 +201,6 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
         GL.AttachShader(program, shader);
         GL.LinkProgram(program);
         
-        GL.DetachShader(program, shader);
         GL.DeleteShader(shader);
         
         return program;
