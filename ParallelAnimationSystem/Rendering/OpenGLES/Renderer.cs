@@ -89,7 +89,7 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
         var toolkitOptions = new ToolkitOptions
         {
             ApplicationName = "Parallel Animation System",
-            Logger = new MelLogger<Renderer>(logger, "OpenGL: "),
+            Logger = new MelLogger<Renderer>(logger, "OpenGL ES: "),
         };
         Toolkit.Init(toolkitOptions);
         
