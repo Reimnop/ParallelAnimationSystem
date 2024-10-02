@@ -1,3 +1,6 @@
-﻿// See https://aka.ms/new-console-template for more information
+﻿using CommandLine;
+using ParallelAnimationSystem.Desktop;
 
-Console.WriteLine("Hello, World!");
+Parser.Default
+    .ParseArguments<Options>(args)
+    .WithParsed(DesktopStartup.ConsumeOptions);

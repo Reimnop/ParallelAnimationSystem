@@ -6,8 +6,10 @@ namespace ParallelAnimationSystem;
 
 public interface IStartup
 {
+    IAppSettings AppSettings { get; }
+    
     void ConfigureLogging(ILoggingBuilder loggingBuilder);
-    IAppSettings CreateAppSettings();
-    IResourceManager CreateResourceManager(IServiceProvider serviceProvider);
+    IResourceManager? CreateResourceManager(IServiceProvider serviceProvider);
     IRenderer CreateRenderer(IServiceProvider serviceProvider);
+    IMediaProvider CreateMediaProvider(IServiceProvider serviceProvider);
 }
