@@ -1,5 +1,4 @@
 using CommandLine;
-using ParallelAnimationSystem.Core;
 
 namespace ParallelAnimationSystem.Desktop;
 

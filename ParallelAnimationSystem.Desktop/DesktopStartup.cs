@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Data;
@@ -8,6 +9,7 @@ namespace ParallelAnimationSystem.Desktop;
 
 public class DesktopStartup(DesktopAppSettings appSettings, string beatmapPath, string audioPath, RenderingBackend backend) : IStartup
 {
+    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(Options))]
     public static void ConsumeOptions(Options options)
     {
         var appSettings = new DesktopAppSettings(
