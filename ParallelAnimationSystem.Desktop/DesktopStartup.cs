@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering;
+using ParallelAnimationSystem.Windowing;
 
 namespace ParallelAnimationSystem.Desktop;
 
@@ -17,7 +18,7 @@ public class DesktopStartup(DesktopAppSettings appSettings, string beatmapPath, 
             options.EnableTextRendering
         );
         
-        Startup.StartApp(new DesktopStartup(appSettings, options.BeatmapPath, options.AudioPath, options.Backend));
+        Startup.StartApp(new DesktopStartup(appSettings, options.BeatmapPath, options.AudioPath, options.Backend ?? RenderingBackend.OpenGL));
     }
 
     public IAppSettings AppSettings { get; } = appSettings;
@@ -28,16 +29,21 @@ public class DesktopStartup(DesktopAppSettings appSettings, string beatmapPath, 
     public IResourceManager? CreateResourceManager(IServiceProvider serviceProvider)
         => null;
 
+    public IWindowManager CreateWindowManager(IServiceProvider serviceProvider)
+        => new DesktopWindowManager();
+
     public IRenderer CreateRenderer(IServiceProvider serviceProvider)
         => backend switch
         {
             RenderingBackend.OpenGL => new Rendering.OpenGL.Renderer(
+                serviceProvider.GetRequiredService<IWindowManager>(),
                 serviceProvider.GetRequiredService<IResourceManager>(),
                 serviceProvider.GetRequiredService<ILogger<Rendering.OpenGL.Renderer>>()),
             RenderingBackend.OpenGLES => new Rendering.OpenGLES.Renderer(
+                serviceProvider.GetRequiredService<IWindowManager>(),
                 serviceProvider.GetRequiredService<IResourceManager>(),
                 serviceProvider.GetRequiredService<ILogger<Rendering.OpenGLES.Renderer>>()),
-            _ => throw new ArgumentOutOfRangeException(nameof(backend), backend, null)
+            _ => throw new NotSupportedException($"Rendering backend '{backend}' is not supported")
         };
 
     public IMediaProvider CreateMediaProvider(IServiceProvider serviceProvider)

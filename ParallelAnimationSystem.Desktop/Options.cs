@@ -27,7 +27,7 @@ public class Options
     public float Speed { get; set; } = 1.0f;
     
     [Option("backend", Required = false, Default = RenderingBackend.OpenGL, HelpText = "Sets the rendering backend to use (opengl/opengles).")]
-    public RenderingBackend Backend { get; set; }
+    public RenderingBackend? Backend { get; set; }
     
     [Option("experimental-enable-text-rendering", Required = false, Default = false, HelpText = "Enable experimental text rendering.")]
     public bool EnableTextRendering { get; set; }

@@ -13,6 +13,7 @@ public static class Startup
         var serviceCollection = new ServiceCollection();
         serviceCollection.AddSingleton(startup.AppSettings);
         serviceCollection.AddLogging(startup.ConfigureLogging);
+        serviceCollection.AddSingleton(startup.CreateWindowManager);
         serviceCollection.AddSingleton(startup.CreateRenderer);
         serviceCollection.AddSingleton<AudioSystem>();
         serviceCollection.AddSingleton<App>();
