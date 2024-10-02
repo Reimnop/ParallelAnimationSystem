@@ -11,9 +11,6 @@ public class Options
     [Option('a', "audio", Required = true, HelpText = "Path to the audio file.")]
     public required string AudioPath { get; set; }
     
-    [Option("format", Required = false, HelpText = "The format of the beatmap file (lsb/vgd).")]
-    public BeatmapFormat? Format { get; set; }
-    
     [Option("vsync", Required = false, HelpText = "Enable VSync.")]
     public bool VSync { get; set; }
     

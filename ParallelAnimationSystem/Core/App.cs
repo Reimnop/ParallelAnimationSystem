@@ -85,6 +85,7 @@ public class App(IAppSettings appSettings, IMediaProvider mediaProvider, IResour
         using var stream = mediaProvider.LoadAudio();
         using var audioStream = new VorbisAudioStream(stream);
         audioPlayer = audio.CreatePlayer(audioStream);
+        audioPlayer.Pitch = appSettings.Speed;
     }
 
     private void RegisterMeshes()
@@ -153,6 +154,8 @@ public class App(IAppSettings appSettings, IMediaProvider mediaProvider, IResour
     private IFontHandle ReadFont(string path)
     {
         using var stream = resourceManager.LoadResource(path);
+        if (stream is null)
+            throw new InvalidOperationException($"Failed to load font '{path}'");
         return renderer.RegisterFont(stream);
     }
     

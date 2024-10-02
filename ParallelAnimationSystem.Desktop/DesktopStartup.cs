@@ -15,6 +15,7 @@ public class DesktopStartup(DesktopAppSettings appSettings, string beatmapPath, 
             options.Seed < 0
                 ? (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds()
                 : (ulong) options.Seed,
+            options.Speed,
             options.EnableTextRendering
         );
         
