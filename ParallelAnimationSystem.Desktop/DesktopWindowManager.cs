@@ -9,7 +9,7 @@ public class DesktopWindowManager : IWindowManager, IDisposable
     public DesktopWindowManager()
         => GLFW.Init();
     
-    public IOpenGLWindow CreateWindow(string title, Vector2i size, GLContextSettings glContextSettings)
+    public IWindow CreateWindow(string title, Vector2i size, GLContextSettings glContextSettings)
         => new DesktopWindow(title, size, glContextSettings);
 
     public void PollEvents()

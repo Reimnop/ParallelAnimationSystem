@@ -4,9 +4,7 @@ namespace ParallelAnimationSystem.Windowing;
 
 public interface IWindowManager
 {
-    IOpenGLWindow CreateWindow(string title, Vector2i size, GLContextSettings glContextSettings);
-    
-    void PollEvents();
+    IWindow CreateWindow(string title, Vector2i size, GLContextSettings glContextSettings);
     
     IntPtr GetProcAddress(string procName);
 }

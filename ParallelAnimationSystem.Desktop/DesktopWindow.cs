@@ -4,7 +4,7 @@ using ParallelAnimationSystem.Windowing;
 
 namespace ParallelAnimationSystem.Desktop;
 
-public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
+public unsafe class DesktopWindow : IWindow, IDisposable
 {
     public string Title
     {
@@ -35,21 +35,21 @@ public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
         
         window = GLFW.CreateWindow(size.X, size.Y, title, null, null);
     }
-    
-    public void MakeCurrent()
-    {
-        GLFW.MakeContextCurrent(window);
-    }
 
     public void SetSwapInterval(int interval)
     {
-        MakeCurrent(); // Make sure the context is current
+        GLFW.MakeContextCurrent(window);
         GLFW.SwapInterval(interval);
     }
 
-    public void SwapBuffers()
+    public void RequestAnimationFrame(AnimationFrameCallback callback)
     {
-        GLFW.SwapBuffers(window);
+        GLFW.PollEvents();
+        
+        GLFW.MakeContextCurrent(window);
+        var time = GLFW.GetTime();
+        if (callback(time))
+            GLFW.SwapBuffers(window);
     }
 
     public void Close()

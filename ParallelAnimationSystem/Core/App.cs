@@ -21,8 +21,6 @@ public class App(IAppSettings appSettings, IMediaProvider mediaProvider, IResour
 
     private readonly Dictionary<GameObject, Task<ITextHandle>> cachedTextHandles = [];
     private readonly List<FontStack> fonts = [];
-    
-    private bool shuttingDown;
 
     private double time;
     private double lastAudioTime;
@@ -158,32 +156,19 @@ public class App(IAppSettings appSettings, IMediaProvider mediaProvider, IResour
             throw new InvalidOperationException($"Failed to load font '{path}'");
         return renderer.RegisterFont(stream);
     }
-    
+
     public void Run()
     {
-        Debug.Assert(runner is not null);
-        Debug.Assert(audioPlayer is not null);
-        
-        // Play audio
-        audioPlayer.Play();
-        
-        // Start loop
-        var stopwatch = Stopwatch.StartNew();
-
-        var lastTime = 0.0;
-        while (!shuttingDown)
-        {
-            var currentTime = stopwatch.Elapsed.TotalSeconds;
-            var delta = currentTime - lastTime;
-            lastTime = currentTime;
-            ProcessFrame(delta);
-        }
+        audioPlayer?.Play();
     }
     
-    private void ProcessFrame(double delta)
+    public bool ProcessFrame(double delta)
     {
         Debug.Assert(runner is not null);
         Debug.Assert(audioPlayer is not null);
+
+        if (renderer.QueuedDrawListCount > 2)
+            return false;
         
         var time = CalculateTime(audioPlayer, delta);
         
@@ -230,7 +215,9 @@ public class App(IAppSettings appSettings, IMediaProvider mediaProvider, IResour
         }
         
         // Submit our draw list
-        SubmitDrawList(drawList);
+        renderer.SubmitDrawList(drawList);
+        
+        return true;
     }
 
     private double CalculateTime(AudioPlayer audioPlayer, double delta)
@@ -254,30 +241,8 @@ public class App(IAppSettings appSettings, IMediaProvider mediaProvider, IResour
         return time;
     }
 
-    private void SubmitDrawList(IDrawList drawList)
-    {
-        // If we already have more than 2 draw lists queued, wait until we don't
-        while (renderer.QueuedDrawListCount > 2 && !shuttingDown)
-            Thread.Yield();
-        
-        // Return if we are shutting down
-        if (shuttingDown)
-            return;
-        
-        // Submit draw list
-        renderer.SubmitDrawList(drawList);
-    }
-    
-    public void Shutdown()
-    {
-        shuttingDown = true;
-    }
-
     public void Dispose()
     {
-        GC.SuppressFinalize(this);
-        
-        shuttingDown = true;
         audioPlayer?.Dispose();
     }
 }

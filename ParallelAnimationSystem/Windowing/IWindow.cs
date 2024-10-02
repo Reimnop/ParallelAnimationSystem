@@ -2,7 +2,9 @@ using OpenTK.Mathematics;
 
 namespace ParallelAnimationSystem.Windowing;
 
-public interface IOpenGLWindow
+public delegate bool AnimationFrameCallback(double deltaTime);
+
+public interface IWindow
 {
     string Title { get; set; }
     
@@ -10,9 +12,8 @@ public interface IOpenGLWindow
     
     bool ShouldClose { get; }
     
-    void MakeCurrent();
     void SetSwapInterval(int interval);
-    void SwapBuffers();
+    void RequestAnimationFrame(AnimationFrameCallback callback);
     
     void Close();
 }

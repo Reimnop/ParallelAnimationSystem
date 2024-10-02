@@ -47,8 +47,8 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
     
     private const int MaxFonts = 12;
     private const int MsaaSamples = 4;
-    
-    public bool ShouldExit { get; private set; }
+
+    public IWindow Window => windowHandle ?? throw new InvalidOperationException("Renderer has not been initialized");
     public int QueuedDrawListCount => drawListQueue.Count;
     
     // Draw list stuff
@@ -81,7 +81,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
     private readonly List<DrawData> opaqueDrawData = [];
     private readonly List<DrawData> transparentDrawData = [];
     
-    private IOpenGLWindow? windowHandle;
+    private IWindow? windowHandle;
     
     public void Initialize()
     {
@@ -96,7 +96,6 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
                 Version = new Version(3, 0),
                 ES = true
             });
-        windowHandle.MakeCurrent();
         
         // Set swap interval
         windowHandle.SetSwapInterval(appSettings.SwapInterval);
@@ -392,40 +391,35 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         drawListQueue.Enqueue((DrawList)drawList);
     }
 
-    public void ProcessFrame()
+    public bool ProcessFrame()
     {
         if (windowHandle is null)
-            throw new InvalidOperationException("Renderer has not been initialized");
-        
-        windowManager.PollEvents();
+            return false;
         
         // Check if window is closed
         if (windowHandle.ShouldClose)
-        {
-            ShouldExit = true;
-            return;
-        }
+            return false;
         
-        // Render frame
-        RenderFrame(windowHandle.FramebufferSize);
+        // Get current draw list
+        if (!drawListQueue.TryDequeue(out var drawList))
+            return false;
+        
+        // Request animation frame
+        windowHandle.RequestAnimationFrame(_ =>
+        {
+            // Check framebuffer size
+            var size = windowHandle.FramebufferSize;
+            if (size.X <= 0 || size.Y <= 0)
+                return false;
+            
+            RenderFrame(size, drawList);
+            return true;
+        });
+        return true;
     }
 
-    private void RenderFrame(Vector2i size)
+    private void RenderFrame(Vector2i size, DrawList drawList)
     {
-        // Get the current draw list
-        // If no draw list is available, wait until we have one
-        DrawList? drawList;
-        while (!drawListQueue.TryDequeue(out drawList))
-            Thread.Yield();
-
-        // If window size is invalid, don't draw
-        // and limit FPS
-        if (size.X <= 0 || size.Y <= 0)
-        {
-            Thread.Sleep(50);
-            return;
-        }
-        
         // Update OpenGL data
         UpdateOpenGlData(size);
         
@@ -511,10 +505,6 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
             size.X, size.Y, 
             ClearBufferMask.ColorBufferBit, 
             BlitFramebufferFilter.Linear);
-        
-        // Swap buffers
-        Debug.Assert(windowHandle is not null);
-        windowHandle.SwapBuffers();
         
         // Return draw list to pool
         drawList.Reset();

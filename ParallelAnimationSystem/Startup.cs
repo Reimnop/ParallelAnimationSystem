@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using ParallelAnimationSystem.Audio;
 using ParallelAnimationSystem.Core;
@@ -42,15 +43,39 @@ public static class Startup
         renderer.Initialize();
         
         // Run app thread
-        var appThread = new Thread(app.Run);
+        var appShutdown = false;
+        var appThread = new Thread(() =>
+        {
+            app.Run();
+            
+            var sw = Stopwatch.StartNew();
+            var deltaTime = 0.0;
+            
+            // ReSharper disable once AccessToModifiedClosure
+            // ReSharper disable once LoopVariableIsNeverChangedInsideLoop
+            while (!appShutdown)
+            {
+                var dt = sw.Elapsed.TotalSeconds;
+                sw.Restart();
+                
+                deltaTime += dt;
+                if (!app.ProcessFrame(deltaTime))
+                    Thread.Yield();
+                else
+                    deltaTime = 0.0;
+            }
+            
+            sw.Stop();
+        });
         appThread.Start();
         
         // Enter the main loop
-        while (!renderer.ShouldExit)
-            renderer.ProcessFrame();
+        while (!renderer.Window.ShouldClose)
+            if (!renderer.ProcessFrame())
+                Thread.Yield();
         
         // When renderer exits, we'll shut down the services
-        app.Shutdown();
+        appShutdown = true;
         
         // Wait for the app thread to finish
         appThread.Join();
