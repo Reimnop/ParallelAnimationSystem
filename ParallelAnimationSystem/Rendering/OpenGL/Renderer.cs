@@ -16,7 +16,7 @@ using TmpParser;
 
 namespace ParallelAnimationSystem.Rendering.OpenGL;
 
-public class Renderer(IWindowManager windowManager, IResourceManager resourceManager, ILogger<Renderer> logger) : IRenderer
+public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IResourceManager resourceManager, ILogger<Renderer> logger) : IRenderer
 {
     private record MeshHandle(int VertexOffset, int VertexCount, int IndexOffset, int IndexCount) : IMeshHandle;
     private class FontHandle(TmpFile fontFile, Dictionary<char, TmpCharacter> ordinalToCharacter, Dictionary<int, TmpGlyph> glyphIdToGlyph) : IFontHandle
@@ -171,8 +171,8 @@ public class Renderer(IWindowManager windowManager, IResourceManager resourceMan
         // Load OpenGL bindings
         GLLoader.LoadBindings(new BindingsContext(windowManager));
         
-        // TODO: Set VSync
-        // Toolkit.OpenGL.SetSwapInterval(options.VSync ? 1 : 0);
+        // Set swap interval
+        windowHandle.SetSwapInterval(appSettings.SwapInterval);
         
         logger.LogInformation("Window created");
         

@@ -11,6 +11,7 @@ public interface IOpenGLWindow
     bool ShouldClose { get; }
     
     void MakeCurrent();
+    void SetSwapInterval(int interval);
     void SwapBuffers();
     
     void Close();

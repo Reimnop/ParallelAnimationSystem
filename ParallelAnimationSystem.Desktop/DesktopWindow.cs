@@ -41,6 +41,12 @@ public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
         GLFW.MakeContextCurrent(window);
     }
 
+    public void SetSwapInterval(int interval)
+    {
+        MakeCurrent(); // Make sure the context is current
+        GLFW.SwapInterval(interval);
+    }
+
     public void SwapBuffers()
     {
         GLFW.SwapBuffers(window);

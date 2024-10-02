@@ -10,7 +10,7 @@ public class Options
     [Option('a', "audio", Required = true, HelpText = "Path to the audio file.")]
     public required string AudioPath { get; set; }
     
-    [Option("vsync", Required = false, HelpText = "Enable VSync.")]
+    [Option("vsync", Required = false, Default = true, HelpText = "Enable VSync.")]
     public bool VSync { get; set; }
     
     [Option("workers", Required = false, Default = 4, HelpText = "Number of worker threads, set to -1 to use all available threads.")]

@@ -13,6 +13,7 @@ public class DesktopStartup(DesktopAppSettings appSettings, string beatmapPath, 
     public static void ConsumeOptions(Options options)
     {
         var appSettings = new DesktopAppSettings(
+            options.VSync ? 1 : 0,
             options.WorkerCount,
             options.Seed < 0
                 ? (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds()
@@ -39,10 +40,12 @@ public class DesktopStartup(DesktopAppSettings appSettings, string beatmapPath, 
         => backend switch
         {
             RenderingBackend.OpenGL => new Rendering.OpenGL.Renderer(
+                serviceProvider.GetRequiredService<IAppSettings>(),
                 serviceProvider.GetRequiredService<IWindowManager>(),
                 serviceProvider.GetRequiredService<IResourceManager>(),
                 serviceProvider.GetRequiredService<ILogger<Rendering.OpenGL.Renderer>>()),
             RenderingBackend.OpenGLES => new Rendering.OpenGLES.Renderer(
+                serviceProvider.GetRequiredService<IAppSettings>(),
                 serviceProvider.GetRequiredService<IWindowManager>(),
                 serviceProvider.GetRequiredService<IResourceManager>(),
                 serviceProvider.GetRequiredService<ILogger<Rendering.OpenGLES.Renderer>>()),
