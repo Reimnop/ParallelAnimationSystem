@@ -9,28 +9,23 @@ namespace ParallelAnimationSystem;
 
 public static class Startup
 {
-    public static void StartApp(Options options)
+    public static void StartApp(IStartup startup)
     {
         var serviceCollection = new ServiceCollection();
-        serviceCollection.AddSingleton(options);
-        serviceCollection.AddLogging(x => x.AddConsole());
-
-        switch (options.Backend)
-        {
-            case "opengl":
-                serviceCollection.AddSingleton<IResourceManager>(_ => new EmbeddedResourceManager("OpenGL"));
-                serviceCollection.AddSingleton<IRenderer, Rendering.OpenGL.Renderer>();
-                break;
-            case "opengles":
-                serviceCollection.AddSingleton<IResourceManager>(_ => new EmbeddedResourceManager("OpenGLES"));
-                serviceCollection.AddSingleton<IRenderer, Rendering.OpenGLES.Renderer>();
-                break;
-            default:
-                throw new ArgumentException($"Unknown rendering backend '{options.Backend}'");
-        }
-        
+        serviceCollection.AddLogging(startup.ConfigureLogging);
+        serviceCollection.AddSingleton(startup.CreateAppSettings());
+        serviceCollection.AddSingleton(startup.CreateRenderer);
         serviceCollection.AddSingleton<AudioSystem>();
         serviceCollection.AddSingleton<App>();
+        serviceCollection.AddSingleton<IResourceManager>(x =>
+        {
+            var resourceManagers = new List<IResourceManager>
+            {
+                startup.CreateResourceManager(x),
+                new EmbeddedResourceManager(typeof(App).Assembly),
+            };
+            return new MergedResourceManager(resourceManagers);
+        });
 
         using var serviceProvider = serviceCollection.BuildServiceProvider();
         

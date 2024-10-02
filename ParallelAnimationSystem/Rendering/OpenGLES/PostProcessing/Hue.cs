@@ -14,7 +14,7 @@ public class Hue(IResourceManager resourceManager) : IDisposable
 
     public void Initialize(int vertexShader)
     {
-        var shaderSource = resourceManager.LoadGraphicsResourceString("Shaders/PostProcessing/Hue.glsl");
+        var shaderSource = resourceManager.LoadResourceString("OpenGLES/Shaders/PostProcessing/Hue.glsl");
         
         var fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
         GL.ShaderSource(fragmentShader, shaderSource);

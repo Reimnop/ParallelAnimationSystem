@@ -1,7 +1,7 @@
 using CommandLine;
 using ParallelAnimationSystem.Core;
 
-namespace ParallelAnimationSystem;
+namespace ParallelAnimationSystem.Desktop;
 
 public class Options
 {
@@ -12,7 +12,7 @@ public class Options
     public required string AudioPath { get; set; }
     
     [Option("format", Required = false, HelpText = "The format of the level file (lsb/vgd).")]
-    public LevelFormat? Format { get; set; }
+    public BeatmapFormat? Format { get; set; }
     
     [Option("vsync", Required = false, HelpText = "Enable VSync.")]
     public bool VSync { get; set; }

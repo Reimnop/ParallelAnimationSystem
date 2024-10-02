@@ -16,7 +16,7 @@ using TmpParser;
 
 namespace ParallelAnimationSystem.Rendering.OpenGL;
 
-public class Renderer(Options options, IResourceManager resourceManager, ILogger<Renderer> logger) : IRenderer
+public class Renderer(IResourceManager resourceManager, ILogger<Renderer> logger) : IRenderer
 {
     private record MeshHandle(int VertexOffset, int VertexCount, int IndexOffset, int IndexCount) : IMeshHandle;
     private class FontHandle(TmpFile fontFile, Dictionary<char, TmpCharacter> ordinalToCharacter, Dictionary<int, TmpGlyph> glyphIdToGlyph) : IFontHandle
@@ -204,8 +204,8 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
         // Load OpenGL bindings
         GLLoader.LoadBindings(Toolkit.OpenGL.GetBindingsContext(glContextHandle));
         
-        // Set VSync
-        Toolkit.OpenGL.SetSwapInterval(options.VSync ? 1 : 0);
+        // TODO: Set VSync
+        // Toolkit.OpenGL.SetSwapInterval(options.VSync ? 1 : 0);
         
         logger.LogInformation("Window created");
         
@@ -283,8 +283,8 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
         multiDrawGlyphBufferHandle = GL.CreateBuffer();
         
         // Initialize shader program
-        var vertexShaderSource = resourceManager.LoadGraphicsResourceString("Shaders/UberVertex.glsl");
-        var fragmentShaderSource = resourceManager.LoadGraphicsResourceString("Shaders/UberFragment.glsl");
+        var vertexShaderSource = resourceManager.LoadResourceString("OpenGL/Shaders/UberVertex.glsl");
+        var fragmentShaderSource = resourceManager.LoadResourceString("OpenGL/Shaders/UberFragment.glsl");
         
         // Create shaders
         var vertexShader = GL.CreateShader(ShaderType.VertexShader);
@@ -395,7 +395,6 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
     private void RenderFrame(Vector2i size)
     {
         // Get the current draw list
-        // If no draw list is available, wait until we have one
         DrawList? drawList;
         while (!drawListQueue.TryDequeue(out drawList))
             Thread.Yield();

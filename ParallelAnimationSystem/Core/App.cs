@@ -12,7 +12,7 @@ using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core;
 
-public class App(Options options, IResourceManager resourceManager, IRenderer renderer, AudioSystem audio, ILogger<App> logger) : IDisposable
+public class App(IAppSettings appSettings, IMediaProvider mediaProvider, IResourceManager resourceManager, IRenderer renderer, AudioSystem audio, ILogger<App> logger) : IDisposable
 {
     private readonly List<List<IMeshHandle>> meshes = [];
     
@@ -35,47 +35,27 @@ public class App(Options options, IResourceManager resourceManager, IRenderer re
         // Register all fonts
         RegisterFonts();
         
-        // Read animations from file
-        logger.LogInformation("Reading beatmap file from '{LevelPath}'", options.LevelPath);
-        var json = File.ReadAllText(options.LevelPath);
-        var jsonNode = JsonNode.Parse(json);
-        if (jsonNode is not JsonObject jsonObject)
-            throw new InvalidOperationException("Invalid JSON object");
-
-        // Determine level format
-        var format = options.Format ?? Path.GetExtension(options.LevelPath) switch
-        {
-            ".lsb" => LevelFormat.Lsb,
-            ".vgd" => LevelFormat.Vgd,
-            _ => throw new ArgumentException("Unknown level file format")
-        };
-        logger.LogInformation("Using beatmap format '{LevelFormat}'", format);
+        // Load beatmap
+        logger.LogInformation("Loading beatmap");
+        var beatmap = mediaProvider.LoadBeatmap(out var format);
         
-        // Deserialize beatmap
-        logger.LogInformation("Deserializing beatmap");
-        var beatmap = format == LevelFormat.Lsb 
-            ? LsDeserialization.DeserializeBeatmap(jsonObject) 
-            : VgDeserialization.DeserializeBeatmap(jsonObject);
+        logger.LogInformation("Using beatmap format '{LevelFormat}'", format);
         
         // Migrate the beatmap to the latest version of the beatmap format
         logger.LogInformation("Migrating beatmap");
-        if (format == LevelFormat.Lsb)
+        if (format == BeatmapFormat.Lsb)
             LsMigration.MigrateBeatmap(beatmap);
         else
             VgMigration.MigrateBeatmap(beatmap);
-
-        var seed = options.Seed < 0
-            ? (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds()
-            : (ulong) options.Seed;
         
-        logger.LogInformation("Using seed '{Seed}'", seed);
+        logger.LogInformation("Using seed '{Seed}'", appSettings.Seed);
         
         // Create animation runner
         logger.LogInformation("Initializing animation runner");
-        var beatmapImporter = new BeatmapImporter(seed, logger);
-        runner = beatmapImporter.CreateRunner(beatmap, format == LevelFormat.Lsb);
+        var beatmapImporter = new BeatmapImporter(appSettings.Seed, logger);
+        runner = beatmapImporter.CreateRunner(beatmap, format == BeatmapFormat.Lsb);
 
-        if (options.EnableTextRendering)
+        if (appSettings.EnableTextRendering)
         {
             logger.LogWarning("Experimental text rendering is enabled! Things MIGHT break!");
             
@@ -100,12 +80,11 @@ public class App(Options options, IResourceManager resourceManager, IRenderer re
         logger.LogInformation("Loaded {ObjectCount} objects", runner.ObjectCount);
         
         // Load audio
-        logger.LogInformation("Loading audio from '{AudioPath}'", options.AudioPath);
+        logger.LogInformation("Loading audio");
         
-        // TODO: When we have streaming audio, don't dispose the stream here
-        using var audioStream = new VorbisAudioStream(options.AudioPath);
+        using var stream = mediaProvider.LoadAudio();
+        using var audioStream = new VorbisAudioStream(stream);
         audioPlayer = audio.CreatePlayer(audioStream);
-        audioPlayer.Pitch = options.Speed;
     }
 
     private void RegisterMeshes()
@@ -206,7 +185,7 @@ public class App(Options options, IResourceManager resourceManager, IRenderer re
         var time = CalculateTime(audioPlayer, delta);
         
         // Update runner
-        runner.Process((float) time, options.WorkerCount);
+        runner.Process((float) time, appSettings.WorkerCount);
         
         // Start queueing up draw data
         var bloomData = runner.Bloom;

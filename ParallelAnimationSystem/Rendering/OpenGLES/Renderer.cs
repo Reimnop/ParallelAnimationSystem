@@ -17,7 +17,7 @@ using TmpParser;
 
 namespace ParallelAnimationSystem.Rendering.OpenGLES;
 
-public class Renderer(Options options, IResourceManager resourceManager, ILogger<Renderer> logger) : IRenderer
+public class Renderer(IResourceManager resourceManager, ILogger<Renderer> logger) : IRenderer
 {
     private class MeshHandle : IMeshHandle
     {
@@ -140,8 +140,8 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
         // Load OpenGL bindings
         GLLoader.LoadBindings(Toolkit.OpenGL.GetBindingsContext(glContextHandle));
         
-        // Set VSync
-        Toolkit.OpenGL.SetSwapInterval(options.VSync ? 1 : 0);
+        // TODO: Set VSync
+        // Toolkit.OpenGL.SetSwapInterval(options.VSync ? 1 : 0);
         
         logger.LogInformation("Window created");
         
@@ -252,7 +252,7 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
         currentFboSize = initialSize;
         
         // Initialize post-processing
-        var vertexShaderSource = resourceManager.LoadGraphicsResourceString("Shaders/PostProcessVertex.glsl");
+        var vertexShaderSource = resourceManager.LoadResourceString("OpenGLES/Shaders/PostProcessVertex.glsl");
         var vertexShader = GL.CreateShader(ShaderType.VertexShader);
         GL.ShaderSource(vertexShader, vertexShaderSource);
         GL.CompileShader(vertexShader);
@@ -274,8 +274,8 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
     private int CreateShaderProgram(string vertexShaderResourceName, string fragmentShaderResourceName)
     {
         // Initialize shader program
-        var vertexShaderSource = resourceManager.LoadGraphicsResourceString(vertexShaderResourceName);
-        var fragmentShaderSource = resourceManager.LoadGraphicsResourceString(fragmentShaderResourceName);
+        var vertexShaderSource = resourceManager.LoadResourceString($"OpenGLES/{vertexShaderResourceName}");
+        var fragmentShaderSource = resourceManager.LoadResourceString($"OpenGLES/{fragmentShaderResourceName}");
         
         var vertexShader = GL.CreateShader(ShaderType.VertexShader);
         GL.ShaderSource(vertexShader, vertexShaderSource);

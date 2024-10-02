@@ -14,7 +14,7 @@ public class Hue(IResourceManager resourceManager) : IDisposable
     public void Initialize()
     {
         // We will use compute shaders to do post-processing
-        var shaderSource = resourceManager.LoadGraphicsResourceString("Shaders/PostProcessing/Hue.glsl");
+        var shaderSource = resourceManager.LoadResourceString("OpenGL/Shaders/PostProcessing/Hue.glsl");
         var shader = GL.CreateShader(ShaderType.ComputeShader);
         GL.ShaderSource(shader, shaderSource);
         GL.CompileShader(shader);

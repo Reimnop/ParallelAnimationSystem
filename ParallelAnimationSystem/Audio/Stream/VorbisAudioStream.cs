@@ -2,9 +2,9 @@ using NVorbis;
 
 namespace ParallelAnimationSystem.Audio.Stream;
 
-public class VorbisAudioStream(string path) : IAudioStream, IDisposable
+public class VorbisAudioStream(System.IO.Stream stream) : IAudioStream, IDisposable
 {
-    private readonly VorbisReader reader = new(path);
+    private readonly VorbisReader reader = new(stream);
     
     public int Channels => reader.Channels;
     public int SampleRate => reader.SampleRate;
