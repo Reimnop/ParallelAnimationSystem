@@ -168,11 +168,11 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
             });
         windowHandle.MakeCurrent();
         
-        // Load OpenGL bindings
-        GLLoader.LoadBindings(new BindingsContext(windowManager));
-        
         // Set swap interval
         windowHandle.SetSwapInterval(appSettings.SwapInterval);
+        
+        // Load OpenGL bindings
+        GLLoader.LoadBindings(new BindingsContext(windowManager));
         
         logger.LogInformation("Window created");
         

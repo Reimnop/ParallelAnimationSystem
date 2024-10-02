@@ -13,7 +13,7 @@ public class DesktopStartup(DesktopAppSettings appSettings, string beatmapPath, 
     public static void ConsumeOptions(Options options)
     {
         var appSettings = new DesktopAppSettings(
-            options.VSync ? 1 : 0,
+            (options.VSync ?? true) ? 1 : 0,
             options.WorkerCount,
             options.Seed < 0
                 ? (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds()
