@@ -1,23 +1,16 @@
 using System.Diagnostics;
-using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging;
-using Pamx.Ls;
-using Pamx.Vg;
-using ParallelAnimationSystem.Audio;
-using ParallelAnimationSystem.Audio.Stream;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.TextProcessing;
-using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core;
 
-public class App(IAppSettings appSettings, IMediaProvider mediaProvider, IResourceManager resourceManager, IRenderer renderer, AudioSystem audio, ILogger<App> logger) : IDisposable
+public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvider, IResourceManager resourceManager, IRenderer renderer, ILogger<BeatmapRunner> logger)
 {
     private readonly List<List<IMeshHandle>> meshes = [];
     
     private AnimationRunner? runner;
-    private AudioPlayer? audioPlayer;
 
     private readonly Dictionary<GameObject, Task<ITextHandle>> cachedTextHandles = [];
     private readonly List<FontStack> fonts = [];
@@ -76,14 +69,6 @@ public class App(IAppSettings appSettings, IMediaProvider mediaProvider, IResour
         }
         
         logger.LogInformation("Loaded {ObjectCount} objects", runner.ObjectCount);
-        
-        // Load audio
-        logger.LogInformation("Loading audio");
-        
-        using var stream = mediaProvider.LoadAudio();
-        using var audioStream = new VorbisAudioStream(stream);
-        audioPlayer = audio.CreatePlayer(audioStream);
-        audioPlayer.Pitch = appSettings.Speed;
     }
 
     private void RegisterMeshes()
@@ -156,21 +141,13 @@ public class App(IAppSettings appSettings, IMediaProvider mediaProvider, IResour
             throw new InvalidOperationException($"Failed to load font '{path}'");
         return renderer.RegisterFont(stream);
     }
-
-    public void Run()
-    {
-        audioPlayer?.Play();
-    }
     
-    public bool ProcessFrame(double delta)
+    public bool ProcessFrame(double time)
     {
         Debug.Assert(runner is not null);
-        Debug.Assert(audioPlayer is not null);
 
         if (renderer.QueuedDrawListCount > 2)
             return false;
-        
-        var time = CalculateTime(audioPlayer, delta);
         
         // Update runner
         runner.Process((float) time, appSettings.WorkerCount);
@@ -218,31 +195,5 @@ public class App(IAppSettings appSettings, IMediaProvider mediaProvider, IResour
         renderer.SubmitDrawList(drawList);
         
         return true;
-    }
-
-    private double CalculateTime(AudioPlayer audioPlayer, double delta)
-    {
-        if (!audioPlayer.Playing)
-            return time;
-        
-        var currentAudioTime = audioPlayer.Position.TotalSeconds;
-        
-        // If audio hasn't updated, we estimate the time using the last known time
-        if (currentAudioTime == lastAudioTime)
-        {
-            time += delta * audioPlayer.Pitch;
-        }
-        else
-        {
-            time = currentAudioTime;
-            lastAudioTime = currentAudioTime;
-        }
-        
-        return time;
-    }
-
-    public void Dispose()
-    {
-        audioPlayer?.Dispose();
     }
 }

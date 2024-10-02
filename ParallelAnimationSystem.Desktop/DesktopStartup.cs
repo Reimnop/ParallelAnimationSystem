@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -18,11 +19,40 @@ public class DesktopStartup(DesktopAppSettings appSettings, string beatmapPath, 
             options.Seed < 0
                 ? (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds()
                 : (ulong) options.Seed,
-            options.Speed,
             options.EnableTextRendering
         );
         
-        Startup.StartApp(new DesktopStartup(appSettings, options.BeatmapPath, options.AudioPath, options.Backend ?? RenderingBackend.OpenGL));
+        var startup = new DesktopStartup(appSettings, options.BeatmapPath, options.AudioPath, options.Backend ?? RenderingBackend.OpenGL);
+        using var app = startup.InitializeApp();
+        using var audioPlayer = AudioPlayer.Load(options.AudioPath);
+        audioPlayer.Pitch *= options.Speed;
+        
+        var beatmapRunner = app.BeatmapRunner;
+        var renderer = app.Renderer;
+        
+        var appShutdown = false;
+        var appThread = new Thread(() =>
+        {
+            // ReSharper disable once AccessToModifiedClosure
+            // ReSharper disable once LoopVariableIsNeverChangedInsideLoop
+            while (!appShutdown)
+                if (!beatmapRunner.ProcessFrame(audioPlayer.Position))
+                    Thread.Yield();
+        });
+        appThread.Start();
+        
+        audioPlayer.Play();
+        
+        // Enter the render loop
+        while (!renderer.Window.ShouldClose)
+            if (!renderer.ProcessFrame())
+                Thread.Yield();
+        
+        // When renderer exits, we'll shut down the services
+        appShutdown = true;
+        
+        // Wait for the app thread to finish
+        appThread.Join();
     }
 
     public IAppSettings AppSettings { get; } = appSettings;
