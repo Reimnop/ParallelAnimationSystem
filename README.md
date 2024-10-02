@@ -40,7 +40,7 @@ Parallel Animation System takes the following command line arguments:
 |--------------------------------------|--------------|-----------------------------------------------------------------------|
 | -l, --level                          | **required** | Path to the level file (.lsb or .vgd).                                |
 | -a, --audio                          | **required** | Path to the audio file.                                               |
-| --vsync                              | false        | Enable VSync.                                                         |
+| --vsync                              | true         | Enable VSync.                                                         |
 | --workers                            | 4            | Number of worker threads, set to -1 to use all available threads.     |
 | --seed                               | -1           | Seed for the random number generator, set to -1 to use a random seed. |
 | --speed                              | 1            | Sets the playback speed.                                              |
