@@ -38,7 +38,7 @@ Parallel Animation System takes the following command line arguments:
 
 | Argument                             | Default      | Description                                                           |
 |--------------------------------------|--------------|-----------------------------------------------------------------------|
-| -l, --level                          | **required** | Path to the level file (.lsb or .vgd).                                |
+| -b, --beatmap                        | **required** | Path to the beatmap file (.lsb or .vgd).                              |
 | -a, --audio                          | **required** | Path to the audio file.                                               |
 | --vsync                              | true         | Enable VSync.                                                         |
 | --workers                            | 4            | Number of worker threads, set to -1 to use all available threads.     |
@@ -51,12 +51,12 @@ Parallel Animation System takes the following command line arguments:
 
 Example usage:
  ```sh
- dotnet run --project ParallelAnimationSystem -- -l level.vgd -a audio.ogg
+ dotnet run --project ParallelAnimationSystem -- -b level.vgd -a audio.ogg
  ```
 
 Or, when running the executable directly:
 ```sh
- ParallelAnimationSystem.exe -l level.vgd -a audio.ogg
+ ParallelAnimationSystem.exe -b level.vgd -a audio.ogg
  ```
 
 ## Troubleshooting
