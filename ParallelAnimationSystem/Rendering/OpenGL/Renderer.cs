@@ -166,6 +166,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
                 Version = new Version(4, 6),
                 ES = false,
             });
+        windowHandle.MakeContextCurrent();
         
         // Set swap interval
         windowHandle.SetSwapInterval(appSettings.SwapInterval);

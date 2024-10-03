@@ -7,7 +7,7 @@ using ParallelAnimationSystem.Data;
 
 namespace ParallelAnimationSystem.Desktop;
 
-public class DesktopMediaProvider(string beatmapPath, string audioPath) : IMediaProvider
+public class DesktopMediaProvider(string beatmapPath) : IMediaProvider
 {
     public IBeatmap LoadBeatmap(out BeatmapFormat format)
     {
@@ -33,7 +33,4 @@ public class DesktopMediaProvider(string beatmapPath, string audioPath) : IMedia
         
         return beatmap;
     }
-
-    public Stream LoadAudio()
-        => File.OpenRead(audioPath);
 }

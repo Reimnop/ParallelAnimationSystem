@@ -12,6 +12,7 @@ public interface IWindow
     
     bool ShouldClose { get; }
     
+    void MakeContextCurrent();
     void SetSwapInterval(int interval);
     void RequestAnimationFrame(AnimationFrameCallback callback);
     

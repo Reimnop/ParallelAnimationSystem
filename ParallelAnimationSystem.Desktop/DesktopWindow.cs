@@ -36,6 +36,11 @@ public unsafe class DesktopWindow : IWindow, IDisposable
         window = GLFW.CreateWindow(size.X, size.Y, title, null, null);
     }
 
+    public void MakeContextCurrent()
+    {
+        GLFW.MakeContextCurrent(window);
+    }
+
     public void SetSwapInterval(int interval)
     {
         GLFW.MakeContextCurrent(window);

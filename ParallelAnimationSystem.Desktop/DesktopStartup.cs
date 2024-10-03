@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -84,5 +83,5 @@ public class DesktopStartup(DesktopAppSettings appSettings, string beatmapPath, 
         };
 
     public IMediaProvider CreateMediaProvider(IServiceProvider serviceProvider)
-        => new DesktopMediaProvider(beatmapPath, audioPath);
+        => new DesktopMediaProvider(beatmapPath);
 }
