@@ -16,7 +16,7 @@ public class AudioPlayer(int stream) : IDisposable
         set => Bass.ChannelSetPosition(stream, Bass.ChannelSeconds2Bytes(stream, value));
     }
 
-    public double Pitch
+    public double Frequency
     {
         get => Bass.ChannelGetAttribute(stream, ChannelAttribute.Frequency);
         set => Bass.ChannelSetAttribute(stream, ChannelAttribute.Frequency, value);

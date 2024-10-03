@@ -25,7 +25,8 @@ public class DesktopStartup(DesktopAppSettings appSettings, string beatmapPath, 
         var startup = new DesktopStartup(appSettings, options.BeatmapPath, options.AudioPath, options.Backend ?? RenderingBackend.OpenGL);
         using var app = startup.InitializeApp();
         using var audioPlayer = AudioPlayer.Load(options.AudioPath);
-        audioPlayer.Pitch *= options.Speed;
+        var baseFrequency = audioPlayer.Frequency;
+        audioPlayer.Frequency = baseFrequency * options.Speed;
         
         var beatmapRunner = app.BeatmapRunner;
         var renderer = app.Renderer;
