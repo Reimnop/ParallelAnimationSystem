@@ -1,28 +1,19 @@
 using System.Diagnostics;
-using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging;
-using Pamx.Ls;
-using Pamx.Vg;
-using ParallelAnimationSystem.Audio;
-using ParallelAnimationSystem.Audio.Stream;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.TextProcessing;
-using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core;
 
-public class App(Options options, IResourceManager resourceManager, IRenderer renderer, AudioSystem audio, ILogger<App> logger) : IDisposable
+public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvider, IResourceManager resourceManager, IRenderer renderer, ILogger<BeatmapRunner> logger)
 {
     private readonly List<List<IMeshHandle>> meshes = [];
     
     private AnimationRunner? runner;
-    private AudioPlayer? audioPlayer;
 
     private readonly Dictionary<GameObject, Task<ITextHandle>> cachedTextHandles = [];
     private readonly List<FontStack> fonts = [];
-    
-    private bool shuttingDown;
 
     private double time;
     private double lastAudioTime;
@@ -35,47 +26,27 @@ public class App(Options options, IResourceManager resourceManager, IRenderer re
         // Register all fonts
         RegisterFonts();
         
-        // Read animations from file
-        logger.LogInformation("Reading beatmap file from '{LevelPath}'", options.LevelPath);
-        var json = File.ReadAllText(options.LevelPath);
-        var jsonNode = JsonNode.Parse(json);
-        if (jsonNode is not JsonObject jsonObject)
-            throw new InvalidOperationException("Invalid JSON object");
-
-        // Determine level format
-        var format = options.Format ?? Path.GetExtension(options.LevelPath) switch
-        {
-            ".lsb" => LevelFormat.Lsb,
-            ".vgd" => LevelFormat.Vgd,
-            _ => throw new ArgumentException("Unknown level file format")
-        };
-        logger.LogInformation("Using beatmap format '{LevelFormat}'", format);
+        // Load beatmap
+        logger.LogInformation("Loading beatmap");
+        var beatmap = mediaProvider.LoadBeatmap(out var format);
         
-        // Deserialize beatmap
-        logger.LogInformation("Deserializing beatmap");
-        var beatmap = format == LevelFormat.Lsb 
-            ? LsDeserialization.DeserializeBeatmap(jsonObject) 
-            : VgDeserialization.DeserializeBeatmap(jsonObject);
+        logger.LogInformation("Using beatmap format '{LevelFormat}'", format);
         
         // Migrate the beatmap to the latest version of the beatmap format
         logger.LogInformation("Migrating beatmap");
-        if (format == LevelFormat.Lsb)
+        if (format == BeatmapFormat.Lsb)
             LsMigration.MigrateBeatmap(beatmap);
         else
             VgMigration.MigrateBeatmap(beatmap);
-
-        var seed = options.Seed < 0
-            ? (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds()
-            : (ulong) options.Seed;
         
-        logger.LogInformation("Using seed '{Seed}'", seed);
+        logger.LogInformation("Using seed '{Seed}'", appSettings.Seed);
         
         // Create animation runner
         logger.LogInformation("Initializing animation runner");
-        var beatmapImporter = new BeatmapImporter(seed, logger);
-        runner = beatmapImporter.CreateRunner(beatmap, format == LevelFormat.Lsb);
+        var beatmapImporter = new BeatmapImporter(appSettings.Seed, logger);
+        runner = beatmapImporter.CreateRunner(beatmap, format == BeatmapFormat.Lsb);
 
-        if (options.EnableTextRendering)
+        if (appSettings.EnableTextRendering)
         {
             logger.LogWarning("Experimental text rendering is enabled! Things MIGHT break!");
             
@@ -98,14 +69,6 @@ public class App(Options options, IResourceManager resourceManager, IRenderer re
         }
         
         logger.LogInformation("Loaded {ObjectCount} objects", runner.ObjectCount);
-        
-        // Load audio
-        logger.LogInformation("Loading audio from '{AudioPath}'", options.AudioPath);
-        
-        // TODO: When we have streaming audio, don't dispose the stream here
-        using var audioStream = new VorbisAudioStream(options.AudioPath);
-        audioPlayer = audio.CreatePlayer(audioStream);
-        audioPlayer.Pitch = options.Speed;
     }
 
     private void RegisterMeshes()
@@ -174,39 +137,20 @@ public class App(Options options, IResourceManager resourceManager, IRenderer re
     private IFontHandle ReadFont(string path)
     {
         using var stream = resourceManager.LoadResource(path);
+        if (stream is null)
+            throw new InvalidOperationException($"Failed to load font '{path}'");
         return renderer.RegisterFont(stream);
     }
     
-    public void Run()
+    public bool ProcessFrame(double time)
     {
         Debug.Assert(runner is not null);
-        Debug.Assert(audioPlayer is not null);
-        
-        // Play audio
-        audioPlayer.Play();
-        
-        // Start loop
-        var stopwatch = Stopwatch.StartNew();
 
-        var lastTime = 0.0;
-        while (!shuttingDown)
-        {
-            var currentTime = stopwatch.Elapsed.TotalSeconds;
-            var delta = currentTime - lastTime;
-            lastTime = currentTime;
-            ProcessFrame(delta);
-        }
-    }
-    
-    private void ProcessFrame(double delta)
-    {
-        Debug.Assert(runner is not null);
-        Debug.Assert(audioPlayer is not null);
-        
-        var time = CalculateTime(audioPlayer, delta);
+        if (renderer.QueuedDrawListCount > 2)
+            return false;
         
         // Update runner
-        runner.Process((float) time, options.WorkerCount);
+        runner.Process((float) time, appSettings.WorkerCount);
         
         // Start queueing up draw data
         var bloomData = runner.Bloom;
@@ -248,54 +192,8 @@ public class App(Options options, IResourceManager resourceManager, IRenderer re
         }
         
         // Submit our draw list
-        SubmitDrawList(drawList);
-    }
-
-    private double CalculateTime(AudioPlayer audioPlayer, double delta)
-    {
-        if (!audioPlayer.Playing)
-            return time;
-        
-        var currentAudioTime = audioPlayer.Position.TotalSeconds;
-        
-        // If audio hasn't updated, we estimate the time using the last known time
-        if (currentAudioTime == lastAudioTime)
-        {
-            time += delta * audioPlayer.Pitch;
-        }
-        else
-        {
-            time = currentAudioTime;
-            lastAudioTime = currentAudioTime;
-        }
-        
-        return time;
-    }
-
-    private void SubmitDrawList(IDrawList drawList)
-    {
-        // If we already have more than 2 draw lists queued, wait until we don't
-        while (renderer.QueuedDrawListCount > 2 && !shuttingDown)
-            Thread.Yield();
-        
-        // Return if we are shutting down
-        if (shuttingDown)
-            return;
-        
-        // Submit draw list
         renderer.SubmitDrawList(drawList);
-    }
-    
-    public void Shutdown()
-    {
-        shuttingDown = true;
-    }
-
-    public void Dispose()
-    {
-        GC.SuppressFinalize(this);
         
-        shuttingDown = true;
-        audioPlayer?.Dispose();
+        return true;
     }
 }

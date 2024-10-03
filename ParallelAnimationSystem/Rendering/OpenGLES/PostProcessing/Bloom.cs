@@ -213,7 +213,7 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
     
     private int CreateProgram(string shaderName, int vertexShader)
     {
-        var shaderSource = resourceManager.LoadGraphicsResourceString($"Shaders/PostProcessing/{shaderName}.glsl");
+        var shaderSource = resourceManager.LoadResourceString($"OpenGLES/Shaders/PostProcessing/{shaderName}.glsl");
         var fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
         GL.ShaderSource(fragmentShader, shaderSource);
         GL.CompileShader(fragmentShader);

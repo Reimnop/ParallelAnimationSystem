@@ -5,19 +5,18 @@ using Microsoft.Extensions.Logging;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGLES2;
 using OpenTK.Mathematics;
-using OpenTK.Platform;
-using OpenTK.Platform.Native;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering.Common;
 using ParallelAnimationSystem.Rendering.OpenGLES.PostProcessing;
 using ParallelAnimationSystem.Rendering.TextProcessing;
 using ParallelAnimationSystem.Util;
+using ParallelAnimationSystem.Windowing;
 using TmpIO;
 using TmpParser;
 
 namespace ParallelAnimationSystem.Rendering.OpenGLES;
 
-public class Renderer(Options options, IResourceManager resourceManager, ILogger<Renderer> logger) : IRenderer
+public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IResourceManager resourceManager, ILogger<Renderer> logger) : IRenderer
 {
     private class MeshHandle : IMeshHandle
     {
@@ -48,8 +47,8 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
     
     private const int MaxFonts = 12;
     private const int MsaaSamples = 4;
-    
-    public bool ShouldExit { get; private set; }
+
+    public IWindow Window => windowHandle ?? throw new InvalidOperationException("Renderer has not been initialized");
     public int QueuedDrawListCount => drawListQueue.Count;
     
     // Draw list stuff
@@ -82,74 +81,32 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
     private readonly List<DrawData> opaqueDrawData = [];
     private readonly List<DrawData> transparentDrawData = [];
     
-    private WindowHandle? windowHandle;
-    private OpenGLContextHandle? glContextHandle;
+    private IWindow? windowHandle;
     
-    public unsafe void Initialize()
+    public void Initialize()
     {
         logger.LogInformation("Initializing renderer");
-
-        PlatformComponents.PreferredBackend = PreferredBackend.EGL;
         
-        var toolkitOptions = new ToolkitOptions
-        {
-            ApplicationName = "Parallel Animation System",
-            Logger = new MelLogger<Renderer>(logger, "OpenGL ES: "),
-        };
-        Toolkit.Init(toolkitOptions);
-        
-        var contextSettings = new EGLGraphicsApiHints
-        {
-            // We do this even if we're not using ANGLE
-            // because it's more compatible with drivers;
-            // Most drivers don't care if it's ANGLE or not
-            IsAngle = true,
-            Version = new Version(3, 0),
-#if DEBUG
-            DebugFlag = true,
-#endif
-            DepthBits = ContextDepthBits.Depth32,
-            StencilBits = ContextStencilBits.Stencil1,
-        };
-
-        EventQueue.EventRaised += (handle, type, args) =>
-        {
-            if (handle != windowHandle)
-                return;
-
-            if (type == PlatformEventType.Close)
+        // Create window
+        windowHandle = windowManager.CreateWindow(
+            "Parallel Animation System", 
+            new Vector2i(1366, 768), 
+            new GLContextSettings
             {
-                logger.LogInformation("Closing window");
-                
-                var closeArgs = (CloseEventArgs) args;
-                Toolkit.Window.Destroy(closeArgs.Window);
-                
-                ShouldExit = true;
-            }
-        };
-
-        windowHandle = Toolkit.Window.Create(contextSettings);
-        Toolkit.Window.SetTitle(windowHandle, "Parallel Animation System");
-        Toolkit.Window.SetClientSize(windowHandle, new Vector2i(1366, 768));
-        Toolkit.Window.SetMode(windowHandle, WindowMode.Normal);
+                Version = new Version(3, 0),
+                ES = true
+            });
         
-        // Create OpenGL context
-        glContextHandle = Toolkit.OpenGL.CreateFromWindow(windowHandle);
-        Toolkit.OpenGL.SetCurrentContext(glContextHandle);
+        // Set swap interval
+        windowHandle.SetSwapInterval(appSettings.SwapInterval);
         
         // Load OpenGL bindings
-        GLLoader.LoadBindings(Toolkit.OpenGL.GetBindingsContext(glContextHandle));
-        
-        // Set VSync
-        Toolkit.OpenGL.SetSwapInterval(options.VSync ? 1 : 0);
+        GLLoader.LoadBindings(new BindingsContext(windowManager));
         
         logger.LogInformation("Window created");
         
-        // Get window size
-        Toolkit.Window.GetFramebufferSize(windowHandle, out var initialSize);
-        
         // Initialize OpenGL data
-        InitializeOpenGlData(initialSize);
+        InitializeOpenGlData(windowHandle.FramebufferSize);
         
         // Log OpenGL information
         logger.LogInformation("OpenGL ES: {Version}", GL.GetString(StringName.Version));
@@ -252,7 +209,7 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
         currentFboSize = initialSize;
         
         // Initialize post-processing
-        var vertexShaderSource = resourceManager.LoadGraphicsResourceString("Shaders/PostProcessVertex.glsl");
+        var vertexShaderSource = resourceManager.LoadResourceString("OpenGLES/Shaders/PostProcessVertex.glsl");
         var vertexShader = GL.CreateShader(ShaderType.VertexShader);
         GL.ShaderSource(vertexShader, vertexShaderSource);
         GL.CompileShader(vertexShader);
@@ -274,8 +231,8 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
     private int CreateShaderProgram(string vertexShaderResourceName, string fragmentShaderResourceName)
     {
         // Initialize shader program
-        var vertexShaderSource = resourceManager.LoadGraphicsResourceString(vertexShaderResourceName);
-        var fragmentShaderSource = resourceManager.LoadGraphicsResourceString(fragmentShaderResourceName);
+        var vertexShaderSource = resourceManager.LoadResourceString($"OpenGLES/{vertexShaderResourceName}");
+        var fragmentShaderSource = resourceManager.LoadResourceString($"OpenGLES/{fragmentShaderResourceName}");
         
         var vertexShader = GL.CreateShader(ShaderType.VertexShader);
         GL.ShaderSource(vertexShader, vertexShaderSource);
@@ -434,42 +391,35 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
         drawListQueue.Enqueue((DrawList)drawList);
     }
 
-    public unsafe void ProcessFrame()
+    public bool ProcessFrame()
     {
         if (windowHandle is null)
-            throw new InvalidOperationException("Renderer has not been initialized");
-        
-        Toolkit.Window.ProcessEvents(false);
+            return false;
         
         // Check if window is closed
-        if (Toolkit.Window.IsWindowDestroyed(windowHandle))
+        if (windowHandle.ShouldClose)
+            return false;
+        
+        // Get current draw list
+        if (!drawListQueue.TryDequeue(out var drawList))
+            return false;
+        
+        // Request animation frame
+        windowHandle.RequestAnimationFrame(_ =>
         {
-            ShouldExit = true;
-            return;
-        }
-        
-        // Get window size
-        Toolkit.Window.GetFramebufferSize(windowHandle, out var size);
-        
-        RenderFrame(size);
+            // Check framebuffer size
+            var size = windowHandle.FramebufferSize;
+            if (size.X <= 0 || size.Y <= 0)
+                return false;
+            
+            RenderFrame(size, drawList);
+            return true;
+        });
+        return true;
     }
 
-    private void RenderFrame(Vector2i size)
+    private void RenderFrame(Vector2i size, DrawList drawList)
     {
-        // Get the current draw list
-        // If no draw list is available, wait until we have one
-        DrawList? drawList;
-        while (!drawListQueue.TryDequeue(out drawList))
-            Thread.Yield();
-
-        // If window size is invalid, don't draw
-        // and limit FPS
-        if (size.X <= 0 || size.Y <= 0)
-        {
-            Thread.Sleep(50);
-            return;
-        }
-        
         // Update OpenGL data
         UpdateOpenGlData(size);
         
@@ -555,10 +505,6 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
             size.X, size.Y, 
             ClearBufferMask.ColorBufferBit, 
             BlitFramebufferFilter.Linear);
-        
-        // Swap buffers
-        Debug.Assert(glContextHandle is not null);
-        Toolkit.OpenGL.SwapBuffers(glContextHandle);
         
         // Return draw list to pool
         drawList.Reset();
@@ -728,8 +674,8 @@ public class Renderer(Options options, IResourceManager resourceManager, ILogger
 
     public void Dispose()
     {
-        if (windowHandle is not null && !Toolkit.Window.IsWindowDestroyed(windowHandle))
-            Toolkit.Window.Destroy(windowHandle);
+        if (windowHandle is IDisposable disposable)
+            disposable.Dispose();
     }
     
     private static void Swap<T>(ref T a, ref T b)

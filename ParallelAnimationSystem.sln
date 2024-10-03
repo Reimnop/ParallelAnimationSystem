@@ -20,6 +20,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TmpIO", "TmpEmulation\TmpIO
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TmpEmulation", "TmpEmulation", "{6F5039A9-623B-4E99-9BE6-CDFF2ECDEB4B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParallelAnimationSystem.Desktop", "ParallelAnimationSystem.Desktop\ParallelAnimationSystem.Desktop.csproj", "{452DDCEC-C528-443D-BB5F-7C34A55B5888}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -58,6 +60,10 @@ Global
 		{653DA41B-A4C6-43A3-AAB4-F56460E205BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{653DA41B-A4C6-43A3-AAB4-F56460E205BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{653DA41B-A4C6-43A3-AAB4-F56460E205BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{452DDCEC-C528-443D-BB5F-7C34A55B5888}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{452DDCEC-C528-443D-BB5F-7C34A55B5888}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{452DDCEC-C528-443D-BB5F-7C34A55B5888}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{452DDCEC-C528-443D-BB5F-7C34A55B5888}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{4E314A52-4F54-460E-B124-58159D07B21C} = {DC6C265A-A6F9-4550-9486-475FFBBD8B72}

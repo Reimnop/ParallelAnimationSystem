@@ -1,6 +1,6 @@
 namespace ParallelAnimationSystem.Core;
 
-public enum LevelFormat
+public enum BeatmapFormat
 {
     Lsb,
     Vgd,

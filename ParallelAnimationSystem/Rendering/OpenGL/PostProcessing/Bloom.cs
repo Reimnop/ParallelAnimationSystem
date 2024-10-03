@@ -192,7 +192,7 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
     
     private int CreateProgram(string shaderName)
     {
-        var shaderSource = resourceManager.LoadGraphicsResourceString($"Shaders/PostProcessing/{shaderName}.glsl");
+        var shaderSource = resourceManager.LoadResourceString($"OpenGL/Shaders/PostProcessing/{shaderName}.glsl");
         var shader = GL.CreateShader(ShaderType.ComputeShader);
         GL.ShaderSource(shader, shaderSource);
         GL.CompileShader(shader);

@@ -1,12 +1,13 @@
 using OpenTK.Mathematics;
 using ParallelAnimationSystem.Rendering.TextProcessing;
+using ParallelAnimationSystem.Windowing;
 using TmpParser;
 
 namespace ParallelAnimationSystem.Rendering;
 
 public interface IRenderer : IDisposable
 {
-    bool ShouldExit { get; }
+    IWindow Window { get; }
     int QueuedDrawListCount { get; }
     
     void Initialize();
@@ -23,5 +24,5 @@ public interface IRenderer : IDisposable
     IDrawList GetDrawList();
     void SubmitDrawList(IDrawList drawList);
 
-    void ProcessFrame();
+    bool ProcessFrame();
 }

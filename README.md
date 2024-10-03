@@ -38,10 +38,9 @@ Parallel Animation System takes the following command line arguments:
 
 | Argument                             | Default      | Description                                                           |
 |--------------------------------------|--------------|-----------------------------------------------------------------------|
-| -l, --level                          | **required** | Path to the level file (.lsb or .vgd).                                |
+| -b, --beatmap                        | **required** | Path to the beatmap file (.lsb or .vgd).                              |
 | -a, --audio                          | **required** | Path to the audio file.                                               |
-| --format                             | *automatic*  | The format of the level file (lsb/vgd).                               |
-| --vsync                              | false        | Enable VSync.                                                         |
+| --vsync                              | true         | Enable VSync.                                                         |
 | --workers                            | 4            | Number of worker threads, set to -1 to use all available threads.     |
 | --seed                               | -1           | Seed for the random number generator, set to -1 to use a random seed. |
 | --speed                              | 1            | Sets the playback speed.                                              |
@@ -52,12 +51,12 @@ Parallel Animation System takes the following command line arguments:
 
 Example usage:
  ```sh
- dotnet run --project ParallelAnimationSystem -- -l level.vgd -a audio.ogg
+ dotnet run --project ParallelAnimationSystem -- -b level.vgd -a audio.ogg
  ```
 
 Or, when running the executable directly:
 ```sh
- ParallelAnimationSystem.exe -l level.vgd -a audio.ogg
+ ParallelAnimationSystem.exe -b level.vgd -a audio.ogg
  ```
 
 ## Troubleshooting
@@ -95,4 +94,5 @@ This project is licensed under the GPLv3 License - see the [LICENSE](LICENSE) fi
 - [Project Arrhythmia](https://store.steampowered.com/app/440310/Project_Arrhythmia/)
 - [OpenTK](https://opentk.net/)
 - [msdfgen](https://github.com/Chlumsky/msdfgen)
+- [BASS](http://www.un4seen.com/)
 - Fonts provided by [Google Fonts](https://fonts.google.com/), [DaFont](https://www.dafont.com/), [Fontsource](https://fontsource.org/), and [Code2000](https://www.code2001.com/code2000_page.htm)

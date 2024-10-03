@@ -104,10 +104,13 @@ public class TextShaper<T>(
             _ => throw new ArgumentOutOfRangeException(nameof(verticalAlignment)),
         };
 
-        var y = yOffset - linesOfShapedGlyphs[0].Ascender;
+        var y = yOffset; // y is now at TOP of the paragraph
         for (var i = 0; i < linesOfShapedGlyphs.Count; i++)
         {
             var line = linesOfShapedGlyphs[i];
+            
+            // Bring y to the baseline of the current line
+            var baselineY = y - line.Ascender;
             
             foreach (var shapedGlyph in line.Glyphs)
             {
@@ -136,7 +139,7 @@ public class TextShaper<T>(
                     var metadata = getFontMetadata(font);
                     
                     var minX = x + glyph.BearingX / metadata.Size * shapedGlyph.Size;
-                    var minY = y + glyph.BearingY / metadata.Size * shapedGlyph.Size + shapedGlyph.YOffset;
+                    var minY = baselineY + glyph.BearingY / metadata.Size * shapedGlyph.Size + shapedGlyph.YOffset;
                     var maxX = minX + glyph.Width / metadata.Size * shapedGlyph.Size;
                     var maxY = minY - glyph.Height / metadata.Size * shapedGlyph.Size;
                     var minUV = new Vector2(glyph.MinX, glyph.MinY);
@@ -170,8 +173,9 @@ public class TextShaper<T>(
                 yield return renderGlyphFactory(new Vector2(minX, minY), new Vector2(maxX, maxY), Vector2.Zero, Vector2.Zero, color, BoldItalic.None, -1);
             }
             
-            if (i + 1 < linesOfShapedGlyphs.Count)
-                y -= linesOfShapedGlyphs[i + 1].Height;
+            // Advance y to the next line
+            // Y is now at the TOP of the next line
+            y -= line.Height;
         }
     }
 
@@ -368,11 +372,6 @@ public class TextShaper<T>(
     {
         if (lines.Count == 0)
             return 0.0f;
-
-        var height = lines[0].Ascender;
-        for (var i = 0; i < lines.Count - 1; i++)
-            height += lines[i].Height;
-        height -= lines[^1].Descender;
-        return height;
+        return lines.Sum(line => line.Height);
     }
 }
