@@ -18,7 +18,8 @@ namespace ParallelAnimationSystem.Android;
     MainLauncher = true)]
 public class MainActivity : SDLActivity
 {
-    public static AndroidSurface Surface => (AndroidSurface) MSurface!;
+    public static AndroidSurface? Surface => MSurface as AndroidSurface;
+    public static bool SurfaceReady => Surface?.SurfaceReady ?? false;
     
     private const ConfigChanges DefaultConfigChanges = ConfigChanges.Keyboard
                                                            | ConfigChanges.KeyboardHidden
@@ -67,7 +68,7 @@ public class MainActivity : SDLActivity
         
         // Enter the render loop
         while (!renderer.Window.ShouldClose)
-            if (!Surface.SurfaceReady || !renderer.ProcessFrame())
+            if (!SurfaceReady || !renderer.ProcessFrame())
                 Thread.Yield();
         
         // When renderer exits, we'll shut down the services

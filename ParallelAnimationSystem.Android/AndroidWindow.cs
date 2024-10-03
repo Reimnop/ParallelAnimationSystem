@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using OpenTK.Mathematics;
 using ParallelAnimationSystem.Windowing;
 using SDL;
@@ -59,16 +60,14 @@ public unsafe class AndroidWindow : IWindow, IDisposable
 
     public void MakeContextCurrent()
     {
-        while (!MainActivity.Surface.SurfaceReady)
-            Thread.Yield();
+        WaitUntilSurfaceReady();
         
         SDL_GL_MakeCurrent(window, context);
     }
 
     public void SetSwapInterval(int interval)
     {
-        while (!MainActivity.Surface.SurfaceReady)
-            Thread.Yield();
+        WaitUntilSurfaceReady();
         
         SDL_GL_MakeCurrent(window, context);
         SDL_GL_SetSwapInterval(interval);
@@ -76,8 +75,7 @@ public unsafe class AndroidWindow : IWindow, IDisposable
 
     public void RequestAnimationFrame(AnimationFrameCallback callback)
     {
-        while (!MainActivity.Surface.SurfaceReady)
-            Thread.Yield();
+        WaitUntilSurfaceReady();
         
         SDL_GL_MakeCurrent(window, context);
         
@@ -117,5 +115,12 @@ public unsafe class AndroidWindow : IWindow, IDisposable
                 }
             }
         } while (eventsRead == EventsPerPeep);
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void WaitUntilSurfaceReady()
+    {
+        while (!MainActivity.SurfaceReady)
+            Thread.Yield();
     }
 }
