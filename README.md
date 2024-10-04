@@ -27,36 +27,37 @@
    
 2. Navigate to the cloned folder and run the project:
     ```sh
-    dotnet run --project ParallelAnimationSystem
+    dotnet run --project ParallelAnimationSystem.Desktop
     ```
 
-This will run ParallelAnimationSystem and also build the PAS executable file in `ParallelAnimationSystem\ParallelAnimationSystem\bin`.
+This will run ParallelAnimationSystem and also build the PAS executable file in `ParallelAnimationSystem\ParallelAnimationSystem.Desktop\bin`.
     
 ### Arguments
 
 Parallel Animation System takes the following command line arguments:
 
-| Argument                             | Default      | Description                                                           |
-|--------------------------------------|--------------|-----------------------------------------------------------------------|
-| -b, --beatmap                        | **required** | Path to the beatmap file (.lsb or .vgd).                              |
-| -a, --audio                          | **required** | Path to the audio file.                                               |
-| --vsync                              | true         | Enable VSync.                                                         |
-| --workers                            | 4            | Number of worker threads, set to -1 to use all available threads.     |
-| --seed                               | -1           | Seed for the random number generator, set to -1 to use a random seed. |
-| --speed                              | 1            | Sets the playback speed.                                              |
-| --backend                            | opengl       | Sets the rendering backend to use (opengl/opengles).                  |
-| --experimental-enable-text-rendering | false        | Enable experimental text rendering.                                   |
-| --help                               |              | Display help screen with list of arguments.                           |
-| --version                            |              | Display version information.                                          |
+| Argument          | Default      | Description                                                           |
+|-------------------|--------------|-----------------------------------------------------------------------|
+| -b, --beatmap     | **required** | Path to the beatmap file (.lsb or .vgd).                              |
+| -a, --audio       | **required** | Path to the audio file.                                               |
+| --vsync           | true         | Enable VSync.                                                         |
+| --workers         | 4            | Number of worker threads, set to -1 to use all available threads.     |
+| --seed            | -1           | Seed for the random number generator, set to -1 to use a random seed. |
+| --speed           | 1            | Sets the playback speed.                                              |
+| --backend         | opengl       | Sets the rendering backend to use (opengl/opengles).                  |
+| --post-processing | true         | Enable post-processing effects.                                       |
+| --text-rendering  | true         | Enable text rendering.                                                |
+| --help            |              | Display help screen with list of arguments.                           |
+| --version         |              | Display version information.                                          |
 
 Example usage:
  ```sh
- dotnet run --project ParallelAnimationSystem -- -b level.vgd -a audio.ogg
+ dotnet run --project ParallelAnimationSystem.Desktop -- -b level.vgd -a audio.ogg
  ```
 
 Or, when running the executable directly:
 ```sh
- ParallelAnimationSystem.exe -b level.vgd -a audio.ogg
+ ParallelAnimationSystem.Desktop.exe -b level.vgd -a audio.ogg
  ```
 
 ## Troubleshooting
