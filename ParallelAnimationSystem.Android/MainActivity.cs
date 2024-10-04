@@ -2,11 +2,6 @@ using Android.Content;
 using Android.Content.PM;
 using Org.Libsdl.App;
 
-[assembly: Application(
-    HardwareAccelerated = false,
-    ResizeableActivity = true,
-    Theme = "@android:style/Theme.Black.NoTitleBar"
-)]
 namespace ParallelAnimationSystem.Android;
 
 [Activity(
