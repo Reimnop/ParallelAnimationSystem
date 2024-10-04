@@ -36,7 +36,7 @@ public class MainActivity : SDLActivity
     protected override void Main()
     {
         var appSettings = new AndroidAppSettings(
-            1, 4,
+            1, 6,
             (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds(),
             false,
             true);
