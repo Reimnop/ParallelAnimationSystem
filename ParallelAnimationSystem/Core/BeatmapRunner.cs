@@ -46,27 +46,26 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
         var beatmapImporter = new BeatmapImporter(appSettings.Seed, logger);
         runner = beatmapImporter.CreateRunner(beatmap, format == BeatmapFormat.Lsb);
 
-        if (appSettings.EnableTextRendering)
+        runner.ObjectSpawned += (_, go) =>
         {
-            logger.LogWarning("Experimental text rendering is enabled! Things MIGHT break!");
+            if (!appSettings.EnableTextRendering)
+                return;
+            if (go.ShapeIndex != 4)
+                return;
+            if (string.IsNullOrWhiteSpace(go.Text))
+                return;
+            var task = Task.Run(() => renderer.CreateText(go.Text, fonts, "NotoMono SDF", go.HorizontalAlignment, go.VerticalAlignment));
+            cachedTextHandles.Add(go, task);
+        };
             
-            runner.ObjectSpawned += (_, go) =>
-            {
-                if (go.ShapeIndex != 4)
-                    return;
-                if (string.IsNullOrWhiteSpace(go.Text))
-                    return;
-                var task = Task.Run(() => renderer.CreateText(go.Text, fonts, "NotoMono SDF", go.HorizontalAlignment, go.VerticalAlignment));
-                cachedTextHandles.Add(go, task);
-            };
-            
-            runner.ObjectKilled += (_, go) =>
-            {
-                if (go.ShapeIndex != 4)
-                    return;
-                cachedTextHandles.Remove(go);
-            };
-        }
+        runner.ObjectKilled += (_, go) =>
+        {
+            if (!appSettings.EnableTextRendering)
+                return;
+            if (go.ShapeIndex != 4)
+                return;
+            cachedTextHandles.Remove(go);
+        };
         
         logger.LogInformation("Loaded {ObjectCount} objects", runner.ObjectCount);
     }
@@ -161,10 +160,19 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
             runner.CameraPosition,
             runner.CameraScale,
             runner.CameraRotation);
-        drawList.PostProcessingData = new PostProcessingData(
-            runner.Hue,
-            bloomData.Intensity / (bloomData.Intensity + 2.0f),
-            bloomData.Diffusion / (bloomData.Diffusion + 2.0f));
+        
+        if (appSettings.EnablePostProcessing)
+        {
+            drawList.PostProcessingData = new PostProcessingData(
+                runner.Hue,
+                bloomData.Intensity / (bloomData.Intensity + 2.0f),
+                bloomData.Diffusion / (bloomData.Diffusion + 2.0f));
+        }
+        else
+        {
+            drawList.PostProcessingData = default;
+        }
+        
 
         // Draw all alive game objects
         foreach (var gameObject in runner.AliveGameObjects)
@@ -184,7 +192,7 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
             
                 drawList.AddMesh(mesh, transform, color1, color2, z, renderMode);
             }
-            else
+            else if (appSettings.EnableTextRendering)
             {
                 if (cachedTextHandles.TryGetValue(gameObject, out var task) && task.IsCompleted)
                     drawList.AddText(task.Result, transform, color1, z);
