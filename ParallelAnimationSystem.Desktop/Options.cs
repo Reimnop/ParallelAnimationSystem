@@ -25,6 +25,9 @@ public class Options
     [Option("backend", Required = false, Default = RenderingBackend.OpenGL, HelpText = "Sets the rendering backend to use (opengl/opengles).")]
     public RenderingBackend? Backend { get; set; }
     
-    [Option("experimental-enable-text-rendering", Required = false, Default = false, HelpText = "Enable experimental text rendering.")]
-    public bool EnableTextRendering { get; set; }
+    [Option("post-processing", Required = false, Default = true, HelpText = "Enable post-processing.")]
+    public bool? EnablePostProcessing { get; set; }
+    
+    [Option("text-rendering", Required = false, Default = true, HelpText = "Enable text rendering.")]
+    public bool? EnableTextRendering { get; set; }
 }

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Android.Content;
 using Android.Content.PM;
 using Org.Libsdl.App;
@@ -39,6 +38,7 @@ public class MainActivity : SDLActivity
         var appSettings = new AndroidAppSettings(
             1, 4,
             (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds(),
+            false,
             true);
         
         var startup = new AndroidStartup(appSettings);

@@ -514,6 +514,9 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
     
     private int HandlePostProcessing(PostProcessingData data, int texture1, int texture2)
     {
+        if (!appSettings.EnablePostProcessing)
+            return texture1;
+        
         if (hue.Process(currentFboSize, data.HueShiftAngle, texture1, texture2))
             Swap(ref texture1, ref texture2); // Swap if we processed
         

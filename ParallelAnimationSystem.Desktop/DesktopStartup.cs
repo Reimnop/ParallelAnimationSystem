@@ -18,7 +18,8 @@ public class DesktopStartup(DesktopAppSettings appSettings, string beatmapPath, 
             options.Seed < 0
                 ? (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds()
                 : (ulong) options.Seed,
-            options.EnableTextRendering
+            options.EnablePostProcessing ?? true,
+            options.EnableTextRendering ?? true
         );
         
         var startup = new DesktopStartup(appSettings, options.BeatmapPath, options.AudioPath, options.Backend ?? RenderingBackend.OpenGL);
