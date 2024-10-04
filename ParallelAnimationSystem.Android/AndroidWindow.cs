@@ -120,7 +120,7 @@ public unsafe class AndroidWindow : IWindow, IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void WaitUntilSurfaceReady()
     {
-        while (!MainActivity.SurfaceReady)
+        while (!PasActivity.SurfaceReady)
             Thread.Yield();
     }
 }
