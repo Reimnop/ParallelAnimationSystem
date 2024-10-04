@@ -1,5 +1,10 @@
 <resources>
     <string name="app_name">ParallelAnimationSystem.Android</string>
     <string name="welcome">Parallel Animation System</string>
-    <string name="start">Start</string>
+    <string name="play">Play</string>
+    <string name="enable_post_processing">Enable Post-Processing</string>
+    <string name="enable_text_rendering">Enable Text Rendering</string>
+    <string name="beatmap_file">Beatmap File</string>
+    <string name="audio_file">Audio File</string>
+    <string name="choose_file">Choose File</string>
 </resources>

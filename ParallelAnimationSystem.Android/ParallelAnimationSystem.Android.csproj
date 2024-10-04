@@ -31,8 +31,4 @@
   <ItemGroup>
     <ProjectReference Include="../ParallelAnimationSystem/ParallelAnimationSystem.csproj" />
   </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Beatmap/**/*" />
-  </ItemGroup>
 </Project>

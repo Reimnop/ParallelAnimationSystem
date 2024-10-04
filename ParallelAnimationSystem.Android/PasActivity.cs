@@ -1,6 +1,8 @@
+using System.Text;
 using Android.Content;
 using Android.Content.PM;
 using Org.Libsdl.App;
+using ParallelAnimationSystem.Core;
 
 namespace ParallelAnimationSystem.Android;
 
@@ -31,16 +33,27 @@ public class PasActivity : SDLActivity
     // This can be treated as our program's entry point on Android
     protected override void Main()
     {
+        var enablePostProcessing = Intent!.GetBooleanExtra("postProcessing", true);
+        var enableTextRendering = Intent!.GetBooleanExtra("textRendering", true);
+        
         var appSettings = new AndroidAppSettings(
             1, 6,
             (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds(),
-            false,
-            true);
+            enablePostProcessing,
+            enableTextRendering);
         
-        var startup = new AndroidStartup(appSettings);
+        var (beatmapData, audioData) = BeatmapDataTransfer.GetBeatmapData() ?? throw new Exception("Failed to load beatmap data");
+        
+        var beatmapFormat = (BeatmapFormat) Intent.GetIntExtra("format", 0);
+        var beatmapString = Encoding.UTF8.GetString(beatmapData);
+        
+        var startup = new AndroidStartup(appSettings, beatmapString, beatmapFormat);
         using var app = startup.InitializeApp();
         
-        using var audioStream = typeof(PasActivity).Assembly.GetManifestResourceStream("ParallelAnimationSystem.Android.Beatmap.level.ogg");
+        if (audioData is null)
+            throw new Exception("Failed to load audio data");
+        
+        using var audioStream = new MemoryStream(audioData);
         if (audioStream is null)
             throw new Exception("Failed to load audio stream");
         
@@ -55,6 +68,7 @@ public class PasActivity : SDLActivity
             // ReSharper disable once AccessToModifiedClosure
             // ReSharper disable once LoopVariableIsNeverChangedInsideLoop
             while (!appShutdown)
+                // ReSharper disable once AccessToDisposedClosure
                 if (!beatmapRunner.ProcessFrame(audioPlayer.Position))
                     Thread.Yield();
         });

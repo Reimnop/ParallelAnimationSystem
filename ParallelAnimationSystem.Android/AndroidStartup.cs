@@ -1,6 +1,7 @@
 using MattiasCibien.Extensions.Logging.Logcat;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.OpenGLES;
@@ -8,7 +9,7 @@ using ParallelAnimationSystem.Windowing;
 
 namespace ParallelAnimationSystem.Android;
 
-public class AndroidStartup(IAppSettings appSettings) : IStartup
+public class AndroidStartup(IAppSettings appSettings, string beatmapData, BeatmapFormat beatmapFormat) : IStartup
 {
     private const string LogcatTag = "ParallelAnimationSystem";
 
@@ -31,5 +32,5 @@ public class AndroidStartup(IAppSettings appSettings) : IStartup
             serviceProvider.GetRequiredService<ILogger<Renderer>>());
 
     public IMediaProvider CreateMediaProvider(IServiceProvider serviceProvider)
-        => new AndroidMediaProvider();
+        => new AndroidMediaProvider(beatmapData, beatmapFormat);
 }

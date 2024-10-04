@@ -1,20 +1,120 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:orientation="vertical"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent">
-  <TextView
-      style="@style/heading_style"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android" 
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+  
+  <com.google.android.material.textview.MaterialTextView 
+      style="@style/TextAppearance.Material3.TitleLarge"
       android:text="@string/welcome"
       android:gravity="center_horizontal"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:layout_margin="8dp" />
-  
-  <com.google.android.material.button.MaterialButton
-      android:id="@+id/start_button"
-      android:text="@string/start"
+      android:layout_marginLeft="16dp"
+      android:layout_marginRight="16dp"
+      android:layout_marginTop="16dp"
+      android:layout_marginBottom="8dp" />
+
+  <com.google.android.material.divider.MaterialDivider
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:layout_margin="8dp" />
+      android:layout_marginLeft="16dp"
+      android:layout_marginRight="16dp"
+      android:layout_marginTop="8dp"
+      android:layout_marginBottom="8dp" />
+
+  <com.google.android.material.materialswitch.MaterialSwitch
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:checked="true"
+      android:id="@+id/enable_post_processing"
+      android:text="@string/enable_post_processing"
+      android:layout_marginLeft="16dp"
+      android:layout_marginRight="16dp"
+      android:layout_marginBottom="8dp" />
+
+  <com.google.android.material.materialswitch.MaterialSwitch
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:checked="true"
+      android:id="@+id/enable_text_rendering"
+      android:text="@string/enable_text_rendering"
+      android:layout_marginLeft="16dp"
+      android:layout_marginRight="16dp"
+      android:layout_marginBottom="8dp" />
+  
+  <GridLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:columnCount="2"
+      android:layout_marginLeft="16dp"
+      android:layout_marginRight="16dp"
+      android:layout_marginBottom="8dp">
+    <LinearLayout
+        android:layout_column="0"
+        android:layout_columnWeight="1"
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="8dp">
+      <com.google.android.material.textview.MaterialTextView
+          style="@style/TextAppearance.Material3.LabelLarge"
+          android:text="@string/beatmap_file"
+          android:gravity="center_horizontal"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginLeft="8dp"
+          android:layout_marginRight="8dp"
+          android:layout_marginBottom="8dp" />
+      <com.google.android.material.button.MaterialButton
+          style="@style/Widget.Material3.Button.TonalButton"
+          android:id="@+id/choose_beatmap_file"
+          android:text="@string/choose_file"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content" />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_column="1"
+        android:layout_columnWeight="1"
+        android:orientation="vertical"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="8dp">
+      <com.google.android.material.textview.MaterialTextView
+          style="@style/TextAppearance.Material3.LabelLarge"
+          android:text="@string/audio_file"
+          android:gravity="center_horizontal"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginLeft="8dp"
+          android:layout_marginRight="8dp"
+          android:layout_marginBottom="8dp" />
+      <com.google.android.material.button.MaterialButton
+          style="@style/Widget.Material3.Button.TonalButton"
+          android:id="@+id/choose_audio_file"
+          android:text="@string/choose_file"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content" />
+    </LinearLayout>
+  </GridLayout>
+
+  <com.google.android.material.divider.MaterialDivider
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginLeft="16dp"
+      android:layout_marginRight="16dp"
+      android:layout_marginTop="8dp"
+      android:layout_marginBottom="8dp" />
+  
+  <com.google.android.material.button.MaterialButton
+      android:id="@+id/play_button"
+      android:text="@string/play"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginLeft="16dp"
+      android:layout_marginRight="16dp"
+      android:layout_marginTop="8dp"
+      android:layout_marginBottom="16dp" />
 </LinearLayout>
