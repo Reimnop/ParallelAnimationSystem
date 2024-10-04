@@ -44,7 +44,7 @@ public class PasActivity : SDLActivity
         
         var (beatmapData, audioData) = BeatmapDataTransfer.GetBeatmapData() ?? throw new Exception("Failed to load beatmap data");
         
-        var beatmapFormat = (BeatmapFormat) Intent.GetIntExtra("format", 0);
+        var beatmapFormat = (BeatmapFormat) Intent.GetIntExtra("beatmapFormat", 0);
         var beatmapString = Encoding.UTF8.GetString(beatmapData);
         
         var startup = new AndroidStartup(appSettings, beatmapString, beatmapFormat);
