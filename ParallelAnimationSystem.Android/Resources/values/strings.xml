@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">ParallelAnimationSystem.Android</string>
     <string name="welcome">Parallel Animation System</string>
+    <string name="start">Start</string>
 </resources>

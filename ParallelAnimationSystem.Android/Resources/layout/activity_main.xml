@@ -11,9 +11,9 @@
       android:layout_height="wrap_content"
       android:layout_margin="8dp" />
   
-  <Button
+  <com.google.android.material.button.MaterialButton
       android:id="@+id/start_button"
-      android:text="Start"
+      android:text="@string/start"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:layout_margin="8dp" />
