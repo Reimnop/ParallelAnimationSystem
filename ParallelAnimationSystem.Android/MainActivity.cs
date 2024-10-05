@@ -18,6 +18,7 @@ public class MainActivity : Activity
     private const int RequestCodeBeatmap = 0;
     private const int RequestCodeAudio = 1;
     
+    private MaterialSwitch lockAspectRatioSwitch = null!;
     private MaterialSwitch enablePostProcessingSwitch = null!;
     private MaterialSwitch enableTextRenderingSwitch = null!;
     private MaterialButton chooseBeatmapFileButton = null!;
@@ -31,7 +32,8 @@ public class MainActivity : Activity
     {
         base.OnCreate(savedInstanceState);
         SetContentView(Resource.Layout.activity_main);
-        
+
+        lockAspectRatioSwitch = FindViewById<MaterialSwitch>(Resource.Id.lock_aspect_ratio)!;
         enablePostProcessingSwitch = FindViewById<MaterialSwitch>(Resource.Id.enable_post_processing)!;
         enableTextRenderingSwitch = FindViewById<MaterialSwitch>(Resource.Id.enable_text_rendering)!;
         chooseBeatmapFileButton = FindViewById<MaterialButton>(Resource.Id.choose_beatmap_file)!;
@@ -136,6 +138,7 @@ public class MainActivity : Activity
         BeatmapDataTransfer.Put(beatmapData, audioData);
         
         var intent = new Intent(this, typeof(PasActivity));
+        intent.PutExtra("lockAspectRatio", lockAspectRatioSwitch.Checked);
         intent.PutExtra("postProcessing", enablePostProcessingSwitch.Checked);
         intent.PutExtra("textRendering", enableTextRenderingSwitch.Checked);
         intent.PutExtra("beatmapFormat", (int) beatmapFormat);

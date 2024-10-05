@@ -33,12 +33,14 @@ public class PasActivity : SDLActivity
     // This can be treated as our program's entry point on Android
     protected override void Main()
     {
+        var lockAspectRatio = Intent!.GetBooleanExtra("lockAspectRatio", true);
         var enablePostProcessing = Intent!.GetBooleanExtra("postProcessing", true);
         var enableTextRendering = Intent!.GetBooleanExtra("textRendering", true);
         
         var appSettings = new AndroidAppSettings(
             1, 6,
             (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds(),
+            lockAspectRatio ? 16.0f / 9.0f : null,
             enablePostProcessing,
             enableTextRendering);
         

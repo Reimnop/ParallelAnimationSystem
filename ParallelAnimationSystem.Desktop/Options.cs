@@ -25,6 +25,9 @@ public class Options
     [Option("backend", Required = false, Default = RenderingBackend.OpenGL, HelpText = "Sets the rendering backend to use (opengl/opengles).")]
     public RenderingBackend? Backend { get; set; }
     
+    [Option("lock-aspect", Required = false, Default = true, HelpText = "Lock the aspect ratio to 16:9.")]
+    public bool? LockAspectRatio { get; set; }
+    
     [Option("post-processing", Required = false, Default = true, HelpText = "Enable post-processing.")]
     public bool? EnablePostProcessing { get; set; }
     

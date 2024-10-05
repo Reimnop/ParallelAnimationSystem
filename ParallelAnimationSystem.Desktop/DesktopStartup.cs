@@ -18,6 +18,7 @@ public class DesktopStartup(DesktopAppSettings appSettings, string beatmapPath, 
             options.Seed < 0
                 ? (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds()
                 : (ulong) options.Seed,
+            (options.LockAspectRatio ?? true) ? 16.0f / 9.0f : null,
             options.EnablePostProcessing ?? true,
             options.EnableTextRendering ?? true
         );

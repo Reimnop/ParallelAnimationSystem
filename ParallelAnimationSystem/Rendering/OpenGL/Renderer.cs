@@ -359,8 +359,25 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
     
     private void RenderFrame(Vector2i size, DrawList drawList)
     {
+        var renderWidth = size.X;
+        var renderHeight = size.Y;
+        if (appSettings.AspectRatio.HasValue)
+        {
+            var targetAspectRatio = appSettings.AspectRatio.Value;
+            var screenAspectRatio = size.X / (float) size.Y;
+            if (targetAspectRatio < screenAspectRatio)
+            {
+                renderWidth = (int) (size.Y * targetAspectRatio);
+            }
+            else
+            {
+                renderHeight = (int) (size.X / targetAspectRatio);
+            }
+        }
+        var renderSize = new Vector2i(renderWidth, renderHeight);
+        
         // Update OpenGL data
-        UpdateOpenGlData(size);
+        UpdateOpenGlData(renderSize);
         
         // Split draw list into opaque and transparent
         opaqueDrawData.Clear();
@@ -384,7 +401,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         transparentDrawData.Sort((a, b) => b.Z.CompareTo(a.Z));
         
         // Get camera matrix (view and projection)
-        var camera = GetCameraMatrix(drawList.CameraData, size);
+        var camera = GetCameraMatrix(drawList.CameraData, renderSize);
         
         // Render
         GL.Viewport(0, 0, currentFboSize.X, currentFboSize.Y);
@@ -452,9 +469,9 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         GL.BlitNamedFramebuffer(
             fboHandle, postProcessFboHandle, 
             0, 0,
-            currentFboSize.X, currentFboSize.Y,
+            renderSize.X, renderSize.Y,
             0, 0,
-            currentFboSize.X, currentFboSize.Y,
+            renderSize.X, renderSize.Y,
             ClearBufferMask.ColorBufferBit,
             BlitFramebufferFilter.Linear);
         
@@ -464,13 +481,20 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         // Bind final texture to post process fbo
         GL.NamedFramebufferTexture(postProcessFboHandle, FramebufferAttachment.ColorAttachment0, finalTexture, 0);
         
+        // Clear window
+        var windowClearColor = new Vector4(0.0f, 0.0f, 0.0f, 1.0f);
+        GL.ClearNamedFramebufferf(0, OpenTK.Graphics.OpenGL.Buffer.Color, 0, in windowClearColor.X);
+        
         // Blit to window
+        var screenOffsetX = (size.X - renderSize.X) / 2;
+        var screenOffsetY = (size.Y - renderSize.Y) / 2;
+        
         GL.BlitNamedFramebuffer(
             postProcessFboHandle, 0,
             0, 0,
-            currentFboSize.X, currentFboSize.Y,
-            0, 0,
-            size.X, size.Y,
+            renderSize.X, renderSize.Y,
+            screenOffsetX, screenOffsetY,
+            screenOffsetX + renderSize.X, screenOffsetY + renderSize.Y,
             ClearBufferMask.ColorBufferBit,
             BlitFramebufferFilter.Linear);
         

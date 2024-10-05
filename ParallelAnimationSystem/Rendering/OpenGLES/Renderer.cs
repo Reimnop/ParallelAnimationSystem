@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using OpenTK.Graphics;
@@ -421,11 +420,28 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
 
     private void RenderFrame(Vector2i size, DrawList drawList)
     {
+        var renderWidth = size.X;
+        var renderHeight = size.Y;
+        if (appSettings.AspectRatio.HasValue)
+        {
+            var targetAspectRatio = appSettings.AspectRatio.Value;
+            var screenAspectRatio = size.X / (float) size.Y;
+            if (targetAspectRatio < screenAspectRatio)
+            {
+                renderWidth = (int) (size.Y * targetAspectRatio);
+            }
+            else
+            {
+                renderHeight = (int) (size.X / targetAspectRatio);
+            }
+        }
+        var renderSize = new Vector2i(renderWidth, renderHeight);
+        
         // Update OpenGL data
-        UpdateOpenGlData(size);
+        UpdateOpenGlData(renderSize);
         
         // Get camera matrix (view and projection)
-        var camera = GetCameraMatrix(drawList.CameraData, size);
+        var camera = GetCameraMatrix(drawList.CameraData, renderSize);
         
         // Split draw list into opaque and transparent
         opaqueDrawData.Clear();
@@ -452,7 +468,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, fboHandle);
         
         // Clear the screen
-        GL.Viewport(0, 0, size.X, size.Y);
+        GL.Viewport(0, 0, renderSize.X, renderSize.Y);
         GL.ClearColor(drawList.ClearColor);
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
         
@@ -483,9 +499,9 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, postProcessFboHandle);
         GL.BlitFramebuffer(
             0, 0, 
-            size.X, size.Y, 
+            renderSize.X, renderSize.Y, 
             0, 0, 
-            size.X, size.Y, 
+            renderSize.X, renderSize.Y, 
             ClearBufferMask.ColorBufferBit, 
             BlitFramebufferFilter.Linear);
         
@@ -496,14 +512,23 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, postProcessFboHandle);
         GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, output, 0);
         
+        // Clear screen
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+        GL.Viewport(0, 0, size.X, size.Y);
+        GL.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        GL.Clear(ClearBufferMask.ColorBufferBit);
+        
         // Blit post-process FBO to screen
+        var screenOffsetX = (size.X - renderSize.X) / 2;
+        var screenOffsetY = (size.Y - renderSize.Y) / 2;
+        
         GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, postProcessFboHandle);
         GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);
         GL.BlitFramebuffer(
             0, 0, 
-            size.X, size.Y, 
-            0, 0, 
-            size.X, size.Y, 
+            renderSize.X, renderSize.Y, 
+            screenOffsetX, screenOffsetY, 
+            screenOffsetX + renderSize.X, screenOffsetY + renderSize.Y, 
             ClearBufferMask.ColorBufferBit, 
             BlitFramebufferFilter.Linear);
         

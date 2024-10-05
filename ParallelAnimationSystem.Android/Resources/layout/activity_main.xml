@@ -29,6 +29,16 @@
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:checked="true"
+      android:id="@+id/lock_aspect_ratio"
+      android:text="@string/lock_aspect_ratio"
+      android:layout_marginLeft="16dp"
+      android:layout_marginRight="16dp"
+      android:layout_marginBottom="8dp" />
+
+  <com.google.android.material.materialswitch.MaterialSwitch
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:checked="true"
       android:id="@+id/enable_post_processing"
       android:text="@string/enable_post_processing"
       android:layout_marginLeft="16dp"
