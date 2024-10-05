@@ -315,7 +315,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             
             origin = Vector2.Zero;
         }
-
+        
         var parentTransforms = new List<ParentTransform>();
         try
         {
@@ -328,7 +328,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             return null;
         }
         
-        var depth = MathHelper.MapRange(beatmapObject.RenderDepth + parentTransforms.Count * beatmapObject.RenderDepth * 0.0005f - i * 0.00001f, -100.0f, 100.0f, 0.0f, 1.0f);
+        var depth = MathHelper.MapRange(beatmapObject.RenderDepth + parentTransforms.Count * 0.001f + i * 0.00001f, -100.0f, 100.0f, 0.0f, 1.0f);
         
         return new GameObject(
             startTime,
