@@ -514,6 +514,10 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
     
     private int HandlePostProcessing(PostProcessingData data, int texture1, int texture2)
     {
+        // Disable depth testing and blending
+        GL.Disable(EnableCap.DepthTest);
+        GL.Disable(EnableCap.Blend);
+        
         if (hue.Process(currentFboSize, data.HueShiftAngle, texture1, texture2))
             Swap(ref texture1, ref texture2); // Swap if we processed
         
