@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using OpenTK.Mathematics;
 using ParallelAnimationSystem.Util;
 using TmpIO;
@@ -22,7 +23,7 @@ public class TextShaper<T>(
         public Measurement CurrentCSpace { get; set; }
         public Measurement CurrentSize { get; set; } = new(1.0f, Unit.Em);
         public Measurement CurrentVOffset { get; set; }
-        public Measurement CurrentLineHeight { get; set; } = new(1.0f, Unit.Em);
+        public Measurement? CurrentLineHeight { get; set; }
         public HorizontalAlignment? CurrentAlignment { get; set; }
         public ColorAlpha CurrentMarkColor { get; set; }
         public required FontStack CurrentFontStack { get; set; }
@@ -138,10 +139,13 @@ public class TextShaper<T>(
                 {
                     var metadata = getFontMetadata(font);
                     
-                    var minX = x + glyph.BearingX / metadata.Size * shapedGlyph.Size;
-                    var minY = baselineY + glyph.BearingY / metadata.Size * shapedGlyph.Size + shapedGlyph.YOffset;
-                    var maxX = minX + glyph.Width / metadata.Size * shapedGlyph.Size;
-                    var maxY = minY - glyph.Height / metadata.Size * shapedGlyph.Size;
+                    var sizeMultiplier = shapedGlyph.Size / metadata.Size;
+                    var glyphBaseline = baselineY + shapedGlyph.YOffset;
+                    
+                    var minX = x + glyph.BearingX * sizeMultiplier;
+                    var minY = glyphBaseline + glyph.BearingY * sizeMultiplier;
+                    var maxX = minX + glyph.Width * sizeMultiplier;
+                    var maxY = minY - glyph.Height * sizeMultiplier;
                     var minUV = new Vector2(glyph.MinX, glyph.MinY);
                     var maxUV = new Vector2(glyph.MaxX, glyph.MaxY);
                     yield return renderGlyphFactory(new Vector2(minX, minY), new Vector2(maxX, maxY), minUV, maxUV, color, boldItalic, shapedGlyph.FontIndex);
@@ -233,8 +237,12 @@ public class TextShaper<T>(
                     var normalizedDescender = metadata.Descender / metadata.Size;
                     
                     var glyphEnd = glyphPosition + normalizedAdvance * currentSize;
-                    var glyphUpper = Math.Max(normalizedAscender * currentSize, normalizedAscender * currentSize + currentVOffset);
-                    var glyphLower = Math.Min(normalizedDescender * currentSize, normalizedDescender * currentSize + currentVOffset);
+                    var baseGlyphUpper = normalizedAscender * currentSize;
+                    var baseGlyphLower = normalizedDescender * currentSize;
+                    var offsetGlyphUpper = normalizedAscender * currentSize + currentVOffset;
+                    var offsetGlyphLower = normalizedDescender * currentSize + currentVOffset;
+                    var glyphUpper = Math.Max(baseGlyphUpper, offsetGlyphUpper);
+                    var glyphLower = Math.Min(baseGlyphLower, offsetGlyphLower);
                     var glyphHeight = glyphUpper - glyphLower;
                     
                     width = Math.Max(width, glyphEnd);
@@ -284,7 +292,7 @@ public class TextShaper<T>(
             if (element is PosElement posElement)
             {
                 var fontStack = state.CurrentFontStack;
-                x += ResolveMeasurement(posElement.Value, fontStack.Size, 0.0f);
+                x = ResolveMeasurement(posElement.Value, fontStack.Size, 0.0f);
             }
 
             if (element is SizeElement sizeElement)
@@ -331,19 +339,16 @@ public class TextShaper<T>(
         var firstFont = registeredFonts[fontIndexLookup[firstFontHandle]];
         var firstFontMetadata = getFontMetadata(firstFont);
         var lastCurrentSize = ResolveMeasurement(state.CurrentSize, lastFontStack.Size, lastFontStack.Size);
-        var lastVOffset = ResolveMeasurement(
-            state.CurrentVOffset,
-            firstFontMetadata.LineHeight / firstFontMetadata.Size * lastCurrentSize,
-            firstFontMetadata.LineHeight / firstFontMetadata.Size * lastCurrentSize);
         var normalizedLastAscender = firstFontMetadata.Ascender / firstFontMetadata.Size;
         var normalizedLastDescender = firstFontMetadata.Descender / firstFontMetadata.Size;
         var normalizedLastLineHeight = firstFontMetadata.LineHeight / firstFontMetadata.Size;
         
-        ascender = ascender == 0.0f ? Math.Max(normalizedLastAscender * lastCurrentSize, normalizedLastAscender * lastCurrentSize + lastVOffset) : ascender;
-        descender = descender == 0.0f ? Math.Min(normalizedLastDescender * lastCurrentSize, normalizedLastDescender * lastCurrentSize + lastVOffset) : descender;
-        height = height == 0.0f ? Math.Max(normalizedLastLineHeight * lastCurrentSize, normalizedLastLineHeight * lastCurrentSize + lastVOffset) : height;
+        ascender = ascender == 0.0f ? normalizedLastAscender * lastCurrentSize : ascender;
+        descender = descender == 0.0f ? normalizedLastDescender * lastCurrentSize : descender;
+        height = height == 0.0f ? normalizedLastLineHeight * lastCurrentSize : height;
         
-        height = ResolveMeasurement(state.CurrentLineHeight, height, height);
+        if (state.CurrentLineHeight.HasValue)
+            height = ResolveMeasurement(state.CurrentLineHeight.Value, normalizedLastLineHeight * lastCurrentSize, normalizedLastLineHeight * lastCurrentSize);
         
         return new TmpLine(ascender, descender, width, height, state.CurrentAlignment, glyphs.ToArray(), marks.ToArray());
     }
@@ -372,6 +377,16 @@ public class TextShaper<T>(
     {
         if (lines.Count == 0)
             return 0.0f;
-        return lines.Sum(line => line.Height);
+        var top = float.MinValue;
+        var bottom = float.MaxValue;
+        var currentY = 0.0f;
+        foreach (var line in lines)
+        {
+            var baseline = currentY - line.Ascender;
+            top = Math.Max(top, baseline + line.Ascender);
+            bottom = Math.Min(bottom, baseline + line.Descender);
+            currentY -= line.Height;
+        }
+        return top - bottom;
     }
 }
