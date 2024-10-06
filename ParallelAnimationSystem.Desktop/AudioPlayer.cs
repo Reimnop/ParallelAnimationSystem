@@ -43,6 +43,8 @@ public class AudioPlayer(int stream) : IDisposable
     {
         // Load the audio file
         var stream = Bass.CreateStream(path);
+        if (stream == 0)
+            throw new Exception($"Failed to load audio file '{Bass.LastError}'");
         return new AudioPlayer(stream);
     }
 

@@ -1,6 +1,9 @@
+using System.Runtime.InteropServices;
+using Ico.Reader;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using ParallelAnimationSystem.Windowing;
+using ReFuel.Stb;
 
 namespace ParallelAnimationSystem.Desktop;
 
@@ -34,6 +37,43 @@ public unsafe class DesktopWindow : IWindow, IDisposable
         GLFW.WindowHint(WindowHintInt.ContextVersionMinor, glContextSettings.Version.Minor);
         
         window = GLFW.CreateWindow(size.X, size.Y, title, null, null);
+        
+        // Load window icon
+        using var iconStream = typeof(DesktopWindow).Assembly.GetManifestResourceStream("ParallelAnimationSystem.Desktop.icon.ico");
+        if (iconStream is not null)
+            LoadIcon(iconStream);
+    }
+
+    private void LoadIcon(Stream iconStream)
+    {
+        var icoReader = new IcoReader();
+        var iconData = icoReader.Read(iconStream);
+        if (iconData is null)
+            return;
+        var group = iconData.Groups[0];
+        var images = new List<StbImage>();
+        try
+        {
+            for (var i = 0; i < group.DirectoryEntries.Length; i++)
+            {
+                var data = iconData.GetImage(group.Name, i);
+                var image = StbImage.Load(data);
+                images.Add(image);
+            }
+            var glfwImages = images
+                .Select(image => new Image
+                {
+                    Width = image.Width,
+                    Height = image.Height,
+                    Pixels = (byte*) image.ImagePointer,
+                });
+            GLFW.SetWindowIcon(window, glfwImages.ToArray());
+        }
+        finally
+        {
+            foreach (var image in images)
+                image.Dispose();
+        }
     }
 
     public void MakeContextCurrent()
