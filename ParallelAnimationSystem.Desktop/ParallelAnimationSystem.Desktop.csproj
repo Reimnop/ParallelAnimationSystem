@@ -19,6 +19,7 @@
     <PackageReference Include="ManagedBass" Version="3.1.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
     <PackageReference Include="OpenTK.Windowing.GraphicsLibraryFramework" Version="5.0.0-pre.11" />
+    <PackageReference Include="ParallelAnimationSystem.Redist" Version="1.0.0" />
     <PackageReference Include="ReFuel.StbImage" Version="2.0.1" />
   </ItemGroup>
   
@@ -29,36 +30,4 @@
   <ItemGroup>
     <EmbeddedResource Include="icon.ico" />
   </ItemGroup>
-  
-  <ItemGroup>
-    <None Include="Native/x64/Windows/bass.dll">
-      <Link>runtimes/win-x64/native/bass.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Native/x86/Windows/bass.dll">
-      <Link>runtimes/win-x86/native/bass.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Native/x64/Linux/libbass.so">
-      <Link>runtimes/linux-x64/native/libbass.so</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Native/x86/Linux/libbass.so">
-      <Link>runtimes/linux-x86/native/libbass.so</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Native/Arm64/Linux/libbass.so">
-      <Link>runtimes/linux-arm64/native/libbass.so</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Native/x64/macOS/libbass.dylib">
-      <Link>runtimes/osx-x64/native/libbass.dylib</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Native/Arm64/macOS/libbass.dylib">
-      <Link>runtimes/osx-arm64/native/libbass.dylib</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 </Project>
