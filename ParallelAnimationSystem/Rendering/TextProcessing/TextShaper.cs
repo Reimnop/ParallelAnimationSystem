@@ -20,6 +20,7 @@ public class TextShaper<T>(
     private class ShapingState
     {
         public Style CurrentStyle { get; set; }
+        public Capitalization CurrentCapitalization { get; set; }
         public Measurement CurrentCSpace { get; set; }
         public Measurement CurrentSize { get; set; } = new(1.0f, Unit.Em);
         public Measurement CurrentVOffset { get; set; }
@@ -201,8 +202,20 @@ public class TextShaper<T>(
         {
             if (element is TextElement textElement)
             {
-                foreach (var c in textElement.Value)
+                foreach (var cRaw in textElement.Value)
                 {
+                    var c = cRaw;
+                    var sizeMultiplier = 1.0f;
+                    if (state.CurrentCapitalization.HasFlag(Capitalization.Uppercase))
+                        c = char.ToUpperInvariant(cRaw);
+                    else if (state.CurrentCapitalization.HasFlag(Capitalization.Lowercase))
+                        c = char.ToLowerInvariant(cRaw);
+                    else if (state.CurrentCapitalization.HasFlag(Capitalization.SmallCaps))
+                    {
+                        c = char.ToUpperInvariant(cRaw);
+                        sizeMultiplier = char.IsLower(cRaw) ? 0.8f : 1.0f;
+                    }
+                    
                     var fontStack = state.CurrentFontStack;
                     var rawGlyph = GetGlyph(fontStack, c);
                     if (!rawGlyph.HasValue)
@@ -214,7 +227,7 @@ public class TextShaper<T>(
                     var font = registeredFonts[fontIndex];
                     var fontMetadata = getFontMetadata(font);
                     
-                    var currentSize = ResolveMeasurement(state.CurrentSize, fontStack.Size, fontStack.Size);
+                    var currentSize = ResolveMeasurement(state.CurrentSize, fontStack.Size, fontStack.Size) * sizeMultiplier;
                     var currentCSpace = ResolveMeasurement(state.CurrentCSpace, fontStack.Size, fontStack.Size);
                     var currentVOffset = ResolveMeasurement(
                         state.CurrentVOffset,
@@ -282,6 +295,11 @@ public class TextShaper<T>(
             if (element is AlignElement alignElement)
             {
                 state.CurrentAlignment = alignElement.Alignment;
+            }
+
+            if (element is CapitalizationElement capitalizationElement)
+            {
+                state.CurrentCapitalization = capitalizationElement.Value;
             }
 
             if (element is CSpaceElement cSpaceElement)
