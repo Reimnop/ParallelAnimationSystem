@@ -227,7 +227,7 @@ public class TextShaper<T>(
                     var font = registeredFonts[fontIndex];
                     var fontMetadata = getFontMetadata(font);
                     
-                    var currentSize = ResolveMeasurement(state.CurrentSize, fontStack.Size, fontStack.Size) * sizeMultiplier;
+                    var currentSize = ResolveMeasurement(state.CurrentSize, fontStack.Size, fontStack.Size);
                     var currentCSpace = ResolveMeasurement(state.CurrentCSpace, fontStack.Size, fontStack.Size);
                     var currentVOffset = ResolveMeasurement(
                         state.CurrentVOffset,
@@ -238,18 +238,18 @@ public class TextShaper<T>(
                     var glyph = glyphNullable ?? throw new InvalidOperationException($"Glyph ID '{glyphId}' not found in font");
                     
                     var glyphPosition = x;
-                    var shapedGlyph = new ShapedGlyph(glyphPosition, currentVOffset, fontIndex, glyphId, currentSize, state.CurrentStyle);
+                    var shapedGlyph = new ShapedGlyph(glyphPosition, currentVOffset, fontIndex, glyphId, currentSize * sizeMultiplier, state.CurrentStyle);
                     glyphs.Add(shapedGlyph);
                     
                     // Calculate advance
                     var metadata = getFontMetadata(font);
                     var normalizedAdvance = glyph.Advance / metadata.Size;
-                    x += normalizedAdvance * currentSize + currentCSpace;
+                    x += normalizedAdvance * currentSize * sizeMultiplier + currentCSpace;
                     
                     var normalizedAscender = metadata.Ascender / metadata.Size;
                     var normalizedDescender = metadata.Descender / metadata.Size;
                     
-                    var glyphEnd = glyphPosition + normalizedAdvance * currentSize;
+                    var glyphEnd = glyphPosition + normalizedAdvance * currentSize * sizeMultiplier;
                     var baseGlyphUpper = normalizedAscender * currentSize;
                     var baseGlyphLower = normalizedDescender * currentSize;
                     var offsetGlyphUpper = normalizedAscender * currentSize + currentVOffset;
