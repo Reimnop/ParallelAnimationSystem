@@ -6,14 +6,15 @@
     <OutputType>Library</OutputType>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <InvariantGlobalization>true</InvariantGlobalization>
 
     <PublishTrimmed>true</PublishTrimmed>
     <SelfContained>true</SelfContained>
     <MSBuildEnableWorkloadResolver>false</MSBuildEnableWorkloadResolver>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <WasmEnableSIMD>true</WasmEnableSIMD>
-    <InvariantGlobalization>true</InvariantGlobalization>
 
+    <DotNetJsApi>true</DotNetJsApi>
     <EmccFlags>-sMIN_WEBGL_VERSION=2 -lGL</EmccFlags>
   </PropertyGroup>
 
