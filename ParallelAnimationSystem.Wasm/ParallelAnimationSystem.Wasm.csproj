@@ -33,5 +33,9 @@
   <ItemGroup>
     <ProjectReference Include="../ParallelAnimationSystem/ParallelAnimationSystem.csproj" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <EmbeddedResource Include="Resources/**/*" />
+  </ItemGroup>
 
 </Project>

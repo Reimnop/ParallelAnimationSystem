@@ -17,13 +17,13 @@ public static partial class JsApi
     [JSExport]
     public static void Initialize(int seed, bool enablePostProcessing, bool enableTextRendering)
     {
-        var appSettings = new WasmAppSettings(unchecked((ulong) seed), enablePostProcessing, enableTextRendering);
+        var appSettings = new WasmAppSettings(unchecked((ulong)seed), enablePostProcessing, enableTextRendering);
         var startup = new WasmStartup(appSettings);
         app = startup.InitializeApp();
     }
 
     [JSExport]
-    public static void RenderFrame(double time)
+    public static void ProcessFrame(double time)
     {
         if (app is null)
             throw new InvalidOperationException("App not initialized");

@@ -11,7 +11,11 @@ public class WasmWindowManager : IWindowManager, IDisposable
     public WasmWindowManager()
     {
         display = Egl.GetDisplay(IntPtr.Zero);
-        Egl.Initialize(display, out _, out _);
+        if (display == IntPtr.Zero)
+            throw new InvalidOperationException("Failed to get EGL display");
+        
+        if (!Egl.Initialize(display, out _, out _))
+            throw new InvalidOperationException("Failed to initialize EGL");
     }
 
     public IWindow CreateWindow(string title, Vector2i size, GLContextSettings glContextSettings)

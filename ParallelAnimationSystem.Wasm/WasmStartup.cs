@@ -15,8 +15,8 @@ public class WasmStartup(WasmAppSettings appSettings) : IStartup
     public void ConfigureLogging(ILoggingBuilder loggingBuilder)
         => loggingBuilder.AddProvider(new WebAssemblyConsoleLoggerProvider());
 
-    public IResourceManager? CreateResourceManager(IServiceProvider serviceProvider)
-        => null;
+    public IResourceManager CreateResourceManager(IServiceProvider serviceProvider)
+        => new EmbeddedResourceManager(typeof(WasmStartup).Assembly); // Provide decompressed font files, as System.IO.Compression isn't available in WASM
 
     public IWindowManager CreateWindowManager(IServiceProvider serviceProvider)
         => new WasmWindowManager();

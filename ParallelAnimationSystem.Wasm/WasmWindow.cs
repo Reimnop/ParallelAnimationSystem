@@ -42,13 +42,15 @@ public class WasmWindow : IWindow, IDisposable
             Egl.SAMPLES, 0,
             Egl.NONE
         };
-        
-        var chosenConfig = IntPtr.Zero;
-        if (!Egl.ChooseConfig(display, config, [chosenConfig], 1, out var numConfig))
+
+        var configs = new IntPtr[1];
+        if (!Egl.ChooseConfig(display, config, configs, 1, out var numConfig))
             throw new InvalidOperationException("Failed to choose EGL config");
         
         if (numConfig == 0)
             throw new InvalidOperationException("No EGL configs found");
+        
+        var chosenConfig = configs[0];
         
         if (!Egl.BindAPI(RenderApi.ES))
             throw new InvalidOperationException("Failed to bind ES API");
