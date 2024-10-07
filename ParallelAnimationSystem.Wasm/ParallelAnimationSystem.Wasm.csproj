@@ -1,21 +1,36 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
+    <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+    <OutputType>Library</OutputType>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <OutputType>Exe</OutputType>
 
     <PublishTrimmed>true</PublishTrimmed>
     <SelfContained>true</SelfContained>
     <MSBuildEnableWorkloadResolver>false</MSBuildEnableWorkloadResolver>
-    
-    <WasmHtmlTemplate>shell.html</WasmHtmlTemplate>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <WasmEnableSIMD>true</WasmEnableSIMD>
+    <InvariantGlobalization>true</InvariantGlobalization>
+
+    <EmccFlags>-sMIN_WEBGL_VERSION=2 -lGL</EmccFlags>
   </PropertyGroup>
+
+  <ItemGroup>
+    <DirectPInvoke Include="libEGL" />
+  </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.ILCompiler.LLVM" Version="8.0.0-*" />
-    <PackageReference Include="runtime.$(NETCoreSdkPortableRuntimeIdentifier).Microsoft.DotNet.ILCompiler.LLVM" Version="8.0.0-*" />
+    <PackageReference Include="Uno.Extensions.Logging.WebAssembly.Console" Version="1.7.0" />
+    
+    <!-- For NativeAOT-LLVM -->
+    <PackageReference Include="Microsoft.DotNet.ILCompiler.LLVM" Version="9.0.0-*" />
+    <PackageReference Include="runtime.$(NETCoreSdkPortableRuntimeIdentifier).Microsoft.DotNet.ILCompiler.LLVM" Version="9.0.0-*" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="../ParallelAnimationSystem/ParallelAnimationSystem.csproj" />
   </ItemGroup>
 
 </Project>

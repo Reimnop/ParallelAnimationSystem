@@ -14,9 +14,6 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
 
     private readonly Dictionary<GameObject, Task<ITextHandle>> cachedTextHandles = [];
     private readonly List<FontStack> fonts = [];
-
-    private double time;
-    private double lastAudioTime;
     
     public void Initialize()
     {
