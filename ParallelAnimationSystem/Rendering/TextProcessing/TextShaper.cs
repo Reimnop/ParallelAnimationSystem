@@ -97,7 +97,7 @@ public class TextShaper<T>(
         }
         
         // Output render glyphs
-        var paragraphHeight = GetParagraphHeight(linesOfShapedGlyphs);
+        var paragraphHeight = GetParagraphHeight(linesOfShapedGlyphs, out var top, out _);
         var yOffset = verticalAlignment switch
         {
             VerticalAlignment.Top => paragraphHeight,
@@ -106,7 +106,7 @@ public class TextShaper<T>(
             _ => throw new ArgumentOutOfRangeException(nameof(verticalAlignment)),
         };
 
-        var y = yOffset; // y is now at TOP of the paragraph
+        var y = yOffset - top; // y is now at TOP of the paragraph
         for (var i = 0; i < linesOfShapedGlyphs.Count; i++)
         {
             var line = linesOfShapedGlyphs[i];
@@ -391,12 +391,16 @@ public class TextShaper<T>(
         return null;
     }
     
-    private static float GetParagraphHeight(IReadOnlyList<TmpLine> lines)
+    private static float GetParagraphHeight(IReadOnlyList<TmpLine> lines, out float top, out float bottom)
     {
         if (lines.Count == 0)
+        {
+            top = 0.0f;
+            bottom = 0.0f;
             return 0.0f;
-        var top = float.MinValue;
-        var bottom = float.MaxValue;
+        }
+        top = float.MinValue;
+        bottom = float.MaxValue;
         var currentY = 0.0f;
         foreach (var line in lines)
         {
