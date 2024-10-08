@@ -97,7 +97,8 @@ public class TextShaper<T>(
         }
         
         // Output render glyphs
-        var paragraphHeight = GetParagraphHeight(linesOfShapedGlyphs, out var top, out _);
+        GetParagraphHeight(linesOfShapedGlyphs, out var top, out var bottom);
+        var paragraphHeight = top - bottom;
         var yOffset = verticalAlignment switch
         {
             VerticalAlignment.Top => paragraphHeight,
@@ -106,11 +107,10 @@ public class TextShaper<T>(
             _ => throw new ArgumentOutOfRangeException(nameof(verticalAlignment)),
         };
 
-        var y = yOffset - top; // y is now at TOP of the paragraph
-        foreach (var line in linesOfShapedGlyphs)
+        var y = yOffset - linesOfShapedGlyphs[0].Ascender; // y is now at the BASELINE of the first line of the paragraph
+        for (var i = 0; i < linesOfShapedGlyphs.Count; i++)
         {
-            // Bring y to the baseline of the current line
-            var baselineY = y - line.Ascender;
+            var line = linesOfShapedGlyphs[i];
             
             foreach (var shapedGlyph in line.Glyphs)
             {
@@ -139,7 +139,7 @@ public class TextShaper<T>(
                     var metadata = getFontMetadata(font);
                     
                     var sizeMultiplier = shapedGlyph.Size / metadata.Size;
-                    var glyphBaseline = baselineY + shapedGlyph.YOffset;
+                    var glyphBaseline = y + shapedGlyph.YOffset;
                     
                     var minX = x + glyph.BearingX * sizeMultiplier;
                     var minY = glyphBaseline + glyph.BearingY * sizeMultiplier;
@@ -176,9 +176,9 @@ public class TextShaper<T>(
                 yield return renderGlyphFactory(new Vector2(minX, minY), new Vector2(maxX, maxY), Vector2.Zero, Vector2.Zero, color, BoldItalic.None, -1);
             }
             
-            // Advance y to the next line
-            // Y is now at the TOP of the next line
-            y -= line.Height;
+            // Bring y to the BASELINE of the next line
+            if (i + 1 < linesOfShapedGlyphs.Count)
+                y -= linesOfShapedGlyphs[i + 1].Height;
         }
     }
 
@@ -389,24 +389,28 @@ public class TextShaper<T>(
         return null;
     }
     
-    private static float GetParagraphHeight(IReadOnlyList<TmpLine> lines, out float top, out float bottom)
+    private static void GetParagraphHeight(IReadOnlyList<TmpLine> lines, out float top, out float bottom)
     {
         if (lines.Count == 0)
         {
             top = 0.0f;
             bottom = 0.0f;
-            return 0.0f;
+            return;
         }
-        top = float.MinValue;
-        bottom = float.MaxValue;
-        var currentY = 0.0f;
-        foreach (var line in lines)
+
+        top = 0.0f;
+        bottom = 0.0f;
+        var y = -lines[0].Ascender;
+        top = Math.Max(top, y);
+        bottom = Math.Min(bottom, y);
+        for (var i = 0; i < lines.Count - 1; i++)
         {
-            var baseline = currentY - line.Ascender;
-            top = Math.Max(top, baseline + line.Ascender);
-            bottom = Math.Min(bottom, baseline + line.Descender);
-            currentY -= line.Height;
+            y -= lines[i + 1].Height;
+            top = Math.Max(top, y);
+            bottom = Math.Min(bottom, y);
         }
-        return top - bottom;
+        y += lines[^1].Height;
+        top = Math.Max(top, y);
+        bottom = Math.Min(bottom, y);
     }
 }
