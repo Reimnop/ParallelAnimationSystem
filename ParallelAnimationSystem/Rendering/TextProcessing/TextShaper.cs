@@ -107,10 +107,8 @@ public class TextShaper<T>(
         };
 
         var y = yOffset - top; // y is now at TOP of the paragraph
-        for (var i = 0; i < linesOfShapedGlyphs.Count; i++)
+        foreach (var line in linesOfShapedGlyphs)
         {
-            var line = linesOfShapedGlyphs[i];
-            
             // Bring y to the baseline of the current line
             var baselineY = y - line.Ascender;
             
