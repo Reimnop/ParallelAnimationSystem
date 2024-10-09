@@ -23,7 +23,7 @@ public static partial class JsApi
     }
 
     [JSExport]
-    public static void ProcessFrame(double time)
+    public static void ProcessFrame(float time)
     {
         if (app is null)
             throw new InvalidOperationException("App not initialized");

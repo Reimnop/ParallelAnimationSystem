@@ -138,7 +138,7 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
         return renderer.RegisterFont(stream);
     }
     
-    public bool ProcessFrame(double time)
+    public bool ProcessFrame(float time)
     {
         Debug.Assert(runner is not null);
 
@@ -146,7 +146,7 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
             return false;
         
         // Update runner
-        runner.Process((float) time, appSettings.WorkerCount);
+        runner.Process(time, appSettings.WorkerCount);
         
         // Start queueing up draw data
         var bloomData = runner.Bloom;

@@ -71,7 +71,7 @@ public class PasActivity : SDLActivity
             // ReSharper disable once LoopVariableIsNeverChangedInsideLoop
             while (!appShutdown)
                 // ReSharper disable once AccessToDisposedClosure
-                if (!beatmapRunner.ProcessFrame(audioPlayer.Position))
+                if (!beatmapRunner.ProcessFrame((float) audioPlayer.Position))
                     Thread.Yield();
         });
         appThread.Start();
