@@ -107,7 +107,7 @@ public class TextShaper<T>(
             _ => throw new ArgumentOutOfRangeException(nameof(verticalAlignment)),
         };
 
-        var y = yOffset - linesOfShapedGlyphs[0].Ascender; // y is now at the BASELINE of the first line of the paragraph
+        var y = yOffset - top - linesOfShapedGlyphs[0].Ascender; // y is now at the BASELINE of the first line of the paragraph
         for (var i = 0; i < linesOfShapedGlyphs.Count; i++)
         {
             var line = linesOfShapedGlyphs[i];
@@ -400,16 +400,19 @@ public class TextShaper<T>(
 
         top = 0.0f;
         bottom = 0.0f;
+        
         var y = -lines[0].Ascender;
         top = Math.Max(top, y);
         bottom = Math.Min(bottom, y);
+        
         for (var i = 0; i < lines.Count - 1; i++)
         {
             y -= lines[i + 1].Height;
             top = Math.Max(top, y);
             bottom = Math.Min(bottom, y);
         }
-        y += lines[^1].Height;
+        
+        y += lines[^1].Descender;
         top = Math.Max(top, y);
         bottom = Math.Min(bottom, y);
     }
