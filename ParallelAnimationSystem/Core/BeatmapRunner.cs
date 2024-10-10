@@ -31,10 +31,15 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
         
         // Migrate the beatmap to the latest version of the beatmap format
         logger.LogInformation("Migrating beatmap");
-        if (format == BeatmapFormat.Lsb)
-            LsMigration.MigrateBeatmap(beatmap);
-        else
-            VgMigration.MigrateBeatmap(beatmap);
+        switch (format) 
+        {
+            case BeatmapFormat.Lsb:
+                LsMigration.MigrateBeatmap(beatmap);
+                break;
+            case BeatmapFormat.Vgd:
+                VgMigration.MigrateBeatmap(beatmap);
+                break;
+        }
         
         logger.LogInformation("Using seed '{Seed}'", appSettings.Seed);
         
