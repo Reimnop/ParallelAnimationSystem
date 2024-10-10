@@ -211,7 +211,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             new System.Numerics.Vector2(prefabObject.Scale.X, prefabObject.Scale.Y)));
         parent.RotationEvents.Add(new Pamx.Common.Data.Keyframe<float>(
             0.0f,
-            MathHelper.DegreesToRadians(prefabObject.Rotation)));
+            prefabObject.Rotation));
         
         // Clone all the objects in the prefab
         if (prefabObject.Prefab is not IPrefab prefab)
@@ -279,7 +279,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
                     new System.Numerics.Vector2(prefabObject.Scale.X, prefabObject.Scale.Y)));
                 idkAnymore.RotationEvents.Add(new Pamx.Common.Data.Keyframe<float>(
                     0.0f,
-                    MathHelper.DegreesToRadians(prefabObject.Rotation)));
+                    prefabObject.Rotation));
                 idkAnymore.ParentType = ParentType.Position | ParentType.Rotation;
                 extraObjects.Add(idkAnymore);
                 
