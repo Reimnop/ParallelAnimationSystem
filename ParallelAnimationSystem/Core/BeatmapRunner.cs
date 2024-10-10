@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using OpenTK.Mathematics;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.TextProcessing;
@@ -153,8 +154,11 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
         // Update runner
         runner.Process(time, appSettings.WorkerCount);
         
-        // Start queueing up draw data
         var bloomData = runner.Bloom;
+        var hue = runner.Hue;
+        var lensDistortionData = runner.LensDistortion;
+        
+        // Start queueing up draw data
         var drawList = renderer.GetDrawList();
         
         drawList.ClearColor = runner.BackgroundColor;
@@ -166,9 +170,10 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
         if (appSettings.EnablePostProcessing)
         {
             drawList.PostProcessingData = new PostProcessingData(
-                runner.Hue,
                 bloomData.Intensity / (bloomData.Intensity + 2.0f),
-                bloomData.Diffusion / (bloomData.Diffusion + 2.0f));
+                bloomData.Diffusion / (bloomData.Diffusion + 2.0f),
+                hue,
+                lensDistortionData.Intensity, new Vector2(lensDistortionData.Center.X, lensDistortionData.Center.Y));
         }
         else
         {

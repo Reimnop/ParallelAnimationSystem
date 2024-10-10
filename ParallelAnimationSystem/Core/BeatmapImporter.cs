@@ -33,6 +33,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         // Get post-processing sequences
         var bloomSequence = CreateBloomSequence(beatmap.Events.Bloom);
         var hueSequence = CreateHueSequence(beatmap.Events.Hue);
+        var lensDistortionSequence = CreateLensDistortionSequence(beatmap.Events.LensDistortion);
         
         // Create the runner with the GameObjects
         return new AnimationRunner(
@@ -42,7 +43,32 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             cameraScaleSequence, 
             cameraRotationSequence,
             bloomSequence,
-            hueSequence);
+            hueSequence,
+            lensDistortionSequence);
+    }
+    
+    private Sequence<LensDistortionData, LensDistortionData> CreateLensDistortionSequence(IList<FixedKeyframe<LensDistortionData>> lensDistortionEvents)
+    {
+        var keyframes = lensDistortionEvents
+            .Select(x =>
+            {
+                var time = x.Time;
+                var value = x.Value;
+                var ease = EaseFunctions.GetOrDefault(x.Ease, EaseFunctions.Linear);
+                return new Animation.Keyframe<LensDistortionData>(time, value, ease);
+            });
+        return new Sequence<LensDistortionData, LensDistortionData>(keyframes, InterpolateLensDistortionData);
+    }
+    
+    private LensDistortionData InterpolateLensDistortionData(LensDistortionData a, LensDistortionData b, float t, object? context)
+    {
+        return new LensDistortionData
+        {
+            Intensity = MathUtil.Lerp(a.Intensity, b.Intensity, t),
+            Center = new System.Numerics.Vector2(
+                MathUtil.Lerp(a.Center.X, b.Center.X, t),
+                MathUtil.Lerp(a.Center.Y, b.Center.Y, t))
+        };
     }
     
     private Sequence<BloomData, BloomData> CreateBloomSequence(IList<FixedKeyframe<BloomData>> bloomEvents)

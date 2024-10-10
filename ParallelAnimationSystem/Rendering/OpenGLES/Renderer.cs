@@ -73,8 +73,8 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
     private Vector2i currentFboSize;
     
     // Post-processing
-    private readonly Hue hue = new(resourceManager);
     private readonly Bloom bloom = new(resourceManager);
+    private readonly UberPost uberPost = new(resourceManager);
     
     // Temporary draw data lists
     private readonly List<DrawData> opaqueDrawData = [];
@@ -221,7 +221,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
             throw new InvalidOperationException($"Failed to compile vertex shader: {infoLog}");
         }
         
-        hue.Initialize(vertexShader);
+        uberPost.Initialize(vertexShader);
         bloom.Initialize(vertexShader);
         
         // Clean up
@@ -543,10 +543,14 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         GL.Disable(EnableCap.DepthTest);
         GL.Disable(EnableCap.Blend);
         
-        if (hue.Process(currentFboSize, data.HueShiftAngle, texture1, texture2))
-            Swap(ref texture1, ref texture2); // Swap if we processed
-        
         if (bloom.Process(currentFboSize, data.BloomIntensity, data.BloomDiffusion, texture1, texture2))
+            Swap(ref texture1, ref texture2);
+        
+        if (uberPost.Process(
+                currentFboSize,
+                data.HueShiftAngle,
+                data.LensDistortionIntensity, data.LensDistortionCenter,
+                texture1, texture2))
             Swap(ref texture1, ref texture2);
         
         return texture1;

@@ -13,6 +13,7 @@ public class AnimationRunner
     public float CameraRotation { get; private set; }
     public BloomData Bloom { get; private set; }
     public float Hue { get; private set; }
+    public LensDistortionData LensDistortion { get; private set; }
     public Color4<Rgba> BackgroundColor { get; private set; }
 
     public event EventHandler<GameObject>? ObjectSpawned;
@@ -33,6 +34,7 @@ public class AnimationRunner
 
     private readonly Sequence<BloomData, BloomData> bloomSequence;
     private readonly Sequence<float, float> hueSequence;
+    private readonly Sequence<LensDistortionData, LensDistortionData> lensDistortionSequence;
         
     private float lastTime;
     
@@ -43,7 +45,8 @@ public class AnimationRunner
         Sequence<float, float> cameraScaleAnimation,
         Sequence<float, float> cameraRotationAnimation,
         Sequence<BloomData, BloomData> bloomSequence,
-        Sequence<float, float> hueSequence)
+        Sequence<float, float> hueSequence,
+        Sequence<LensDistortionData, LensDistortionData> lensDistortionSequence)
     {
         // Set sequences
         this.themeColorSequence = themeColorSequence;
@@ -52,6 +55,7 @@ public class AnimationRunner
         this.cameraRotationAnimation = cameraRotationAnimation;
         this.bloomSequence = bloomSequence;
         this.hueSequence = hueSequence;
+        this.lensDistortionSequence = lensDistortionSequence;
 
         foreach (var gameObject in gameObjects)
         {
@@ -72,6 +76,7 @@ public class AnimationRunner
         CameraRotation = cameraRotationAnimation.Interpolate(time);
         Bloom = bloomSequence.Interpolate(time);
         Hue = hueSequence.Interpolate(time);
+        LensDistortion = lensDistortionSequence.Interpolate(time);
         
         // Spawn and kill objects according to time
         SpawnAndKillObjects(time);

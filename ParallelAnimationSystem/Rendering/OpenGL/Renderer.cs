@@ -60,8 +60,8 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
     private bool newMeshData = true;
     
     // Post processors
-    private readonly Hue hue = new(resourceManager);
     private readonly Bloom bloom = new(resourceManager);
+    private readonly UberPost uberPost = new(resourceManager);
     
     // Graphics data
     private readonly List<FontHandle> registeredFonts = [];
@@ -326,7 +326,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         currentFboSize = size;
         
         // Initialize post processors
-        hue.Initialize();
+        uberPost.Initialize();
         bloom.Initialize();
     }
 
@@ -617,10 +617,14 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
 
     private int HandlePostProcessing(PostProcessingData data, int texture1, int texture2)
     {
-        if (hue.Process(currentFboSize, data.HueShiftAngle, texture1, texture2))
-            Swap(ref texture1, ref texture2); // Swap if we processed
-        
         if (bloom.Process(currentFboSize, data.BloomIntensity, data.BloomDiffusion, texture1, texture2))
+            Swap(ref texture1, ref texture2);
+        
+        if (uberPost.Process(
+                currentFboSize,
+                data.HueShiftAngle,
+                data.LensDistortionIntensity, data.LensDistortionCenter,
+                texture1, texture2))
             Swap(ref texture1, ref texture2);
         
         return texture1;

@@ -4,17 +4,19 @@ using ParallelAnimationSystem.Data;
 
 namespace ParallelAnimationSystem.Rendering.OpenGLES.PostProcessing;
 
-public class Hue(IResourceManager resourceManager) : IDisposable
+public class UberPost(IResourceManager resourceManager) : IDisposable
 {
     private int program;
     private int sizeUniformLocation;
     private int hueShiftAngleUniformLocation;
+    private int lensDistortionIntensityUniformLocation;
+    private int lensDistortionCenterUniformLocation;
     
     private int framebuffer;
 
     public void Initialize(int vertexShader)
     {
-        var shaderSource = resourceManager.LoadResourceString("OpenGLES/Shaders/PostProcessing/Hue.glsl");
+        var shaderSource = resourceManager.LoadResourceString("OpenGLES/Shaders/PostProcessing/UberPost.glsl");
         
         var fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
         GL.ShaderSource(fragmentShader, shaderSource);
@@ -45,14 +47,21 @@ public class Hue(IResourceManager resourceManager) : IDisposable
         
         sizeUniformLocation = GL.GetUniformLocation(program, "uSize");
         hueShiftAngleUniformLocation = GL.GetUniformLocation(program, "uHueShiftAngle");
+        lensDistortionIntensityUniformLocation = GL.GetUniformLocation(program, "uLensDistortionIntensity");
+        lensDistortionCenterUniformLocation = GL.GetUniformLocation(program, "uLensDistortionCenter");
         
         // Initialize framebuffer
         framebuffer = GL.GenFramebuffer();
     }
     
-    public bool Process(Vector2i size, float shiftAngle, int inputTexture, int outputTexture)
+    public bool Process(
+        Vector2i size,
+        float hueShiftAngle,
+        float lensDistortionIntensity,
+        Vector2 lensDistortionCenter, 
+        int inputTexture, int outputTexture)
     {
-        if (shiftAngle == 0.0f)
+        if (hueShiftAngle == 0.0f && lensDistortionIntensity == 0.0f)
             return false;
         
         // Attach output texture to framebuffer
@@ -63,7 +72,9 @@ public class Hue(IResourceManager resourceManager) : IDisposable
         // Do our processing
         GL.UseProgram(program);
         GL.Uniform2f(sizeUniformLocation, size.X, size.Y);
-        GL.Uniform1f(hueShiftAngleUniformLocation, shiftAngle);
+        GL.Uniform1f(hueShiftAngleUniformLocation, hueShiftAngle);
+        GL.Uniform1f(lensDistortionIntensityUniformLocation, lensDistortionIntensity);
+        GL.Uniform2f(lensDistortionCenterUniformLocation, 1, lensDistortionCenter);
         
         GL.ActiveTexture(TextureUnit.Texture0);
         GL.BindTexture(TextureTarget.Texture2d, inputTexture);
