@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO.Hashing;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -216,6 +217,8 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         if (prefabObject.Prefab is not IPrefab prefab)
             throw new InvalidOperationException("Prefab object does not have a prefab");
         
+        var extraObjects = new List<IObject> { parent };
+        
         // Create a parent lookup dictionary to correctly map the parents
         // while cloning the objects
         var lookup = new Dictionary<IObject, IObject>();
@@ -251,6 +254,38 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             
             if (lookup.TryGetValue(currentParent, out var newParent))
                 newObj.Parent = newParent;
+            else
+            {
+                // This code is cursed, but it works
+                // Don't ask me how, it's just how PA works
+                
+                // It handles the case where the parent object has transformation,
+                // but also the object that this object references outside the prefab
+                // also has its own transformation, essentially creating a situation
+                // where a single object has two parents
+                
+                // It handles it by inserting an empty object in the middle of the original
+                // object that the prefab object references and this object
+                
+                // The behavior is supposed to be undefined, but this is how PA handles it
+                var idkAnymore = Asset.CreateObject();
+                idkAnymore.Parent = currentParent;
+                idkAnymore.Type = ObjectType.Empty;
+                idkAnymore.PositionEvents.Add(new Pamx.Common.Data.Keyframe<System.Numerics.Vector2>(
+                    0.0f, 
+                    new System.Numerics.Vector2(prefabObject.Position.X, prefabObject.Position.Y)));
+                idkAnymore.ScaleEvents.Add(new Pamx.Common.Data.Keyframe<System.Numerics.Vector2>(
+                    0.0f,
+                    new System.Numerics.Vector2(prefabObject.Scale.X, prefabObject.Scale.Y)));
+                idkAnymore.RotationEvents.Add(new Pamx.Common.Data.Keyframe<float>(
+                    0.0f,
+                    MathHelper.DegreesToRadians(prefabObject.Rotation)));
+                idkAnymore.ParentType = ParentType.Position | ParentType.Rotation;
+                extraObjects.Add(idkAnymore);
+                
+                newObj.Parent = idkAnymore;
+                newObj.ParentType = ParentType.Position | ParentType.Scale | ParentType.Rotation;
+            }
         }
 
         // Objects with no parent should be parented to the global parent
@@ -262,9 +297,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             newObj.ParentType = ParentType.Position | ParentType.Scale | ParentType.Rotation;
         }
         
-        yield return parent;
-        foreach (var newObj in lookup.Values)
-            yield return newObj;
+        return extraObjects.Concat(lookup.Values);
     }
 
     private GameObject? CreateGameObject(int i, IObject beatmapObject, bool isLsb)
