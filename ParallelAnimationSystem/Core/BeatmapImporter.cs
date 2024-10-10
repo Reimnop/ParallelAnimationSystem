@@ -259,6 +259,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             if (newObj.Parent is not null)
                 continue;
             newObj.Parent = parent;
+            newObj.ParentType = ParentType.Position | ParentType.Scale | ParentType.Rotation;
         }
         
         yield return parent;
