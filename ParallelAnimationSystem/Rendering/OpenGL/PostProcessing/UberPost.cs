@@ -73,5 +73,6 @@ public class UberPost(IResourceManager resourceManager) : IDisposable
     public void Dispose()
     {
         GL.DeleteProgram(program);
+        GL.DeleteSampler(sampler);
     }
 }
