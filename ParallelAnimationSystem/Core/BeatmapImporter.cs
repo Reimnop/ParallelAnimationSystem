@@ -281,9 +281,12 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
                     0.0f,
                     prefabObject.Rotation));
                 idkAnymore.ParentType = newObj.ParentType;
+                idkAnymore.ParentOffset = newObj.ParentOffset;
                 extraObjects.Add(idkAnymore);
                 
                 newObj.Parent = idkAnymore;
+                newObj.ParentType = ParentType.Position | ParentType.Scale | ParentType.Rotation;
+                newObj.ParentOffset = default;
             }
         }
 
@@ -294,6 +297,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
                 continue;
             newObj.Parent = parent;
             newObj.ParentType = ParentType.Position | ParentType.Scale | ParentType.Rotation;
+            newObj.ParentOffset = default;
         }
         
         return extraObjects.Concat(lookup.Values);
