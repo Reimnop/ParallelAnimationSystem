@@ -14,6 +14,14 @@ public static class LsMigration
             prefab.Offset = -prefab.Offset;
         }
         
+        // Clear prefab transforms (ls doesn't support it)
+        foreach (var prefabObject in beatmap.PrefabObjects)
+        {
+            prefabObject.Position = System.Numerics.Vector2.Zero;
+            prefabObject.Scale = System.Numerics.Vector2.One;
+            prefabObject.Rotation = 0.0f;
+        }
+        
         // Migrate theme color keyframes
         foreach (var o in beatmap.Objects.Concat(beatmap.Prefabs.SelectMany(x => x.BeatmapObjects)))
         {

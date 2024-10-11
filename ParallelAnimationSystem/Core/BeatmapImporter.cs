@@ -280,11 +280,10 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
                 idkAnymore.RotationEvents.Add(new Pamx.Common.Data.Keyframe<float>(
                     0.0f,
                     prefabObject.Rotation));
-                idkAnymore.ParentType = ParentType.Position | ParentType.Rotation;
+                idkAnymore.ParentType = newObj.ParentType;
                 extraObjects.Add(idkAnymore);
                 
                 newObj.Parent = idkAnymore;
-                newObj.ParentType = ParentType.Position | ParentType.Scale | ParentType.Rotation;
             }
         }
 
