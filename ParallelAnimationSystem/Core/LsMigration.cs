@@ -15,6 +15,7 @@ public static class LsMigration
         }
         
         // Clear prefab transforms (ls doesn't support it)
+        // TODO: It actually does, but the code is so cursed that I'm not going to bother
         foreach (var prefabObject in beatmap.PrefabObjects)
         {
             prefabObject.Position = System.Numerics.Vector2.Zero;
