@@ -13,16 +13,14 @@ public static class LsMigration
         {
             prefab.Offset = -prefab.Offset;
         }
-        
-        // Clear prefab transforms (ls doesn't support it)
-        // TODO: It actually does, but the code is so cursed that I'm not going to bother
+
+        // Set default scale to 1x1 if X or Y is 0 as this is the default behavior in Legacy.
         foreach (var prefabObject in beatmap.PrefabObjects)
         {
-            prefabObject.Position = System.Numerics.Vector2.Zero;
-            prefabObject.Scale = System.Numerics.Vector2.One;
-            prefabObject.Rotation = 0.0f;
+            if (prefabObject.Scale.X == 0f || prefabObject.Scale.Y == 0f)
+                prefabObject.Scale = System.Numerics.Vector2.One;
         }
-        
+
         // Migrate theme color keyframes
         foreach (var o in beatmap.Objects.Concat(beatmap.Prefabs.SelectMany(x => x.BeatmapObjects)))
         {

@@ -9,6 +9,13 @@ public static class VgMigration
 {
     public static void MigrateBeatmap(IBeatmap beatmap)
     {
+        // Set default scale to 1x1 if X and Y is 0 as this is the default behavior in alpha.
+        foreach (var prefabObject in beatmap.PrefabObjects)
+        {
+            if (prefabObject.Scale.X == 0f && prefabObject.Scale.Y == 0f)
+                prefabObject.Scale = System.Numerics.Vector2.One;
+        }
+
         // Migrate theme color keyframes
         foreach (var o in beatmap.Objects.Concat(beatmap.Prefabs.SelectMany(x => x.BeatmapObjects)))
         {
