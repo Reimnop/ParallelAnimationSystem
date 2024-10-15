@@ -9,10 +9,10 @@ public static class VgMigration
 {
     public static void MigrateBeatmap(IBeatmap beatmap)
     {
-        // Set default scale to 1x1 if X and Y is 0 as this is the default behavior in alpha.
+        // Set default scale to 1 if scale is 0
         foreach (var prefabObject in beatmap.PrefabObjects)
         {
-            if (prefabObject.Scale.X == 0f && prefabObject.Scale.Y == 0f)
+            if (prefabObject.Scale == System.Numerics.Vector2.Zero)
                 prefabObject.Scale = System.Numerics.Vector2.One;
         }
 
