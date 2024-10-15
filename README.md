@@ -36,19 +36,19 @@ This will run ParallelAnimationSystem and also build the PAS executable file in 
 
 Parallel Animation System takes the following command line arguments:
 
-| Argument          | Default      | Description                                                           |
-|-------------------|--------------|-----------------------------------------------------------------------|
-| -b, --beatmap     | **required** | Path to the beatmap file (.lsb or .vgd).                              |
-| -a, --audio       | **required** | Path to the audio file.                                               |
-| --vsync           | true         | Enable VSync.                                                         |
-| --workers         | 4            | Number of worker threads, set to -1 to use all available threads.     |
-| --seed            | -1           | Seed for the random number generator, set to -1 to use a random seed. |
-| --speed           | 1            | Sets the playback speed.                                              |
-| --backend         | opengl       | Sets the rendering backend to use (opengl/opengles).                  |
-| --post-processing | true         | Enable post-processing effects.                                       |
-| --text-rendering  | true         | Enable text rendering.                                                |
-| --help            |              | Display help screen with list of arguments.                           |
-| --version         |              | Display version information.                                          |
+| Argument          | Default      | Description                                                          |
+|-------------------|--------------|----------------------------------------------------------------------|
+| -b, --beatmap     | **required** | Path to the beatmap file (.lsb or .vgd)                              |
+| -a, --audio       | **required** | Path to the audio file                                               |
+| --vsync           | true         | Enable VSync.                                                        |
+| --workers         | 4            | Number of worker threads, set to -1 to use all available threads     |
+| --seed            | -1           | Seed for the random number generator, set to -1 to use a random seed |
+| --speed           | 1            | Sets the playback speed                                              |
+| --backend         | opengl       | Sets the rendering backend to use (opengl/opengles)                  |
+| --post-processing | true         | Enable post-processing effects                                       |
+| --text-rendering  | true         | Enable text rendering                                                |
+| --help            |              | Display help screen with list of arguments                           |
+| --version         |              | Display version information                                          |
 
 Example usage:
  ```sh

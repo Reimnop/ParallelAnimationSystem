@@ -9,25 +9,34 @@ namespace ParallelAnimationSystem.Desktop;
 
 public class DesktopStartup(DesktopAppSettings appSettings, string beatmapPath, string audioPath, RenderingBackend backend) : IStartup
 {
-    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(Options))]
-    public static void ConsumeOptions(Options options)
+    public static void ConsumeOptions(
+        string beatmapPath,
+        string audioPath,
+        bool vsync,
+        int workerCount,
+        long seed,
+        float speed,
+        RenderingBackend backend,
+        bool lockAspectRatio,
+        bool enablePostProcessing,
+        bool enableTextRendering)
     {
         var appSettings = new DesktopAppSettings(
-            (options.VSync ?? true) ? 1 : 0,
-            options.WorkerCount,
-            options.Seed < 0
+            vsync ? 1 : 0,
+            workerCount,
+            seed < 0
                 ? (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds()
-                : (ulong) options.Seed,
-            (options.LockAspectRatio ?? true) ? 16.0f / 9.0f : null,
-            options.EnablePostProcessing ?? true,
-            options.EnableTextRendering ?? true
+                : (ulong) seed,
+            lockAspectRatio ? 16.0f / 9.0f : null,
+            enablePostProcessing,
+            enableTextRendering
         );
         
-        var startup = new DesktopStartup(appSettings, options.BeatmapPath, options.AudioPath, options.Backend ?? RenderingBackend.OpenGL);
+        var startup = new DesktopStartup(appSettings, beatmapPath, audioPath, backend);
         using var app = startup.InitializeApp();
-        using var audioPlayer = AudioPlayer.Load(options.AudioPath);
+        using var audioPlayer = AudioPlayer.Load(audioPath);
         var baseFrequency = audioPlayer.Frequency;
-        audioPlayer.Frequency = baseFrequency * options.Speed;
+        audioPlayer.Frequency = baseFrequency * speed;
         
         var beatmapRunner = app.BeatmapRunner;
         var renderer = app.Renderer;
