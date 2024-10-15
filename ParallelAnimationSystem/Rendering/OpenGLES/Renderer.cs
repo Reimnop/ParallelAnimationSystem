@@ -405,20 +405,20 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
             return false;
         
         // Request animation frame
-        windowHandle.RequestAnimationFrame(_ =>
+        windowHandle.RequestAnimationFrame((_, drawFramebuffer) =>
         {
             // Check framebuffer size
             var size = windowHandle.FramebufferSize;
             if (size.X <= 0 || size.Y <= 0)
                 return false;
             
-            RenderFrame(size, drawList);
+            RenderFrame(size, drawList, drawFramebuffer);
             return true;
         });
         return true;
     }
 
-    private void RenderFrame(Vector2i size, DrawList drawList)
+    private void RenderFrame(Vector2i size, DrawList drawList, int drawFramebuffer)
     {
         var renderWidth = size.X;
         var renderHeight = size.Y;
@@ -513,7 +513,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, output, 0);
         
         // Clear screen
-        GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, drawFramebuffer);
         GL.Viewport(0, 0, size.X, size.Y);
         GL.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         GL.Clear(ClearBufferMask.ColorBufferBit);
@@ -523,7 +523,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         var screenOffsetY = (size.Y - renderSize.Y) / 2;
         
         GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, postProcessFboHandle);
-        GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);
+        GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, drawFramebuffer);
         GL.BlitFramebuffer(
             0, 0, 
             renderSize.X, renderSize.Y, 

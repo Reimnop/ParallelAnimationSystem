@@ -93,7 +93,7 @@ public unsafe class DesktopWindow : IWindow, IDisposable
         
         GLFW.MakeContextCurrent(window);
         var time = GLFW.GetTime();
-        if (callback(time))
+        if (callback(time, 0))
             GLFW.SwapBuffers(window);
     }
 

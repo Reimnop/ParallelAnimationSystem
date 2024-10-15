@@ -19,7 +19,7 @@ public class WasmWindow : IWindow, IDisposable
     }
 
     public bool ShouldClose => false;
-    
+
     private readonly IntPtr display;
     private readonly IntPtr context;
     private readonly IntPtr surface;
@@ -84,7 +84,7 @@ public class WasmWindow : IWindow, IDisposable
     public void RequestAnimationFrame(AnimationFrameCallback callback)
     {
         MakeContextCurrent();
-        callback(0);
+        callback(0, 0);
     }
 
     public void Close()

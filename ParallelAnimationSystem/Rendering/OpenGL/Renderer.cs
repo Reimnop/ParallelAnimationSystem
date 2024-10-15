@@ -344,20 +344,20 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
             return false;
         
         // Request animation frame
-        windowHandle.RequestAnimationFrame(_ =>
+        windowHandle.RequestAnimationFrame((_, drawFramebuffer) =>
         {
             // Check framebuffer size
             var size = windowHandle.FramebufferSize;
             if (size.X <= 0 || size.Y <= 0)
                 return false;
             
-            RenderFrame(size, drawList);
+            RenderFrame(size, drawList, drawFramebuffer);
             return true;
         });
         return true;
     }
     
-    private void RenderFrame(Vector2i size, DrawList drawList)
+    private void RenderFrame(Vector2i size, DrawList drawList, int drawFramebuffer)
     {
         var renderWidth = size.X;
         var renderHeight = size.Y;
@@ -483,14 +483,14 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         
         // Clear window
         var windowClearColor = new Vector4(0.0f, 0.0f, 0.0f, 1.0f);
-        GL.ClearNamedFramebufferf(0, OpenTK.Graphics.OpenGL.Buffer.Color, 0, in windowClearColor.X);
+        GL.ClearNamedFramebufferf(drawFramebuffer, OpenTK.Graphics.OpenGL.Buffer.Color, 0, in windowClearColor.X);
         
         // Blit to window
         var screenOffsetX = (size.X - renderSize.X) / 2;
         var screenOffsetY = (size.Y - renderSize.Y) / 2;
         
         GL.BlitNamedFramebuffer(
-            postProcessFboHandle, 0,
+            postProcessFboHandle, drawFramebuffer,
             0, 0,
             renderSize.X, renderSize.Y,
             screenOffsetX, screenOffsetY,

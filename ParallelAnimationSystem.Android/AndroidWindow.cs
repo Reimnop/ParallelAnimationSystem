@@ -26,7 +26,7 @@ public unsafe class AndroidWindow : IWindow, IDisposable
     }
     
     public bool ShouldClose { get; private set; }
-    
+
     private const int EventsPerPeep = 64;
     private readonly SDL_Event[] events = new SDL_Event[EventsPerPeep];
     
@@ -81,7 +81,7 @@ public unsafe class AndroidWindow : IWindow, IDisposable
         
         PollEvents();
         var time = SDL_GetTicks() / 1000.0f;
-        if (callback(time))
+        if (callback(time, 0))
             SDL_GL_SwapWindow(window);
     }
 
