@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.IO.Hashing;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -333,6 +332,9 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             AutoKillType.SongTime => beatmapObject.AutoKillOffset,
             _ => throw new ArgumentOutOfRangeException()
         };
+        
+        if (killTime <= startTime) 
+            return null; // This object can be safely discarded, as it's never alive
 
         var parentPositionTimeOffset = beatmapObject.ParentOffset.Position;
         var parentScaleTimeOffset = beatmapObject.ParentOffset.Scale;
