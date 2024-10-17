@@ -27,12 +27,14 @@ var outputOption = new Option<string>(
 
 var widthOption = new Option<int>(
     aliases: ["--width"],
-    description: "Width of the output video"
+    description: "Width of the output video",
+    getDefaultValue: () => 1920
 );
 
 var heightOption = new Option<int>(
     aliases: ["--height"],
-    description: "Height of the output video"
+    description: "Height of the output video",
+    getDefaultValue: () => 1080
 );
 
 var framerateOption = new Option<int>(
