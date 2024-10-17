@@ -8,7 +8,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
     <InvariantGlobalization>true</InvariantGlobalization>
-    <PublishTrimmed>true</PublishTrimmed>
+    <PublishAot>true</PublishAot>
 
     <ApplicationIcon>icon.ico</ApplicationIcon>
   </PropertyGroup>
