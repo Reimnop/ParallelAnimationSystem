@@ -160,7 +160,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         // Create window
         windowHandle = windowManager.CreateWindow(
             "Parallel Animation System", 
-            new Vector2i(1366, 768),
+            appSettings.InitialSize,
             new GLContextSettings
             {
                 Version = new Version(4, 6),
