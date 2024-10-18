@@ -169,9 +169,14 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
         
         if (appSettings.EnablePostProcessing)
         {
+            // TODO: Either PA creators suck at choosing diffusion, or my bloom implementation is catastrophically wrong
+            // var bloomDiffusion01 = MathHelper.MapRange(bloomData.Diffusion, 5.0f, 30.0f, 0.05f, 0.95f);
+            // bloomDiffusion01 = Math.Clamp(bloomDiffusion01, 0.0f, 1.0f);
+            var bloomDiffusion01 = 0.9f; 
+            
             drawList.PostProcessingData = new PostProcessingData(
-                bloomData.Intensity / (bloomData.Intensity + 2.0f),
-                bloomData.Diffusion / (bloomData.Diffusion + 2.0f),
+                bloomData.Intensity,
+                bloomDiffusion01,
                 hue,
                 lensDistortionData.Intensity, new Vector2(lensDistortionData.Center.X, lensDistortionData.Center.Y));
         }

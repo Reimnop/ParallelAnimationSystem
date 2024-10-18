@@ -76,7 +76,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
     private int fontAtlasSampler;
     
     private Vector2i currentFboSize;
-    private int fboTextureHandle, fboDepthBufferHandle;
+    private int fboColorBufferHandle, fboDepthBufferHandle;
     private int fboHandle;
     private int postProcessTextureHandle1, postProcessTextureHandle2;
     private int postProcessFboHandle;
@@ -303,14 +303,14 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         
         // Initialize fbos
         // Initialize scene fbo
-        fboTextureHandle = GL.CreateTexture(TextureTarget.Texture2dMultisample);
-        GL.TextureStorage2DMultisample(fboTextureHandle, MsaaSamples, SizedInternalFormat.Rgba16f, size.X, size.Y, true);
+        fboColorBufferHandle = GL.CreateRenderbuffer();
+        GL.NamedRenderbufferStorageMultisample(fboColorBufferHandle, MsaaSamples, InternalFormat.Rgba16f, size.X, size.Y);
         
         fboDepthBufferHandle = GL.CreateRenderbuffer();
         GL.NamedRenderbufferStorageMultisample(fboDepthBufferHandle, MsaaSamples, InternalFormat.DepthComponent32f, size.X, size.Y);
         
         fboHandle = GL.CreateFramebuffer();
-        GL.NamedFramebufferTexture(fboHandle, FramebufferAttachment.ColorAttachment0, fboTextureHandle, 0);
+        GL.NamedFramebufferRenderbuffer(fboHandle, FramebufferAttachment.ColorAttachment0, RenderbufferTarget.Renderbuffer, fboColorBufferHandle);
         GL.NamedFramebufferRenderbuffer(fboHandle, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, fboDepthBufferHandle);
         
         // Initialize post process fbo
@@ -695,14 +695,14 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
             return;
         
         // Delete old textures
-        GL.DeleteTexture(fboTextureHandle);
+        GL.DeleteRenderbuffer(fboColorBufferHandle);
         GL.DeleteRenderbuffer(fboDepthBufferHandle);
         GL.DeleteTexture(postProcessTextureHandle1);
         GL.DeleteTexture(postProcessTextureHandle2);
         
         // Create new textures
-        fboTextureHandle = GL.CreateTexture(TextureTarget.Texture2dMultisample);
-        GL.TextureStorage2DMultisample(fboTextureHandle, MsaaSamples, SizedInternalFormat.Rgba16f, size.X, size.Y, true);
+        fboColorBufferHandle = GL.CreateRenderbuffer();
+        GL.NamedRenderbufferStorageMultisample(fboColorBufferHandle, MsaaSamples, InternalFormat.Rgba16f, size.X, size.Y);
         
         fboDepthBufferHandle = GL.CreateRenderbuffer();
         GL.NamedRenderbufferStorageMultisample(fboDepthBufferHandle, MsaaSamples, InternalFormat.DepthComponent32f, size.X, size.Y);
@@ -714,7 +714,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         GL.TextureStorage2D(postProcessTextureHandle2, 1, SizedInternalFormat.Rgba16f, size.X, size.Y);
         
         // Bind to fbo
-        GL.NamedFramebufferTexture(fboHandle, FramebufferAttachment.ColorAttachment0, fboTextureHandle, 0);
+        GL.NamedFramebufferRenderbuffer(fboHandle, FramebufferAttachment.ColorAttachment0, RenderbufferTarget.Renderbuffer, fboColorBufferHandle);
         GL.NamedFramebufferRenderbuffer(fboHandle, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, fboDepthBufferHandle);
 
         currentFboSize = size;

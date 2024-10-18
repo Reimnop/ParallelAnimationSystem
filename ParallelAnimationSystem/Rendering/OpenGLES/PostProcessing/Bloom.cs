@@ -7,6 +7,7 @@ namespace ParallelAnimationSystem.Rendering.OpenGLES.PostProcessing;
 public class Bloom(IResourceManager resourceManager) : IDisposable
 {
     private int prefilterProgram, blurProgram, upsampleProgram, combineProgram;
+    private int prefilterThresholdUniformLocation;
     private int blurSizeUniformLocation, blurVerticalUniformLocation;
     private int upsampleSizeUniformLocation, upsampleDiffusionUniformLocation, upsampleLowMipUniformLocation, upsampleHighMipUniformLocation;
     private int combineIntensityUniformLocation, combineTexture1UniformLocation, combineTexture2UniformLocation;
@@ -25,6 +26,8 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
         blurProgram = CreateProgram("BloomBlur", vertexShader);
         upsampleProgram = CreateProgram("BloomUpsample", vertexShader);
         combineProgram = CreateProgram("BloomCombine", vertexShader);
+        
+        prefilterThresholdUniformLocation = GL.GetUniformLocation(prefilterProgram, "uThreshold");
         
         blurSizeUniformLocation = GL.GetUniformLocation(blurProgram, "uSize");
         blurVerticalUniformLocation = GL.GetUniformLocation(blurProgram, "uVertical");
@@ -59,12 +62,18 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
             currentSize = size;
         }
         
+        // Bind samplers
+        GL.BindSampler(0, textureSampler);
+        GL.BindSampler(1, textureSampler);
+        
         // Prefilter to mip 0
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, framebuffer);
         GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, downsamplingMipChain[0], 0);
         GL.Viewport(0, 0, size.X, size.Y);
         
         GL.UseProgram(prefilterProgram);
+        
+        GL.Uniform1f(prefilterThresholdUniformLocation, 0.95f);
         
         GL.ActiveTexture(TextureUnit.Texture0);
         GL.BindTexture(TextureTarget.Texture2d, inputTexture);
@@ -87,7 +96,6 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
             
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.Texture2d, downsamplingMipChain[i - 1]);
-            GL.BindSampler(0, textureSampler);
             
             GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
             
@@ -98,7 +106,6 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
             
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.Texture2d, downsamplingMipChainTemp[i - 1]);
-            GL.BindSampler(0, textureSampler);
             
             GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
         }
@@ -123,11 +130,9 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
             
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.Texture2d, lowMip);
-            GL.BindSampler(0, textureSampler);
             
             GL.ActiveTexture(TextureUnit.Texture1);
             GL.BindTexture(TextureTarget.Texture2d, highMip);
-            GL.BindSampler(1, textureSampler);
             
             GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
         }
@@ -144,11 +149,9 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
         
         GL.ActiveTexture(TextureUnit.Texture0);
         GL.BindTexture(TextureTarget.Texture2d, inputTexture);
-        GL.BindSampler(0, textureSampler);
         
         GL.ActiveTexture(TextureUnit.Texture1);
         GL.BindTexture(TextureTarget.Texture2d, upsamplingMipChain[^1]);
-        GL.BindSampler(1, textureSampler);
         
         GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
         

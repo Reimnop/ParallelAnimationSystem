@@ -47,6 +47,7 @@ public class DesktopStartup(DesktopAppSettings appSettings, string beatmapPath, 
             // ReSharper disable once AccessToModifiedClosure
             // ReSharper disable once LoopVariableIsNeverChangedInsideLoop
             while (!appShutdown)
+                // ReSharper disable once AccessToDisposedClosure
                 if (!beatmapRunner.ProcessFrame((float) audioPlayer.Position))
                     Thread.Yield();
         });

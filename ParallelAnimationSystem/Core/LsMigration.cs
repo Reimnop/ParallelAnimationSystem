@@ -55,7 +55,7 @@ public static class LsMigration
             bloomKeyframe.Value = new BloomData
             {
                 Intensity = bloomKeyframe.Value.Intensity,
-                Diffusion = 5.0f,
+                Diffusion = 7.0f,
             };
             events.Bloom[i] = bloomKeyframe;
         }
