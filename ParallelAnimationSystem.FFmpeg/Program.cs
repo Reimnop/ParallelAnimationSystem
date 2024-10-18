@@ -43,6 +43,18 @@ var framerateOption = new Option<int>(
     getDefaultValue: () => 60
 );
 
+var videoCodecOption = new Option<string>(
+    aliases: ["--video-codec"],
+    description: "Video codec to use",
+    getDefaultValue: () => "libx264"
+);
+
+var audioCodecOption = new Option<string>(
+    aliases: ["--audio-codec"],
+    description: "Audio codec to use",
+    getDefaultValue: () => "aac"
+);
+
 var seedOption = new Option<long>(
     aliases: ["--seed"],
     description: "Seed for the random number generator, set to -1 to use a random seed",
@@ -80,6 +92,8 @@ rootCommand.AddOption(outputOption);
 rootCommand.AddOption(widthOption);
 rootCommand.AddOption(heightOption);
 rootCommand.AddOption(framerateOption);
+rootCommand.AddOption(videoCodecOption);
+rootCommand.AddOption(audioCodecOption);
 rootCommand.AddOption(seedOption);
 rootCommand.AddOption(speedOption);
 rootCommand.AddOption(backendOption);
@@ -94,6 +108,8 @@ rootCommand.SetHandler(context =>
     var sizeX = context.ParseResult.GetValueForOption(widthOption);
     var sizeY = context.ParseResult.GetValueForOption(heightOption);
     var framerate = context.ParseResult.GetValueForOption(framerateOption);
+    var videoCodec = context.ParseResult.GetValueForOption(videoCodecOption)!;
+    var audioCodec = context.ParseResult.GetValueForOption(audioCodecOption)!;
     var seed = context.ParseResult.GetValueForOption(seedOption);
     var speed = context.ParseResult.GetValueForOption(speedOption);
     var backend = context.ParseResult.GetValueForOption(backendOption);
@@ -107,6 +123,8 @@ rootCommand.SetHandler(context =>
         sizeX,
         sizeY,
         framerate,
+        videoCodec,
+        audioCodec,
         seed,
         speed,
         backend,

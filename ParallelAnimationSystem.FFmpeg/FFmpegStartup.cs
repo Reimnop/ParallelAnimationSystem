@@ -1,6 +1,5 @@
 using System.Runtime.InteropServices;
 using FFMpegCore;
-using FFMpegCore.Enums;
 using FFMpegCore.Pipes;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -22,6 +21,8 @@ public class FFmpegStartup(FFmpegAppSettings appSettings, string beatmapPath, Re
         int sizeX,
         int sizeY,
         int framerate,
+        string videoCodec,
+        string audioCodec,
         long seed,
         float speed,
         RenderingBackend backend,
@@ -69,8 +70,8 @@ public class FFmpegStartup(FFmpegAppSettings appSettings, string beatmapPath, Re
             .FromPipeInput(videoFramesSource)
             .AddPipeInput(audioFramesSource)
             .OutputToFile(outputPath, true, options => options
-                .WithVideoCodec(VideoCodec.LibX264)
-                .WithAudioCodec(AudioCodec.Aac))
+                .WithVideoCodec(videoCodec)
+                .WithAudioCodec(audioCodec))
             .ProcessSynchronously();
     }
 
