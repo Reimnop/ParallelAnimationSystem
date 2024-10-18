@@ -175,8 +175,8 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
             // var bloomDiffusion01 = 0.9f; 
             
             drawList.PostProcessingData = new PostProcessingData(
-                // Put the multiplier here because beatmaps look bad without it
-                bloomData.Intensity * 0.6f, // TODO: Remove this multiplier
+                // Put the sqrt here because beatmaps look bad without it
+                MathF.Sqrt(bloomData.Intensity), // TODO: Remove this sqrt
                 bloomDiffusion01,
                 hue,
                 lensDistortionData.Intensity, new Vector2(lensDistortionData.Center.X, lensDistortionData.Center.Y));
