@@ -7,12 +7,11 @@ namespace ParallelAnimationSystem.Rendering.OpenGL.PostProcessing;
 
 public class Bloom(IResourceManager resourceManager) : IDisposable
 {
-    private int prefilterProgram, blurProgram, upsampleProgram, combineProgram;
+    private int prefilterProgram, downsampleProgram, upsampleProgram, combineProgram;
     private int 
         prefilterSizeUniformLocation,
         prefilterThresholdUniformLocation,
-        blurSizeUniformLocation,
-        blurVerticalUniformLocation,
+        downsampleSizeUniformLocation,
         upsampleLowMipSamplerUniformLocation,
         upsampleHighMipSamplerUniformLocation,
         upsampleOutputSizeUniformLocation,
@@ -23,21 +22,19 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
     private int textureSampler;
     
     private readonly List<int> downsampleMipChain = [];
-    private readonly List<int> downsampleMipChainTemps = [];
     private readonly List<int> upsampleMipChain = [];
     private Vector2i currentSize = -Vector2i.One;
 
     public void Initialize()
     {
         prefilterProgram = CreateProgram("BloomPrefilter");
-        blurProgram = CreateProgram("BloomBlur");
+        downsampleProgram = CreateProgram("BloomDownsample");
         upsampleProgram = CreateProgram("BloomUpsample");
         combineProgram = CreateProgram("BloomCombine");
         
         prefilterSizeUniformLocation = GL.GetUniformLocation(prefilterProgram, "uSize");
         prefilterThresholdUniformLocation = GL.GetUniformLocation(prefilterProgram, "uThreshold");
-        blurSizeUniformLocation = GL.GetUniformLocation(blurProgram, "uSize");
-        blurVerticalUniformLocation = GL.GetUniformLocation(blurProgram, "uVertical");
+        downsampleSizeUniformLocation = GL.GetUniformLocation(downsampleProgram, "uSize");
         upsampleLowMipSamplerUniformLocation = GL.GetUniformLocation(upsampleProgram, "uLowMipSampler");
         upsampleHighMipSamplerUniformLocation = GL.GetUniformLocation(upsampleProgram, "uHighMipSampler");
         upsampleOutputSizeUniformLocation = GL.GetUniformLocation(upsampleProgram, "uOutputSize");
@@ -54,8 +51,11 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
 
     public bool Process(Vector2i size, float intensity, float diffusion, int inputTexture, int outputTexture)
     {
-        if (intensity == 0.0f || diffusion == 0.0f)
+        if (intensity == 0.0f)
             return false;
+        
+        // diffusion = MathHelper.Lerp(0.05f, 0.95f, diffusion);
+        diffusion = MathHelper.Lerp(0.5f, 0.95f, diffusion);
         
         // Update mip chain if size has changed
         if (size != currentSize)
@@ -82,29 +82,17 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
             1);
         GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit);
         
-        // Downsample and blur until we reach MaxMipLevels
-        GL.UseProgram(blurProgram);
+        // Downsample until we reach MaxMipLevels
+        GL.UseProgram(downsampleProgram);
         
         for (var i = 1; i < downsampleMipChain.Count; i++)
         {
             var mipSize = new Vector2i(size.X >> i, size.Y >> i);
             
-            // Blur pass H (mip[i - 1] -> temps[i - 1])
-            GL.BindImageTexture(0, downsampleMipChainTemps[i - 1], 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f);
-            GL.BindTextureUnit(0, downsampleMipChain[i - 1]);
-            GL.Uniform2i(blurSizeUniformLocation, 1, mipSize);
-            GL.Uniform1i(blurVerticalUniformLocation, 0);
-            
-            GL.DispatchCompute(
-                (uint)MathUtil.DivideCeil(mipSize.X, 8), 
-                (uint)MathUtil.DivideCeil(mipSize.Y, 8), 
-                1);
-            GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit);
-            
-            // Blur pass V (temp1 -> mip[i])
+            // Downsample pass (mip[i - 1] -> mip[i])
             GL.BindImageTexture(0, downsampleMipChain[i], 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f);
-            GL.BindTextureUnit(0, downsampleMipChainTemps[i - 1]);
-            GL.Uniform1i(blurVerticalUniformLocation, 1);
+            GL.BindTextureUnit(0, downsampleMipChain[i - 1]);
+            GL.Uniform2i(downsampleSizeUniformLocation, 1, mipSize);
             
             GL.DispatchCompute(
                 (uint)MathUtil.DivideCeil(mipSize.X, 8), 
@@ -164,13 +152,10 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
         // Clean up old mip chain
         foreach (var mip in downsampleMipChain)
             GL.DeleteTexture(mip);
-        foreach (var mip in downsampleMipChainTemps)
-            GL.DeleteTexture(mip);
         foreach (var mip in upsampleMipChain)
             GL.DeleteTexture(mip);
         
         downsampleMipChain.Clear();
-        downsampleMipChainTemps.Clear();
         upsampleMipChain.Clear();
         
         // Create new mip chain
@@ -179,14 +164,6 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
             var mip = GL.CreateTexture(TextureTarget.Texture2d);
             GL.TextureStorage2D(mip, 1, SizedInternalFormat.Rgba16f, size.X >> i, size.Y >> i);
             downsampleMipChain.Add(mip);
-        }
-        
-        // Create temp textures for blur
-        for (var i = 1; i < mipLevels; i++)
-        {
-            var mip = GL.CreateTexture(TextureTarget.Texture2d);
-            GL.TextureStorage2D(mip, 1, SizedInternalFormat.Rgba16f, size.X >> i, size.Y >> i);
-            downsampleMipChainTemps.Add(mip);
         }
         
         // Create upsampling mip chain
@@ -237,14 +214,10 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
     public void Dispose()
     {
         GL.DeleteProgram(prefilterProgram);
-        GL.DeleteProgram(blurProgram);
         GL.DeleteProgram(upsampleProgram);
         GL.DeleteProgram(combineProgram);
         
         foreach (var mip in downsampleMipChain)
-            GL.DeleteTexture(mip);
-        
-        foreach (var mip in downsampleMipChainTemps)
             GL.DeleteTexture(mip);
         
         foreach (var mip in upsampleMipChain)

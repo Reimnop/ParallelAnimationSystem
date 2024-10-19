@@ -9,7 +9,7 @@ layout(location = 0) out highp vec4 oFragColor;
 in highp vec2 vUv;
 
 uniform sampler2D uTexture;
-uniform float uThreshold;
+uniform highp float uThreshold;
 
 void main() {
     // Load color

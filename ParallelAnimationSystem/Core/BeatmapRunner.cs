@@ -171,12 +171,10 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
         {
             // TODO: Either PA creators suck at choosing diffusion, or my bloom implementation is catastrophically wrong
             var bloomDiffusion01 = MathHelper.MapRange(bloomData.Diffusion, 5.0f, 30.0f, 0.0f, 1.0f);
-            bloomDiffusion01 = MathHelper.Lerp(bloomDiffusion01, 0.05f, 0.95f);
             // var bloomDiffusion01 = 0.9f; 
             
             drawList.PostProcessingData = new PostProcessingData(
-                // Put the sqrt here because beatmaps look bad without it
-                MathF.Sqrt(bloomData.Intensity), // TODO: Remove this sqrt
+                bloomData.Intensity,
                 bloomDiffusion01,
                 hue,
                 lensDistortionData.Intensity, new Vector2(lensDistortionData.Center.X, lensDistortionData.Center.Y));

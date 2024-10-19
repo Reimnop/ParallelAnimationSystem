@@ -24,7 +24,7 @@ void main() {
     float knee = uThreshold * 0.5;
     float brightness = max(color.r, max(color.g, color.b));
     float softness = clamp(brightness - uThreshold + knee, 0.0, knee * 2.0);
-    softness = softness * softness / (4.0 * knee + EPSILON);
+    softness = (softness * softness) / (4.0 * knee + EPSILON);
     float multiplier = max(brightness - uThreshold, softness) / max(brightness, EPSILON);
     color.rgb *= multiplier;
     
