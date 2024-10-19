@@ -13,4 +13,5 @@ public record ParentTransform(
     float ParentRotationTimeOffset,
     bool ParentAnimatePosition,
     bool ParentAnimateScale,
-    bool ParentAnimateRotation);
+    bool ParentAnimateRotation,
+    int RenderDepth);
