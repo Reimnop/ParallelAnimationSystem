@@ -110,7 +110,7 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
         for (var i = 0; i < upsampleMipChain.Count; i++)
         {
             var lowMip = i == 0 ? downsampleMipChain[^1] : upsampleMipChain[i - 1];
-            var highMip = downsampleMipChain[^(i + 1)];
+            var highMip = downsampleMipChain[^(i + 2)];
             var outputMip = upsampleMipChain[i];
             var outputSize = new Vector2i(size.X >> (upsampleMipChain.Count - i - 1), size.Y >> (upsampleMipChain.Count - i - 1));
             
