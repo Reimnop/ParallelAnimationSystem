@@ -13,7 +13,6 @@ layout(location = 0) out highp vec4 oFragColor;
 uniform sampler2D uTexture;
 
 uniform highp ivec2 uSize;
-uniform bool uVertical;
 
 in highp vec2 vUv;
 

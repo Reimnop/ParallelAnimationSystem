@@ -8,7 +8,7 @@ const float PI = 3.14159265359;
 
 uniform sampler2D uTexture;
 
-uniform ivec2 uSize;
+uniform highp ivec2 uSize;
 uniform highp float uHueShiftAngle;
 uniform highp float uLensDistortionIntensity;
 uniform highp vec2 uLensDistortionCenter;

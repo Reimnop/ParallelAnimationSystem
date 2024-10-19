@@ -5,7 +5,7 @@ layout(local_size_x = 8, local_size_y = 8) in;
 layout(rgba16f, binding = 0) uniform image2D uOutputImage;
 
 uniform sampler2D uTexture;
-uniform ivec2 uSize;
+uniform highp ivec2 uSize;
 
 void main() {
     ivec2 coords = ivec2(gl_GlobalInvocationID.xy);

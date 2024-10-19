@@ -7,8 +7,8 @@ layout(rgba16f, binding = 0) uniform image2D uImageOutput;
 uniform sampler2D uLowMipSampler;
 uniform sampler2D uHighMipSampler;
 
-uniform ivec2 uOutputSize;
-uniform float uDiffusion;
+uniform highp ivec2 uOutputSize;
+uniform highp float uDiffusion;
 
 vec3 sampleLowMip(sampler2D mip, vec2 uv, vec2 pxSize) {
     // A B C
