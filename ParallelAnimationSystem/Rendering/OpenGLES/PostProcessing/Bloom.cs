@@ -50,11 +50,11 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
 
     public bool Process(Vector2i size, float intensity, float diffusion, int inputTexture, int outputTexture)
     {
-        if (intensity == 0.0f || diffusion == 0.0f)
+        if (intensity == 0.0f)
             return false;
         
-        // diffusion = MathHelper.Lerp(0.05f, 0.95f, diffusion);
-        diffusion = MathHelper.Lerp(0.5f, 0.95f, diffusion);
+        diffusion = MathHelper.Lerp(0.05f, 0.95f, diffusion);
+        // diffusion = MathHelper.Lerp(0.5f, 0.95f, diffusion);
         
         // Update mip chain if size has changed
         if (size != currentSize)
