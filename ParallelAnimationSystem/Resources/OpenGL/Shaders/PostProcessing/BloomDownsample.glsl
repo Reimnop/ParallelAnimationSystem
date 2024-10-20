@@ -36,13 +36,11 @@ void main() {
     vec3 l = texture(uTexture, uv + vec2(-0.5,  0.5) * pxSize).rgb;
     vec3 m = texture(uTexture, uv + vec2( 0.5,  0.5) * pxSize).rgb;
     
-    vec3 color = 
-        (a + b + d + e) * 0.125 +
-        (b + c + e + f) * 0.125 +
-        (d + e + g + h) * 0.125 +
-        (e + f + h + i) * 0.125 +
-        (j + k + l + m) * 0.5;
-    color *= 0.25;
+    vec3 color =
+        e * 0.125 +
+        (a + c + g + i) * 0.03125 +
+        (b + d + f + h) * 0.0625 +
+        (j + k + l + m) * 0.125;
     
     // Store the result
     imageStore(uOutputImage, coords, vec4(color, 1.0));
