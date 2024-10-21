@@ -153,10 +153,8 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             {
                 var time = x.Time;
                 var theme = x.Value.Value;
-                if (theme is null)
-                    throw new NotImplementedException("TODO: Implement built-in themes");
                 var ease = EaseFunctions.GetOrDefault(x.Ease, EaseFunctions.Linear);
-                return new Animation.Keyframe<ITheme>(time, theme, ease);
+                return new Animation.Keyframe<ITheme>(time, theme!, ease);
             });
         return new Sequence<ITheme, ThemeColors>(keyframes, InterpolateTheme);
     }

@@ -35,10 +35,10 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
         switch (format) 
         {
             case BeatmapFormat.Lsb:
-                LsMigration.MigrateBeatmap(beatmap);
+                LsMigration.MigrateBeatmap(beatmap, resourceManager);
                 break;
             case BeatmapFormat.Vgd:
-                VgMigration.MigrateBeatmap(beatmap);
+                VgMigration.MigrateBeatmap(beatmap); // TODO
                 break;
         }
         

@@ -1,13 +1,19 @@
+using System.Text.Json.Nodes;
 using Pamx.Common;
 using Pamx.Common.Data;
 using Pamx.Common.Enum;
+using Pamx.Ls;
+using ParallelAnimationSystem.Data;
 
 namespace ParallelAnimationSystem.Core;
 
 public static class LsMigration
 {
-    public static void MigrateBeatmap(IBeatmap beatmap)
+    public static void MigrateBeatmap(IBeatmap beatmap, IResourceManager resourceManager)
     {
+        // Load built-in themes
+        var themes = LoadThemes(resourceManager);
+        
         // Negate prefab offsets
         foreach (var prefab in beatmap.Prefabs)
         {
@@ -59,5 +65,47 @@ public static class LsMigration
             };
             events.Bloom[i] = bloomKeyframe;
         }
+        
+        // Migrate theme keyframes
+        for (var i = 0; i < events.Theme.Count; i++)
+        {
+            var themeKeyframe = events.Theme[i];
+            if (themeKeyframe.Value is IIdentifiable<int> themeIdentifiable &&
+                themes.TryGetValue(themeIdentifiable.Id, out var theme))
+                events.Theme[i] = new FixedKeyframe<IReference<ITheme>>
+                {
+                    Time = themeKeyframe.Time,
+                    Value = theme,
+                    Ease = themeKeyframe.Ease,
+                };
+        }
+    }
+    
+    private static Dictionary<int, ITheme> LoadThemes(IResourceManager resourceManager)
+    {
+        var themeNames = new[]
+        {
+            "Anarchy.lst",
+            "Classic.lst",
+            "Dark.lst",
+            "DayNight.lst",
+            "Donuts.lst",
+            "Machine.lst",
+            "New.lst",
+        };
+        
+        var themes = new Dictionary<int, ITheme>();
+
+        foreach (var themeName in themeNames)
+        {
+            var themeData = resourceManager.LoadResourceString($"Themes/{themeName}");
+            var json = JsonNode.Parse(themeData);
+            if (json is not JsonObject jsonObject)
+                continue;
+            var theme = (LsBeatmapTheme) LsDeserialization.DeserializeTheme(jsonObject);
+            themes.Add(theme.Id, theme);
+        }
+        
+        return themes;
     }
 }
