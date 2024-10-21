@@ -1,7 +1,9 @@
+using System.Drawing;
 using System.Text.Json.Nodes;
 using Pamx.Common;
 using Pamx.Common.Data;
 using Pamx.Common.Enum;
+using Pamx.Common.Implementation;
 using Pamx.Ls;
 using ParallelAnimationSystem.Data;
 
@@ -13,6 +15,13 @@ public static class LsMigration
     {
         // Load built-in themes
         var themes = LoadThemes(resourceManager);
+        
+        // Add to beatmap
+        beatmap.Themes.AddRange(themes.Values);
+        
+        // Fix themes
+        foreach (var theme in beatmap.Themes)
+            FixTheme(theme);
         
         // Negate prefab offsets
         foreach (var prefab in beatmap.Prefabs)
@@ -107,5 +116,24 @@ public static class LsMigration
         }
         
         return themes;
+    }
+
+    private static void FixTheme(ITheme theme)
+    {
+        // Make sure theme has correct amount of colors
+        for (var i = theme.Player.Count; i < 4; i++)
+        {
+            theme.Player.Add(Color.Black);
+        }
+        
+        for (var i = theme.Object.Count; i < 9; i++)
+        {
+            theme.Object.Add(Color.Black);
+        }
+        
+        for (var i = theme.BackgroundObject.Count; i < 9; i++)
+        {
+            theme.BackgroundObject.Add(Color.Black);
+        }
     }
 }
