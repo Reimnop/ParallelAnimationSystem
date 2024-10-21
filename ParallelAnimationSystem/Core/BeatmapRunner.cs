@@ -154,10 +154,6 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
         // Update runner
         runner.Process(time, appSettings.WorkerCount);
         
-        var bloomData = runner.Bloom;
-        var hue = runner.Hue;
-        var lensDistortionData = runner.LensDistortion;
-        
         // Start queueing up draw data
         var drawList = renderer.GetDrawList();
         
@@ -169,21 +165,28 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
         
         if (appSettings.EnablePostProcessing)
         {
+            var bloomData = runner.Bloom;
+            var hue = runner.Hue;
+            var lensDistortionData = runner.LensDistortion;
+            var vignetteData = runner.Vignette;
+            
             // TODO: Either PA creators suck at choosing diffusion, or my bloom implementation is catastrophically wrong
             var bloomDiffusion01 = MathHelper.MapRange(bloomData.Diffusion, 5.0f, 30.0f, 0.0f, 1.0f);
+            
             // var bloomDiffusion01 = 0.9f; 
             
             drawList.PostProcessingData = new PostProcessingData(
                 bloomData.Intensity,
                 bloomDiffusion01,
                 hue,
-                lensDistortionData.Intensity, new Vector2(lensDistortionData.Center.X, lensDistortionData.Center.Y));
+                lensDistortionData.Intensity, new Vector2(lensDistortionData.Center.X, lensDistortionData.Center.Y),
+                runner.ChromaticAberration,
+                new Vector2(vignetteData.Center.X, vignetteData.Center.Y), vignetteData.Intensity, vignetteData.Roundness, vignetteData.Smoothness, vignetteData.Color);
         }
         else
         {
             drawList.PostProcessingData = default;
         }
-        
 
         // Draw all alive game objects
         foreach (var gameObject in runner.AliveGameObjects)

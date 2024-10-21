@@ -12,6 +12,12 @@ public class UberPost(IResourceManager resourceManager) : IDisposable
     private int hueShiftAngleUniformLocation;
     private int lensDistortionIntensityUniformLocation;
     private int lensDistortionCenterUniformLocation;
+    private int chromaticAberrationIntensityUniformLocation;
+    private int vignetteCenterUniformLocation;
+    private int vignetteIntensityUniformLocation;
+    private int vignetteRoundnessUniformLocation;
+    private int vignetteSmoothnessUniformLocation;
+    private int vignetteColorUniformLocation;
     private int sampler;
 
     public void Initialize()
@@ -21,18 +27,38 @@ public class UberPost(IResourceManager resourceManager) : IDisposable
         GL.ShaderSource(shader, shaderSource);
         GL.CompileShader(shader);
         
+        var compileStatus = GL.GetShaderi(shader, ShaderParameterName.CompileStatus);
+        if (compileStatus == 0)
+        {
+            GL.GetShaderInfoLog(shader, out var infoLog);
+            throw new Exception($"Failed to compile shader: {infoLog}");
+        }
+        
         program = GL.CreateProgram();
         GL.AttachShader(program, shader);
         GL.LinkProgram(program);
+        
+        var linkStatus = GL.GetProgrami(program, ProgramProperty.LinkStatus);
+        if (linkStatus == 0)
+        {
+            GL.GetProgramInfoLog(program, out var infoLog);
+            throw new Exception($"Failed to link program: {infoLog}");
+        }
+        
+        // Clean up
+        GL.DeleteShader(shader);
         
         // Get uniform locations
         sizeUniformLocation = GL.GetUniformLocation(program, "uSize");
         hueShiftAngleUniformLocation = GL.GetUniformLocation(program, "uHueShiftAngle");
         lensDistortionIntensityUniformLocation = GL.GetUniformLocation(program, "uLensDistortionIntensity");
         lensDistortionCenterUniformLocation = GL.GetUniformLocation(program, "uLensDistortionCenter");
-        
-        // Clean up
-        GL.DeleteShader(shader);
+        chromaticAberrationIntensityUniformLocation = GL.GetUniformLocation(program, "uChromaticAberrationIntensity");
+        vignetteCenterUniformLocation = GL.GetUniformLocation(program, "uVignetteCenter");
+        vignetteIntensityUniformLocation = GL.GetUniformLocation(program, "uVignetteIntensity");
+        vignetteRoundnessUniformLocation = GL.GetUniformLocation(program, "uVignetteRoundness");
+        vignetteSmoothnessUniformLocation = GL.GetUniformLocation(program, "uVignetteSmoothness");
+        vignetteColorUniformLocation = GL.GetUniformLocation(program, "uVignetteColor");
         
         // Initialize sampler
         sampler = GL.CreateSampler();
@@ -45,11 +71,12 @@ public class UberPost(IResourceManager resourceManager) : IDisposable
     public bool Process(
         Vector2i size,
         float hueShiftAngle,
-        float lensDistortionIntensity,
-        Vector2 lensDistortionCenter,
+        float lensDistortionIntensity, Vector2 lensDistortionCenter,
+        float chromaticAberrationIntensity,
+        Vector2 vignetteCenter, float vignetteIntensity, float vignetteRoundness, float vignetteSmoothness, Vector3 vignetteColor,
         int inputTexture, int outputTexture)
     {
-        if (hueShiftAngle == 0.0f && lensDistortionIntensity == 0.0f)
+        if (hueShiftAngle == 0.0f && lensDistortionIntensity == 0.0f && chromaticAberrationIntensity == 0.0f && vignetteIntensity == 0.0f)
             return false;
         
         GL.UseProgram(program);
@@ -60,6 +87,12 @@ public class UberPost(IResourceManager resourceManager) : IDisposable
         GL.Uniform1f(hueShiftAngleUniformLocation, hueShiftAngle);
         GL.Uniform1f(lensDistortionIntensityUniformLocation, lensDistortionIntensity);
         GL.Uniform2f(lensDistortionCenterUniformLocation, 1, lensDistortionCenter);
+        GL.Uniform1f(chromaticAberrationIntensityUniformLocation, chromaticAberrationIntensity);
+        GL.Uniform2f(vignetteCenterUniformLocation, 1, vignetteCenter);
+        GL.Uniform1f(vignetteIntensityUniformLocation, vignetteIntensity);
+        GL.Uniform1f(vignetteRoundnessUniformLocation, vignetteRoundness);
+        GL.Uniform1f(vignetteSmoothnessUniformLocation, vignetteSmoothness);
+        GL.Uniform3f(vignetteColorUniformLocation, 1, vignetteColor);
         
         GL.DispatchCompute(
             (uint)MathUtil.DivideCeil(size.X, 8), 

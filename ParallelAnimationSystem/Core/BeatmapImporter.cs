@@ -21,32 +21,91 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
     {
         // Convert all the objects in the beatmap to GameObjects
         var gameObjects = CreateGameObjects(beatmap, isLsb);
-        
+
         // Get theme sequence
         var themeColorSequence = CreateThemeSequence(beatmap.Events.Theme);
-        
+
         // Get camera sequences
         var cameraPositionSequence = CreateCameraPositionSequence(beatmap.Events.Movement);
         var cameraScaleSequence = CreateCameraScaleSequence(beatmap.Events.Zoom);
         var cameraRotationSequence = CreateCameraRotationSequence(beatmap.Events.Rotation);
-        
+
         // Get post-processing sequences
         var bloomSequence = CreateBloomSequence(beatmap.Events.Bloom);
         var hueSequence = CreateHueSequence(beatmap.Events.Hue);
         var lensDistortionSequence = CreateLensDistortionSequence(beatmap.Events.LensDistortion);
-        
+        var chromaticAberrationSequence = CreateChromaticAberrationSequence(beatmap.Events.Chroma);
+        var vignetteSequence = CreateVignetteSequence(beatmap.Events.Vignette);
+
         // Create the runner with the GameObjects
         return new AnimationRunner(
-            gameObjects, 
-            themeColorSequence, 
-            cameraPositionSequence, 
-            cameraScaleSequence, 
+            gameObjects,
+            themeColorSequence,
+            cameraPositionSequence,
+            cameraScaleSequence,
             cameraRotationSequence,
             bloomSequence,
             hueSequence,
-            lensDistortionSequence);
+            lensDistortionSequence,
+            chromaticAberrationSequence,
+            vignetteSequence);
+    }
+
+    private Sequence<VignetteData, Data.VignetteData> CreateVignetteSequence(IList<FixedKeyframe<VignetteData>> vignetteEvents)
+    {
+        var keyframes = vignetteEvents
+            .Select(x =>
+            {
+                var time = x.Time;
+                var value = x.Value;
+                var ease = EaseFunctions.GetOrDefault(x.Ease, EaseFunctions.Linear);
+                return new Animation.Keyframe<VignetteData>(time, value, ease);
+            });
+        return new Sequence<VignetteData, Data.VignetteData>(keyframes, InterpolateVignetteData);
+    }
+
+    private Sequence<float, float> CreateChromaticAberrationSequence(IList<FixedKeyframe<float>> chromaEvents)
+    {
+        var keyframes = chromaEvents
+            .Select(x =>
+            {
+                var time = x.Time;
+                var value = x.Value;
+                var ease = EaseFunctions.GetOrDefault(x.Ease, EaseFunctions.Linear);
+                return new Animation.Keyframe<float>(time, value, ease);
+            });
+        return new Sequence<float, float>(keyframes, InterpolateFloat);
     }
     
+    private static Data.VignetteData InterpolateVignetteData(VignetteData a, VignetteData b, float t, object? context)
+    {
+        var themeColors = (ThemeColors) context!;
+
+        var rounded = t > 0.5f ? b.Rounded : a.Rounded;
+        
+        var roundness = float.IsNaN(a.Roundness) || float.IsNaN(b.Roundness)
+            ? (rounded ? 1.0f : 0.0f)
+            : (rounded ? MathUtil.Lerp(a.Roundness, b.Roundness, t) : 1.0f);
+        
+        var color = a.Color.HasValue && b.Color.HasValue
+            ? new Vector3(
+                MathUtil.Lerp(a.Color.Value == 0 ? 0.0f : themeColors.Effect[a.Color.Value - 1].X, b.Color.Value == 0 ? 0.0f : themeColors.Effect[b.Color.Value - 1].X, t),
+                MathUtil.Lerp(a.Color.Value == 0 ? 0.0f : themeColors.Effect[a.Color.Value - 1].Y, b.Color.Value == 0 ? 0.0f : themeColors.Effect[b.Color.Value - 1].Y, t),
+                MathUtil.Lerp(a.Color.Value == 0 ? 0.0f : themeColors.Effect[a.Color.Value - 1].Z, b.Color.Value == 0 ? 0.0f : themeColors.Effect[b.Color.Value - 1].Z, t))
+            : Vector3.Zero;
+        
+        return new Data.VignetteData
+        {
+            Intensity = MathUtil.Lerp(a.Intensity, b.Intensity, t),
+            Smoothness = MathUtil.Lerp(a.Smoothness, b.Smoothness, t),
+            Color = color,
+            Roundness = roundness,
+            Center = new Vector2(
+                MathUtil.Lerp(a.Center.X, b.Center.X, t),
+                MathUtil.Lerp(a.Center.Y, b.Center.Y, t)),
+        };
+    }
+
     private Sequence<LensDistortionData, LensDistortionData> CreateLensDistortionSequence(IList<FixedKeyframe<LensDistortionData>> lensDistortionEvents)
     {
         var keyframes = lensDistortionEvents

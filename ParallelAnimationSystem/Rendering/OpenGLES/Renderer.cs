@@ -506,7 +506,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
             BlitFramebufferFilter.Linear);
         
         // Process post-process effects
-        var output = HandlePostProcessing(drawList.PostProcessingData, postProcessTextureHandle1, postProcessTextureHandle2);
+        var output = HandlePostProcessing(drawList.PostProcessingData, renderSize.X / (float) renderSize.Y, postProcessTextureHandle1, postProcessTextureHandle2);
         
         // Bind output texture to post-process FBO
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, postProcessFboHandle);
@@ -537,7 +537,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         drawListPool.Enqueue(drawList);
     }
     
-    private int HandlePostProcessing(PostProcessingData data, int texture1, int texture2)
+    private int HandlePostProcessing(PostProcessingData data, float aspectRatio, int texture1, int texture2)
     {
         // Disable depth testing and blending
         GL.Disable(EnableCap.DepthTest);
@@ -550,6 +550,8 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
                 currentFboSize,
                 data.HueShiftAngle,
                 data.LensDistortionIntensity, data.LensDistortionCenter,
+                data.ChromaticAberrationIntensity,
+                data.VignetteCenter, data.VignetteIntensity, MathUtil.Lerp(data.VignetteRoundness, 1.0f, aspectRatio), data.VignetteSmoothness, data.VignetteColor,
                 texture1, texture2))
             Swap(ref texture1, ref texture2);
         

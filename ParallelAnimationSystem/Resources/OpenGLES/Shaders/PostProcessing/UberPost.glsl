@@ -12,6 +12,12 @@ uniform highp ivec2 uSize;
 uniform highp float uHueShiftAngle;
 uniform highp float uLensDistortionIntensity;
 uniform highp vec2 uLensDistortionCenter;
+uniform highp float uChromaticAberrationIntensity;
+uniform highp vec2 uVignetteCenter;
+uniform highp float uVignetteIntensity;
+uniform highp float uVignetteRoundness;
+uniform highp float uVignetteSmoothness;
+uniform highp vec3 uVignetteColor;
 
 in highp vec2 vUv;
 
@@ -42,9 +48,12 @@ vec3 hueShift(vec3 color, float hueAdjust) {
 }
 
 // "Borrowed" from Unity's PostProcessing package
-vec2 distortLens(vec2 uv, float intensity, vec2 center) {
+vec2 distortLens(vec2 uv) {
+    float intensity = uLensDistortionIntensity;
+    vec2 center = uLensDistortionCenter;
+
     if (intensity == 0.0)
-        return uv;
+    return uv;
 
     float amount = 1.6 * max(abs(intensity), 1.0);
     float theta = min(160.0, amount) * PI / 180.0;
@@ -65,16 +74,45 @@ vec2 distortLens(vec2 uv, float intensity, vec2 center) {
     return uv;
 }
 
+vec3 vignette(vec3 color, vec2 uv, vec2 center, float intensity, float roundness, float smoothness, vec3 vignetteColor) {
+    vec2 dist = abs(uv - center) * intensity;
+    dist.x *= roundness;
+    float vFactor = pow(clamp(1.0 - dot(dist, dist), 0.0, 1.0), smoothness);
+    return color * mix(vignetteColor, vec3(1.0), vFactor);
+}
+
 void main() {
+    vec2 uv = vUv;
+    
     // Apply lens distortion
-    vec2 uv = distortLens(vUv, uLensDistortionIntensity, uLensDistortionCenter);
-    
-    // Load color
-    vec4 color = texture(uTexture, uv);
-    
+    vec2 uvDistorted = distortLens(uv);
+
+    // Apply chromatic aberration
+    vec3 color;
+    if (uChromaticAberrationIntensity == 0.0) {
+        color = texture(uTexture, uvDistorted).rgb;
+    } else {
+        vec2 coords = uv * 2.0 - 1.0;
+        vec2 end = uv - coords * dot(coords, coords) * uChromaticAberrationIntensity;
+        vec2 delta = (end - uv) / 3.0;
+
+        float r = texture(uTexture, uvDistorted).r;
+        float g = texture(uTexture, distortLens(uv + delta)).g;
+        float b = texture(uTexture, distortLens(uv + delta * 2.0)).b;
+
+        color = vec3(r, g, b);
+    }
+
+    // Apply vignette
+    if (uVignetteIntensity != 0.0) {
+        color = vignette(color, uvDistorted, uVignetteCenter, uVignetteIntensity, uVignetteRoundness, uVignetteSmoothness, uVignetteColor);
+    }
+
     // Hue shift
-    color.rgb = hueShift(color.rgb, uHueShiftAngle);
+    if (uHueShiftAngle != 0.0) {
+        color = hueShift(color, uHueShiftAngle);
+    }
     
     // Store result
-    oFragColor = color;
+    oFragColor = vec4(color, 1.0);
 }

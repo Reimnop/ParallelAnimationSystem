@@ -62,8 +62,9 @@ public static class LsMigration
             }
         }
         
-        // Migrate bloom keyframes
         var events = beatmap.Events;
+        
+        // Migrate bloom keyframes
         for (var i = 0; i < events.Bloom.Count; i++)
         {
             var bloomKeyframe = events.Bloom[i];
@@ -73,6 +74,14 @@ public static class LsMigration
                 Diffusion = 20.0f,
             };
             events.Bloom[i] = bloomKeyframe;
+        }
+        
+        // Migrate chromatic aberration keyframes
+        for (var i = 0; i < events.Chroma.Count; i++)
+        {
+            var chromaticAberrationKeyframe = events.Chroma[i];
+            chromaticAberrationKeyframe.Value /= 40.0f;
+            events.Chroma[i] = chromaticAberrationKeyframe;
         }
         
         // Migrate theme keyframes
@@ -87,6 +96,21 @@ public static class LsMigration
                     Value = theme,
                     Ease = themeKeyframe.Ease,
                 };
+        }
+        
+        // Migrate vignette keyframes
+        for (var i = 0; i < events.Vignette.Count; i++)
+        {
+            var vignetteKeyframe = events.Vignette[i];
+            vignetteKeyframe.Value = new VignetteData
+            {
+                Intensity = vignetteKeyframe.Value.Intensity * 1.5f,
+                Smoothness = vignetteKeyframe.Value.Smoothness * 5.0f,
+                Rounded = vignetteKeyframe.Value.Rounded,
+                Roundness = vignetteKeyframe.Value.Roundness,
+                Center = vignetteKeyframe.Value.Center,
+            };
+            events.Vignette[i] = vignetteKeyframe;
         }
     }
     

@@ -11,6 +11,12 @@ uniform ivec2 uSize;
 uniform float uHueShiftAngle;
 uniform float uLensDistortionIntensity;
 uniform vec2 uLensDistortionCenter;
+uniform float uChromaticAberrationIntensity;
+uniform vec2 uVignetteCenter;
+uniform float uVignetteIntensity;
+uniform float uVignetteRoundness;
+uniform float uVignetteSmoothness;
+uniform vec3 uVignetteColor;
 
 // "Borrowed" from https://gist.github.com/mairod/a75e7b44f68110e1576d77419d608786
 vec3 hueShift(vec3 color, float hueAdjust) {
@@ -39,7 +45,10 @@ vec3 hueShift(vec3 color, float hueAdjust) {
 }
 
 // "Borrowed" from Unity's PostProcessing package
-vec2 distortLens(vec2 uv, float intensity, vec2 center) {
+vec2 distortLens(vec2 uv) {
+    float intensity = uLensDistortionIntensity;
+    vec2 center = uLensDistortionCenter;
+    
     if (intensity == 0.0)
         return uv;
     
@@ -62,6 +71,13 @@ vec2 distortLens(vec2 uv, float intensity, vec2 center) {
     return uv;
 }
 
+vec3 vignette(vec3 color, vec2 uv, vec2 center, float intensity, float roundness, float smoothness, vec3 vignetteColor) {
+    vec2 dist = abs(uv - center) * intensity;
+    dist.x *= roundness;
+    float vFactor = pow(clamp(1.0 - dot(dist, dist), 0.0, 1.0), smoothness);
+    return color * mix(vignetteColor, vec3(1.0), vFactor);
+}
+
 void main() {
     ivec2 coords = ivec2(gl_GlobalInvocationID.xy);
     
@@ -70,17 +86,37 @@ void main() {
         return;
     
     // Get texture coordinates
-    vec2 texCoords = vec2(coords.x + 0.5, coords.y + 0.5) / vec2(uSize);
+    vec2 uv = vec2(coords.x + 0.5, coords.y + 0.5) / vec2(uSize);
     
     // Apply lens distortion
-    texCoords = distortLens(texCoords, uLensDistortionIntensity, uLensDistortionCenter);
+    vec2 uvDistorted = distortLens(uv);
     
-    // Sample texture
-    vec4 color = texture(uTexture, texCoords);
+    // Apply chromatic aberration
+    vec3 color;
+    if (uChromaticAberrationIntensity == 0.0) {
+        color = texture(uTexture, uvDistorted).rgb;
+    } else {
+        vec2 coords = uv * 2.0 - 1.0;
+        vec2 end = uv - coords * dot(coords, coords) * uChromaticAberrationIntensity;
+        vec2 delta = (end - uv) / 3.0;
+
+        float r = texture(uTexture, uvDistorted).r;
+        float g = texture(uTexture, distortLens(uv + delta)).g;
+        float b = texture(uTexture, distortLens(uv + delta * 2.0)).b;
+
+        color = vec3(r, g, b);
+    }
+    
+    // Apply vignette
+    if (uVignetteIntensity != 0.0) {
+        color = vignette(color, uvDistorted, uVignetteCenter, uVignetteIntensity, uVignetteRoundness, uVignetteSmoothness, uVignetteColor);
+    }
     
     // Hue shift
-    color.rgb = hueShift(color.rgb, uHueShiftAngle);
+    if (uHueShiftAngle != 0.0) {
+        color = hueShift(color, uHueShiftAngle);
+    }
     
     // Store result
-    imageStore(uImageOutput, coords, color);
+    imageStore(uImageOutput, coords, vec4(color, 1.0));
 }

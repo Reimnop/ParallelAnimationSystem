@@ -14,6 +14,8 @@ public class AnimationRunner
     public BloomData Bloom { get; private set; }
     public float Hue { get; private set; }
     public LensDistortionData LensDistortion { get; private set; }
+    public float ChromaticAberration { get; private set; }
+    public Data.VignetteData Vignette { get; private set; }
     public Color4<Rgba> BackgroundColor { get; private set; }
 
     public event EventHandler<GameObject>? ObjectSpawned;
@@ -35,6 +37,8 @@ public class AnimationRunner
     private readonly Sequence<BloomData, BloomData> bloomSequence;
     private readonly Sequence<float, float> hueSequence;
     private readonly Sequence<LensDistortionData, LensDistortionData> lensDistortionSequence;
+    private readonly Sequence<float, float> chromaticAberrationSequence;
+    private readonly Sequence<VignetteData, Data.VignetteData> vignetteSequence;
         
     private float lastTime;
     
@@ -46,7 +50,9 @@ public class AnimationRunner
         Sequence<float, float> cameraRotationAnimation,
         Sequence<BloomData, BloomData> bloomSequence,
         Sequence<float, float> hueSequence,
-        Sequence<LensDistortionData, LensDistortionData> lensDistortionSequence)
+        Sequence<LensDistortionData, LensDistortionData> lensDistortionSequence,
+        Sequence<float, float> chromaticAberrationSequence,
+        Sequence<VignetteData, Data.VignetteData> vignetteSequence)
     {
         // Set sequences
         this.themeColorSequence = themeColorSequence;
@@ -56,6 +62,8 @@ public class AnimationRunner
         this.bloomSequence = bloomSequence;
         this.hueSequence = hueSequence;
         this.lensDistortionSequence = lensDistortionSequence;
+        this.chromaticAberrationSequence = chromaticAberrationSequence;
+        this.vignetteSequence = vignetteSequence;
 
         foreach (var gameObject in gameObjects)
         {
@@ -70,23 +78,25 @@ public class AnimationRunner
 
     public void Process(float time, int workers = -1)
     {
-        // Update sequences
-        CameraPosition = cameraPositionAnimation.Interpolate(time);
-        CameraScale = cameraScaleAnimation.Interpolate(time);
-        CameraRotation = cameraRotationAnimation.Interpolate(time);
-        Bloom = bloomSequence.Interpolate(time);
-        Hue = hueSequence.Interpolate(time);
-        LensDistortion = lensDistortionSequence.Interpolate(time);
-        
-        // Spawn and kill objects according to time
-        SpawnAndKillObjects(time);
-        
         // Update theme
         var themeColors = themeColorSequence.Interpolate(time);
         if (themeColors is null)
             throw new InvalidOperationException("Theme colors are null, theme color sequence might not be populated");
-
+        
         BackgroundColor = themeColors.Background;
+        
+        // Spawn and kill objects according to time
+        SpawnAndKillObjects(time);
+        
+        // Update sequences
+        CameraPosition = cameraPositionAnimation.Interpolate(time, themeColors);
+        CameraScale = cameraScaleAnimation.Interpolate(time, themeColors);
+        CameraRotation = cameraRotationAnimation.Interpolate(time, themeColors);
+        Bloom = bloomSequence.Interpolate(time, themeColors);
+        Hue = hueSequence.Interpolate(time, themeColors);
+        LensDistortion = lensDistortionSequence.Interpolate(time, themeColors);
+        ChromaticAberration = chromaticAberrationSequence.Interpolate(time, themeColors);
+        Vignette = vignetteSequence.Interpolate(time, themeColors);
         
         // Update all objects in parallel
         var parallelOptions = new ParallelOptions

@@ -66,6 +66,30 @@ public static class VgMigration
                 };
         }
         
+        // Migrate chromatic aberration keyframes
+        for (var i = 0; i < events.Chroma.Count; i++)
+        {
+            var chromaticAberrationKeyframe = events.Chroma[i];
+            chromaticAberrationKeyframe.Value /= 80.0f;
+            events.Chroma[i] = chromaticAberrationKeyframe;
+        }
+        
+        // Migrate vignette keyframes
+        for (var i = 0; i < events.Vignette.Count; i++)
+        {
+            var vignetteKeyframe = events.Vignette[i];
+            vignetteKeyframe.Value = new VignetteData
+            {
+                Intensity = vignetteKeyframe.Value.Intensity * 2.5f,
+                Smoothness = vignetteKeyframe.Value.Smoothness * 5.0f,
+                Color = vignetteKeyframe.Value.Color,
+                Rounded = vignetteKeyframe.Value.Rounded,
+                Roundness = float.NaN,
+                Center = vignetteKeyframe.Value.Center,
+            };
+            events.Vignette[i] = vignetteKeyframe;
+        }
+        
         // We'll handle camera parenting at migration
         // Start by inserting an empty camera object at the start of the beatmap
         var cameraObject = new BeatmapObject
