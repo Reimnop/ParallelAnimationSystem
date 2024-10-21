@@ -15,9 +15,10 @@ public static partial class JsApi
     public static partial string GetBeatmapFormat();
     
     [JSExport]
-    public static void Initialize(int seed, bool enablePostProcessing, bool enableTextRendering)
+    public static void Initialize(int seedLow, int seedHigh, bool enablePostProcessing, bool enableTextRendering)
     {
-        var appSettings = new WasmAppSettings(unchecked((ulong)seed), enablePostProcessing, enableTextRendering);
+        var seed = unchecked((uint)seedLow) | ((ulong)seedHigh << 32);
+        var appSettings = new WasmAppSettings(seed, enablePostProcessing, enableTextRendering);
         var startup = new WasmStartup(appSettings);
         app = startup.InitializeApp();
     }
