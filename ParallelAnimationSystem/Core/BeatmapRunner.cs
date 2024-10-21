@@ -38,7 +38,7 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
                 LsMigration.MigrateBeatmap(beatmap, resourceManager);
                 break;
             case BeatmapFormat.Vgd:
-                VgMigration.MigrateBeatmap(beatmap); // TODO
+                VgMigration.MigrateBeatmap(beatmap, resourceManager);
                 break;
         }
         

@@ -1,14 +1,28 @@
+using System.Drawing;
+using System.Text.Json.Nodes;
 using Pamx.Common;
 using Pamx.Common.Data;
 using Pamx.Common.Enum;
 using Pamx.Common.Implementation;
+using Pamx.Vg;
+using ParallelAnimationSystem.Data;
 
 namespace ParallelAnimationSystem.Core;
 
 public static class VgMigration
 {
-    public static void MigrateBeatmap(IBeatmap beatmap)
+    public static void MigrateBeatmap(IBeatmap beatmap, IResourceManager resourceManager)
     {
+        // Load themes
+        var themes = LoadThemes(resourceManager);
+        
+        // Add to beatmap
+        beatmap.Themes.AddRange(themes.Values);
+        
+        // Fix themes
+        foreach (var theme in beatmap.Themes)
+            FixTheme(theme);
+        
         // Set default scale to 1 if scale is 0
         foreach (var prefabObject in beatmap.PrefabObjects)
         {
@@ -34,6 +48,22 @@ public static class VgMigration
                     o.ColorEvents[i] = oldColorKeyframe;
                 }
             }
+        }
+        
+        var events = beatmap.Events;
+        
+        // Migrate theme keyframes
+        for (var i = 0; i < events.Theme.Count; i++)
+        {
+            var themeKeyframe = events.Theme[i];
+            if (themeKeyframe.Value is IIdentifiable<string> themeIdentifiable &&
+                themes.TryGetValue(themeIdentifiable.Id, out var theme))
+                events.Theme[i] = new FixedKeyframe<IReference<ITheme>>
+                {
+                    Time = themeKeyframe.Time,
+                    Value = theme,
+                    Ease = themeKeyframe.Ease,
+                };
         }
         
         // We'll handle camera parenting at migration
@@ -85,6 +115,73 @@ public static class VgMigration
                 // Make sure camera parented objects are above everything else
                 o.RenderDepth -= 100;
             }
+        }
+    }
+
+    private static Dictionary<string, ITheme> LoadThemes(IResourceManager resourceManager)
+    {
+        var themeNames = new[]
+        {
+            "Anarchy.vgt",
+            "BlackWhite.vgt",
+            "Classic.vgt",
+            "Dark.vgt",
+            "DayNight.vgt",
+            "DesertHeat.vgt",
+            "Donuts.vgt",
+            "EmberStones.vgt",
+            "FireArmour.vgt",
+            "HotPanda.vgt",
+            "JungleWaterway.vgt",
+            "Lure.vgt",
+            "Machine.vgt",
+            "New.vgt",
+            "Poison.vgt",
+            "Shiver.vgt",
+            "Starlight.vgt",
+            "StoneField.vgt",
+            "ViciousGoop.vgt",
+            "WhiteBlack.vgt",
+            "Wonderland.vgt",
+        };
+        
+        var themes = new Dictionary<string, ITheme>();
+        
+        foreach (var themeName in themeNames)
+        {
+            var themeString = resourceManager.LoadResourceString($"Themes/{themeName}");
+            var json = JsonNode.Parse(themeString);
+            if (json is not JsonObject jsonObject)
+                continue;
+            
+            var theme = VgDeserialization.DeserializeTheme(jsonObject);
+            themes.Add(themeName, theme);
+        }
+        
+        return themes;
+    }
+    
+    private static void FixTheme(ITheme theme)
+    {
+        // Make sure theme has correct amount of colors
+        for (var i = theme.Player.Count; i < 4; i++)
+        {
+            theme.Player.Add(Color.Black);
+        }
+        
+        for (var i = theme.Object.Count; i < 9; i++)
+        {
+            theme.Object.Add(Color.Black);
+        }
+        
+        for (var i = theme.ParallaxObject.Count; i < 9; i++)
+        {
+            theme.ParallaxObject.Add(Color.Black);
+        }
+        
+        for (var i = theme.Effect.Count; i < 9; i++)
+        {
+            theme.Effect.Add(Color.Black);
         }
     }
 }
