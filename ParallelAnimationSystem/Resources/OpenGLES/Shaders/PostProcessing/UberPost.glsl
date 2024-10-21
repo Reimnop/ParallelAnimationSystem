@@ -15,6 +15,7 @@ uniform highp vec2 uLensDistortionCenter;
 uniform highp float uChromaticAberrationIntensity;
 uniform highp vec2 uVignetteCenter;
 uniform highp float uVignetteIntensity;
+uniform highp float uVignetteRounded;
 uniform highp float uVignetteRoundness;
 uniform highp float uVignetteSmoothness;
 uniform highp vec3 uVignetteColor;
@@ -74,9 +75,10 @@ vec2 distortLens(vec2 uv) {
     return uv;
 }
 
-vec3 vignette(vec3 color, vec2 uv, vec2 center, float intensity, float roundness, float smoothness, vec3 vignetteColor) {
+vec3 vignette(vec3 color, vec2 uv, vec2 center, float intensity, float rounded, float roundness, float smoothness, vec3 vignetteColor) {
     vec2 dist = abs(uv - center) * intensity;
-    dist.x *= roundness;
+    dist.x *= mix(rounded, 1.0, float(uSize.x) / float(uSize.y));
+    dist = pow(clamp(dist, 0.0, 1.0), vec2(roundness));
     float vFactor = pow(clamp(1.0 - dot(dist, dist), 0.0, 1.0), smoothness);
     return color * mix(vignetteColor, vec3(1.0), vFactor);
 }
@@ -105,7 +107,7 @@ void main() {
 
     // Apply vignette
     if (uVignetteIntensity != 0.0) {
-        color = vignette(color, uvDistorted, uVignetteCenter, uVignetteIntensity, uVignetteRoundness, uVignetteSmoothness, uVignetteColor);
+        color = vignette(color, uvDistorted, uVignetteCenter, uVignetteIntensity, uVignetteRounded, uVignetteRoundness, uVignetteSmoothness, uVignetteColor);
     }
 
     // Hue shift

@@ -476,7 +476,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
             BlitFramebufferFilter.Linear);
         
         // Do post-processing
-        var finalTexture = HandlePostProcessing(drawList.PostProcessingData, renderSize.X / (float) renderSize.Y, postProcessTextureHandle1, postProcessTextureHandle2);
+        var finalTexture = HandlePostProcessing(drawList.PostProcessingData, postProcessTextureHandle1, postProcessTextureHandle2);
         
         // Bind final texture to post process fbo
         GL.NamedFramebufferTexture(postProcessFboHandle, FramebufferAttachment.ColorAttachment0, finalTexture, 0);
@@ -615,7 +615,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
             0);
     }
 
-    private int HandlePostProcessing(PostProcessingData data, float aspectRatio, int texture1, int texture2)
+    private int HandlePostProcessing(PostProcessingData data, int texture1, int texture2)
     {
         if (bloom.Process(currentFboSize, data.BloomIntensity, data.BloomDiffusion, texture1, texture2))
             Swap(ref texture1, ref texture2);
@@ -625,7 +625,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
                 data.HueShiftAngle,
                 data.LensDistortionIntensity, data.LensDistortionCenter,
                 data.ChromaticAberrationIntensity,
-                data.VignetteCenter, data.VignetteIntensity, MathUtil.Lerp(data.VignetteRoundness, 1.0f, aspectRatio), data.VignetteSmoothness, data.VignetteColor,
+                data.VignetteCenter, data.VignetteIntensity, data.VignetteRounded, data.VignetteRoundness, data.VignetteSmoothness, data.VignetteColor,
                 texture1, texture2))
             Swap(ref texture1, ref texture2);
         

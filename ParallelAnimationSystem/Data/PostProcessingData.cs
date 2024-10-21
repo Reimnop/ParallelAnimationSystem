@@ -7,4 +7,4 @@ public record struct PostProcessingData(
     float HueShiftAngle,
     float LensDistortionIntensity, Vector2 LensDistortionCenter,
     float ChromaticAberrationIntensity,
-    Vector2 VignetteCenter, float VignetteIntensity, float VignetteRoundness, float VignetteSmoothness, Vector3 VignetteColor);
+    Vector2 VignetteCenter, float VignetteIntensity, bool VignetteRounded, float VignetteRoundness, float VignetteSmoothness, Vector3 VignetteColor);

@@ -181,7 +181,7 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
                 hue,
                 lensDistortionData.Intensity, new Vector2(lensDistortionData.Center.X, lensDistortionData.Center.Y),
                 runner.ChromaticAberration,
-                new Vector2(vignetteData.Center.X, vignetteData.Center.Y), vignetteData.Intensity, vignetteData.Roundness, vignetteData.Smoothness, vignetteData.Color);
+                new Vector2(vignetteData.Center.X, vignetteData.Center.Y), vignetteData.Intensity, vignetteData.Rounded, vignetteData.Roundness, vignetteData.Smoothness, vignetteData.Color);
         }
         else
         {

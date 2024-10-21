@@ -104,8 +104,8 @@ public static class LsMigration
             var vignetteKeyframe = events.Vignette[i];
             vignetteKeyframe.Value = new VignetteData
             {
-                Intensity = vignetteKeyframe.Value.Intensity * 1.5f,
-                Smoothness = vignetteKeyframe.Value.Smoothness * 5.0f,
+                Intensity = vignetteKeyframe.Value.Intensity,
+                Smoothness = vignetteKeyframe.Value.Smoothness,
                 Rounded = vignetteKeyframe.Value.Rounded,
                 Roundness = vignetteKeyframe.Value.Roundness,
                 Center = vignetteKeyframe.Value.Center,

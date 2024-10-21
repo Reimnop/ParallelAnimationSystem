@@ -15,6 +15,7 @@ public class UberPost(IResourceManager resourceManager) : IDisposable
     private int chromaticAberrationIntensityUniformLocation;
     private int vignetteCenterUniformLocation;
     private int vignetteIntensityUniformLocation;
+    private int vignetteRoundedUniformLocation;
     private int vignetteRoundnessUniformLocation;
     private int vignetteSmoothnessUniformLocation;
     private int vignetteColorUniformLocation;
@@ -56,6 +57,7 @@ public class UberPost(IResourceManager resourceManager) : IDisposable
         chromaticAberrationIntensityUniformLocation = GL.GetUniformLocation(program, "uChromaticAberrationIntensity");
         vignetteCenterUniformLocation = GL.GetUniformLocation(program, "uVignetteCenter");
         vignetteIntensityUniformLocation = GL.GetUniformLocation(program, "uVignetteIntensity");
+        vignetteRoundedUniformLocation = GL.GetUniformLocation(program, "uVignetteRounded");
         vignetteRoundnessUniformLocation = GL.GetUniformLocation(program, "uVignetteRoundness");
         vignetteSmoothnessUniformLocation = GL.GetUniformLocation(program, "uVignetteSmoothness");
         vignetteColorUniformLocation = GL.GetUniformLocation(program, "uVignetteColor");
@@ -73,7 +75,7 @@ public class UberPost(IResourceManager resourceManager) : IDisposable
         float hueShiftAngle,
         float lensDistortionIntensity, Vector2 lensDistortionCenter,
         float chromaticAberrationIntensity,
-        Vector2 vignetteCenter, float vignetteIntensity, float vignetteRoundness, float vignetteSmoothness, Vector3 vignetteColor,
+        Vector2 vignetteCenter, float vignetteIntensity, bool vignetteRounded, float vignetteRoundness, float vignetteSmoothness, Vector3 vignetteColor,
         int inputTexture, int outputTexture)
     {
         if (hueShiftAngle == 0.0f && lensDistortionIntensity == 0.0f && chromaticAberrationIntensity == 0.0f && vignetteIntensity == 0.0f)
@@ -90,6 +92,7 @@ public class UberPost(IResourceManager resourceManager) : IDisposable
         GL.Uniform1f(chromaticAberrationIntensityUniformLocation, chromaticAberrationIntensity);
         GL.Uniform2f(vignetteCenterUniformLocation, 1, vignetteCenter);
         GL.Uniform1f(vignetteIntensityUniformLocation, vignetteIntensity);
+        GL.Uniform1f(vignetteRoundedUniformLocation, vignetteRounded ? 1.0f : 0.0f);
         GL.Uniform1f(vignetteRoundnessUniformLocation, vignetteRoundness);
         GL.Uniform1f(vignetteSmoothnessUniformLocation, vignetteSmoothness);
         GL.Uniform3f(vignetteColorUniformLocation, 1, vignetteColor);

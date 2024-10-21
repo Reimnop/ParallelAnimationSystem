@@ -82,10 +82,9 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         var themeColors = (ThemeColors) context!;
 
         var rounded = t > 0.5f ? b.Rounded : a.Rounded;
-        
         var roundness = float.IsNaN(a.Roundness) || float.IsNaN(b.Roundness)
-            ? (rounded ? 1.0f : 0.0f)
-            : (rounded ? MathUtil.Lerp(a.Roundness, b.Roundness, t) : 1.0f);
+            ? 1.0f
+            : MathUtil.Lerp(a.Roundness, b.Roundness, t);
         
         var color = a.Color.HasValue && b.Color.HasValue
             ? new Vector3(
@@ -99,6 +98,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             Intensity = MathUtil.Lerp(a.Intensity, b.Intensity, t),
             Smoothness = MathUtil.Lerp(a.Smoothness, b.Smoothness, t),
             Color = color,
+            Rounded = rounded,
             Roundness = roundness,
             Center = new Vector2(
                 MathUtil.Lerp(a.Center.X, b.Center.X, t),
