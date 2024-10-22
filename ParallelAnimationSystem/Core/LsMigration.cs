@@ -97,21 +97,6 @@ public static class LsMigration
                     Ease = themeKeyframe.Ease,
                 };
         }
-        
-        // Migrate vignette keyframes
-        for (var i = 0; i < events.Vignette.Count; i++)
-        {
-            var vignetteKeyframe = events.Vignette[i];
-            vignetteKeyframe.Value = new VignetteData
-            {
-                Intensity = vignetteKeyframe.Value.Intensity,
-                Smoothness = vignetteKeyframe.Value.Smoothness,
-                Rounded = vignetteKeyframe.Value.Rounded,
-                Roundness = vignetteKeyframe.Value.Roundness,
-                Center = vignetteKeyframe.Value.Center,
-            };
-            events.Vignette[i] = vignetteKeyframe;
-        }
     }
     
     private static Dictionary<int, ITheme> LoadThemes(IResourceManager resourceManager)

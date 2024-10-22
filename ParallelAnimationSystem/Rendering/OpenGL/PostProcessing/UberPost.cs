@@ -91,10 +91,10 @@ public class UberPost(IResourceManager resourceManager) : IDisposable
         GL.Uniform2f(lensDistortionCenterUniformLocation, 1, lensDistortionCenter);
         GL.Uniform1f(chromaticAberrationIntensityUniformLocation, chromaticAberrationIntensity);
         GL.Uniform2f(vignetteCenterUniformLocation, 1, vignetteCenter);
-        GL.Uniform1f(vignetteIntensityUniformLocation, vignetteIntensity);
+        GL.Uniform1f(vignetteIntensityUniformLocation, vignetteIntensity * 3.0f);
         GL.Uniform1f(vignetteRoundedUniformLocation, vignetteRounded ? 1.0f : 0.0f);
-        GL.Uniform1f(vignetteRoundnessUniformLocation, vignetteRoundness);
-        GL.Uniform1f(vignetteSmoothnessUniformLocation, vignetteSmoothness);
+        GL.Uniform1f(vignetteRoundnessUniformLocation, (1.0f - vignetteRoundness) * 6.0f + vignetteRoundness);
+        GL.Uniform1f(vignetteSmoothnessUniformLocation, vignetteSmoothness * 5.0f);
         GL.Uniform3f(vignetteColorUniformLocation, 1, vignetteColor);
         
         GL.DispatchCompute(
