@@ -87,7 +87,7 @@ public class UberPost(IResourceManager resourceManager) : IDisposable
         
         // Do our processing
         GL.UseProgram(program);
-        GL.Uniform2f(sizeUniformLocation, size.X, size.Y);
+        GL.Uniform2i(sizeUniformLocation, 1, size);
         GL.Uniform1f(hueShiftAngleUniformLocation, hueShiftAngle);
         GL.Uniform1f(lensDistortionIntensityUniformLocation, lensDistortionIntensity);
         GL.Uniform2f(lensDistortionCenterUniformLocation, 1, lensDistortionCenter);
