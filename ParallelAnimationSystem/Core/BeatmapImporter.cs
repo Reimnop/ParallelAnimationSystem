@@ -88,9 +88,9 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         
         var color = a.Color.HasValue && b.Color.HasValue
             ? new Vector3(
-                MathUtil.Lerp(a.Color.Value == 0 ? 0.0f : themeColors.Effect[a.Color.Value - 1].X, b.Color.Value == 0 ? 0.0f : themeColors.Effect[b.Color.Value - 1].X, t),
-                MathUtil.Lerp(a.Color.Value == 0 ? 0.0f : themeColors.Effect[a.Color.Value - 1].Y, b.Color.Value == 0 ? 0.0f : themeColors.Effect[b.Color.Value - 1].Y, t),
-                MathUtil.Lerp(a.Color.Value == 0 ? 0.0f : themeColors.Effect[a.Color.Value - 1].Z, b.Color.Value == 0 ? 0.0f : themeColors.Effect[b.Color.Value - 1].Z, t))
+                MathUtil.Lerp(a.Color.Value >= themeColors.Effect.Count ? 0.0f : themeColors.Effect[a.Color.Value].X, b.Color.Value >= themeColors.Effect.Count ? 0.0f : themeColors.Effect[b.Color.Value].X, t),
+                MathUtil.Lerp(a.Color.Value >= themeColors.Effect.Count ? 0.0f : themeColors.Effect[a.Color.Value].Y, b.Color.Value >= themeColors.Effect.Count ? 0.0f : themeColors.Effect[b.Color.Value].Y, t),
+                MathUtil.Lerp(a.Color.Value >= themeColors.Effect.Count ? 0.0f : themeColors.Effect[a.Color.Value].Z, b.Color.Value >= themeColors.Effect.Count ? 0.0f : themeColors.Effect[b.Color.Value].Z, t))
             : Vector3.Zero;
         
         return new Data.VignetteData
