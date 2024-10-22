@@ -80,7 +80,7 @@ public static class VgMigration
             var vignetteKeyframe = events.Vignette[i];
             vignetteKeyframe.Value = new VignetteData
             {
-                Intensity = vignetteKeyframe.Value.Intensity * 2.0f,
+                Intensity = vignetteKeyframe.Value.Intensity * 3.0f,
                 Smoothness = vignetteKeyframe.Value.Smoothness * 5.0f,
                 Color = vignetteKeyframe.Value.Color,
                 Rounded = vignetteKeyframe.Value.Rounded,
