@@ -8,16 +8,26 @@ layout(rgba16f, binding = 0) uniform image2D uImageOutput;
 uniform sampler2D uTexture;
 
 uniform ivec2 uSize;
+
 uniform float uHueShiftAngle;
+
 uniform float uLensDistortionIntensity;
 uniform vec2 uLensDistortionCenter;
+
 uniform float uChromaticAberrationIntensity;
+
 uniform vec2 uVignetteCenter;
 uniform float uVignetteIntensity;
 uniform float uVignetteRounded;
 uniform float uVignetteRoundness;
 uniform float uVignetteSmoothness;
 uniform vec3 uVignetteColor;
+
+uniform vec3 uGradientColor1;
+uniform vec3 uGradientColor2;
+uniform float uGradientIntensity;
+uniform mat2 uGradientRotation;
+uniform int uGradientMode;
 
 // "Borrowed" from https://gist.github.com/mairod/a75e7b44f68110e1576d77419d608786
 vec3 hueShift(vec3 color, float hueAdjust) {
@@ -80,6 +90,33 @@ vec3 vignette(vec3 color, vec2 uv, vec2 center, float aspect, float intensity, f
     return color * mix(vignetteColor, vec3(1.0), vFactor);
 }
 
+vec3 applyGradient(vec3 color, vec2 uv, vec3 color1, vec3 color2, float intensity, mat2 rotation, int mode) {
+    if (intensity == 0.0)
+        return color;
+    
+    vec2 uvNormalized = uv - 0.5;
+    uvNormalized = rotation * uvNormalized;
+    float gradient = uvNormalized.y + 0.5;
+    vec3 gradientColor = mix(color2, color1, gradient);
+    
+    if (mode == 0) // linear
+        return mix(color, gradientColor, intensity);
+    else if (mode == 1) // additive
+        return color + gradientColor * intensity;
+    else if (mode == 2) // multiplicative
+        return color * mix(vec3(1.0), gradientColor, intensity);
+    else if (mode == 3) // screen
+        return vec3(1.0) - (vec3(1.0) - color) * (vec3(1.0) - gradientColor * intensity);
+    else // default to linear
+        return mix(color, gradientColor, intensity);
+}
+
+vec3 sampleTexture(sampler2D tex, vec2 uv) {
+    vec3 color = texture(tex, uv).rgb;
+    color = applyGradient(color, uv, uGradientColor1, uGradientColor2, uGradientIntensity, uGradientRotation, uGradientMode);
+    return color;
+}
+
 void main() {
     ivec2 coords = ivec2(gl_GlobalInvocationID.xy);
     
@@ -96,15 +133,15 @@ void main() {
     // Apply chromatic aberration
     vec3 color;
     if (uChromaticAberrationIntensity == 0.0) {
-        color = texture(uTexture, uvDistorted).rgb;
+        color = sampleTexture(uTexture, uvDistorted);
     } else {
         vec2 coords = uv * 2.0 - 1.0;
         vec2 end = uv - coords * dot(coords, coords) * uChromaticAberrationIntensity;
         vec2 delta = (end - uv) / 3.0;
 
-        float r = texture(uTexture, uvDistorted).r;
-        float g = texture(uTexture, distortLens(uv + delta)).g;
-        float b = texture(uTexture, distortLens(uv + delta * 2.0)).b;
+        float r = sampleTexture(uTexture, uvDistorted).r;
+        float g = sampleTexture(uTexture, distortLens(uv + delta)).g;
+        float b = sampleTexture(uTexture, distortLens(uv + delta * 2.0)).b;
 
         color = vec3(r, g, b);
     }

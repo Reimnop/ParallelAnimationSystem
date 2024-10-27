@@ -169,11 +169,8 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
             var hue = runner.Hue;
             var lensDistortionData = runner.LensDistortion;
             var vignetteData = runner.Vignette;
-            
-            // TODO: Either PA creators suck at choosing diffusion, or my bloom implementation is catastrophically wrong
+            var gradientData = runner.Gradient;
             var bloomDiffusion01 = MathHelper.MapRange(bloomData.Diffusion, 5.0f, 30.0f, 0.0f, 1.0f);
-            
-            // var bloomDiffusion01 = 0.9f; 
             
             drawList.PostProcessingData = new PostProcessingData(
                 bloomData.Intensity,
@@ -181,7 +178,8 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
                 hue,
                 lensDistortionData.Intensity, new Vector2(lensDistortionData.Center.X, lensDistortionData.Center.Y),
                 runner.ChromaticAberration,
-                new Vector2(vignetteData.Center.X, vignetteData.Center.Y), vignetteData.Intensity, vignetteData.Rounded, vignetteData.Roundness, vignetteData.Smoothness, vignetteData.Color);
+                new Vector2(vignetteData.Center.X, vignetteData.Center.Y), vignetteData.Intensity, vignetteData.Rounded, vignetteData.Roundness, vignetteData.Smoothness, vignetteData.Color,
+                gradientData.Color1, gradientData.Color2, gradientData.Intensity, gradientData.Rotation * MathF.PI * 2.0f, gradientData.Mode);
         }
         else
         {

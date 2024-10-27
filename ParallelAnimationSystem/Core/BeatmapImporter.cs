@@ -36,6 +36,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         var lensDistortionSequence = CreateLensDistortionSequence(beatmap.Events.LensDistortion);
         var chromaticAberrationSequence = CreateChromaticAberrationSequence(beatmap.Events.Chroma);
         var vignetteSequence = CreateVignetteSequence(beatmap.Events.Vignette);
+        var gradientSequence = CreateGradientSequence(beatmap.Events.Gradient);
 
         // Create the runner with the GameObjects
         return new AnimationRunner(
@@ -48,7 +49,21 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             hueSequence,
             lensDistortionSequence,
             chromaticAberrationSequence,
-            vignetteSequence);
+            vignetteSequence,
+            gradientSequence);
+    }
+    
+    private Sequence<GradientData, Data.GradientData> CreateGradientSequence(IList<FixedKeyframe<GradientData>> gradientEvents)
+    {
+        var keyframes = gradientEvents
+            .Select(x =>
+            {
+                var time = x.Time;
+                var value = x.Value;
+                var ease = EaseFunctions.GetOrDefault(x.Ease, EaseFunctions.Linear);
+                return new Animation.Keyframe<GradientData>(time, value, ease);
+            });
+        return new Sequence<GradientData, Data.GradientData>(keyframes, InterpolateGradientData);
     }
 
     private Sequence<VignetteData, Data.VignetteData> CreateVignetteSequence(IList<FixedKeyframe<VignetteData>> vignetteEvents)
@@ -75,6 +90,31 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
                 return new Animation.Keyframe<float>(time, value, ease);
             });
         return new Sequence<float, float>(keyframes, InterpolateFloat);
+    }
+    
+    private Data.GradientData InterpolateGradientData(GradientData a, GradientData b, float t, object? context)
+    {
+        var themeColors = (ThemeColors) context!;
+        
+        var color1 = new Vector3(
+            MathUtil.Lerp(a.ColorA >= themeColors.Effect.Count ? 1.0f : themeColors.Effect[a.ColorA].X, b.ColorA >= themeColors.Effect.Count ? 1.0f : themeColors.Effect[b.ColorA].X, t),
+            MathUtil.Lerp(a.ColorA >= themeColors.Effect.Count ? 1.0f : themeColors.Effect[a.ColorA].Y, b.ColorA >= themeColors.Effect.Count ? 1.0f : themeColors.Effect[b.ColorA].Y, t),
+            MathUtil.Lerp(a.ColorA >= themeColors.Effect.Count ? 1.0f : themeColors.Effect[a.ColorA].Z, b.ColorA >= themeColors.Effect.Count ? 1.0f : themeColors.Effect[b.ColorA].Z, t));
+        var color2 = new Vector3(
+            MathUtil.Lerp(a.ColorB >= themeColors.Effect.Count ? 1.0f : themeColors.Effect[a.ColorB].X, b.ColorB >= themeColors.Effect.Count ? 1.0f : themeColors.Effect[b.ColorB].X, t),
+            MathUtil.Lerp(a.ColorB >= themeColors.Effect.Count ? 1.0f : themeColors.Effect[a.ColorB].Y, b.ColorB >= themeColors.Effect.Count ? 1.0f : themeColors.Effect[b.ColorB].Y, t),
+            MathUtil.Lerp(a.ColorB >= themeColors.Effect.Count ? 1.0f : themeColors.Effect[a.ColorB].Z, b.ColorB >= themeColors.Effect.Count ? 1.0f : themeColors.Effect[b.ColorB].Z, t));
+
+        var mode = a.Mode;
+        
+        return new Data.GradientData
+        {
+            Color1 = color1,
+            Color2 = color2,
+            Intensity = MathUtil.Lerp(a.Intensity, b.Intensity, t),
+            Rotation = MathUtil.Lerp(a.Rotation, b.Rotation, t),
+            Mode = mode
+        };
     }
     
     private static Data.VignetteData InterpolateVignetteData(VignetteData a, VignetteData b, float t, object? context)

@@ -16,6 +16,7 @@ public class AnimationRunner
     public LensDistortionData LensDistortion { get; private set; }
     public float ChromaticAberration { get; private set; }
     public Data.VignetteData Vignette { get; private set; }
+    public Data.GradientData Gradient { get; private set; }
     public Color4<Rgba> BackgroundColor { get; private set; }
 
     public event EventHandler<GameObject>? ObjectSpawned;
@@ -39,6 +40,7 @@ public class AnimationRunner
     private readonly Sequence<LensDistortionData, LensDistortionData> lensDistortionSequence;
     private readonly Sequence<float, float> chromaticAberrationSequence;
     private readonly Sequence<VignetteData, Data.VignetteData> vignetteSequence;
+    private readonly Sequence<GradientData, Data.GradientData> gradientSequence;
         
     private float lastTime;
     
@@ -52,7 +54,8 @@ public class AnimationRunner
         Sequence<float, float> hueSequence,
         Sequence<LensDistortionData, LensDistortionData> lensDistortionSequence,
         Sequence<float, float> chromaticAberrationSequence,
-        Sequence<VignetteData, Data.VignetteData> vignetteSequence)
+        Sequence<VignetteData, Data.VignetteData> vignetteSequence,
+        Sequence<GradientData, Data.GradientData> gradientSequence)
     {
         // Set sequences
         this.themeColorSequence = themeColorSequence;
@@ -64,6 +67,7 @@ public class AnimationRunner
         this.lensDistortionSequence = lensDistortionSequence;
         this.chromaticAberrationSequence = chromaticAberrationSequence;
         this.vignetteSequence = vignetteSequence;
+        this.gradientSequence = gradientSequence;
 
         foreach (var gameObject in gameObjects)
         {
@@ -97,6 +101,7 @@ public class AnimationRunner
         LensDistortion = lensDistortionSequence.Interpolate(time, themeColors);
         ChromaticAberration = chromaticAberrationSequence.Interpolate(time, themeColors);
         Vignette = vignetteSequence.Interpolate(time, themeColors);
+        Gradient = gradientSequence.Interpolate(time, themeColors);
         
         // Update all objects in parallel
         var parallelOptions = new ParallelOptions
