@@ -84,7 +84,7 @@ public unsafe class FFmpegWindow : IWindow, IDisposable
             
             CurrentFrame = frame;
             
-            GLFW.SwapBuffers(window);
+            // GLFW.SwapBuffers(window);
         }
         
         GLFW.MakeContextCurrent(null);
