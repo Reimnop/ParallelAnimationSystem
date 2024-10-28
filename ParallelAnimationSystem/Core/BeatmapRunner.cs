@@ -154,12 +154,23 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
         // Update runner
         runner.Process(time, appSettings.WorkerCount);
         
+        // Calculate shake vector
+        const float shakeMagic1 = 123.97f;
+        const float shakeMagic2 = 423.42f;
+        const float shakeFrequency = 10.0f;
+        
+        var shake = runner.Shake;
+        var shakeVector = new Vector2(
+            MathF.Sin(time * MathF.PI * shakeFrequency + shakeMagic1) + MathF.Sin(time * shakeFrequency * 2.0f - shakeMagic1),
+            MathF.Sin(time * MathF.PI * shakeFrequency - shakeMagic2) + MathF.Sin(time * shakeFrequency * 2.0f + shakeMagic2));
+        shakeVector *= shake * 0.5f;
+        
         // Start queueing up draw data
         var drawList = renderer.GetDrawList();
         
         drawList.ClearColor = runner.BackgroundColor;
         drawList.CameraData = new CameraData(
-            runner.CameraPosition,
+            runner.CameraPosition + shakeVector,
             runner.CameraScale,
             runner.CameraRotation);
         

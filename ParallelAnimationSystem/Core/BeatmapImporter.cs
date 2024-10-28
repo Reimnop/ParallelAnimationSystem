@@ -37,6 +37,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         var chromaticAberrationSequence = CreateChromaticAberrationSequence(beatmap.Events.Chroma);
         var vignetteSequence = CreateVignetteSequence(beatmap.Events.Vignette);
         var gradientSequence = CreateGradientSequence(beatmap.Events.Gradient);
+        var shakeSequence = CreateShakeSequence(beatmap.Events.Shake);
 
         // Create the runner with the GameObjects
         return new AnimationRunner(
@@ -50,9 +51,23 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             lensDistortionSequence,
             chromaticAberrationSequence,
             vignetteSequence,
-            gradientSequence);
+            gradientSequence,
+            shakeSequence);
     }
-    
+
+    private Sequence<float, float> CreateShakeSequence(IList<FixedKeyframe<float>> shakeEvents)
+    {
+        var keyframes = shakeEvents
+            .Select(x =>
+            {
+                var time = x.Time;
+                var value = x.Value;
+                var ease = EaseFunctions.GetOrDefault(x.Ease, EaseFunctions.Linear);
+                return new Animation.Keyframe<float>(time, value, ease);
+            });
+        return new Sequence<float, float>(keyframes, InterpolateFloat);
+    }
+
     private Sequence<GradientData, Data.GradientData> CreateGradientSequence(IList<FixedKeyframe<GradientData>> gradientEvents)
     {
         var keyframes = gradientEvents

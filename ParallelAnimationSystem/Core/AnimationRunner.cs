@@ -17,6 +17,7 @@ public class AnimationRunner
     public float ChromaticAberration { get; private set; }
     public Data.VignetteData Vignette { get; private set; }
     public Data.GradientData Gradient { get; private set; }
+    public float Shake { get; private set; }
     public Color4<Rgba> BackgroundColor { get; private set; }
 
     public event EventHandler<GameObject>? ObjectSpawned;
@@ -41,6 +42,7 @@ public class AnimationRunner
     private readonly Sequence<float, float> chromaticAberrationSequence;
     private readonly Sequence<VignetteData, Data.VignetteData> vignetteSequence;
     private readonly Sequence<GradientData, Data.GradientData> gradientSequence;
+    private readonly Sequence<float, float> shakeSequence;
         
     private float lastTime;
     
@@ -55,7 +57,8 @@ public class AnimationRunner
         Sequence<LensDistortionData, LensDistortionData> lensDistortionSequence,
         Sequence<float, float> chromaticAberrationSequence,
         Sequence<VignetteData, Data.VignetteData> vignetteSequence,
-        Sequence<GradientData, Data.GradientData> gradientSequence)
+        Sequence<GradientData, Data.GradientData> gradientSequence,
+        Sequence<float, float> shakeSequence)
     {
         // Set sequences
         this.themeColorSequence = themeColorSequence;
@@ -68,6 +71,7 @@ public class AnimationRunner
         this.chromaticAberrationSequence = chromaticAberrationSequence;
         this.vignetteSequence = vignetteSequence;
         this.gradientSequence = gradientSequence;
+        this.shakeSequence = shakeSequence;
 
         foreach (var gameObject in gameObjects)
         {
@@ -102,6 +106,7 @@ public class AnimationRunner
         ChromaticAberration = chromaticAberrationSequence.Interpolate(time, themeColors);
         Vignette = vignetteSequence.Interpolate(time, themeColors);
         Gradient = gradientSequence.Interpolate(time, themeColors);
+        Shake = shakeSequence.Interpolate(time, themeColors);
         
         // Update all objects in parallel
         var parallelOptions = new ParallelOptions
