@@ -182,10 +182,10 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
             var vignetteData = runner.Vignette;
             var gradientData = runner.Gradient;
             var bloomDiffusion01 = MathHelper.MapRange(bloomData.Diffusion, 5.0f, 30.0f, 0.0f, 1.0f);
-            var glitchIntensity = runner.Glitch.Intensity;
-            var glitchSpeed = MathHelper.MapRange(runner.Glitch.Speed, 0.0f, 2.0f, 7.0f, 40.0f);
-            var glitchSize = new Vector2(MathHelper.MapRange(runner.Glitch.Width, 0.0f, 1.0f, 0.02f, 1.0f), 0.015f);
-            
+            // var glitchIntensity = runner.Glitch.Intensity;
+            // var glitchSpeed = MathHelper.MapRange(runner.Glitch.Speed, 0.0f, 2.0f, 7.0f, 40.0f);
+            // var glitchSize = new Vector2(MathHelper.MapRange(runner.Glitch.Width, 0.0f, 1.0f, 0.02f, 1.0f), 0.015f);
+
             drawList.PostProcessingData = new PostProcessingData(
                 time,
                 hue,
@@ -195,7 +195,7 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
                 runner.ChromaticAberration,
                 new Vector2(vignetteData.Center.X, vignetteData.Center.Y), vignetteData.Intensity, vignetteData.Rounded, vignetteData.Roundness, vignetteData.Smoothness, vignetteData.Color,
                 gradientData.Color1, gradientData.Color2, gradientData.Intensity, gradientData.Rotation * MathF.PI * 2.0f, gradientData.Mode,
-                glitchIntensity, glitchSpeed, glitchSize);
+                0.0f, 0.0f, Vector2.One); // glitchIntensity, glitchSpeed, glitchSize
         }
         else
         {
