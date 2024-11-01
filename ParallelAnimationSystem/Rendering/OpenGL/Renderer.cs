@@ -622,11 +622,13 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         
         if (uberPost.Process(
                 currentFboSize,
+                data.Time,
                 data.HueShiftAngle,
                 data.LensDistortionIntensity, data.LensDistortionCenter,
                 data.ChromaticAberrationIntensity,
                 data.VignetteCenter, data.VignetteIntensity, data.VignetteRounded, data.VignetteRoundness, data.VignetteSmoothness, data.VignetteColor,
                 data.GradientColor1, data.GradientColor2, data.GradientIntensity, data.GradientRotation, data.GradientMode,
+                data.GlitchIntensity, data.GlitchSpeed, data.GlitchSize,
                 texture1, texture2))
             Swap(ref texture1, ref texture2);
         

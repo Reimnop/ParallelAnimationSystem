@@ -17,6 +17,7 @@ public class AnimationRunner
     public float ChromaticAberration { get; private set; }
     public Data.VignetteData Vignette { get; private set; }
     public Data.GradientData Gradient { get; private set; }
+    public GlitchData Glitch { get; private set; }
     public float Shake { get; private set; }
     public Color4<Rgba> BackgroundColor { get; private set; }
 
@@ -42,6 +43,7 @@ public class AnimationRunner
     private readonly Sequence<float, float> chromaticAberrationSequence;
     private readonly Sequence<VignetteData, Data.VignetteData> vignetteSequence;
     private readonly Sequence<GradientData, Data.GradientData> gradientSequence;
+    private readonly Sequence<GlitchData, GlitchData> glitchSequence;
     private readonly Sequence<float, float> shakeSequence;
         
     private float lastTime;
@@ -58,6 +60,7 @@ public class AnimationRunner
         Sequence<float, float> chromaticAberrationSequence,
         Sequence<VignetteData, Data.VignetteData> vignetteSequence,
         Sequence<GradientData, Data.GradientData> gradientSequence,
+        Sequence<GlitchData, GlitchData> glitchSequence,
         Sequence<float, float> shakeSequence)
     {
         // Set sequences
@@ -71,6 +74,7 @@ public class AnimationRunner
         this.chromaticAberrationSequence = chromaticAberrationSequence;
         this.vignetteSequence = vignetteSequence;
         this.gradientSequence = gradientSequence;
+        this.glitchSequence = glitchSequence;
         this.shakeSequence = shakeSequence;
 
         foreach (var gameObject in gameObjects)
@@ -106,6 +110,7 @@ public class AnimationRunner
         ChromaticAberration = chromaticAberrationSequence.Interpolate(time, themeColors);
         Vignette = vignetteSequence.Interpolate(time, themeColors);
         Gradient = gradientSequence.Interpolate(time, themeColors);
+        Glitch = glitchSequence.Interpolate(time, themeColors);
         Shake = shakeSequence.Interpolate(time, themeColors);
         
         // Update all objects in parallel

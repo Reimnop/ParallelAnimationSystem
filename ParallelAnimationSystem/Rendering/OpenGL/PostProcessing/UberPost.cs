@@ -12,6 +12,8 @@ public class UberPost(IResourceManager resourceManager) : IDisposable
     
     private int sizeUniformLocation;
     
+    private int timeUniformLocation;
+    
     private int hueShiftAngleUniformLocation;
     
     private int lensDistortionIntensityUniformLocation;
@@ -31,6 +33,10 @@ public class UberPost(IResourceManager resourceManager) : IDisposable
     private int gradientIntensityUniformLocation;
     private int gradientRotationUniformLocation;
     private int gradientModeUniformLocation;
+    
+    private int glitchIntensityUniformLocation;
+    private int glitchSpeedUniformLocation;
+    private int glitchSizeUniformLocation;
     
     private int sampler;
 
@@ -65,6 +71,8 @@ public class UberPost(IResourceManager resourceManager) : IDisposable
         // Get uniform locations
         sizeUniformLocation = GL.GetUniformLocation(program, "uSize");
         
+        timeUniformLocation = GL.GetUniformLocation(program, "uTime");
+        
         hueShiftAngleUniformLocation = GL.GetUniformLocation(program, "uHueShiftAngle");
         
         lensDistortionIntensityUniformLocation = GL.GetUniformLocation(program, "uLensDistortionIntensity");
@@ -85,6 +93,10 @@ public class UberPost(IResourceManager resourceManager) : IDisposable
         gradientRotationUniformLocation = GL.GetUniformLocation(program, "uGradientRotation");
         gradientModeUniformLocation = GL.GetUniformLocation(program, "uGradientMode");
         
+        glitchIntensityUniformLocation = GL.GetUniformLocation(program, "uGlitchIntensity");
+        glitchSpeedUniformLocation = GL.GetUniformLocation(program, "uGlitchSpeed");
+        glitchSizeUniformLocation = GL.GetUniformLocation(program, "uGlitchSize");
+        
         // Initialize sampler
         sampler = GL.CreateSampler();
         GL.SamplerParameteri(sampler, SamplerParameterI.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
@@ -95,25 +107,32 @@ public class UberPost(IResourceManager resourceManager) : IDisposable
     
     public bool Process(
         Vector2i size,
+        float time,
         float hueShiftAngle,
         float lensDistortionIntensity, Vector2 lensDistortionCenter,
         float chromaticAberrationIntensity,
         Vector2 vignetteCenter, float vignetteIntensity, bool vignetteRounded, float vignetteRoundness, float vignetteSmoothness, Vector3 vignetteColor,
         Vector3 gradientColor1, Vector3 gradientColor2, float gradientIntensity, float gradientRotation, GradientOverlayMode gradientMode,
+        float glitchIntensity, float glitchSpeed, Vector2 glitchSize,
         int inputTexture, int outputTexture)
     {
         if (hueShiftAngle == 0.0f && 
             lensDistortionIntensity == 0.0f && 
             chromaticAberrationIntensity == 0.0f && 
             vignetteIntensity == 0.0f &&
-            gradientIntensity == 0.0f)
+            gradientIntensity == 0.0f &&
+            glitchIntensity == 0.0f)
             return false;
         
         GL.UseProgram(program);
         
         GL.BindImageTexture(0, outputTexture, 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f);
         GL.BindTextureUnit(0, inputTexture);
+        GL.BindSampler(0, sampler);
+        
         GL.Uniform2i(sizeUniformLocation, 1, size);
+        
+        GL.Uniform1f(timeUniformLocation, time);
         
         GL.Uniform1f(hueShiftAngleUniformLocation, hueShiftAngle);
         
@@ -137,6 +156,10 @@ public class UberPost(IResourceManager resourceManager) : IDisposable
             MathF.Sin(gradientRotation), MathF.Cos(gradientRotation));
         GL.UniformMatrix2f(gradientRotationUniformLocation, 1, false, in rotation);
         GL.Uniform1i(gradientModeUniformLocation, (int) gradientMode);
+        
+        GL.Uniform1f(glitchIntensityUniformLocation, glitchIntensity);
+        GL.Uniform1f(glitchSpeedUniformLocation, glitchSpeed);
+        GL.Uniform2f(glitchSizeUniformLocation, 1, glitchSize);
         
         GL.DispatchCompute(
             (uint)MathUtil.DivideCeil(size.X, 8), 
