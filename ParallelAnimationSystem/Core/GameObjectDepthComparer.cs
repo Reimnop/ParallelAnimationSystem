@@ -14,7 +14,7 @@ public class GameObjectDepthComparer : IComparer<GameObject>
         var renderDepthComparison = y.RenderDepth.CompareTo(x.RenderDepth);
         if (renderDepthComparison != 0) 
             return renderDepthComparison;
-        var parentDepthComparison = x.ParentDepth.CompareTo(y.ParentDepth);
+        var parentDepthComparison = y.ParentDepth.CompareTo(x.ParentDepth);
         if (parentDepthComparison != 0) 
             return parentDepthComparison;
         return x.DepthTiebreaker.CompareTo(y.DepthTiebreaker);
