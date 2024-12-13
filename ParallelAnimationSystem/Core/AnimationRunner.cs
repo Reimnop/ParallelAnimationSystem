@@ -30,7 +30,7 @@ public class AnimationRunner
     private readonly List<GameObject> killTimeSortedGameObjects = [];
     private int spawnIndex;
     private int killIndex;
-    private readonly HashSet<GameObject> aliveGameObjects = [];
+    private readonly SortedSet<GameObject> aliveGameObjects = new(new GameObjectDepthComparer());
     
     private readonly Sequence<ITheme, ThemeColors> themeColorSequence;
     private readonly Sequence<Vector2, Vector2> cameraPositionAnimation;

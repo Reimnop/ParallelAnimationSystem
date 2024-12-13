@@ -385,8 +385,8 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         
         foreach (var drawData in drawList)
         {
-            // Discard draw data that is fully transparent, or outside of clipping range
-            if ((drawData.Color1.W == 0.0f && drawData.Color2.W == 0.0f) || drawData.Z < 0.0f || drawData.Z > 1.0f)
+            // Discard draw data that is fully transparent
+            if (drawData.Color1.W == 0.0f && drawData.Color2.W == 0.0f)
                 continue;
             
             // Add to appropriate list
@@ -396,9 +396,9 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
                 transparentDrawData.Add(drawData);
         }
         
-        // Sort transparent draw data back to front and opaque front to back
-        opaqueDrawData.Sort((a, b) => a.Z.CompareTo(b.Z));
-        transparentDrawData.Sort((a, b) => b.Z.CompareTo(a.Z));
+        // Reverse opaque draw data list so that it is drawn
+        // from back to front to avoid overdraw
+        opaqueDrawData.Reverse();
         
         // Get camera matrix (view and projection)
         var camera = GetCameraMatrix(drawList.CameraData, renderSize);
@@ -408,7 +408,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         
         // Clear buffers
         var clearColor = drawList.ClearColor;
-        var depth = 1.0f;
+        var depth = 0.0f;
         GL.ClearNamedFramebufferf(fboHandle, OpenTK.Graphics.OpenGL.Buffer.Color, 0, in clearColor.X);
         GL.ClearNamedFramebufferf(fboHandle, OpenTK.Graphics.OpenGL.Buffer.Depth, 0, in depth);
         
@@ -441,6 +441,9 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         
         // Bind our vertex array
         GL.BindVertexArray(vertexArrayHandle);
+        
+        // Set depth function
+        GL.DepthFunc(DepthFunction.Greater);
         
         // Opaque pass, disable blending, enable depth testing
         GL.Disable(EnableCap.Blend);
@@ -521,7 +524,6 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
             var transform = drawData.Transform;
             var color1 = drawData.Color1;
             var color2 = drawData.Color2;
-            var z = drawData.Z;
             var renderMode = drawData.RenderMode;
             
             var mvp = transform * camera;
@@ -533,7 +535,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
                 MvpRow3 = mvp.Row2,
                 Color1 = (Vector4) color1,
                 Color2 = (Vector4) color2,
-                Z = z,
+                Z = RenderUtil.EncodeIntDepth(drawData.Index),
                 RenderMode = (int) renderMode,
                 RenderType = (int) renderType,
                 GlyphOffset = multiDrawGlyphBuffer.Data.Length / Unsafe.SizeOf<RenderGlyph>(),

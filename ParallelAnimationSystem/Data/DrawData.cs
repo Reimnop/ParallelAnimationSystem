@@ -11,6 +11,7 @@ public class DrawData
     public Matrix3 Transform { get; set; }
     public Color4<Rgba> Color1 { get; set; }
     public Color4<Rgba> Color2 { get; set; }
-    public float Z { get; set; }
     public RenderMode RenderMode { get; set; }
+    
+    public int Index { get; set; }
 }

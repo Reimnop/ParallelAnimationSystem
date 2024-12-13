@@ -449,8 +449,8 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         
         foreach (var drawData in drawList)
         {
-            // Discard draw data that is fully transparent, or outside of clipping range
-            if ((drawData.Color1.W == 0.0f && drawData.Color2.W == 0.0f) || drawData.Z < 0.0f || drawData.Z > 1.0f)
+            // Discard draw data that is fully transparent
+            if (drawData.Color1.W == 0.0f && drawData.Color2.W == 0.0f)
                 continue;
             
             // Add to appropriate list
@@ -460,9 +460,9 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
                 transparentDrawData.Add(drawData);
         }
         
-        // Sort transparent draw data back to front and opaque front to back
-        opaqueDrawData.Sort((a, b) => a.Z.CompareTo(b.Z));
-        transparentDrawData.Sort((a, b) => b.Z.CompareTo(a.Z));
+        // Reverse opaque draw data list so that it is drawn
+        // from back to front to avoid overdraw
+        opaqueDrawData.Reverse();
         
         // Bind FBO
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, fboHandle);
@@ -470,7 +470,11 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         // Clear the screen
         GL.Viewport(0, 0, renderSize.X, renderSize.Y);
         GL.ClearColor(drawList.ClearColor);
+        GL.ClearDepthf(0.0f);
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+        
+        // Set depth function
+        GL.DepthFunc(DepthFunction.Greater);
         
         // Opaque pass, disable blending, enable depth testing
         GL.Disable(EnableCap.Blend);
@@ -581,7 +585,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
                         GL.UniformMatrix3fv(mvpUniformLocation, 1, false, (float*)&transform);
                     }
             
-                    GL.Uniform1f(zUniformLocation, drawData.Z);
+                    GL.Uniform1f(zUniformLocation, RenderUtil.EncodeIntDepth(drawData.Index));
                     GL.Uniform1i(renderModeUniformLocation, (int) drawData.RenderMode);
                     GL.Uniform4f(color1UniformLocation, color1.X, color1.Y, color1.Z, color1.W);
                     GL.Uniform4f(color2UniformLocation, color2.X, color2.Y, color2.Z, color2.W);
@@ -601,7 +605,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
                     {
                         GL.UniformMatrix3fv(glyphMvpUniformLocation, 1, false, (float*)&transform);
                     }
-                    GL.Uniform1f(glyphZUniformLocation, drawData.Z);
+                    GL.Uniform1f(glyphZUniformLocation, RenderUtil.EncodeIntDepth(drawData.Index));
                     
                     // Set textures
                     lock (registeredFonts)

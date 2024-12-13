@@ -16,7 +16,7 @@ public class DrawList : IDrawList, IEnumerable<DrawData>
     private readonly List<DrawData> drawDataList = [];
     private int count;
     
-    public void AddMesh(IMeshHandle mesh, Matrix3 transform, Color4<Rgba> color1, Color4<Rgba> color2, float z, RenderMode renderMode)
+    public void AddMesh(IMeshHandle mesh, Matrix3 transform, Color4<Rgba> color1, Color4<Rgba> color2, RenderMode renderMode)
     {
         DrawData drawData;
         if (drawDataList.Count > count)
@@ -26,19 +26,19 @@ public class DrawList : IDrawList, IEnumerable<DrawData>
             drawData = new DrawData();
             drawDataList.Add(drawData);
         }
-
-        count++;
         
         drawData.RenderType = RenderType.Mesh;
         drawData.Mesh = mesh;
         drawData.Transform = transform;
         drawData.Color1 = color1;
         drawData.Color2 = color2;
-        drawData.Z = z;
         drawData.RenderMode = renderMode;
+        drawData.Index = count;
+        
+        count++;
     }
     
-    public void AddText(ITextHandle text, Matrix3 transform, Color4<Rgba> color, float z)
+    public void AddText(ITextHandle text, Matrix3 transform, Color4<Rgba> color)
     {
         DrawData drawData;
         if (drawDataList.Count > count)
@@ -48,14 +48,14 @@ public class DrawList : IDrawList, IEnumerable<DrawData>
             drawData = new DrawData();
             drawDataList.Add(drawData);
         }
-
-        count++;
         
         drawData.RenderType = RenderType.Text;
         drawData.Text = text;
         drawData.Transform = transform;
         drawData.Color1 = color;
-        drawData.Z = z;
+        drawData.Index = count;
+        
+        count++;
     }
 
     public IEnumerator<DrawData> GetEnumerator()

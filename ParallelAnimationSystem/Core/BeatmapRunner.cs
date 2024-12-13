@@ -206,7 +206,6 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
         foreach (var gameObject in runner.AliveGameObjects)
         {
             var transform = gameObject.CachedTransform;
-            var z = gameObject.Depth;
             var color1 = gameObject.CachedThemeColor.Item1;
             var color2 = gameObject.CachedThemeColor.Item2;
             
@@ -218,12 +217,12 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
                 if (color1 == color2)
                     color2.W = 0.0f;
             
-                drawList.AddMesh(mesh, transform, color1, color2, z, renderMode);
+                drawList.AddMesh(mesh, transform, color1, color2, renderMode);
             }
             else if (appSettings.EnableTextRendering)
             {
                 if (cachedTextHandles.TryGetValue(gameObject, out var task) && task.IsCompleted)
-                    drawList.AddText(task.Result, transform, color1, z);
+                    drawList.AddText(task.Result, transform, color1);
             }
         }
         

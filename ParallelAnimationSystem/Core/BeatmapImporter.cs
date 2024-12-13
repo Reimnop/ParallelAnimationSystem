@@ -530,8 +530,6 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             return null;
         }
         
-        var depth = MathHelper.MapRange(beatmapObject.RenderDepth + parentTransforms.Sum(x => x.RenderDepth) * 0.0001f - i * 0.00001f, -100.0f, 100.0f, 0.0f, 1.0f);
-        
         return new GameObject(
             startTime,
             killTime,
@@ -539,7 +537,8 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             -parentPositionTimeOffset, -parentScaleTimeOffset, -parentRotationTimeOffset,
             parentAnimatePosition, parentAnimateScale, parentAnimateRotation,
             renderMode, origin, 
-            shapeIndex, shapeOptionIndex, depth,
+            shapeIndex, shapeOptionIndex,
+            beatmapObject.RenderDepth, parentTransforms.Count, i,
             text, horizontalAlignment, verticalAlignment,
             parentTransforms);
     }
