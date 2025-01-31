@@ -1,0 +1,34 @@
+﻿{
+  "id": "7",
+  "name": "Black/White",
+  "gui": "EFEBEF",
+  "bg": "111111",
+  "players": [
+    "F44336",
+    "2196F3",
+    "4CAF50",
+    "FF9800"
+  ],
+  "objs": [
+    "FAFAFA",
+    "FFFFFF",
+    "FFFFFF",
+    "FFFFFF",
+    "FFFFFF",
+    "FFFFFF",
+    "FFFFFF",
+    "FFFFFF",
+    "FFFFFF"
+  ],
+  "bgs": [
+    "222222",
+    "333333",
+    "444444",
+    "444444",
+    "444444",
+    "444444",
+    "444444",
+    "444444",
+    "444444"
+  ]
+}

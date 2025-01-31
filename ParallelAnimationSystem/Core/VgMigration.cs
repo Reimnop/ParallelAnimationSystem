@@ -162,8 +162,8 @@ public static class VgMigration
             if (json is not JsonObject jsonObject)
                 continue;
             
-            var theme = VgDeserialization.DeserializeTheme(jsonObject);
-            themes.Add(themeName, theme);
+            var theme = (VgBeatmapTheme) VgDeserialization.DeserializeTheme(jsonObject);
+            themes.Add(theme.Id, theme);
         }
         
         return themes;

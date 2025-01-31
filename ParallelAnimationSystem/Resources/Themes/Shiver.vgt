@@ -1,1 +1,46 @@
-{"name":"Shiver","id":"15","pla":["FA5C66","5C8BFA","06D6A0","FFD166"],"obj":["99FFFF","52E1FB","52ADF7","407DDD","0635FF","0419CB","3D7F83","276563","112437"],"fx":["FF7C96","EF4768","B7003E","6D6E99","41436B","161C40","66E0FF","00AEEF","007FBC"],"bg":["BCDFF8","C6ECFB","DAF7FD","86B2EC","7195C0","7D97B3","5E7B98","495E78","32485F"],"base_bg":"BCDFF8","base_gui":"323233","base_gui_accent":"EF5350","folder":""}
+{
+  "id": "15",
+  "name": "Shiver",
+  "pla": [
+    "FA5C66",
+    "5C8BFA",
+    "06D6A0",
+    "FFD166"
+  ],
+  "obj": [
+    "99FFFF",
+    "52E1FB",
+    "52ADF7",
+    "407DDD",
+    "0635FF",
+    "0419CB",
+    "3D7F83",
+    "276563",
+    "112437"
+  ],
+  "fx": [
+    "FF7C96",
+    "EF4768",
+    "B7003E",
+    "6D6E99",
+    "41436B",
+    "161C40",
+    "66E0FF",
+    "00AEEF",
+    "007FBC"
+  ],
+  "bg": [
+    "BCDFF8",
+    "C6ECFB",
+    "DAF7FD",
+    "86B2EC",
+    "7195C0",
+    "7D97B3",
+    "5E7B98",
+    "495E78",
+    "32485F"
+  ],
+  "base_bg": "BCDFF8",
+  "base_gui": "323233",
+  "base_gui_accent": "EF5350"
+}
