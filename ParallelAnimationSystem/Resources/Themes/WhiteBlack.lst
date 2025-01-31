@@ -1,8 +1,8 @@
 ﻿{
-  "id": "7",
+  "id": "8",
   "name": "White/Black",
-  "gui": "EFEBEF",
-  "bg": "111111",
+  "gui": "212121",
+  "bg": "FAFAFA", 
   "players": [
     "F44336",
     "2196F3",
@@ -10,17 +10,6 @@
     "FF9800"
   ],
   "objs": [
-    "FAFAFA",
-    "FFFFFF",
-    "FFFFFF",
-    "FFFFFF",
-    "FFFFFF",
-    "FFFFFF",
-    "FFFFFF",
-    "FFFFFF",
-    "FFFFFF"
-  ],
-  "bgs": [
     "222222",
     "333333",
     "444444",
@@ -30,5 +19,16 @@
     "444444",
     "444444",
     "444444"
+  ],
+  "bgs": [
+    "FFFFFF",
+    "E5E5E5",
+    "CCCCCC",
+    "CCCCCC",
+    "CCCCCC",
+    "CCCCCC",
+    "CCCCCC",
+    "CCCCCC",
+    "CCCCCC"
   ]
 }
