@@ -1,1 +1,34 @@
-{"id":"3","name":"Donuts","gui":"212121","bg":"FFFFFF","players":["F44336","2196F3","4CAF50","FF9800"],"objs":["FF86A3","FF6386","FFDF91","FFBF7A","8CEEFF","20DAF5","EC9D75","CE6852","1B1B1C"],"bgs":["FFFFFF","AFAFAF","646464","393939"]}
+{
+  "id": "3",
+  "name": "Donuts",
+  "gui": "212121",
+  "bg": "FFFFFF",
+  "players": [
+    "F44336",
+    "2196F3",
+    "4CAF50",
+    "FF9800"
+  ],
+  "objs": [
+    "FF86A3",
+    "FF6386",
+    "FFDF91",
+    "FFBF7A",
+    "8CEEFF",
+    "20DAF5",
+    "EC9D75",
+    "CE6852",
+    "1B1B1C"
+  ],
+  "bgs": [
+    "FFFFFF",
+    "AFAFAF",
+    "646464",
+    "393939",
+    "393939",
+    "393939",
+    "393939",
+    "393939",
+    "393939"
+  ]
+}

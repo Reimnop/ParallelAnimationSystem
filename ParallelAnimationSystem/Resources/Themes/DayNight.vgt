@@ -1,1 +1,46 @@
-{"name":"Day Night","id":"2","pla":["F44336","2196F3","4CAF50","FF9800"],"obj":["132036","3E5376","A5DCE9","EF8E46","FFCD86","FFF5D5"],"fx":["F7F7F7","F7F7F7","F7F7F7","F7F7F7","F7F7F7","F7F7F7","F7F7F7","F7F7F7","F7F7F7"],"bg":["F7F7F7","F7F7F7","F7F7F7","F7F7F7","F7F7F7","F7F7F7","F7F7F7","F7F7F7","F7F7F7"],"base_bg":"FFFFFF","base_gui":"212121","base_gui_accent":"EF5350","folder":""}
+{
+  "id": "2",
+  "name": "Day Night",
+  "pla": [
+    "F44336",
+    "2196F3",
+    "4CAF50",
+    "FF9800"
+  ],
+  "obj": [
+    "132036",
+    "3E5376",
+    "A5DCE9",
+    "EF8E46",
+    "FFCD86",
+    "FFF5D5",
+    "FFF5D5",
+    "FFF5D5",
+    "FFF5D5"
+  ],
+  "fx": [
+    "F7F7F7",
+    "F7F7F7",
+    "F7F7F7",
+    "F7F7F7",
+    "F7F7F7",
+    "F7F7F7",
+    "F7F7F7",
+    "F7F7F7",
+    "F7F7F7"
+  ],
+  "bg": [
+    "F7F7F7",
+    "F7F7F7",
+    "F7F7F7",
+    "F7F7F7",
+    "F7F7F7",
+    "F7F7F7",
+    "F7F7F7",
+    "F7F7F7",
+    "F7F7F7"
+  ],
+  "base_bg": "FFFFFF",
+  "base_gui": "212121",
+  "base_gui_accent": "EF5350"
+}

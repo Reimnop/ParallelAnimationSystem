@@ -1,1 +1,34 @@
-{"id":"2","name":"Day Night","gui":"212121","bg":"FFFFFF","players":["F44336","2196F3","4CAF50","FF9800"],"objs":["142138","3E5376","A5DCE9","EF8E46","FFCD86","FFF5D5"],"bgs":["1E1E1E","3C3C3C","5A5A5A","787878","969696","B4B4B4"]}
+{
+  "id": "2",
+  "name": "Day Night",
+  "gui": "212121",
+  "bg": "FFFFFF",
+  "players": [
+    "F44336",
+    "2196F3",
+    "4CAF50",
+    "FF9800"
+  ],
+  "objs": [
+    "142138",
+    "3E5376",
+    "A5DCE9",
+    "EF8E46",
+    "FFCD86",
+    "FFF5D5",
+    "FFF5D5",
+    "FFF5D5",
+    "FFF5D5"
+  ],
+  "bgs": [
+    "1E1E1E",
+    "3C3C3C",
+    "5A5A5A",
+    "787878",
+    "969696",
+    "B4B4B4",
+    "B4B4B4",
+    "B4B4B4",
+    "B4B4B4"
+  ]
+}

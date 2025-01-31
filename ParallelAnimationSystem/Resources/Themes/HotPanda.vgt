@@ -1,1 +1,46 @@
-{"name":"HotPanda","id":"20","pla":["FA5C66","5C8BFA","06D6A0","FFD166"],"obj":["C8024F","FF585F","FCE4A8","BED7E9","0A7E8B","093A54","2F2041","27232A","FFFFFF"],"fx":["FF7C96","EF4768","B7003E","6D6E99","41436B","161C40","66E0FF","00AEEF","007FBC"],"bg":["FFAAFF","FEB8FE","FAC4FE","FF8BFE","FF97FE","FEA3FF","B56BAE","D98AD6","ED9AEB"],"base_bg":"27232A","base_gui":"FFFFFF","base_gui_accent":"C80224","folder":""}
+{
+  "id": "20",
+  "name": "HotPanda",
+  "pla": [
+    "FA5C66",
+    "5C8BFA",
+    "06D6A0",
+    "FFD166"
+  ],
+  "obj": [
+    "C8024F",
+    "FF585F",
+    "FCE4A8",
+    "BED7E9",
+    "0A7E8B",
+    "093A54",
+    "2F2041",
+    "27232A",
+    "FFFFFF"
+  ],
+  "fx": [
+    "FF7C96",
+    "EF4768",
+    "B7003E",
+    "6D6E99",
+    "41436B",
+    "161C40",
+    "66E0FF",
+    "00AEEF",
+    "007FBC"
+  ],
+  "bg": [
+    "FFAAFF",
+    "FEB8FE",
+    "FAC4FE",
+    "FF8BFE",
+    "FF97FE",
+    "FEA3FF",
+    "B56BAE",
+    "D98AD6",
+    "ED9AEB"
+  ],
+  "base_bg": "27232A",
+  "base_gui": "FFFFFF",
+  "base_gui_accent": "C80224"
+}

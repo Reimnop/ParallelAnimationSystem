@@ -104,12 +104,14 @@ public static class LsMigration
         var themeNames = new[]
         {
             "Anarchy.lst",
+            "BlackWhite.lst",
             "Classic.lst",
             "Dark.lst",
             "DayNight.lst",
             "Donuts.lst",
             "Machine.lst",
             "New.lst",
+            "WhiteBlack.lst"
         };
         
         var themes = new Dictionary<int, ITheme>();
