@@ -113,17 +113,41 @@ public static class VgMigration
         beatmap.Objects.Add(cameraObject);
         
         // Now we'll parent all the camera parent objects to the camera object
-        foreach (var o in beatmap.Objects.Concat(beatmap.Prefabs.SelectMany(x => x.BeatmapObjects)))
+        var allObjects = beatmap.Objects.Concat(beatmap.Prefabs.SelectMany(x => x.BeatmapObjects)).ToList();
+        
+        var childrenLookup = new Dictionary<IObject, List<IObject>>();
+        foreach (var o in allObjects)
         {
-            if (o.Parent is IIdentifiable<string> { Id: "camera" })
-            {
-                o.Parent = cameraObject;
-                o.ParentType = ParentType.Position | ParentType.Scale | ParentType.Rotation;
-                
-                // Make sure camera parented objects are above everything else
-                o.RenderDepth -= 100;
-            }
+            if (o.Parent is not BeatmapObject parent)
+                continue;
+
+            if (!childrenLookup.TryGetValue(parent, out var childrenList))
+                childrenLookup.Add(parent, childrenList = []);
+            
+            childrenList.Add(o);
         }
+        
+        foreach (var o in allObjects)
+        {
+            if (o.Parent is not IIdentifiable<string> { Id: "camera" })
+                continue;
+            
+            o.Parent = cameraObject;
+            o.ParentType = ParentType.Position | ParentType.Scale | ParentType.Rotation;
+                
+            // Make sure camera parented objects are above everything else
+            OffsetLayersRecursively(childrenLookup, o, -100);
+        }
+    }
+
+    private static void OffsetLayersRecursively(Dictionary<IObject, List<IObject>> childrenLookup,
+        IObject currentObject, int offsetBy)
+    {
+        currentObject.RenderDepth += offsetBy;
+        if (!childrenLookup.TryGetValue(currentObject, out var children))
+            return;
+        foreach (var child in children)
+            OffsetLayersRecursively(childrenLookup, child, offsetBy);
     }
 
     private static Dictionary<string, ITheme> LoadThemes(IResourceManager resourceManager)
