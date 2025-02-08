@@ -7,28 +7,21 @@ using ParallelAnimationSystem.Data;
 
 namespace ParallelAnimationSystem.Wasm;
 
-public class WasmMediaProvider : IMediaProvider
+public class WasmMediaProvider(string beatmapData, BeatmapFormat beatmapFormat) : IMediaProvider
 {
     public IBeatmap LoadBeatmap(out BeatmapFormat format)
     {
-        var beatmapJsonStr = JsApi.GetBeatmapData();
-        var beatmapJson = JsonNode.Parse(beatmapJsonStr);
+        var beatmapJson = JsonNode.Parse(beatmapData);
         if (beatmapJson is not JsonObject jsonObject)
             throw new InvalidOperationException("Failed to parse beatmap JSON");
-
-        var formatStr = JsApi.GetBeatmapFormat();
-        format = formatStr switch
-        {
-            "lsb" => BeatmapFormat.Lsb,
-            "vgd" => BeatmapFormat.Vgd,
-            _ => throw new InvalidOperationException($"Unsupported beatmap format '{formatStr}'")
-        };
         
-        return format switch
+        format = beatmapFormat;
+        
+        return beatmapFormat switch
         {
             BeatmapFormat.Lsb => LsDeserialization.DeserializeBeatmap(jsonObject),
             BeatmapFormat.Vgd => VgDeserialization.DeserializeBeatmap(jsonObject),
-            _ => throw new InvalidOperationException($"Unsupported beatmap format '{format}'"),
+            _ => throw new InvalidOperationException($"Unsupported beatmap format '{beatmapFormat}'"),
         };
     }
 }

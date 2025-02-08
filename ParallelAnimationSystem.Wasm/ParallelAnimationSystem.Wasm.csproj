@@ -13,9 +13,8 @@
     <SelfContained>true</SelfContained>
     <MSBuildEnableWorkloadResolver>false</MSBuildEnableWorkloadResolver>
     <WasmEnableSIMD>true</WasmEnableSIMD>
-
-    <DotNetJsApi>true</DotNetJsApi>
-    <EmccFlags>-sMIN_WEBGL_VERSION=2 -lGL</EmccFlags>
+    
+    <EmccFlags>-sEXPORT_ES6 -sMODULARIZE -sMIN_WEBGL_VERSION=2 -lGL -sEXPORTED_RUNTIME_METHODS='["stringToNewUTF8"]'</EmccFlags>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,8 +22,6 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="Uno.Extensions.Logging.WebAssembly.Console" Version="1.7.0" />
-    
     <!-- For NativeAOT-LLVM -->
     <PackageReference Include="Microsoft.DotNet.ILCompiler.LLVM" Version="9.0.0-*" />
     <PackageReference Include="runtime.$(NETCoreSdkPortableRuntimeIdentifier).Microsoft.DotNet.ILCompiler.LLVM" Version="9.0.0-*" />

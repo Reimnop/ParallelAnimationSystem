@@ -1,19 +1,19 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.OpenGLES;
 using ParallelAnimationSystem.Windowing;
-using Uno.Extensions.Logging.WebAssembly;
 
 namespace ParallelAnimationSystem.Wasm;
 
-public class WasmStartup(WasmAppSettings appSettings) : IStartup
+public class WasmStartup(WasmAppSettings appSettings, string beatmapData, BeatmapFormat beatmapFormat) : IStartup
 {
     public IAppSettings AppSettings { get; } = appSettings;
     
     public void ConfigureLogging(ILoggingBuilder loggingBuilder)
-        => loggingBuilder.AddProvider(new WebAssemblyConsoleLoggerProvider());
+        => loggingBuilder.AddProvider(new WasmLoggerProvider());
 
     public IResourceManager CreateResourceManager(IServiceProvider serviceProvider)
         => new EmbeddedResourceManager(typeof(WasmStartup).Assembly); // Provide decompressed font files, as System.IO.Compression isn't available in WASM
@@ -29,5 +29,5 @@ public class WasmStartup(WasmAppSettings appSettings) : IStartup
             serviceProvider.GetRequiredService<ILogger<Renderer>>());
 
     public IMediaProvider CreateMediaProvider(IServiceProvider serviceProvider)
-        => new WasmMediaProvider();
+        => new WasmMediaProvider(beatmapData, beatmapFormat);
 }
