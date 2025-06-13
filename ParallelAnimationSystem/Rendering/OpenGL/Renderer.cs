@@ -639,6 +639,9 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
 
     private static Matrix3 GetCameraMatrix(CameraData camera, Vector2i size)
     {
+        if (camera.Scale == 0.0f)
+            return Matrix3.Zero;
+        
         var aspectRatio = size.X / (float) size.Y;
         var view = Matrix3.Invert(
             MathUtil.CreateScale(Vector2.One * camera.Scale) *

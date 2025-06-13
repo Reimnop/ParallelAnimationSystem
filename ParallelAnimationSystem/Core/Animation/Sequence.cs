@@ -1,28 +1,25 @@
-using System.Runtime.CompilerServices;
-
 namespace ParallelAnimationSystem.Core.Animation;
 
 public class Sequence<TIn, TOut>
 {
-    public ReadOnlySpan<Keyframe<TIn>> Keyframes => keyframes;
+    public IReadOnlyList<Keyframe<TIn>> Keyframes => keyframes;
     
-    private readonly Keyframe<TIn>[] keyframes;
+    private readonly List<Keyframe<TIn>> keyframes;
     private readonly Interpolator<TIn, TOut> interpolator;
 
     public Sequence(IEnumerable<Keyframe<TIn>> keyframes, Interpolator<TIn, TOut> interpolator)
     {
-        this.keyframes = keyframes.ToArray();
+        this.keyframes = keyframes.ToList();
         this.interpolator = interpolator;
-        Array.Sort(this.keyframes, (x, y) => x.Time.CompareTo(y.Time));
+        this.keyframes.Sort((x, y) => x.Time.CompareTo(y.Time));
     }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    
     public TOut? Interpolate(float time, object? context = null)
     {
-        if (keyframes.Length == 0)
+        if (keyframes.Count == 0)
             return default;
 
-        if (keyframes.Length == 1)
+        if (keyframes.Count == 1)
             return ResultFromSingleKeyframe(keyframes[0], context);
 
         if (time < keyframes[0].Time)
@@ -42,13 +39,13 @@ public class Sequence<TIn, TOut>
     // Binary search for the keyframe pair that contains the given time
     private int Search(float time)
     {
-        int low = 0;
-        int high = keyframes.Length - 1;
+        var low = 0;
+        var high = keyframes.Count - 1;
 
         while (low <= high)
         {
-            int mid = (low + high) / 2;
-            float midTime = keyframes[mid].Time;
+            var mid = (low + high) / 2;
+            var midTime = keyframes[mid].Time;
 
             if (time < midTime)
             {
