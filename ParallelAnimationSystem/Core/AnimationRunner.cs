@@ -49,7 +49,7 @@ public class AnimationRunner
     private float lastTime;
     
     public AnimationRunner(
-        IEnumerable<GameObject> gameObjects, 
+        IEnumerable<GameObject> gameObjects,
         Sequence<ITheme, ThemeColors> themeColorSequence,
         Sequence<Vector2, Vector2> cameraPositionAnimation,
         Sequence<float, float> cameraScaleAnimation,

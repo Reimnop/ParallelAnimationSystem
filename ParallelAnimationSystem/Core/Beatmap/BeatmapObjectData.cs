@@ -81,11 +81,11 @@ public class BeatmapObjectData(
         set => SetField(ref shapeIndex, value);
     }
 
-    public IReadOnlyList<Animation.Keyframe<Vector2>> PositionKeyframes => positionAnimation.Keyframes;
-    public IReadOnlyList<Animation.Keyframe<Vector2>> ScaleKeyframes => scaleAnimation.Keyframes;
-    public IReadOnlyList<Animation.Keyframe<float>> RotationKeyframes => rotationAnimation.Keyframes;
-    public IReadOnlyList<Animation.Keyframe<ThemeColor>> ThemeColorKeyframes => themeColorAnimation.Keyframes;
-    
+    public Sequence<Vector2, Vector2> PositionSequence { get; } = new(positionKeyframes, InterpolateVector2);
+    public Sequence<Vector2, Vector2> ScaleSequence { get; } = new(scaleKeyframes, InterpolateVector2);
+    public Sequence<float, float> RotationSequence { get; } = new(rotationKeyframes, InterpolateFloat);
+    public Sequence<ThemeColor, (Color4<Rgba>, Color4<Rgba>)> ThemeColorSequence { get; } = new(themeColorKeyframes, InterpolateThemeColor);
+
     private ParentTemporalOffsets parentTemporalOffsets = new(0f, 0f, 0f);
     private ParentTypes parentTypes = new(true, false, true);
     
@@ -101,11 +101,6 @@ public class BeatmapObjectData(
 
     private int shapeCategoryIndex = 0;
     private int shapeIndex = 0;
-
-    private readonly Sequence<Vector2, Vector2> positionAnimation = new(positionKeyframes, InterpolateVector2);
-    private readonly Sequence<Vector2, Vector2> scaleAnimation = new(scaleKeyframes, InterpolateVector2);
-    private readonly Sequence<float, float> rotationAnimation = new(rotationKeyframes, InterpolateFloat);
-    private readonly Sequence<ThemeColor, (Color4<Rgba>, Color4<Rgba>)> themeColorAnimation = new(themeColorKeyframes, InterpolateThemeColor);
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
