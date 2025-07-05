@@ -156,7 +156,7 @@ public class Timeline
          AutoKillType.NoAutoKill => float.PositiveInfinity,
          AutoKillType.LastKeyframe => throw new NotImplementedException(),
          AutoKillType.LastKeyframeOffset => throw new NotImplementedException(),
-         AutoKillType.SongTime => throw new NotImplementedException(),
+         AutoKillType.SongTime => data.KillTimeOffset,
          _ => throw new ArgumentOutOfRangeException(nameof(data.AutoKillType), $"Unknown AutoKillType '{data.AutoKillType}'!")
       };
 
