@@ -83,8 +83,8 @@ public unsafe class DesktopWindow : IWindow, IDisposable
 
     public void SetSwapInterval(int interval)
     {
-        GLFW.MakeContextCurrent(window);
-        GLFW.SwapInterval(interval);
+        // GLFW.MakeContextCurrent(window);
+        // GLFW.SwapInterval(interval);
     }
 
     public void RequestAnimationFrame(AnimationFrameCallback callback)
@@ -94,7 +94,10 @@ public unsafe class DesktopWindow : IWindow, IDisposable
         GLFW.MakeContextCurrent(window);
         var time = GLFW.GetTime();
         if (callback(time, 0))
+        {
             GLFW.SwapBuffers(window);
+            DwmFlush();
+        }
     }
 
     public void Close()
@@ -106,4 +109,7 @@ public unsafe class DesktopWindow : IWindow, IDisposable
     {
         GLFW.DestroyWindow(window);
     }
+    
+    [DllImport("Dwmapi.dll")]
+    static extern int DwmFlush();
 }

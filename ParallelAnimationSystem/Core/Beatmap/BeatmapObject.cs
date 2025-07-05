@@ -80,6 +80,23 @@ public class BeatmapObject(string id, BeatmapObjectData data) : INotifyPropertyC
         
         ChildRemoved?.Invoke(this, child);
     }
+    
+    /// <summary>
+    /// Depth-first traversal of the beatmap object tree, applying the specified action to each object.
+    /// </summary>
+    public void Traverse(Action<BeatmapObject> action)
+    {
+        var stack = new Stack<BeatmapObject>();
+        stack.Push(this);
+        while (stack.Count > 0)
+        {
+            var current = stack.Pop();
+            action(current);
+            
+            foreach (var child in current.Children)
+                stack.Push(child);
+        }
+    }
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {

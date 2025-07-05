@@ -97,7 +97,7 @@ public class BeatmapObjectData(
 
     private AutoKillType autoKillType = AutoKillType.FixedTime;
     private float startTime = 0f;
-    private float killTimeOffset = 5f;
+    private float killTimeOffset = 0f;
 
     private int shapeCategoryIndex = 0;
     private int shapeIndex = 0;
