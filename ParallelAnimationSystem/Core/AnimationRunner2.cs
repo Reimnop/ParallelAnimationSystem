@@ -40,8 +40,15 @@ public class AnimationRunner2(
     public Color4<Rgba> BackgroundColor { get; private set; }
 
     private readonly ConcurrentBag<PerFrameBeatmapObjectData> perFrameData = [];
+    private readonly List<PerFrameBeatmapObjectData> sortedPerFrameData = [];
 
-    public void Process(float time, int workers = -1)
+    private readonly PerFrameDataDepthComparer depthComparer = new(); 
+
+    /// <summary>
+    /// Processes one frame of the animation. Do not call from multiple threads at the same time.
+    /// </summary>
+    /// <returns>The render data of the animation.</returns>
+    public IReadOnlyList<PerFrameBeatmapObjectData> ProcessFrame(float time, int workers = -1)
     {
         // Update theme
         var themeColors = themeColorSequence.Interpolate(time);
@@ -67,24 +74,38 @@ public class AnimationRunner2(
         Shake = shakeSequence.Interpolate(time, themeColors);
         
         // Update all objects in parallel
+        perFrameData.Clear();
+        
         var parallelOptions = new ParallelOptions
         {
             MaxDegreeOfParallelism = workers
         };
-        Parallel.ForEach(timeline.AliveObjects, parallelOptions, (x, _) => ProcessGameObjectAsync(x, themeColors, time));
+        Parallel.ForEach(timeline.AliveObjects, parallelOptions, (x, _) => ProcessGameObject(x, themeColors, time));
+        
+        // Sort the per-frame data by depth
+        sortedPerFrameData.Clear();
+        sortedPerFrameData.AddRange(perFrameData);
+        sortedPerFrameData.Sort(depthComparer);
+        
+        // Return the sorted per-frame data
+        return sortedPerFrameData;
     }
 
-    private void ProcessGameObjectAsync(BeatmapObject beatmapObject, ThemeColors themeColors, float time)
+    private void ProcessGameObject(BeatmapObject beatmapObject, ThemeColors themeColors, float time)
     {
+        var parentDepth = 0;
+        var transform = CalculateBeatmapObjectTransform(
+            beatmapObject,
+            true, true, true,
+            0.0f, 0.0f, 0.0f,
+            time, ref parentDepth,
+            null);
         var perFrameDatum = new PerFrameBeatmapObjectData
         {
             BeatmapObject = beatmapObject,
-            Transform = CalculateBeatmapObjectTransform(
-                beatmapObject,
-                true, true, true,
-                0.0f, 0.0f, 0.0f,
-                time, null),
-            Colors = CalculateBeatmapObjectThemeColor(beatmapObject, time, themeColors)
+            Transform = transform,
+            Colors = CalculateBeatmapObjectThemeColor(beatmapObject, time, themeColors),
+            ParentDepth = parentDepth,
         };
         perFrameData.Add(perFrameDatum);
     }
@@ -93,9 +114,11 @@ public class AnimationRunner2(
         BeatmapObject beatmapObject,
         bool animatePosition, bool animateScale, bool animateRotation,
         float positionTimeOffset, float scaleTimeOffset, float rotationTimeOffset,
-        float time,
+        float time, ref int parentDepth,
         object? context)
     {
+        parentDepth++;
+        
         var matrix = Matrix3.Identity;
         var data = beatmapObject.Data;
         var timeOffset = -data.StartTime;
@@ -127,7 +150,8 @@ public class AnimationRunner2(
                 beatmapObject.Data.ParentTemporalOffsets.Position,
                 beatmapObject.Data.ParentTemporalOffsets.Scale,
                 beatmapObject.Data.ParentTemporalOffsets.Rotation,
-                time, context);
+                time, ref parentDepth,
+                context);
         
         return matrix;
     }
