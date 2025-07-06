@@ -154,8 +154,8 @@ public class Timeline
       {
          AutoKillType.FixedTime => data.StartTime + data.KillTimeOffset,
          AutoKillType.NoAutoKill => float.PositiveInfinity,
-         AutoKillType.LastKeyframe => throw new NotImplementedException(),
-         AutoKillType.LastKeyframeOffset => throw new NotImplementedException(),
+         AutoKillType.LastKeyframe => data.StartTime + GetBeatmapObjectLength(data),
+         AutoKillType.LastKeyframeOffset => data.StartTime + GetBeatmapObjectLength(data) + data.KillTimeOffset,
          AutoKillType.SongTime => data.KillTimeOffset,
          _ => throw new ArgumentOutOfRangeException(nameof(data.AutoKillType), $"Unknown AutoKillType '{data.AutoKillType}'!")
       };
@@ -171,4 +171,7 @@ public class Timeline
       if (eventArgs.PropertyName is nameof(BeatmapObjectData.KillTimeOffset) or nameof(BeatmapObjectData.AutoKillType))
          killTimeDirty = true;
    }
+
+   private static float GetBeatmapObjectLength(BeatmapObjectData data)
+      => Math.Max(data.PositionSequence.Length, Math.Max(data.ScaleSequence.Length, Math.Max(data.RotationSequence.Length, data.ThemeColorSequence.Length)));
 }

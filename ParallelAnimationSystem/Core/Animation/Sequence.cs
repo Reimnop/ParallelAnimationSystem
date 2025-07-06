@@ -5,6 +5,7 @@ namespace ParallelAnimationSystem.Core.Animation;
 public class Sequence<TIn, TOut>
 {
     public IReadOnlyList<Keyframe<TIn>> Keyframes => keyframes;
+    public float Length => keyframes.Count == 0 ? 0.0f : keyframes[^1].Time;
     
     private readonly List<Keyframe<TIn>> keyframes;
     private readonly Interpolator<TIn, TOut> interpolator;
