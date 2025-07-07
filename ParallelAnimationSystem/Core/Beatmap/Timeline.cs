@@ -13,10 +13,10 @@ public class Timeline
       string.Empty,
       new BeatmapObjectData([], [], [], []));
 
-   public IReadOnlyCollection<BeatmapObject> AllObjects => allObjects;
+   public IReadOnlyDictionary<string, BeatmapObject> AllObjects => allObjects;
    public IReadOnlyCollection<BeatmapObject> AliveObjects => aliveObjects;
 
-   private readonly HashSet<BeatmapObject> allObjects = [];
+   private readonly Dictionary<string, BeatmapObject> allObjects = [];
    private readonly HashSet<BeatmapObject> aliveObjects = [];
    
    private readonly List<(float Time, BeatmapObject Object)> startTimeSortedObjects = [];
@@ -32,8 +32,11 @@ public class Timeline
 
    public Timeline()
    {
+      allObjects.Add(RootObject.Id, RootObject);
+      
       RootObject.ChildAdded += OnBeatmapObjectChildAdded;
       RootObject.ChildRemoved += OnBeatmapObjectChildRemoved;
+      RootObject.Data.PropertyChanged += OnBeatmapObjectDataPropertyChanged;
    }
 
    private void OnBeatmapObjectChildAdded(object? sender, BeatmapObject beatmapObject)
@@ -45,7 +48,7 @@ public class Timeline
          obj.ChildRemoved += OnBeatmapObjectChildRemoved;
          obj.Data.PropertyChanged += OnBeatmapObjectDataPropertyChanged;
          
-         allObjects.Add(obj);
+         allObjects.Add(obj.Id, obj);
       });
       
       // Flag start and kill times as dirty
@@ -65,7 +68,7 @@ public class Timeline
          obj.ChildRemoved -= OnBeatmapObjectChildRemoved;
          obj.Data.PropertyChanged -= OnBeatmapObjectDataPropertyChanged;
          
-         allObjects.Remove(obj);
+         allObjects.Remove(obj.Id);
       });
       
       // Flag start and kill times as dirty
@@ -81,7 +84,7 @@ public class Timeline
       if (startTimeDirty)
       {
          startTimeSortedObjects.Clear();
-         foreach (var obj in allObjects)
+         foreach (var (_, obj) in allObjects)
             startTimeSortedObjects.Add((obj.Data.StartTime, obj));
          startTimeSortedObjects.Sort((a, b) => a.Time.CompareTo(b.Time));
          startIndex = CalculateIndex(time, startTimeSortedObjects, x => x.Time);
@@ -90,7 +93,7 @@ public class Timeline
       if (killTimeDirty)
       {
          killTimeSortedObjects.Clear();
-         foreach (var obj in allObjects)
+         foreach (var (_, obj) in allObjects)
             killTimeSortedObjects.Add((CalculateKillTime(obj.Data), obj));
          killTimeSortedObjects.Sort((a, b) => a.Time.CompareTo(b.Time));
          killIndex = CalculateIndex(time, killTimeSortedObjects, x => x.Time);
