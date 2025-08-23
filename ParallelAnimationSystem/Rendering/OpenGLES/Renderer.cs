@@ -519,7 +519,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         // Clear screen
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, drawFramebuffer);
         GL.Viewport(0, 0, size.X, size.Y);
-        GL.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        GL.ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         GL.Clear(ClearBufferMask.ColorBufferBit);
         
         // Blit post-process FBO to screen

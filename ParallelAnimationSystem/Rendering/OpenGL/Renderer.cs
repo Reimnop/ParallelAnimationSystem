@@ -485,7 +485,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         GL.NamedFramebufferTexture(postProcessFboHandle, FramebufferAttachment.ColorAttachment0, finalTexture, 0);
         
         // Clear window
-        var windowClearColor = new Vector4(0.0f, 0.0f, 0.0f, 1.0f);
+        var windowClearColor = Vector4.Zero;
         GL.ClearNamedFramebufferf(drawFramebuffer, OpenTK.Graphics.OpenGL.Buffer.Color, 0, in windowClearColor.X);
         
         // Blit to window
