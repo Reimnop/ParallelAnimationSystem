@@ -17,6 +17,18 @@ var audioOption = new Option<string>(
     IsRequired = true
 };
 
+var widthOption = new Option<int>(
+    aliases: ["-w", "--width"],
+    description: "Width of the window",
+    getDefaultValue: () => 1366
+);
+
+var heightOption = new Option<int>(
+    aliases: ["-h", "--height"],
+    description: "Height of the window",
+    getDefaultValue: () => 768
+);
+
 var vsyncOption = new Option<bool>(
     aliases: ["--vsync"],
     description: "Enable VSync",
@@ -68,6 +80,8 @@ var textRenderingOption = new Option<bool>(
 var rootCommand = new RootCommand("Parallel Animation System");
 rootCommand.AddOption(beatmapOption);
 rootCommand.AddOption(audioOption);
+rootCommand.AddOption(widthOption);
+rootCommand.AddOption(heightOption);
 rootCommand.AddOption(vsyncOption);
 rootCommand.AddOption(workersOption);
 rootCommand.AddOption(seedOption);
@@ -81,6 +95,8 @@ rootCommand.SetHandler(context =>
 {
     var beatmapPath = context.ParseResult.GetValueForOption(beatmapOption)!;
     var audioPath = context.ParseResult.GetValueForOption(audioOption)!;
+    var width = context.ParseResult.GetValueForOption(widthOption);
+    var height = context.ParseResult.GetValueForOption(heightOption);
     var vsync = context.ParseResult.GetValueForOption(vsyncOption);
     var workerCount = context.ParseResult.GetValueForOption(workersOption);
     var seed = context.ParseResult.GetValueForOption(seedOption);
@@ -93,6 +109,8 @@ rootCommand.SetHandler(context =>
     DesktopStartup.ConsumeOptions(
         beatmapPath,
         audioPath,
+        width,
+        height,
         vsync,
         workerCount,
         seed,

@@ -2,9 +2,9 @@ using OpenTK.Mathematics;
 
 namespace ParallelAnimationSystem.Desktop;
 
-public sealed class DesktopAppSettings(int swapInterval, int workerCount, ulong seed, float? aspectRatio, bool enablePostProcessing, bool enableTextRendering) : IAppSettings
+public sealed class DesktopAppSettings(Vector2i initialSize, int swapInterval, int workerCount, ulong seed, float? aspectRatio, bool enablePostProcessing, bool enableTextRendering) : IAppSettings
 {
-    public Vector2i InitialSize { get; } = new(1366, 768);
+    public Vector2i InitialSize { get; } = initialSize;
     public int SwapInterval { get; } = swapInterval;
     public int WorkerCount { get; } = workerCount;
     public ulong Seed { get; } = seed;

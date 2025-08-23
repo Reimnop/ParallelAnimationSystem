@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using OpenTK.Mathematics;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Windowing;
@@ -12,6 +13,8 @@ public class DesktopStartup(DesktopAppSettings appSettings, string beatmapPath, 
     public static void ConsumeOptions(
         string beatmapPath,
         string audioPath,
+        int width,
+        int height,
         bool vsync,
         int workerCount,
         long seed,
@@ -22,6 +25,7 @@ public class DesktopStartup(DesktopAppSettings appSettings, string beatmapPath, 
         bool enableTextRendering)
     {
         var appSettings = new DesktopAppSettings(
+            new Vector2i(width, height),
             vsync ? 1 : 0,
             workerCount,
             seed < 0
