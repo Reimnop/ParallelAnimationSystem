@@ -167,8 +167,12 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
         
         // Start queueing up draw data
         var drawList = renderer.GetDrawList();
-        
-        drawList.ClearColor = runner.BackgroundColor;
+
+        drawList.ClearColor = new Color4<Rgba>(
+            runner.BackgroundColor.X,
+            runner.BackgroundColor.Y,
+            runner.BackgroundColor.Z,
+            appSettings.BackgroundOpacity);
         drawList.CameraData = new CameraData(
             runner.CameraPosition + shakeVector,
             runner.CameraScale,

@@ -9,6 +9,7 @@ public sealed class FFmpegAppSettings(Vector2i initialSize, int swapInterval, in
     public int WorkerCount { get; } = workerCount;
     public ulong Seed { get; } = seed;
     public float? AspectRatio { get; } = aspectRatio;
+    public float BackgroundOpacity { get; } = 1.0f;
     public bool EnablePostProcessing { get; } = enablePostProcessing;
     public bool EnableTextRendering { get; } = enableTextRendering;
 }

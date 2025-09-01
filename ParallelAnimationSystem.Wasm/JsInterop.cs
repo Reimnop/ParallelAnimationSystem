@@ -10,6 +10,7 @@ public static class JsInterop
     [UnmanagedCallersOnly(EntryPoint = "initialize")]
     public static unsafe void Initialize(
         long seed, 
+        float backgroundOpacity,
         bool enablePostProcessing, 
         bool enableTextRendering,
         byte* beatmapDataPtr,
@@ -19,7 +20,7 @@ public static class JsInterop
         if (beatmapData is null)
             throw new InvalidOperationException("Beatmap data is null");
         
-        var appSettings = new WasmAppSettings(unchecked((ulong) seed), enablePostProcessing, enableTextRendering);
+        var appSettings = new WasmAppSettings(unchecked((ulong) seed), backgroundOpacity, enablePostProcessing, enableTextRendering);
         var startup = new WasmStartup(appSettings, beatmapData, (BeatmapFormat) beatmapFormat);
         app = startup.InitializeApp();
     }

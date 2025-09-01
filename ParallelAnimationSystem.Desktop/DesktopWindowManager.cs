@@ -6,11 +6,17 @@ namespace ParallelAnimationSystem.Desktop;
 
 public class DesktopWindowManager : IWindowManager, IDisposable
 {
-    public DesktopWindowManager()
-        => GLFW.Init();
+    private readonly DesktopWindowSettings windowSettings;
+
+    public DesktopWindowManager(DesktopWindowSettings windowSettings)
+    {
+        this.windowSettings = windowSettings;
+        
+        GLFW.Init();
+    }
     
     public IWindow CreateWindow(string title, Vector2i size, GLContextSettings glContextSettings)
-        => new DesktopWindow(title, size, glContextSettings);
+        => new DesktopWindow(title, size, glContextSettings, windowSettings);
 
     public void PollEvents()
         => GLFW.PollEvents();

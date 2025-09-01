@@ -9,6 +9,7 @@ public interface IAppSettings
     int WorkerCount { get; }
     ulong Seed { get; }
     float? AspectRatio { get; }
+    float BackgroundOpacity { get; }
     bool EnablePostProcessing { get; }
     bool EnableTextRendering { get; }
 }

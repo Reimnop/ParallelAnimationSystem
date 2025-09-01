@@ -21,6 +21,11 @@ public class DesktopStartup(DesktopAppSettings appSettings, string beatmapPath, 
         float speed,
         RenderingBackend backend,
         bool lockAspectRatio,
+        float backgroundOpacity,
+        bool transparent,
+        bool resizable,
+        bool borderless,
+        bool floating,
         bool enablePostProcessing,
         bool enableTextRendering)
     {
@@ -32,12 +37,17 @@ public class DesktopStartup(DesktopAppSettings appSettings, string beatmapPath, 
                 ? (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds()
                 : (ulong) seed,
             lockAspectRatio ? 16.0f / 9.0f : null,
+            backgroundOpacity,
             enablePostProcessing,
             enableTextRendering
         );
         
         var startup = new DesktopStartup(appSettings, beatmapPath, audioPath, backend);
-        using var app = startup.InitializeApp();
+        using var app = startup.InitializeApp(services =>
+        {
+            var windowSettings = new DesktopWindowSettings(transparent, resizable, borderless, floating);
+            services.AddSingleton(windowSettings);
+        });
         using var audioPlayer = AudioPlayer.Load(audioPath);
         var baseFrequency = audioPlayer.Frequency;
         audioPlayer.Frequency = baseFrequency * speed;
@@ -80,7 +90,7 @@ public class DesktopStartup(DesktopAppSettings appSettings, string beatmapPath, 
         => null;
 
     public IWindowManager CreateWindowManager(IServiceProvider serviceProvider)
-        => new DesktopWindowManager();
+        => new DesktopWindowManager(serviceProvider.GetRequiredService<DesktopWindowSettings>());
 
     public IRenderer CreateRenderer(IServiceProvider serviceProvider)
         => backend switch

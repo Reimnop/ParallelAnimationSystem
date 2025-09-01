@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using Ico.Reader;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
@@ -28,13 +27,25 @@ public unsafe class DesktopWindow : IWindow, IDisposable
 
     private readonly Window* window;
 
-    public DesktopWindow(string title, Vector2i size, GLContextSettings glContextSettings)
+    public DesktopWindow(string title, Vector2i size, GLContextSettings glContextSettings, DesktopWindowSettings windowSettings)
     {
-        GLFW.WindowHint(WindowHintClientApi.ClientApi, glContextSettings.ES ? ClientApi.OpenGlEsApi : ClientApi.OpenGlApi);
-        if (!glContextSettings.ES)
+        if (glContextSettings.ES)
+        {
+            GLFW.WindowHint(WindowHintClientApi.ClientApi, ClientApi.OpenGlEsApi);
+        }
+        else
+        {
+            GLFW.WindowHint(WindowHintClientApi.ClientApi, ClientApi.OpenGlApi);
             GLFW.WindowHint(WindowHintOpenGlProfile.OpenGlProfile, OpenGlProfile.Core);
+        }
+            
         GLFW.WindowHint(WindowHintInt.ContextVersionMajor, glContextSettings.Version.Major);
         GLFW.WindowHint(WindowHintInt.ContextVersionMinor, glContextSettings.Version.Minor);
+        
+        GLFW.WindowHint(WindowHintBool.TransparentFramebuffer, windowSettings.Transparent);
+        GLFW.WindowHint(WindowHintBool.Decorated, !windowSettings.Borderless);
+        GLFW.WindowHint(WindowHintBool.Resizable, windowSettings.Resizable);
+        GLFW.WindowHint(WindowHintBool.Floating, windowSettings.Floating);
         
         window = GLFW.CreateWindow(size.X, size.Y, title, null, null);
         

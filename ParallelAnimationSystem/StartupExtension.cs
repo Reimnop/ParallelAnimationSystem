@@ -7,7 +7,7 @@ namespace ParallelAnimationSystem;
 
 public static class StartupExtension
 {
-    public static App InitializeApp(this IStartup startup)
+    public static App InitializeApp(this IStartup startup, Action<IServiceCollection>? configureServices = null)
     {
         var serviceCollection = new ServiceCollection();
         serviceCollection.AddSingleton(startup.AppSettings);
@@ -26,6 +26,9 @@ public static class StartupExtension
             return new MergedResourceManager([resourceManager, appResourceManager]);
         });
         serviceCollection.AddSingleton(startup.CreateMediaProvider);
+        
+        // Allow further configuration
+        configureServices?.Invoke(serviceCollection);
 
         var serviceProvider = serviceCollection.BuildServiceProvider();
         
