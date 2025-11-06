@@ -9,12 +9,15 @@ public class PerFrameDataDepthComparer : IComparer<PerFrameBeatmapObjectData>
         if (x == y)
             return 0;
         
-        var renderDepthComparison = x.BeatmapObject.Data.RenderDepth.CompareTo(y.BeatmapObject.Data.RenderDepth);
+        var renderDepthComparison = y.BeatmapObject.Data.RenderDepth.CompareTo(x.BeatmapObject.Data.RenderDepth);
         if (renderDepthComparison != 0) 
             return renderDepthComparison;
         var parentDepthComparison = y.ParentDepth.CompareTo(x.ParentDepth);
         if (parentDepthComparison != 0) 
             return parentDepthComparison;
+        var startTimeComparison = y.BeatmapObject.Data.StartTime.CompareTo(x.BeatmapObject.Data.StartTime);
+        if (startTimeComparison != 0)
+            return startTimeComparison;
         
         // Hash both IDs
         var xIdHash = x.BeatmapObject.Id.GetHashCode();

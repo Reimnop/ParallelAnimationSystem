@@ -538,7 +538,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             parentAnimatePosition, parentAnimateScale, parentAnimateRotation,
             renderMode, origin, 
             shapeIndex, shapeOptionIndex,
-            beatmapObject.RenderDepth, parentTransforms.Count, i,
+            beatmapObject.RenderDepth, parentTransforms.Count,
             text, horizontalAlignment, verticalAlignment,
             parentTransforms);
     }

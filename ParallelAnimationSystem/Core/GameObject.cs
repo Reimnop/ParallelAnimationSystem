@@ -27,7 +27,6 @@ public class GameObject(
     int shapeOptionIndex,
     int renderDepth,
     int parentDepth,
-    int depthTiebreaker, // should be set to the index of the object in the beatmap
     string? text,
     HorizontalAlignment horizontalAlignment,
     VerticalAlignment verticalAlignment,
@@ -60,7 +59,6 @@ public class GameObject(
 
     public int RenderDepth { get; } = renderDepth;
     public int ParentDepth { get; } = parentDepth;
-    public int DepthTiebreaker { get; } = depthTiebreaker;
     
     public string? Text { get; } = text;
     public HorizontalAlignment HorizontalAlignment { get; } = horizontalAlignment;

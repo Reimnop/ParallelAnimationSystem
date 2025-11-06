@@ -440,7 +440,7 @@ public class BeatmapImporter2(ulong randomSeed, ILogger logger)
         foreach (var @event in events)
         {
             var time = @event.Time;
-            var parsedValue = ParseRandomVector2(@event, seeds, i++);
+            var parsedValue = ParseRandomVector2(@event, [..seeds, i++]);
             var newValue = new Vector2(parsedValue.X, parsedValue.Y);
             value = additive ? value + newValue : newValue;
             var ease = EaseFunctions.GetOrDefault(@event.Ease, EaseFunctions.Linear);

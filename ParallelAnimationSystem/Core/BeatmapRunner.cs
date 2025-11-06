@@ -11,7 +11,7 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
 {
     private readonly List<List<IMeshHandle>> meshes = [];
     
-    private AnimationRunner? runner;
+    private AnimationRunner2? runner;
 
     private readonly Dictionary<GameObject, Task<ITextHandle>> cachedTextHandles = [];
     private readonly List<FontStack> fonts = [];
@@ -46,9 +46,10 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
         
         // Create animation runner
         logger.LogInformation("Initializing animation runner");
-        var beatmapImporter = new BeatmapImporter(appSettings.Seed, logger);
-        runner = beatmapImporter.CreateRunner(beatmap, format == BeatmapFormat.Lsb);
+        var beatmapImporter = new BeatmapImporter2(appSettings.Seed, logger);
+        runner = beatmapImporter.CreateRunner(beatmap);
 
+        /*
         runner.ObjectSpawned += (_, go) =>
         {
             if (!appSettings.EnableTextRendering)
@@ -69,8 +70,9 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
                 return;
             cachedTextHandles.Remove(go);
         };
+        */
         
-        logger.LogInformation("Loaded {ObjectCount} objects", runner.ObjectCount);
+        logger.LogInformation("Loaded objects");
     }
 
     private void RegisterMeshes()
@@ -152,7 +154,7 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
             return false;
         
         // Update runner
-        runner.Process(time, appSettings.WorkerCount);
+        var beatmapObjectDataList = runner.ProcessFrame(time, appSettings.WorkerCount);
         
         // Calculate shake vector
         const float shakeMagic1 = 123.97f;
@@ -203,26 +205,39 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
         }
 
         // Draw all alive game objects
-        foreach (var gameObject in runner.AliveGameObjects)
+        foreach (var perFrameObjectData in beatmapObjectDataList)
         {
-            var transform = gameObject.CachedTransform;
-            var color1 = gameObject.CachedThemeColor.Item1;
-            var color2 = gameObject.CachedThemeColor.Item2;
+            var transform = perFrameObjectData.Transform;
+            var color1 = perFrameObjectData.Colors.Item1;
+            var color2 = perFrameObjectData.Colors.Item2;
+
+            var objectData = perFrameObjectData.BeatmapObject.Data;
             
-            if (gameObject.ShapeIndex != 4) // 4 is text
+            if (objectData.ShapeIndex != 4) // 4 is text
             {
-                var mesh = meshes[gameObject.ShapeIndex][gameObject.ShapeOptionIndex];
-                var renderMode = gameObject.RenderMode;
+                var shapeCategory = objectData.ShapeCategoryIndex;
+                if (shapeCategory >= 0 && shapeCategory < meshes.Count)
+                {
+                    var shapeIndex = objectData.ShapeIndex;
+                    var meshCategory = meshes[shapeCategory];
+
+                    if (shapeIndex >= 0 && shapeIndex < meshCategory.Count)
+                    {
+                        var mesh = meshCategory[objectData.ShapeIndex];
+                        var renderMode = objectData.RenderMode;
             
-                if (color1 == color2)
-                    color2.W = 0.0f;
+                        if (color1 == color2)
+                            color2.W = 0.0f;
             
-                drawList.AddMesh(mesh, transform, color1, color2, renderMode);
+                        drawList.AddMesh(mesh, transform, color1, color2, renderMode);
+                    }
+                }
             }
             else if (appSettings.EnableTextRendering)
             {
-                if (cachedTextHandles.TryGetValue(gameObject, out var task) && task.IsCompleted)
-                    drawList.AddText(task.Result, transform, color1);
+                // TODO: Handle text rendering
+                // if (cachedTextHandles.TryGetValue(gameObject, out var task) && task.IsCompleted)
+                //     drawList.AddText(task.Result, transform, color1);
             }
         }
         
