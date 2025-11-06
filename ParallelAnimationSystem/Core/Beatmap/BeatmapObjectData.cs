@@ -19,6 +19,12 @@ public class BeatmapObjectData(
 {
     public event PropertyChangedEventHandler? PropertyChanged;
 
+    public bool IsEmpty
+    {
+        get => isEmpty;
+        set => SetField(ref isEmpty, value);
+    }
+
     public ParentTemporalOffsets ParentTemporalOffsets
     {
         get => parentTemporalOffsets;
@@ -85,6 +91,8 @@ public class BeatmapObjectData(
     public Sequence<Vector2, Vector2> ScaleSequence { get; } = new(scaleKeyframes, InterpolateVector2);
     public Sequence<float, float> RotationSequence { get; } = new(rotationKeyframes, InterpolateFloat);
     public Sequence<ThemeColor, (Color4<Rgba>, Color4<Rgba>)> ThemeColorSequence { get; } = new(themeColorKeyframes, InterpolateThemeColor);
+
+    private bool isEmpty;
 
     private ParentTemporalOffsets parentTemporalOffsets = new(0f, 0f, 0f);
     private ParentTypes parentTypes = new(true, false, true);

@@ -397,6 +397,7 @@ public class BeatmapImporter2(ulong randomSeed, ILogger logger)
             rotationAnimation,
             themeColorAnimation)
         {
+            IsEmpty = @object.Type is ObjectType.Empty or ObjectType.LegacyEmpty,
             ParentTemporalOffsets = new ParentTemporalOffsets(
                 parentPositionTimeOffset,
                 parentScaleTimeOffset,
