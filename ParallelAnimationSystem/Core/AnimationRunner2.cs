@@ -100,10 +100,11 @@ public class AnimationRunner2(
             0.0f, 0.0f, 0.0f,
             time, ref parentDepth,
             null);
+        var originMatrix = MathUtil.CreateTranslation(beatmapObject.Data.Origin);
         var perFrameDatum = new PerFrameBeatmapObjectData
         {
             BeatmapObject = beatmapObject,
-            Transform = transform,
+            Transform = originMatrix * transform,
             Colors = CalculateBeatmapObjectThemeColor(beatmapObject, time, themeColors),
             ParentDepth = parentDepth,
         };
@@ -119,41 +120,44 @@ public class AnimationRunner2(
     {
         parentDepth++;
         
-        var matrix = Matrix3.Identity;
         var data = beatmapObject.Data;
-        var timeOffset = -data.StartTime;
+        var parentTypes = data.ParentTypes;
+        var parentTemporalOffsets = data.ParentTemporalOffsets;
+
+        var matrix = beatmapObject.Parent is not null
+            ? CalculateBeatmapObjectTransform(
+                beatmapObject.Parent,
+                parentTypes.Position,
+                parentTypes.Scale,
+                parentTypes.Rotation,
+                parentTemporalOffsets.Position,
+                parentTemporalOffsets.Scale,
+                parentTemporalOffsets.Rotation,
+                time, ref parentDepth,
+                context)
+            : Matrix3.Identity;
+        
+        var currentMatrix = Matrix3.Identity;
             
         if (animateScale)
         {
-            var scale = data.ScaleSequence.Interpolate(time + timeOffset + scaleTimeOffset, context);
-            matrix *= MathUtil.CreateScale(scale);
+            var scale = data.ScaleSequence.Interpolate(time - data.StartTime - scaleTimeOffset, context);
+            currentMatrix *= MathUtil.CreateScale(scale);
         }
         
         if (animateRotation)
         {
-            var rotation = data.RotationSequence.Interpolate(time + timeOffset + rotationTimeOffset, context);
-            matrix *= MathUtil.CreateRotation(rotation);
+            var rotation = data.RotationSequence.Interpolate(time - data.StartTime - rotationTimeOffset, context);
+            currentMatrix *= MathUtil.CreateRotation(rotation);
         }
         
         if (animatePosition)
         {
-            var position = data.PositionSequence.Interpolate(time + timeOffset + positionTimeOffset, context);
-            matrix *= MathUtil.CreateTranslation(position);
+            var position = data.PositionSequence.Interpolate(time - data.StartTime - positionTimeOffset, context);
+            currentMatrix *= MathUtil.CreateTranslation(position);
         }
-            
-        if (beatmapObject.Parent is not null)
-            matrix *= CalculateBeatmapObjectTransform(
-                beatmapObject.Parent,
-                beatmapObject.Data.ParentTypes.Position,
-                beatmapObject.Data.ParentTypes.Scale,
-                beatmapObject.Data.ParentTypes.Rotation,
-                beatmapObject.Data.ParentTemporalOffsets.Position,
-                beatmapObject.Data.ParentTemporalOffsets.Scale,
-                beatmapObject.Data.ParentTemporalOffsets.Rotation,
-                time, ref parentDepth,
-                context);
         
-        return matrix;
+        return currentMatrix * matrix;
     }
     
     private static (Color4<Rgba>, Color4<Rgba>) CalculateBeatmapObjectThemeColor(BeatmapObject beatmapObject, float time, object? context = null)
