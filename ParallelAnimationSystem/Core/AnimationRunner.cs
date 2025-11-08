@@ -1,13 +1,31 @@
+using System.Collections.Concurrent;
 using OpenTK.Mathematics;
 using Pamx.Common;
 using Pamx.Common.Data;
 using ParallelAnimationSystem.Core.Animation;
+using ParallelAnimationSystem.Core.Beatmap;
+using ParallelAnimationSystem.Core.Data;
+using ParallelAnimationSystem.Util;
+using GradientData = Pamx.Common.Data.GradientData;
+using VignetteData = Pamx.Common.Data.VignetteData;
 
 namespace ParallelAnimationSystem.Core;
 
-public class AnimationRunner
+public class AnimationRunner(
+    Timeline timeline,
+    Sequence<ITheme, ThemeColors> themeColorSequence,
+    Sequence<Vector2, Vector2> cameraPositionAnimation,
+    Sequence<float, float> cameraScaleAnimation,
+    Sequence<float, float> cameraRotationAnimation,
+    Sequence<BloomData, BloomData> bloomSequence,
+    Sequence<float, float> hueSequence,
+    Sequence<LensDistortionData, LensDistortionData> lensDistortionSequence,
+    Sequence<float, float> chromaticAberrationSequence,
+    Sequence<VignetteData, Data.VignetteData> vignetteSequence,
+    Sequence<GradientData, Data.GradientData> gradientSequence,
+    Sequence<GlitchData, GlitchData> glitchSequence,
+    Sequence<float, float> shakeSequence)
 {
-    public IReadOnlySet<GameObject> AliveGameObjects => aliveGameObjects;
     public Vector2 CameraPosition { get; private set; }
     public float CameraScale { get; private set; }
     public float CameraRotation { get; private set; }
@@ -21,74 +39,16 @@ public class AnimationRunner
     public float Shake { get; private set; }
     public Color4<Rgba> BackgroundColor { get; private set; }
 
-    public event EventHandler<GameObject>? ObjectSpawned;
-    public event EventHandler<GameObject>? ObjectKilled;
-    
-    public int ObjectCount => startTimeSortedGameObjects.Count;
+    private readonly ConcurrentBag<PerFrameBeatmapObjectData> perFrameData = [];
+    private readonly List<PerFrameBeatmapObjectData> sortedPerFrameData = [];
 
-    private readonly List<GameObject> startTimeSortedGameObjects = [];
-    private readonly List<GameObject> killTimeSortedGameObjects = [];
-    private int spawnIndex;
-    private int killIndex;
-    private readonly SortedSet<GameObject> aliveGameObjects = new(new GameObjectDepthComparer());
-    
-    private readonly Sequence<ITheme, ThemeColors> themeColorSequence;
-    private readonly Sequence<Vector2, Vector2> cameraPositionAnimation;
-    private readonly Sequence<float, float> cameraScaleAnimation;
-    private readonly Sequence<float, float> cameraRotationAnimation;
+    private readonly PerFrameDataDepthComparer depthComparer = new(); 
 
-    private readonly Sequence<BloomData, BloomData> bloomSequence;
-    private readonly Sequence<float, float> hueSequence;
-    private readonly Sequence<LensDistortionData, LensDistortionData> lensDistortionSequence;
-    private readonly Sequence<float, float> chromaticAberrationSequence;
-    private readonly Sequence<VignetteData, Data.VignetteData> vignetteSequence;
-    private readonly Sequence<GradientData, Data.GradientData> gradientSequence;
-    private readonly Sequence<GlitchData, GlitchData> glitchSequence;
-    private readonly Sequence<float, float> shakeSequence;
-        
-    private float lastTime;
-    
-    public AnimationRunner(
-        IEnumerable<GameObject> gameObjects,
-        Sequence<ITheme, ThemeColors> themeColorSequence,
-        Sequence<Vector2, Vector2> cameraPositionAnimation,
-        Sequence<float, float> cameraScaleAnimation,
-        Sequence<float, float> cameraRotationAnimation,
-        Sequence<BloomData, BloomData> bloomSequence,
-        Sequence<float, float> hueSequence,
-        Sequence<LensDistortionData, LensDistortionData> lensDistortionSequence,
-        Sequence<float, float> chromaticAberrationSequence,
-        Sequence<VignetteData, Data.VignetteData> vignetteSequence,
-        Sequence<GradientData, Data.GradientData> gradientSequence,
-        Sequence<GlitchData, GlitchData> glitchSequence,
-        Sequence<float, float> shakeSequence)
-    {
-        // Set sequences
-        this.themeColorSequence = themeColorSequence;
-        this.cameraPositionAnimation = cameraPositionAnimation;
-        this.cameraScaleAnimation = cameraScaleAnimation;
-        this.cameraRotationAnimation = cameraRotationAnimation;
-        this.bloomSequence = bloomSequence;
-        this.hueSequence = hueSequence;
-        this.lensDistortionSequence = lensDistortionSequence;
-        this.chromaticAberrationSequence = chromaticAberrationSequence;
-        this.vignetteSequence = vignetteSequence;
-        this.gradientSequence = gradientSequence;
-        this.glitchSequence = glitchSequence;
-        this.shakeSequence = shakeSequence;
-
-        foreach (var gameObject in gameObjects)
-        {
-            startTimeSortedGameObjects.Add(gameObject);
-            killTimeSortedGameObjects.Add(gameObject);
-        }
-        
-        // Sort them
-        startTimeSortedGameObjects.Sort((x, y) => x.StartTime.CompareTo(y.StartTime));
-        killTimeSortedGameObjects.Sort((x, y) => x.KillTime.CompareTo(y.KillTime));
-    }
-
-    public void Process(float time, int workers = -1)
+    /// <summary>
+    /// Processes one frame of the animation. Do not call from multiple threads at the same time.
+    /// </summary>
+    /// <returns>The render data of the animation.</returns>
+    public IReadOnlyList<PerFrameBeatmapObjectData> ProcessFrame(float time, int workers = -1)
     {
         // Update theme
         var themeColors = themeColorSequence.Interpolate(time);
@@ -98,7 +58,7 @@ public class AnimationRunner
         BackgroundColor = themeColors.Background;
         
         // Spawn and kill objects according to time
-        SpawnAndKillObjects(time);
+        timeline.ProcessFrame(time);
         
         // Update sequences
         CameraPosition = cameraPositionAnimation.Interpolate(time, themeColors);
@@ -114,65 +74,95 @@ public class AnimationRunner
         Shake = shakeSequence.Interpolate(time, themeColors);
         
         // Update all objects in parallel
+        perFrameData.Clear();
+        
         var parallelOptions = new ParallelOptions
         {
             MaxDegreeOfParallelism = workers
         };
-        Parallel.ForEach(aliveGameObjects, parallelOptions, (x, _) => ProcessGameObjectAsync(x, themeColors, time));
+        Parallel.ForEach(timeline.AliveObjects.Where(x => !x.Data.IsEmpty), parallelOptions, (x, _) => ProcessGameObject(x, themeColors, time));
+        
+        // Sort the per-frame data by depth
+        sortedPerFrameData.Clear();
+        sortedPerFrameData.AddRange(perFrameData);
+        sortedPerFrameData.Sort(depthComparer);
+        
+        // Return the sorted per-frame data
+        return sortedPerFrameData;
     }
 
-    private static void ProcessGameObjectAsync(GameObject gameObject, ThemeColors themeColors, float time)
+    private void ProcessGameObject(BeatmapObject beatmapObject, ThemeColors themeColors, float time)
     {
-        gameObject.CalculateTransform(time);
-        gameObject.CalculateThemeColor(time, themeColors);
+        var parentDepth = 0;
+        var transform = CalculateBeatmapObjectTransform(
+            beatmapObject,
+            true, true, true,
+            0.0f, 0.0f, 0.0f,
+            time, ref parentDepth,
+            null);
+        var originMatrix = MathUtil.CreateTranslation(beatmapObject.Data.Origin);
+        var perFrameDatum = new PerFrameBeatmapObjectData
+        {
+            BeatmapObject = beatmapObject,
+            Transform = originMatrix * transform,
+            Colors = CalculateBeatmapObjectThemeColor(beatmapObject, time, themeColors),
+            ParentDepth = parentDepth,
+        };
+        perFrameData.Add(perFrameDatum);
     }
 
-    private void SpawnAndKillObjects(float time)
+    private static Matrix3 CalculateBeatmapObjectTransform(
+        BeatmapObject beatmapObject,
+        bool animatePosition, bool animateScale, bool animateRotation,
+        float positionTimeOffset, float scaleTimeOffset, float rotationTimeOffset,
+        float time, ref int parentDepth,
+        object? context)
     {
-        if (time > lastTime)
-        {
-            // Update objects forward in time
-            // Spawn
-            while (spawnIndex < startTimeSortedGameObjects.Count && time >= startTimeSortedGameObjects[spawnIndex].StartTime)
-            {
-                var obj = startTimeSortedGameObjects[spawnIndex];
-                aliveGameObjects.Add(obj);
-                spawnIndex++;
-                ObjectSpawned?.Invoke(this, obj);
-            }
+        parentDepth++;
+        
+        var data = beatmapObject.Data;
+        var parentTypes = data.ParentTypes;
+        var parentTemporalOffsets = data.ParentTemporalOffsets;
 
-            // Kill
-            while (killIndex < killTimeSortedGameObjects.Count && time >= killTimeSortedGameObjects[killIndex].KillTime)
-            {
-                var obj = killTimeSortedGameObjects[killIndex];
-                aliveGameObjects.Remove(obj);
-                killIndex++;
-                ObjectKilled?.Invoke(this, obj);
-            }
-        }
-        else if (time < lastTime)
-        {
-            // Update objects backwards in time
-            // Spawn
-            while (killIndex - 1 >= 0 && time < killTimeSortedGameObjects[killIndex - 1].KillTime)
-            {
-                var obj = killTimeSortedGameObjects[killIndex - 1];
-                aliveGameObjects.Add(obj);
-                killIndex--;
-                ObjectSpawned?.Invoke(this, obj);
-            }
+        var matrix = beatmapObject.Parent is not null
+            ? CalculateBeatmapObjectTransform(
+                beatmapObject.Parent,
+                parentTypes.Position,
+                parentTypes.Scale,
+                parentTypes.Rotation,
+                parentTemporalOffsets.Position,
+                parentTemporalOffsets.Scale,
+                parentTemporalOffsets.Rotation,
+                time, ref parentDepth,
+                context)
+            : Matrix3.Identity;
+        
+        var currentMatrix = Matrix3.Identity;
             
-            // Kill
-            while (spawnIndex - 1 >= 0 && time < startTimeSortedGameObjects[spawnIndex - 1].StartTime)
-            {
-                var obj = startTimeSortedGameObjects[spawnIndex - 1];
-                aliveGameObjects.Remove(obj);
-                spawnIndex--;
-                ObjectKilled?.Invoke(this, obj);
-            }
+        if (animateScale)
+        {
+            var scale = data.ScaleSequence.Interpolate(time - data.StartTime - scaleTimeOffset, context);
+            currentMatrix *= MathUtil.CreateScale(scale);
         }
         
-        // Update last time
-        lastTime = time;
+        if (animateRotation)
+        {
+            var rotation = data.RotationSequence.Interpolate(time - data.StartTime - rotationTimeOffset, context);
+            currentMatrix *= MathUtil.CreateRotation(rotation);
+        }
+        
+        if (animatePosition)
+        {
+            var position = data.PositionSequence.Interpolate(time - data.StartTime - positionTimeOffset, context);
+            currentMatrix *= MathUtil.CreateTranslation(position);
+        }
+        
+        return currentMatrix * matrix;
+    }
+    
+    private static (Color4<Rgba>, Color4<Rgba>) CalculateBeatmapObjectThemeColor(BeatmapObject beatmapObject, float time, object? context = null)
+    {
+        var data = beatmapObject.Data;
+        return data.ThemeColorSequence.Interpolate(time - data.StartTime, context);
     }
 }

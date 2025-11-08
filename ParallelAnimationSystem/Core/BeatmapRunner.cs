@@ -11,9 +11,7 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
 {
     private readonly List<List<IMeshHandle>> meshes = [];
     
-    private AnimationRunner2? runner;
-
-    private readonly Dictionary<GameObject, Task<ITextHandle>> cachedTextHandles = [];
+    private AnimationRunner? runner;
     private readonly List<FontStack> fonts = [];
     
     public void Initialize()
@@ -46,31 +44,8 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
         
         // Create animation runner
         logger.LogInformation("Initializing animation runner");
-        var beatmapImporter = new BeatmapImporter2(appSettings.Seed, logger);
+        var beatmapImporter = new BeatmapImporter(appSettings.Seed, logger);
         runner = beatmapImporter.CreateRunner(beatmap);
-
-        /*
-        runner.ObjectSpawned += (_, go) =>
-        {
-            if (!appSettings.EnableTextRendering)
-                return;
-            if (go.ShapeIndex != 4)
-                return;
-            if (string.IsNullOrWhiteSpace(go.Text))
-                return;
-            var task = Task.Run(() => renderer.CreateText(go.Text, fonts, "NotoMono SDF", go.HorizontalAlignment, go.VerticalAlignment));
-            cachedTextHandles.Add(go, task);
-        };
-            
-        runner.ObjectKilled += (_, go) =>
-        {
-            if (!appSettings.EnableTextRendering)
-                return;
-            if (go.ShapeIndex != 4)
-                return;
-            cachedTextHandles.Remove(go);
-        };
-        */
         
         logger.LogInformation("Loaded objects");
     }
