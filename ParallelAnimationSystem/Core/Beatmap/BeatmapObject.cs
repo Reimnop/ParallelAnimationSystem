@@ -8,6 +8,9 @@ namespace ParallelAnimationSystem.Core.Beatmap;
 /// </summary>
 public class BeatmapObject(string id, BeatmapObjectData data) : INotifyPropertyChanged
 {
+    [ThreadStatic]
+    private static Stack<BeatmapObject>? traverseStack;
+    
     public event PropertyChangedEventHandler? PropertyChanged;
     public event EventHandler<BeatmapObject>? ChildAdded;
     public event EventHandler<BeatmapObject>? ChildRemoved;
@@ -86,15 +89,15 @@ public class BeatmapObject(string id, BeatmapObjectData data) : INotifyPropertyC
     /// </summary>
     public void Traverse(Action<BeatmapObject> action)
     {
-        var stack = new Stack<BeatmapObject>();
-        stack.Push(this);
-        while (stack.Count > 0)
+        traverseStack ??= new Stack<BeatmapObject>();
+        traverseStack.Push(this);
+        while (traverseStack.Count > 0)
         {
-            var current = stack.Pop();
+            var current = traverseStack.Pop();
             action(current);
             
             foreach (var child in current.Children)
-                stack.Push(child);
+                traverseStack.Push(child);
         }
     }
 
