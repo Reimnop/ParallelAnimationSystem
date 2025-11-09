@@ -82,7 +82,9 @@ public class Timeline : IDisposable
    {
       if (!disposing)
       {
-         // TODO: Warn about not being disposed properly
+          Console.Error.WriteLine(
+             "Timeline finalizer called without disposing. Did you forget to call Dispose()?\n{0}",
+             Environment.StackTrace);
       }
       
       // Unsubscribe from events

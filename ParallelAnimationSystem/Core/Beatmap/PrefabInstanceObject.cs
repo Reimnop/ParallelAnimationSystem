@@ -71,7 +71,9 @@ public class PrefabInstanceObject : IDisposable
     {
         if (!disposing)
         {
-            // TODO: Warn about not being disposed properly
+            Console.Error.WriteLine(
+                "PrefabInstanceObject finalizer called without disposing. Did you forget to call Dispose()?\n{0}",
+                Environment.StackTrace);
         }
         
         // Unsubscribe from root object changes
