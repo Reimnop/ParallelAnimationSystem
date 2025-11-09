@@ -110,6 +110,21 @@ public class BeatmapObjectData(
     private int shapeCategoryIndex = 0;
     private int shapeIndex = 0;
 
+    public float CalculateKillTime(float startTimeOffset)
+    {
+        var actualStartTime = StartTime + startTimeOffset;
+        
+        return AutoKillType switch
+        {
+            AutoKillType.FixedTime => actualStartTime + KillTimeOffset,
+            AutoKillType.NoAutoKill => float.PositiveInfinity,
+            AutoKillType.LastKeyframe => actualStartTime + GetObjectLength(),
+            AutoKillType.LastKeyframeOffset => actualStartTime + GetObjectLength() + KillTimeOffset,
+            AutoKillType.SongTime => KillTimeOffset,
+            _ => throw new ArgumentOutOfRangeException(nameof(AutoKillType), $"Unknown AutoKillType '{AutoKillType}'!")
+        };
+    }
+
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -156,4 +171,7 @@ public class BeatmapObjectData(
             opacity);
         return (color1, color2);
     }
+    
+    private float GetObjectLength()
+        => Math.Max(PositionSequence.Length, Math.Max(ScaleSequence.Length, Math.Max(RotationSequence.Length, ThemeColorSequence.Length)));
 }

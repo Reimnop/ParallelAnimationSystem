@@ -15,6 +15,20 @@ public class Timeline : IDisposable
    
    public BeatmapObject RootObject { get; }
 
+   public float StartTimeOffset
+   {
+      get => startTimeOffset;
+      set
+      {
+         if (startTimeOffset == value)
+            return;
+         
+         startTimeOffset = value;
+         startTimeDirty = true;
+         killTimeDirty = true;
+      }
+   }
+
    public IReadOnlyDictionary<string, BeatmapObject> AllObjects => allObjects;
    public IReadOnlyCollection<BeatmapObject> AliveObjects => aliveObjects;
 
@@ -29,6 +43,8 @@ public class Timeline : IDisposable
 
    private int startIndex = 0;
    private int killIndex = 0;
+
+   private float startTimeOffset = 0.0f;
    
    private float currentTime = 0.0f;
 
@@ -127,7 +143,7 @@ public class Timeline : IDisposable
       {
          startTimeSortedObjects.Clear();
          foreach (var (_, obj) in allObjects)
-            startTimeSortedObjects.Add((obj.Data.StartTime, obj));
+            startTimeSortedObjects.Add((obj.Data.StartTime + StartTimeOffset, obj));
          startTimeSortedObjects.Sort((a, b) => a.Time.CompareTo(b.Time));
          startIndex = CalculateIndex(time, startTimeSortedObjects, x => x.Time);
       }
@@ -136,7 +152,7 @@ public class Timeline : IDisposable
       {
          killTimeSortedObjects.Clear();
          foreach (var (_, obj) in allObjects)
-            killTimeSortedObjects.Add((CalculateKillTime(obj.Data), obj));
+            killTimeSortedObjects.Add((obj.Data.CalculateKillTime(StartTimeOffset), obj));
          killTimeSortedObjects.Sort((a, b) => a.Time.CompareTo(b.Time));
          killIndex = CalculateIndex(time, killTimeSortedObjects, x => x.Time);
       }
@@ -194,17 +210,6 @@ public class Timeline : IDisposable
       return index < 0 ? ~index : index + 1;
    }
 
-   private float CalculateKillTime(BeatmapObjectData data)
-      => data.AutoKillType switch
-      {
-         AutoKillType.FixedTime => data.StartTime + data.KillTimeOffset,
-         AutoKillType.NoAutoKill => float.PositiveInfinity,
-         AutoKillType.LastKeyframe => data.StartTime + GetBeatmapObjectLength(data),
-         AutoKillType.LastKeyframeOffset => data.StartTime + GetBeatmapObjectLength(data) + data.KillTimeOffset,
-         AutoKillType.SongTime => data.KillTimeOffset,
-         _ => throw new ArgumentOutOfRangeException(nameof(data.AutoKillType), $"Unknown AutoKillType '{data.AutoKillType}'!")
-      };
-
    private void OnBeatmapObjectDataPropertyChanged(object? sender, PropertyChangedEventArgs eventArgs)
    {
       if (eventArgs.PropertyName is nameof(BeatmapObjectData.StartTime))
@@ -216,7 +221,4 @@ public class Timeline : IDisposable
       if (eventArgs.PropertyName is nameof(BeatmapObjectData.KillTimeOffset) or nameof(BeatmapObjectData.AutoKillType))
          killTimeDirty = true;
    }
-
-   private static float GetBeatmapObjectLength(BeatmapObjectData data)
-      => Math.Max(data.PositionSequence.Length, Math.Max(data.ScaleSequence.Length, Math.Max(data.RotationSequence.Length, data.ThemeColorSequence.Length)));
 }
