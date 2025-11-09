@@ -4,14 +4,16 @@ using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core.Beatmap;
 
-public class Timeline
+public class Timeline : IDisposable
 {
+   private static BeatmapObject DefaultRootObject => new(
+      string.Empty,
+      new BeatmapObjectData([], [], [], []));
+   
    public event EventHandler<BeatmapObject>? BeatmapObjectAdded;
    public event EventHandler<BeatmapObject>? BeatmapObjectRemoved;
    
-   public BeatmapObject RootObject { get; } = new(
-      string.Empty,
-      new BeatmapObjectData([], [], [], []));
+   public BeatmapObject RootObject { get; }
 
    public IReadOnlyDictionary<string, BeatmapObject> AllObjects => allObjects;
    public IReadOnlyCollection<BeatmapObject> AliveObjects => aliveObjects;
@@ -30,13 +32,52 @@ public class Timeline
    
    private float currentTime = 0.0f;
 
-   public Timeline()
+   public Timeline(BeatmapObject rootObject)
    {
-      allObjects.Add(RootObject.Id, RootObject);
+      RootObject = rootObject;
       
-      RootObject.ChildAdded += OnBeatmapObjectChildAdded;
-      RootObject.ChildRemoved += OnBeatmapObjectChildRemoved;
-      RootObject.Data.PropertyChanged += OnBeatmapObjectDataPropertyChanged;
+      // Subscribe to events
+      RootObject.Traverse(obj =>
+      {
+         obj.ChildAdded += OnBeatmapObjectChildAdded;
+         obj.ChildRemoved += OnBeatmapObjectChildRemoved;
+         obj.Data.PropertyChanged += OnBeatmapObjectDataPropertyChanged;
+         
+         allObjects.Add(obj.Id, obj);
+      });
+   }
+
+   public Timeline() : this(DefaultRootObject)
+   {
+   }
+   
+   ~Timeline()
+   {
+      Dispose(false);
+   }
+   
+   public void Dispose()
+   {
+      Dispose(true);
+      GC.SuppressFinalize(this);
+   }
+
+   private void Dispose(bool disposing)
+   {
+      if (!disposing)
+      {
+         // TODO: Warn about not being disposed properly
+      }
+      
+      // Unsubscribe from events
+      RootObject.Traverse(obj =>
+      {
+         obj.ChildAdded -= OnBeatmapObjectChildAdded;
+         obj.ChildRemoved -= OnBeatmapObjectChildRemoved;
+         obj.Data.PropertyChanged -= OnBeatmapObjectDataPropertyChanged;
+         
+         // We don't need to clear allObjects here since we're disposing
+      });
    }
 
    private void OnBeatmapObjectChildAdded(object? sender, BeatmapObject beatmapObject)
@@ -81,6 +122,7 @@ public class Timeline
 
    public void ProcessFrame(float time)
    {
+      // TODO: Maybe optimize this
       if (startTimeDirty)
       {
          startTimeSortedObjects.Clear();
