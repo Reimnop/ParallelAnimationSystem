@@ -6,41 +6,39 @@ using ParallelAnimationSystem.Core.Animation;
 using ParallelAnimationSystem.Core.Beatmap;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Util;
-using GradientData = Pamx.Common.Data.GradientData;
-using VignetteData = Pamx.Common.Data.VignetteData;
 
 namespace ParallelAnimationSystem.Core;
 
 public class AnimationRunner(
     Timeline timeline,
     PrefabInstanceTimeline prefabInstanceTimeline,
-    Sequence<ITheme, ThemeColors> themeColorSequence,
-    Sequence<Vector2, Vector2> cameraPositionAnimation,
-    Sequence<float, float> cameraScaleAnimation,
-    Sequence<float, float> cameraRotationAnimation,
-    Sequence<BloomData, BloomData> bloomSequence,
-    Sequence<float, float> hueSequence,
-    Sequence<LensDistortionData, LensDistortionData> lensDistortionSequence,
-    Sequence<float, float> chromaticAberrationSequence,
-    Sequence<VignetteData, Data.VignetteData> vignetteSequence,
-    Sequence<GradientData, Data.GradientData> gradientSequence,
-    Sequence<GlitchData, GlitchData> glitchSequence,
-    Sequence<float, float> shakeSequence)
+    Sequence<SequenceKeyframe<ITheme>, object?, ThemeColorState> themeColorSequence,
+    Sequence<SequenceKeyframe<Vector2>, object?, Vector2> cameraPositionAnimation,
+    Sequence<SequenceKeyframe<float>, object?, float> cameraScaleAnimation,
+    Sequence<SequenceKeyframe<float>, object?, float> cameraRotationAnimation,
+    Sequence<SequenceKeyframe<BloomData>, ThemeColorState, BloomEffectState> bloomSequence,
+    Sequence<SequenceKeyframe<float>, object?, float> hueSequence,
+    Sequence<SequenceKeyframe<LensDistortionData>, object?, LensDistortionData> lensDistortionSequence,
+    Sequence<SequenceKeyframe<float>, object?, float> chromaticAberrationSequence,
+    Sequence<SequenceKeyframe<VignetteData>, ThemeColorState, VignetteEffectState> vignetteSequence,
+    Sequence<SequenceKeyframe<GradientData>, ThemeColorState, GradientEffectState> gradientSequence,
+    Sequence<SequenceKeyframe<GlitchData>, object?, GlitchData> glitchSequence,
+    Sequence<SequenceKeyframe<float>, object?, float> shakeSequence)
 {
     private record struct ProcessingBeatmapObject(float TimeOffset, BeatmapObject BeatmapObject);
     
     public Vector2 CameraPosition { get; private set; }
     public float CameraScale { get; private set; }
     public float CameraRotation { get; private set; }
-    public BloomData Bloom { get; private set; }
+    public BloomEffectState Bloom { get; private set; }
     public float Hue { get; private set; }
     public LensDistortionData LensDistortion { get; private set; }
     public float ChromaticAberration { get; private set; }
-    public Data.VignetteData Vignette { get; private set; }
-    public Data.GradientData Gradient { get; private set; }
+    public VignetteEffectState Vignette { get; private set; }
+    public GradientEffectState Gradient { get; private set; }
     public GlitchData Glitch { get; private set; }
     public float Shake { get; private set; }
-    public Color4<Rgba> BackgroundColor { get; private set; }
+    public ColorRgba BackgroundColor { get; private set; }
 
     private readonly ConcurrentBag<PerFrameBeatmapObjectData> perFrameData = [];
     private readonly List<PerFrameBeatmapObjectData> sortedPerFrameData = [];
@@ -54,24 +52,24 @@ public class AnimationRunner(
     public IReadOnlyList<PerFrameBeatmapObjectData> ProcessFrame(float time, int workers = -1)
     {
         // Update theme
-        var themeColors = themeColorSequence.Interpolate(time);
-        if (themeColors is null)
+        var themeColorState = themeColorSequence.Interpolate(time, null);
+        if (themeColorState is null)
             throw new InvalidOperationException("Theme colors are null, theme color sequence might not be populated");
         
-        BackgroundColor = themeColors.Background;
+        BackgroundColor = themeColorState.Background;
         
         // Update sequences
-        CameraPosition = cameraPositionAnimation.Interpolate(time, themeColors);
-        CameraScale = cameraScaleAnimation.Interpolate(time, themeColors);
-        CameraRotation = cameraRotationAnimation.Interpolate(time, themeColors);
-        Bloom = bloomSequence.Interpolate(time, themeColors);
-        Hue = hueSequence.Interpolate(time, themeColors);
-        LensDistortion = lensDistortionSequence.Interpolate(time, themeColors);
-        ChromaticAberration = chromaticAberrationSequence.Interpolate(time, themeColors);
-        Vignette = vignetteSequence.Interpolate(time, themeColors);
-        Gradient = gradientSequence.Interpolate(time, themeColors);
-        Glitch = glitchSequence.Interpolate(time, themeColors);
-        Shake = shakeSequence.Interpolate(time, themeColors);
+        CameraPosition = cameraPositionAnimation.Interpolate(time, null);
+        CameraScale = cameraScaleAnimation.Interpolate(time, null);
+        CameraRotation = cameraRotationAnimation.Interpolate(time, null);
+        Bloom = bloomSequence.Interpolate(time, themeColorState);
+        Hue = hueSequence.Interpolate(time, null);
+        LensDistortion = lensDistortionSequence.Interpolate(time, null);
+        ChromaticAberration = chromaticAberrationSequence.Interpolate(time, null);
+        Vignette = vignetteSequence.Interpolate(time, themeColorState);
+        Gradient = gradientSequence.Interpolate(time, themeColorState);
+        Glitch = glitchSequence.Interpolate(time, null);
+        Shake = shakeSequence.Interpolate(time, null);
         
         // Process next frame in timelines
         timeline.ProcessFrame(time);
@@ -91,7 +89,7 @@ public class AnimationRunner(
         {
             MaxDegreeOfParallelism = workers
         };
-        Parallel.ForEach(processingObjects, parallelOptions, (x, _) => ProcessGameObject(x, themeColors, time));
+        Parallel.ForEach(processingObjects, parallelOptions, (x, _) => ProcessGameObject(x, themeColorState, time));
         
         // Sort the per-frame data by depth
         sortedPerFrameData.Clear();
@@ -102,7 +100,7 @@ public class AnimationRunner(
         return sortedPerFrameData;
     }
 
-    private void ProcessGameObject(ProcessingBeatmapObject processingBeatmapObject, ThemeColors themeColors, float time)
+    private void ProcessGameObject(ProcessingBeatmapObject processingBeatmapObject, ThemeColorState themeColorState, float time)
     {
         var timeOffset = processingBeatmapObject.TimeOffset;
         var beatmapObject = processingBeatmapObject.BeatmapObject;
@@ -119,7 +117,7 @@ public class AnimationRunner(
         {
             BeatmapObject = beatmapObject,
             Transform = originMatrix * transform,
-            Colors = CalculateBeatmapObjectThemeColor(beatmapObject, time + timeOffset, themeColors),
+            Color = beatmapObject.Data.ThemeColorSequence.Interpolate(time + timeOffset - beatmapObject.Data.StartTime, themeColorState),
             ParentDepth = parentDepth,
         };
         perFrameData.Add(perFrameDatum);
@@ -172,11 +170,5 @@ public class AnimationRunner(
         }
         
         return currentMatrix * matrix;
-    }
-    
-    private static (Color4<Rgba>, Color4<Rgba>) CalculateBeatmapObjectThemeColor(BeatmapObject beatmapObject, float time, object? context = null)
-    {
-        var data = beatmapObject.Data;
-        return data.ThemeColorSequence.Interpolate(time - data.StartTime, context);
     }
 }

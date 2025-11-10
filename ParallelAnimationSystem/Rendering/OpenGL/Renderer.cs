@@ -386,11 +386,11 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         foreach (var drawData in drawList)
         {
             // Discard draw data that is fully transparent
-            if (drawData.Color1.W == 0.0f && drawData.Color2.W == 0.0f)
+            if (drawData.Color1.A == 0.0f && drawData.Color2.A == 0.0f)
                 continue;
             
             // Add to appropriate list
-            if (drawData.RenderType != RenderType.Text && drawData.Color1.W == 1.0f && (drawData.Color2.W == 1.0f || drawData.RenderMode == RenderMode.Normal))
+            if (drawData.RenderType != RenderType.Text && drawData.Color1.A == 1.0f && (drawData.Color2.A == 1.0f || drawData.RenderMode == RenderMode.Normal))
                 opaqueDrawData.Add(drawData);
             else
                 transparentDrawData.Add(drawData);
@@ -407,7 +407,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         GL.Viewport(0, 0, currentFboSize.X, currentFboSize.Y);
         
         // Clear buffers
-        var clearColor = drawList.ClearColor;
+        var clearColor = drawList.ClearColor.ToVector();
         var depth = 0.0f;
         GL.ClearNamedFramebufferf(fboHandle, OpenTK.Graphics.OpenGL.Buffer.Color, 0, in clearColor.X);
         GL.ClearNamedFramebufferf(fboHandle, OpenTK.Graphics.OpenGL.Buffer.Depth, 0, in depth);
@@ -533,8 +533,8 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
                 MvpRow1 = mvp.Row0,
                 MvpRow2 = mvp.Row1,
                 MvpRow3 = mvp.Row2,
-                Color1 = (Vector4) color1,
-                Color2 = (Vector4) color2,
+                Color1 = color1.ToVector(),
+                Color2 = color2.ToVector(),
                 Z = RenderUtil.EncodeIntDepth(drawData.Index),
                 RenderMode = (int) renderMode,
                 RenderType = (int) renderType,

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using OpenTK.Mathematics;
+using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.TextProcessing;
@@ -183,8 +184,9 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
         foreach (var perFrameObjectData in beatmapObjectDataList)
         {
             var transform = perFrameObjectData.Transform;
-            var color1 = perFrameObjectData.Colors.Item1;
-            var color2 = perFrameObjectData.Colors.Item2;
+            var beatmapObjectColor = perFrameObjectData.Color;
+            var color1 = beatmapObjectColor.Color1 * beatmapObjectColor.Opacity;
+            var color2 = beatmapObjectColor.Color2 * beatmapObjectColor.Opacity;
 
             var objectData = perFrameObjectData.BeatmapObject.Data;
             
@@ -200,9 +202,9 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
                     {
                         var mesh = meshCategory[objectData.ShapeIndex];
                         var renderMode = objectData.RenderMode;
-            
+
                         if (color1 == color2)
-                            color2.W = 0.0f;
+                            color2 = new ColorRgba(color2.R, color2.G, color2.B, 0.0f);
             
                         drawList.AddMesh(mesh, transform, color1, color2, renderMode);
                     }

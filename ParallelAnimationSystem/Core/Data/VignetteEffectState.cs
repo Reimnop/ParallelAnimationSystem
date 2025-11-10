@@ -2,7 +2,7 @@ using OpenTK.Mathematics;
 
 namespace ParallelAnimationSystem.Core.Data;
 
-public struct VignetteData()
+public struct VignetteEffectState()
 {
     public float Intensity { get; set; } = 0.0f;
     public float Smoothness { get; set; } = 0.0f;

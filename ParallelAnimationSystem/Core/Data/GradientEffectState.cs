@@ -3,7 +3,7 @@ using Pamx.Common.Enum;
 
 namespace ParallelAnimationSystem.Core.Data;
 
-public struct GradientData()
+public struct GradientEffectState()
 {
     public Vector3 Color1 { get; set; } = Vector3.Zero;
     public Vector3 Color2 { get; set; } = Vector3.Zero;

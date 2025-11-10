@@ -1,5 +1,6 @@
 using System.Collections;
 using OpenTK.Mathematics;
+using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Data;
 
 namespace ParallelAnimationSystem.Rendering.Common;
@@ -11,12 +12,12 @@ public class DrawList : IDrawList, IEnumerable<DrawData>
     
     public CameraData CameraData { get; set; } = new(Vector2.Zero, 10.0f, 0.0f);
     public PostProcessingData PostProcessingData { get; set; } = default;
-    public Color4<Rgba> ClearColor { get; set; } = Color4.Black;
+    public ColorRgba ClearColor { get; set; } = new(0.0f, 0.0f, 0.0f, 1.0f);
     
     private readonly List<DrawData> drawDataList = [];
     private int count;
     
-    public void AddMesh(IMeshHandle mesh, Matrix3 transform, Color4<Rgba> color1, Color4<Rgba> color2, RenderMode renderMode)
+    public void AddMesh(IMeshHandle mesh, Matrix3 transform, ColorRgba color1, ColorRgba color2, RenderMode renderMode)
     {
         DrawData drawData;
         if (drawDataList.Count > count)
@@ -38,7 +39,7 @@ public class DrawList : IDrawList, IEnumerable<DrawData>
         count++;
     }
     
-    public void AddText(ITextHandle text, Matrix3 transform, Color4<Rgba> color)
+    public void AddText(ITextHandle text, Matrix3 transform, ColorRgba color)
     {
         DrawData drawData;
         if (drawDataList.Count > count)
@@ -73,7 +74,7 @@ public class DrawList : IDrawList, IEnumerable<DrawData>
     {
         CameraData = new CameraData(Vector2.Zero, 10.0f, 0.0f);
         PostProcessingData = default;
-        ClearColor = Color4.Black;
+        ClearColor = new ColorRgba(0.0f, 0.0f, 0.0f, 1.0f);
         count = 0;
     }
 }

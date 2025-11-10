@@ -8,7 +8,7 @@ public struct PerFrameBeatmapObjectData : IEquatable<PerFrameBeatmapObjectData>
 {
     public BeatmapObject BeatmapObject { get; set; }
     public Matrix3 Transform { get; set; }
-    public (Color4<Rgba>, Color4<Rgba>) Colors { get; set; }
+    public BeatmapObjectColor Color { get; set; }
     public int ParentDepth { get; set; }
     
     public static bool operator ==(PerFrameBeatmapObjectData left, PerFrameBeatmapObjectData right)
@@ -27,9 +27,9 @@ public struct PerFrameBeatmapObjectData : IEquatable<PerFrameBeatmapObjectData>
     public bool Equals(PerFrameBeatmapObjectData other)
         => BeatmapObject == other.BeatmapObject && 
            Transform == other.Transform && 
-           Colors == other.Colors && 
+           Color == other.Color && 
            ParentDepth == other.ParentDepth;
 
     public override int GetHashCode()
-        => HashCode.Combine(BeatmapObject, Transform, Colors, ParentDepth);
+        => HashCode.Combine(BeatmapObject, Transform, Color, ParentDepth);
 }

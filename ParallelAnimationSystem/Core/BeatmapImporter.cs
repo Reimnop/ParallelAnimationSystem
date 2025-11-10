@@ -11,8 +11,6 @@ using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Util;
 using BeatmapObject = ParallelAnimationSystem.Core.Beatmap.BeatmapObject;
-using GradientData = Pamx.Common.Data.GradientData;
-using VignetteData = Pamx.Common.Data.VignetteData;
 
 namespace ParallelAnimationSystem.Core;
 
@@ -83,97 +81,77 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             shakeSequence);
     }
 
-    private Sequence<float, float> CreateShakeSequence(IList<FixedKeyframe<float>> shakeEvents)
+    private Sequence<SequenceKeyframe<float>, object?, float> CreateShakeSequence(IList<FixedKeyframe<float>> shakeEvents)
     {
         var keyframes = shakeEvents
-            .Select(x =>
+            .Select(x => new SequenceKeyframe<float>
             {
-                var time = x.Time;
-                var value = x.Value;
-                var ease = EaseFunctions.GetOrDefault(x.Ease, EaseFunctions.Linear);
-                return new Animation.Keyframe<float>(time, value, ease);
+                Time = x.Time,
+                Ease = x.Ease,
+                Value = x.Value,
             });
-        return new Sequence<float, float>(keyframes, InterpolateFloat);
+        return new Sequence<SequenceKeyframe<float>, object?, float>(keyframes, SequenceKeyframe<float>.ResolveToValue, MathUtil.Lerp);
     }
     
-    private Sequence<GlitchData, GlitchData> CreateGlitchSequence(IList<FixedKeyframe<GlitchData>> glitchEvents)
+    private Sequence<SequenceKeyframe<GlitchData>, object?, GlitchData> CreateGlitchSequence(IList<FixedKeyframe<GlitchData>> glitchEvents)
     {
         var keyframes = glitchEvents
-            .Select(x =>
+            .Select(x => new SequenceKeyframe<GlitchData>
             {
-                var time = x.Time;
-                var value = x.Value;
-                var ease = EaseFunctions.GetOrDefault(x.Ease, EaseFunctions.Linear);
-                return new Animation.Keyframe<GlitchData>(time, value, ease);
+                Time = x.Time,
+                Ease = x.Ease,
+                Value = x.Value,
             });
-        return new Sequence<GlitchData, GlitchData>(keyframes, InterpolateGlitchData);
+        return new Sequence<SequenceKeyframe<GlitchData>, object?, GlitchData>(keyframes, (x, _) => x.Value, InterpolateGlitchData);
     }
 
-    private static GlitchData InterpolateGlitchData(GlitchData a, GlitchData b, float t, object? context)
-    {
-        return new GlitchData
+    private static GlitchData InterpolateGlitchData(GlitchData a, GlitchData b, float t)
+        => new()
         {
             Intensity = MathUtil.Lerp(a.Intensity, b.Intensity, t),
             Speed = MathUtil.Lerp(a.Speed, b.Speed, t),
             Width = MathUtil.Lerp(a.Width, b.Width, t)
         };
-    }
 
-    private Sequence<GradientData, Data.GradientData> CreateGradientSequence(IList<FixedKeyframe<GradientData>> gradientEvents)
+    private Sequence<SequenceKeyframe<GradientData>, ThemeColorState, GradientEffectState> CreateGradientSequence(IList<FixedKeyframe<GradientData>> gradientEvents)
     {
         var keyframes = gradientEvents
-            .Select(x =>
+            .Select(x => new SequenceKeyframe<GradientData>
             {
-                var time = x.Time;
-                var value = x.Value;
-                var ease = EaseFunctions.GetOrDefault(x.Ease, EaseFunctions.Linear);
-                return new Animation.Keyframe<GradientData>(time, value, ease);
+                Time = x.Time,
+                Ease = x.Ease,
+                Value = x.Value,
             });
-        return new Sequence<GradientData, Data.GradientData>(keyframes, InterpolateGradientData);
+        return new Sequence<SequenceKeyframe<GradientData>, ThemeColorState, GradientEffectState>(keyframes, ResolveGradientDataKeyframe, InterpolateGradientEffectState);
     }
 
-    private Sequence<VignetteData, Data.VignetteData> CreateVignetteSequence(IList<FixedKeyframe<VignetteData>> vignetteEvents)
+    private static GradientEffectState ResolveGradientDataKeyframe(SequenceKeyframe<GradientData> keyframe, ThemeColorState context)
     {
-        var keyframes = vignetteEvents
-            .Select(x =>
-            {
-                var time = x.Time;
-                var value = x.Value;
-                var ease = EaseFunctions.GetOrDefault(x.Ease, EaseFunctions.Linear);
-                return new Animation.Keyframe<VignetteData>(time, value, ease);
-            });
-        return new Sequence<VignetteData, Data.VignetteData>(keyframes, InterpolateVignetteData);
-    }
-
-    private Sequence<float, float> CreateChromaticAberrationSequence(IList<FixedKeyframe<float>> chromaEvents)
-    {
-        var keyframes = chromaEvents
-            .Select(x =>
-            {
-                var time = x.Time;
-                var value = x.Value;
-                var ease = EaseFunctions.GetOrDefault(x.Ease, EaseFunctions.Linear);
-                return new Animation.Keyframe<float>(time, value, ease);
-            });
-        return new Sequence<float, float>(keyframes, InterpolateFloat);
+        var value = keyframe.Value;
+        var color1Index = Math.Clamp(value.ColorA, 0, context.Effect.Count - 1);
+        var color2Index = Math.Clamp(value.ColorB, 0, context.Effect.Count - 1);
+        var color1 = context.Effect[color1Index];
+        var color2 = context.Effect[color2Index];
+        var color1Vector = new Vector3(color1.R, color1.G, color1.B);
+        var color2Vector = new Vector3(color2.R, color2.G, color2.B);
+        var mode = value.Mode;
+        return new GradientEffectState
+        {
+            Color1 = color1Vector,
+            Color2 = color2Vector,
+            Intensity = value.Intensity,
+            Rotation = value.Rotation,
+            Mode = mode
+        };
     }
     
-    private Data.GradientData InterpolateGradientData(GradientData a, GradientData b, float t, object? context)
-    {
-        var themeColors = (ThemeColors) context!;
-        
-        var color1 = new Vector3(
-            MathUtil.Lerp(a.ColorA >= themeColors.Effect.Count ? 1.0f : themeColors.Effect[a.ColorA].X, b.ColorA >= themeColors.Effect.Count ? 1.0f : themeColors.Effect[b.ColorA].X, t),
-            MathUtil.Lerp(a.ColorA >= themeColors.Effect.Count ? 1.0f : themeColors.Effect[a.ColorA].Y, b.ColorA >= themeColors.Effect.Count ? 1.0f : themeColors.Effect[b.ColorA].Y, t),
-            MathUtil.Lerp(a.ColorA >= themeColors.Effect.Count ? 1.0f : themeColors.Effect[a.ColorA].Z, b.ColorA >= themeColors.Effect.Count ? 1.0f : themeColors.Effect[b.ColorA].Z, t));
-        var color2 = new Vector3(
-            MathUtil.Lerp(a.ColorB >= themeColors.Effect.Count ? 1.0f : themeColors.Effect[a.ColorB].X, b.ColorB >= themeColors.Effect.Count ? 1.0f : themeColors.Effect[b.ColorB].X, t),
-            MathUtil.Lerp(a.ColorB >= themeColors.Effect.Count ? 1.0f : themeColors.Effect[a.ColorB].Y, b.ColorB >= themeColors.Effect.Count ? 1.0f : themeColors.Effect[b.ColorB].Y, t),
-            MathUtil.Lerp(a.ColorB >= themeColors.Effect.Count ? 1.0f : themeColors.Effect[a.ColorB].Z, b.ColorB >= themeColors.Effect.Count ? 1.0f : themeColors.Effect[b.ColorB].Z, t));
-
+    private static GradientEffectState InterpolateGradientEffectState(GradientEffectState a, GradientEffectState b, float t)
+    { 
+        var color1 = MathUtil.Lerp(a.Color1, b.Color1, t);
+        var color2 = MathUtil.Lerp(a.Color2, b.Color2, t);
         var mode = a.Mode;
         
-        return new Data.GradientData
+        return new GradientEffectState
         {
             Color1 = color1,
             Color2 = color2,
@@ -182,174 +160,229 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             Mode = mode
         };
     }
-    
-    private static Data.VignetteData InterpolateVignetteData(VignetteData a, VignetteData b, float t, object? context)
-    {
-        var themeColors = (ThemeColors) context!;
 
-        var rounded = t > 0.5f ? b.Rounded : a.Rounded;
-        var roundness = a.Roundness.HasValue && b.Roundness.HasValue
-            ? MathUtil.Lerp(a.Roundness.Value, b.Roundness.Value, t)
-            : 1.0f;
-        
-        var color = a.Color.HasValue && b.Color.HasValue
-            ? new Vector3(
-                MathUtil.Lerp(a.Color.Value >= themeColors.Effect.Count ? 0.0f : themeColors.Effect[a.Color.Value].X, b.Color.Value >= themeColors.Effect.Count ? 0.0f : themeColors.Effect[b.Color.Value].X, t),
-                MathUtil.Lerp(a.Color.Value >= themeColors.Effect.Count ? 0.0f : themeColors.Effect[a.Color.Value].Y, b.Color.Value >= themeColors.Effect.Count ? 0.0f : themeColors.Effect[b.Color.Value].Y, t),
-                MathUtil.Lerp(a.Color.Value >= themeColors.Effect.Count ? 0.0f : themeColors.Effect[a.Color.Value].Z, b.Color.Value >= themeColors.Effect.Count ? 0.0f : themeColors.Effect[b.Color.Value].Z, t))
-            : Vector3.Zero;
-        
-        return new Data.VignetteData
+    private Sequence<SequenceKeyframe<VignetteData>, ThemeColorState, VignetteEffectState> CreateVignetteSequence(IList<FixedKeyframe<VignetteData>> vignetteEvents)
+    {
+        var keyframes = vignetteEvents
+            .Select(x => new SequenceKeyframe<VignetteData>
+            {
+                Time = x.Time,
+                Ease = x.Ease,
+                Value = x.Value,
+            });
+        return new Sequence<SequenceKeyframe<VignetteData>, ThemeColorState, VignetteEffectState>(keyframes, ResolveVignetteDataKeyframe, InterpolateVignetteEffectState);
+    }
+    
+    private static VignetteEffectState ResolveVignetteDataKeyframe(SequenceKeyframe<VignetteData> keyframe, ThemeColorState context)
+    {
+        var value = keyframe.Value;
+        var color = value.Color.HasValue 
+            ? context.Effect[Math.Clamp(value.Color.Value, 0, context.Effect.Count - 1)]
+            : new ColorRgba(0.0f, 0.0f, 0.0f, 1.0f);
+        var colorVector = new Vector3(color.R, color.G, color.B);
+        var rounded = value.Rounded;
+        var roundness = value.Roundness ?? 1.0f;
+        return new VignetteEffectState
         {
-            Intensity = MathUtil.Lerp(a.Intensity, b.Intensity, t),
-            Smoothness = MathUtil.Lerp(a.Smoothness, b.Smoothness, t),
-            Color = color,
+            Intensity = value.Intensity,
+            Smoothness = value.Smoothness,
+            Color = colorVector,
             Rounded = rounded,
             Roundness = roundness,
-            Center = new Vector2(
-                MathUtil.Lerp(a.Center.X, b.Center.X, t),
-                MathUtil.Lerp(a.Center.Y, b.Center.Y, t)),
+            Center = new Vector2(value.Center.X, value.Center.Y),
         };
     }
 
-    private Sequence<LensDistortionData, LensDistortionData> CreateLensDistortionSequence(IList<FixedKeyframe<LensDistortionData>> lensDistortionEvents)
+    private static VignetteEffectState InterpolateVignetteEffectState(VignetteEffectState a, VignetteEffectState b, float t)
+        => new()
+        {
+            Intensity = MathUtil.Lerp(a.Intensity, b.Intensity, t),
+            Smoothness = MathUtil.Lerp(a.Smoothness, b.Smoothness, t),
+            Color = MathUtil.Lerp(a.Color, b.Color, t),
+            Rounded = t > 0.5f ? b.Rounded : a.Rounded,
+            Roundness = MathUtil.Lerp(a.Roundness, b.Roundness, t),
+            Center = MathUtil.Lerp(a.Center, b.Center, t),
+        };
+
+    private Sequence<SequenceKeyframe<float>, object?, float> CreateChromaticAberrationSequence(IList<FixedKeyframe<float>> chromaEvents)
+    {
+        var keyframes = chromaEvents
+            .Select(x => new SequenceKeyframe<float>
+            {
+                Time = x.Time,
+                Ease = x.Ease,
+                Value = x.Value,
+            });
+        return new Sequence<SequenceKeyframe<float>, object?, float>(keyframes, SequenceKeyframe<float>.ResolveToValue, MathUtil.Lerp);
+    }
+
+    private Sequence<SequenceKeyframe<LensDistortionData>, object?, LensDistortionData> CreateLensDistortionSequence(IList<FixedKeyframe<LensDistortionData>> lensDistortionEvents)
     {
         var keyframes = lensDistortionEvents
-            .Select(x =>
+            .Select(x => new SequenceKeyframe<LensDistortionData>
             {
-                var time = x.Time;
-                var value = x.Value;
-                var ease = EaseFunctions.GetOrDefault(x.Ease, EaseFunctions.Linear);
-                return new Animation.Keyframe<LensDistortionData>(time, value, ease);
+                Time = x.Time,
+                Ease = x.Ease,
+                Value = x.Value,
             });
-        return new Sequence<LensDistortionData, LensDistortionData>(keyframes, InterpolateLensDistortionData);
+        return new Sequence<SequenceKeyframe<LensDistortionData>, object?, LensDistortionData>(
+            keyframes,
+            SequenceKeyframe<LensDistortionData>.ResolveToValue,
+            InterpolateLensDistortionData);
     }
     
-    private LensDistortionData InterpolateLensDistortionData(LensDistortionData a, LensDistortionData b, float t, object? context)
-    {
-        return new LensDistortionData
+    private LensDistortionData InterpolateLensDistortionData(LensDistortionData a, LensDistortionData b, float t)
+        => new()
         {
             Intensity = MathUtil.Lerp(a.Intensity, b.Intensity, t),
             Center = new System.Numerics.Vector2(
                 MathUtil.Lerp(a.Center.X, b.Center.X, t),
                 MathUtil.Lerp(a.Center.Y, b.Center.Y, t))
         };
-    }
     
-    private Sequence<BloomData, BloomData> CreateBloomSequence(IList<FixedKeyframe<BloomData>> bloomEvents)
+    private Sequence<SequenceKeyframe<BloomData>, ThemeColorState, BloomEffectState> CreateBloomSequence(IList<FixedKeyframe<BloomData>> bloomEvents)
     {
         var keyframes = bloomEvents
-            .Select(x =>
+            .Select(x => new SequenceKeyframe<BloomData>
             {
-                var time = x.Time;
-                var value = x.Value;
-                var ease = EaseFunctions.GetOrDefault(x.Ease, EaseFunctions.Linear);
-                return new Animation.Keyframe<BloomData>(time, value, ease);
+                Time = x.Time,
+                Ease = x.Ease,
+                Value = x.Value,
             });
-        return new Sequence<BloomData, BloomData>(keyframes, InterpolateBloomData);
+        return new Sequence<SequenceKeyframe<BloomData>, ThemeColorState, BloomEffectState>(keyframes, ResolveBloomDataKeyframe, InterpolateBloomEffectState);
     }
 
-    private BloomData InterpolateBloomData(BloomData a, BloomData b, float t, object? context)
+    private static BloomEffectState ResolveBloomDataKeyframe(SequenceKeyframe<BloomData> keyframe, ThemeColorState context)
     {
-        return new BloomData
+        var colorIndex = Math.Clamp(keyframe.Value.Color, 0, context.Effect.Count - 1);
+        var color = context.Effect[colorIndex];
+        var colorVector = new Vector3(color.R, color.G, color.B);
+        return new BloomEffectState
         {
-            Intensity = MathUtil.Lerp(a.Intensity, b.Intensity, t),
-            Diffusion = MathUtil.Lerp(a.Diffusion, b.Diffusion, t)
+            Intensity = keyframe.Value.Intensity,
+            Diffusion = keyframe.Value.Diffusion,
+            Color = colorVector,
         };
     }
 
-    private Sequence<float, float> CreateHueSequence(IList<FixedKeyframe<float>> hueEvents)
+    private static BloomEffectState InterpolateBloomEffectState(BloomEffectState a, BloomEffectState b, float t)
+        => new()
+        {
+            Intensity = MathUtil.Lerp(a.Intensity, b.Intensity, t),
+            Diffusion = MathUtil.Lerp(a.Diffusion, b.Diffusion, t),
+            Color = MathUtil.Lerp(a.Color, b.Color, t),
+        };
+
+    private Sequence<SequenceKeyframe<float>, object?, float> CreateHueSequence(IList<FixedKeyframe<float>> hueEvents)
     {
         var keyframes = hueEvents
-            .Select(x =>
+            .Select(x => new SequenceKeyframe<float>
             {
-                var time = x.Time;
-                var value = MathHelper.DegreesToRadians(x.Value);
-                var ease = EaseFunctions.GetOrDefault(x.Ease, EaseFunctions.Linear);
-                return new Animation.Keyframe<float>(time, value, ease);
+                Time = x.Time,
+                Ease = x.Ease,
+                Value = x.Value,
             });
-        return new Sequence<float, float>(keyframes, InterpolateFloat);
+        return new Sequence<SequenceKeyframe<float>, object?, float>(keyframes, SequenceKeyframe<float>.ResolveToValue, MathUtil.Lerp);
     }
     
-    private Sequence<Vector2, Vector2> CreateCameraPositionSequence(IList<FixedKeyframe<System.Numerics.Vector2>> cameraPositionEvents)
+    private Sequence<SequenceKeyframe<Vector2>, object?, Vector2> CreateCameraPositionSequence(IList<FixedKeyframe<System.Numerics.Vector2>> cameraPositionEvents)
     {
         var keyframes = cameraPositionEvents
-            .Select(x =>
+            .Select(x => new SequenceKeyframe<Vector2>
             {
-                var time = x.Time;
-                var value = new Vector2(x.Value.X, x.Value.Y);
-                var ease = EaseFunctions.GetOrDefault(x.Ease, EaseFunctions.Linear);
-                return new Animation.Keyframe<Vector2>(time, value, ease);
+                Time = x.Time,
+                Ease = x.Ease,
+                Value = new Vector2(x.Value.X, x.Value.Y),
             });
-        return new Sequence<Vector2, Vector2>(keyframes, InterpolateVector2);
+        return new Sequence<SequenceKeyframe<Vector2>, object?, Vector2>(keyframes, SequenceKeyframe<Vector2>.ResolveToValue, MathUtil.Lerp);
     }
     
-    private Sequence<float, float> CreateCameraScaleSequence(IList<FixedKeyframe<float>> cameraScaleEvents)
+    private Sequence<SequenceKeyframe<float>, object?, float> CreateCameraScaleSequence(IList<FixedKeyframe<float>> cameraScaleEvents)
     {
         var keyframes = cameraScaleEvents
-            .Select(x =>
+            .Select(x => new SequenceKeyframe<float>
             {
-                var time = x.Time;
-                var value = x.Value;
-                var ease = EaseFunctions.GetOrDefault(x.Ease, EaseFunctions.Linear);
-                return new Animation.Keyframe<float>(time, value, ease);
+                Time = x.Time,
+                Ease = x.Ease,
+                Value = x.Value,
             });
-        return new Sequence<float, float>(keyframes, InterpolateFloat);
+        return new Sequence<SequenceKeyframe<float>, object?, float>(keyframes, SequenceKeyframe<float>.ResolveToValue, MathUtil.Lerp);
     }
     
-    private Sequence<float, float> CreateCameraRotationSequence(IList<FixedKeyframe<float>> cameraScaleEvents)
+    private Sequence<SequenceKeyframe<float>, object?, float> CreateCameraRotationSequence(IList<FixedKeyframe<float>> cameraScaleEvents)
         {
             var keyframes = cameraScaleEvents
-                .Select(x =>
+                .Select(x => new SequenceKeyframe<float>
                 {
-                    var time = x.Time;
-                    var value = MathHelper.DegreesToRadians(x.Value);
-                    var ease = EaseFunctions.GetOrDefault(x.Ease, EaseFunctions.Linear);
-                    return new Animation.Keyframe<float>(time, value, ease);
+                    Time = x.Time,
+                    Ease = x.Ease,
+                    Value = MathHelper.DegreesToRadians(x.Value),
                 });
-            return new Sequence<float, float>(keyframes, InterpolateFloat);
+            return new Sequence<SequenceKeyframe<float>, object?, float>(keyframes, SequenceKeyframe<float>.ResolveToValue, MathUtil.Lerp);
         }
 
-    private Sequence<ITheme, ThemeColors> CreateThemeSequence(IList<FixedKeyframe<IReference<ITheme>>> themeEvents)
+    private Sequence<SequenceKeyframe<ITheme>, object?, ThemeColorState> CreateThemeSequence(IList<FixedKeyframe<IReference<ITheme>>> themeEvents)
     {
         var keyframes = themeEvents
             .Where(x => x.Value.Value is not null)
-            .Select(x =>
+            .Select(x => new SequenceKeyframe<ITheme>
             {
-                var time = x.Time;
-                var theme = x.Value.Value;
-                var ease = EaseFunctions.GetOrDefault(x.Ease, EaseFunctions.Linear);
-                return new Animation.Keyframe<ITheme>(time, theme!, ease);
+                Time = x.Time,
+                Ease = x.Ease,
+                Value = x.Value.Value ?? throw new ArgumentNullException(nameof(x.Value.Value)),
             });
-        return new Sequence<ITheme, ThemeColors>(keyframes, InterpolateTheme);
+        return new Sequence<SequenceKeyframe<ITheme>, object?, ThemeColorState>(keyframes, ResolveThemeKeyframe, InterpolateThemeColorState);
     }
 
-    private ThemeColors InterpolateTheme(ITheme a, ITheme b, float t, object? context)
+    private static ThemeColorState ResolveThemeKeyframe(SequenceKeyframe<ITheme> keyframe, object? _)
     {
-        var themeColors = new ThemeColors
+        var themeColorState = new ThemeColorState
         {
-            Background = InterpolateColor4(a.Background.ToColor4(), b.Background.ToColor4(), t),
-            Gui = InterpolateColor4(a.Gui.ToColor4(), b.Gui.ToColor4(), t),
-            GuiAccent = InterpolateColor4(a.GuiAccent.ToColor4(), b.GuiAccent.ToColor4(), t)
+            Background = keyframe.Value.Background.ToColorRgba(),
+            Gui = keyframe.Value.Gui.ToColorRgba(),
+            GuiAccent = keyframe.Value.GuiAccent.ToColorRgba(),
+        };
+        
+        for (var i = 0; i < keyframe.Value.Player.Count; i++)
+            themeColorState.Player.Add(keyframe.Value.Player[i].ToColorRgba());
+        for (var i = keyframe.Value.Player.Count; i < 4; i++)
+            themeColorState.Player.Add(new ColorRgba(1.0f, 1.0f, 1.0f, 1.0f));
+        
+        for (var i = 0; i < keyframe.Value.Object.Count; i++)
+            themeColorState.Object.Add(keyframe.Value.Object[i].ToColorRgba());
+        for (var i = keyframe.Value.Object.Count; i < 9; i++)
+            themeColorState.Object.Add(new ColorRgba(1.0f, 1.0f, 1.0f, 1.0f));
+        
+        for (var i = 0; i < keyframe.Value.Effect.Count; i++)
+            themeColorState.Effect.Add(keyframe.Value.Effect[i].ToColorRgba());
+        for (var i = keyframe.Value.Effect.Count; i < 9; i++)
+            themeColorState.Effect.Add(new ColorRgba(1.0f, 1.0f, 1.0f, 1.0f));
+        
+        for (var i = 0; i < keyframe.Value.ParallaxObject.Count; i++)
+            themeColorState.ParallaxObject.Add(keyframe.Value.ParallaxObject[i].ToColorRgba());
+        for (var i = keyframe.Value.ParallaxObject.Count; i < 9; i++)
+            themeColorState.ParallaxObject.Add(new ColorRgba(1.0f, 1.0f, 1.0f, 1.0f));
+        
+        return themeColorState;
+    }
+    
+    private static ThemeColorState InterpolateThemeColorState(ThemeColorState a, ThemeColorState b, float t)
+    {
+        var themeColorState = new ThemeColorState
+        {
+            Background = ColorRgba.Lerp(a.Background, b.Background, t),
+            Gui = ColorRgba.Lerp(a.Gui, b.Gui, t),
+            GuiAccent = ColorRgba.Lerp(a.GuiAccent, b.GuiAccent, t)
         };
         for (var i = 0; i < Math.Min(a.Player.Count, b.Player.Count); i++)
-            themeColors.Player.Add(InterpolateColor4(a.Player[i].ToColor4(), b.Player[i].ToColor4(), t));
+            themeColorState.Player.Add(ColorRgba.Lerp(a.Player[i], b.Player[i], t));
         for (var i = 0; i < Math.Min(a.Object.Count, b.Object.Count); i++)
-            themeColors.Object.Add(InterpolateColor4(a.Object[i].ToColor4(), b.Object[i].ToColor4(), t));
+            themeColorState.Object.Add(ColorRgba.Lerp(a.Object[i], b.Object[i], t));
         for (var i = 0; i < Math.Min(a.Effect.Count, b.Effect.Count); i++)
-            themeColors.Effect.Add(InterpolateColor4(a.Effect[i].ToColor4(), b.Effect[i].ToColor4(), t));
+            themeColorState.Effect.Add(ColorRgba.Lerp(a.Effect[i], b.Effect[i], t));
         for (var i = 0; i < Math.Min(a.ParallaxObject.Count, b.ParallaxObject.Count); i++)
-            themeColors.ParallaxObject.Add(InterpolateColor4(a.ParallaxObject[i].ToColor4(), b.ParallaxObject[i].ToColor4(), t));
-        return themeColors;
-    }
-
-    private Color4<Rgba> InterpolateColor4(Color4<Rgba> a, Color4<Rgba> b, float t)
-    {
-        return new Color4<Rgba>(
-            MathUtil.Lerp(a.X, b.X, t),
-            MathUtil.Lerp(a.Y, b.Y, t),
-            MathUtil.Lerp(a.Z, b.Z, t),
-            MathUtil.Lerp(a.W, b.W, t));
+            themeColorState.ParallaxObject.Add(ColorRgba.Lerp(a.ParallaxObject[i], b.ParallaxObject[i], t));
+        return themeColorState;
     }
 
     private Timeline CreateTimeline(IBeatmap beatmap)
@@ -469,20 +502,18 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         return (objectId, @object.Parent is IIdentifiable<string> parentIdentifiable ? parentIdentifiable.Id : null, data);
     }
     
-    private IEnumerable<Animation.Keyframe<ThemeColor>> EnumerateThemeColorKeyframes(IEnumerable<FixedKeyframe<ThemeColor>> events)
-    {
-        var keyframes = events.Select(e =>
+    private IEnumerable<BeatmapObjectColorKeyframe> EnumerateThemeColorKeyframes(IEnumerable<FixedKeyframe<ThemeColor>> events)
+        => events.Select(e => new BeatmapObjectColorKeyframe
         {
-            var time = e.Time;
-            var value = e.Value;
-            var ease = EaseFunctions.GetOrDefault(e.Ease, EaseFunctions.Linear);
-            return new Animation.Keyframe<ThemeColor>(time, value, ease);
+            Time = e.Time,
+            Ease = e.Ease,
+            ColorIndex1 = e.Value.Index,
+            ColorIndex2 = e.Value.EndIndex,
+            Opacity = e.Value.Opacity,
         });
-        return keyframes;
-    }
 
-    private IEnumerable<Animation.Keyframe<Vector2>> EnumerateSequenceKeyframes(
-        IEnumerable<Pamx.Common.Data.Keyframe<System.Numerics.Vector2>> events,
+    private IEnumerable<PositionScaleKeyframe> EnumerateSequenceKeyframes(
+        IEnumerable<Keyframe<System.Numerics.Vector2>> events,
         bool additive = false,
         params object[] seeds)
     {
@@ -494,13 +525,17 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             var parsedValue = ParseRandomVector2(@event, [..seeds, i++]);
             var newValue = new Vector2(parsedValue.X, parsedValue.Y);
             value = additive ? value + newValue : newValue;
-            var ease = EaseFunctions.GetOrDefault(@event.Ease, EaseFunctions.Linear);
-            yield return new Animation.Keyframe<Vector2>(time, value, ease);
+            yield return new PositionScaleKeyframe
+            {
+                Time = time,
+                Ease = @event.Ease,
+                Value = value,
+            };
         }
     }
     
-    private IEnumerable<Animation.Keyframe<float>> EnumerateRotationSequenceKeyframes(
-        IEnumerable<Pamx.Common.Data.Keyframe<float>> events,
+    private IEnumerable<RotationKeyframe> EnumerateRotationSequenceKeyframes(
+        IEnumerable<Keyframe<float>> events,
         bool additive = false,
         params object[] seeds)
     {
@@ -511,12 +546,16 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             var time = @event.Time;
             var newValue = MathHelper.DegreesToRadians(ParseRandomFloat(@event, [..seeds, i++]));
             value = additive ? value + newValue : newValue;
-            var ease = EaseFunctions.GetOrDefault(@event.Ease, EaseFunctions.Linear);
-            yield return new Animation.Keyframe<float>(time, value, ease);
+            yield return new RotationKeyframe
+            {
+                Time = time,
+                Ease = @event.Ease,
+                Value = value,
+            };
         }
     }
 
-    private float ParseRandomFloat(Pamx.Common.Data.Keyframe<float> keyframe, params object[] seeds)
+    private float ParseRandomFloat(Keyframe<float> keyframe, params object[] seeds)
         => keyframe.RandomMode switch
         {
             RandomMode.None => keyframe.Value,
@@ -526,7 +565,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             _ => keyframe.Value
         };
 
-    private System.Numerics.Vector2 ParseRandomVector2(Pamx.Common.Data.Keyframe<System.Numerics.Vector2> keyframe, params object[] seeds)
+    private System.Numerics.Vector2 ParseRandomVector2(Keyframe<System.Numerics.Vector2> keyframe, params object[] seeds)
         => keyframe.RandomMode switch
         {
             RandomMode.None => keyframe.Value,
@@ -581,17 +620,5 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         var hashValue = hash.GetCurrentHashAsUInt32();
         
         return (float) MathUtil.Lerp(min, max, hashValue / (double) uint.MaxValue);
-    }
-    
-    private static Vector2 InterpolateVector2(Vector2 a, Vector2 b, float t, object? context)
-    {
-        return new Vector2(
-            MathUtil.Lerp(a.X, b.X, t),
-            MathUtil.Lerp(a.Y, b.Y, t));
-    }
-    
-    private static float InterpolateFloat(float a, float b, float t, object? context)
-    {
-        return MathUtil.Lerp(a, b, t);
     }
 }

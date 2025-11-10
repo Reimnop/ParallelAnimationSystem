@@ -35,4 +35,25 @@ public static class MathUtil
     
     public static float Lerp(float start, float end, float t)
         => start + t * (end - start);
+    
+    public static Vector2 Lerp(Vector2 a, Vector2 b, float t)
+        => new(
+            Lerp(a.X, b.X, t),
+            Lerp(a.Y, b.Y, t));
+    
+    public static Vector3 Lerp(Vector3 a, Vector3 b, float t)
+        => new(
+            Lerp(a.X, b.X, t),
+            Lerp(a.Y, b.Y, t),
+            Lerp(a.Z, b.Z, t));
+    
+    public static Vector4 Lerp(Vector4 a, Vector4 b, float t)
+        => new(
+            Lerp(a.X, b.X, t),
+            Lerp(a.Y, b.Y, t),
+            Lerp(a.Z, b.Z, t),
+            Lerp(a.W, b.W, t));
+    
+    public static float InverseLerp(float a, float b, float value)
+        => (value - a) / (b - a);
 }

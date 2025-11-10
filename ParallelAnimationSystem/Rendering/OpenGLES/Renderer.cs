@@ -450,11 +450,11 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         foreach (var drawData in drawList)
         {
             // Discard draw data that is fully transparent
-            if (drawData.Color1.W == 0.0f && drawData.Color2.W == 0.0f)
+            if (drawData.Color1.A == 0.0f && drawData.Color2.A == 0.0f)
                 continue;
             
             // Add to appropriate list
-            if (drawData.RenderType != RenderType.Text && drawData.Color1.W == 1.0f && (drawData.Color2.W == 1.0f || drawData.RenderMode == RenderMode.Normal))
+            if (drawData.RenderType != RenderType.Text && drawData.Color1.A == 1.0f && (drawData.Color2.A == 1.0f || drawData.RenderMode == RenderMode.Normal))
                 opaqueDrawData.Add(drawData);
             else
                 transparentDrawData.Add(drawData);
@@ -469,7 +469,8 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         
         // Clear the screen
         GL.Viewport(0, 0, renderSize.X, renderSize.Y);
-        GL.ClearColor(drawList.ClearColor);
+        var clearColor = drawList.ClearColor;
+        GL.ClearColor(clearColor.R, clearColor.G, clearColor.B, clearColor.A);
         GL.ClearDepthf(0.0f);
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
         
@@ -587,8 +588,8 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
             
                     GL.Uniform1f(zUniformLocation, RenderUtil.EncodeIntDepth(drawData.Index));
                     GL.Uniform1i(renderModeUniformLocation, (int) drawData.RenderMode);
-                    GL.Uniform4f(color1UniformLocation, color1.X, color1.Y, color1.Z, color1.W);
-                    GL.Uniform4f(color2UniformLocation, color2.X, color2.Y, color2.Z, color2.W);
+                    GL.Uniform4f(color1UniformLocation, color1.R, color1.G, color1.B, color1.A);
+                    GL.Uniform4f(color2UniformLocation, color2.R, color2.G, color2.B, color2.A);
             
                     // Bind our buffers
                     GL.BindVertexArray(meshHandle.VertexArrayHandle);
@@ -617,7 +618,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
                         }
                     
                     // Set color
-                    GL.Uniform4f(glyphBaseColorUniformLocation, color1.X, color1.Y, color1.Z, color1.W);
+                    GL.Uniform4f(glyphBaseColorUniformLocation, color1.R, color1.G, color1.B, color1.A);
 
                     // Bind our buffers
                     GL.BindVertexArray(textVertexArrayHandle);

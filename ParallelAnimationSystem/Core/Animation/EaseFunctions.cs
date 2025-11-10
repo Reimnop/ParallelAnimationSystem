@@ -6,38 +6,43 @@ public delegate float EaseFunction(float t);
 
 public static class EaseFunctions
 {
-	private static readonly Dictionary<Ease, EaseFunction> EaseLookup = new()
-	{
-		[Ease.Linear] = Linear,
-		[Ease.Instant] = Instant,
-		[Ease.InSine] = SineIn,
-		[Ease.OutSine] = SineOut,
-		[Ease.InOutSine] = SineInOut,
-		[Ease.InElastic] = ElasticIn,
-		[Ease.OutElastic] = ElasticOut,
-		[Ease.InOutElastic] = ElasticInOut,
-		[Ease.InBack] = BackIn,
-		[Ease.OutBack] = BackOut,
-		[Ease.InOutBack] = BackInOut,
-		[Ease.InBounce] = BounceIn,
-		[Ease.OutBounce] = BounceOut,
-		[Ease.InOutBounce] = BounceInOut,
-		[Ease.InQuad] = QuadIn,
-		[Ease.OutQuad] = QuadOut,
-		[Ease.InOutQuad] = QuadInOut,
-		[Ease.InCirc] = CircIn,
-		[Ease.OutCirc] = CircOut,
-		[Ease.InOutCirc] = CircInOut,
-		[Ease.InExpo] = ExpoIn,
-		[Ease.OutExpo] = ExpoOut,
-		[Ease.InOutExpo] = ExpoInOut,
-	};
+	private static readonly EaseFunction[] easeFunctions =
+	[
+		Linear,
+		Instant,
+		SineIn,
+		SineOut,
+		SineInOut,
+		ElasticIn,
+		ElasticOut,
+		ElasticInOut,
+		BackIn,
+		BackOut,
+		BackInOut,
+		BounceIn,
+		BounceOut,
+		BounceInOut,
+		QuadIn,
+		QuadOut,
+		QuadInOut,
+		CircIn,
+		CircOut,
+		CircInOut,
+		ExpoIn,
+		ExpoOut,
+		ExpoInOut,
+	];
 
 	public static EaseFunction? Get(Ease name)
-		=> EaseLookup.GetValueOrDefault(name);
+	{
+		var index = (int)name;
+		if (index < 0 || index >= easeFunctions.Length)
+			return null;
+		return easeFunctions[index];
+	}
 	
-	public static EaseFunction GetOrDefault(Ease name, EaseFunction defaultValue)
-		=> EaseLookup.GetValueOrDefault(name, defaultValue);
+	public static EaseFunction GetOrLinear(Ease name)
+		=> Get(name) ?? Linear;
 
 	private const float Pi = 3.14159265359f;
 	private const float Pi2 = Pi / 2.0f;

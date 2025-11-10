@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using OpenTK.Mathematics;
-using Pamx.Common.Data;
 using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core.Animation;
 using ParallelAnimationSystem.Core.Data;
@@ -11,10 +10,10 @@ using ParallelAnimationSystem.Util;
 namespace ParallelAnimationSystem.Core.Beatmap;
 
 public class BeatmapObjectData(
-    IEnumerable<Animation.Keyframe<Vector2>> positionKeyframes,
-    IEnumerable<Animation.Keyframe<Vector2>> scaleKeyframes,
-    IEnumerable<Animation.Keyframe<float>> rotationKeyframes,
-    IEnumerable<Animation.Keyframe<ThemeColor>> themeColorKeyframes)
+    IEnumerable<PositionScaleKeyframe> positionKeyframes,
+    IEnumerable<PositionScaleKeyframe> scaleKeyframes,
+    IEnumerable<RotationKeyframe> rotationKeyframes,
+    IEnumerable<BeatmapObjectColorKeyframe> themeColorKeyframes)
     : INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -87,10 +86,25 @@ public class BeatmapObjectData(
         set => SetField(ref shapeIndex, value);
     }
 
-    public Sequence<Vector2, Vector2> PositionSequence { get; } = new(positionKeyframes, InterpolateVector2);
-    public Sequence<Vector2, Vector2> ScaleSequence { get; } = new(scaleKeyframes, InterpolateVector2);
-    public Sequence<float, float> RotationSequence { get; } = new(rotationKeyframes, InterpolateFloat);
-    public Sequence<ThemeColor, (Color4<Rgba>, Color4<Rgba>)> ThemeColorSequence { get; } = new(themeColorKeyframes, InterpolateThemeColor);
+    public Sequence<PositionScaleKeyframe, object?, Vector2> PositionSequence { get; } = new(
+        positionKeyframes,
+        PositionScaleKeyframe.ResolveToValue,
+        MathUtil.Lerp);
+    
+    public Sequence<PositionScaleKeyframe, object?, Vector2> ScaleSequence { get; } = new(
+        scaleKeyframes,
+        PositionScaleKeyframe.ResolveToValue,
+        MathUtil.Lerp);
+    
+    public Sequence<RotationKeyframe, object?, float> RotationSequence { get; } = new(
+        rotationKeyframes,
+        RotationKeyframe.ResolveToValue,
+        MathUtil.Lerp);
+    
+    public Sequence<BeatmapObjectColorKeyframe, ThemeColorState, BeatmapObjectColor> ThemeColorSequence { get; } = new(
+        themeColorKeyframes,
+        BeatmapObjectColorKeyframe.ResolveToValue,
+        BeatmapObjectColor.Lerp);
 
     private bool isEmpty;
 
@@ -136,40 +150,6 @@ public class BeatmapObjectData(
         field = value;
         OnPropertyChanged(propertyName);
         return true;
-    }
-    
-    private static Vector2 InterpolateVector2(Vector2 a, Vector2 b, float t, object? context)
-        => new(
-            MathUtil.Lerp(a.X, b.X, t),
-            MathUtil.Lerp(a.Y, b.Y, t));
-    
-    private static float InterpolateFloat(float a, float b, float t, object? context)
-        => MathUtil.Lerp(a, b, t);
-    
-    private static (Color4<Rgba>, Color4<Rgba>) InterpolateThemeColor(ThemeColor a, ThemeColor b, float t, object? context)
-    {
-        if (context is not ThemeColors colors)
-            throw new ArgumentException($"Context is not of type {typeof(ThemeColors)}");
-
-        var opacityA = a.Opacity;
-        var opacityB = b.Opacity;
-        var colorAStart = colors.Object[a.Index];
-        var colorAEnd = colors.Object[a.EndIndex];
-        var colorBStart = colors.Object[b.Index];
-        var colorBEnd = colors.Object[b.EndIndex];
-
-        var opacity = MathUtil.Lerp(opacityA, opacityB, t);
-        var color1 = new Color4<Rgba>(
-            MathUtil.Lerp(colorAStart.X, colorBStart.X, t),
-            MathUtil.Lerp(colorAStart.Y, colorBStart.Y, t),
-            MathUtil.Lerp(colorAStart.Z, colorBStart.Z, t),
-            opacity);
-        var color2 = new Color4<Rgba>(
-            MathUtil.Lerp(colorAEnd.X, colorBEnd.X, t),
-            MathUtil.Lerp(colorAEnd.Y, colorBEnd.Y, t),
-            MathUtil.Lerp(colorAEnd.Z, colorBEnd.Z, t),
-            opacity);
-        return (color1, color2);
     }
     
     private float GetObjectLength()
