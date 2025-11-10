@@ -8,6 +8,10 @@ namespace ParallelAnimationSystem.Core.Beatmap;
 /// </summary>
 public class BeatmapObject(string id, BeatmapObjectData data) : INotifyPropertyChanged
 {
+    public static BeatmapObject DefaultRoot => new(
+        string.Empty,
+        new BeatmapObjectData([], [], [], []));
+    
     [ThreadStatic]
     private static Stack<BeatmapObject>? traverseStack;
     

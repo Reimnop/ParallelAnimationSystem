@@ -6,10 +6,6 @@ namespace ParallelAnimationSystem.Core.Beatmap;
 
 public class Timeline : IDisposable
 {
-   private static BeatmapObject DefaultRootObject => new(
-      string.Empty,
-      new BeatmapObjectData([], [], [], []));
-   
    public event EventHandler<BeatmapObject>? BeatmapObjectAdded;
    public event EventHandler<BeatmapObject>? BeatmapObjectRemoved;
    
@@ -63,7 +59,7 @@ public class Timeline : IDisposable
       });
    }
 
-   public Timeline() : this(DefaultRootObject)
+   public Timeline() : this(BeatmapObject.DefaultRoot)
    {
    }
    
