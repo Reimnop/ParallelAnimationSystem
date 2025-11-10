@@ -13,6 +13,7 @@ namespace ParallelAnimationSystem.Core;
 
 public class AnimationRunner(
     Timeline timeline,
+    PrefabInstanceTimeline prefabInstanceTimeline,
     Sequence<ITheme, ThemeColors> themeColorSequence,
     Sequence<Vector2, Vector2> cameraPositionAnimation,
     Sequence<float, float> cameraScaleAnimation,
@@ -26,6 +27,8 @@ public class AnimationRunner(
     Sequence<GlitchData, GlitchData> glitchSequence,
     Sequence<float, float> shakeSequence)
 {
+    private record struct ProcessingBeatmapObject(float TimeOffset, BeatmapObject BeatmapObject);
+    
     public Vector2 CameraPosition { get; private set; }
     public float CameraScale { get; private set; }
     public float CameraRotation { get; private set; }
@@ -57,9 +60,6 @@ public class AnimationRunner(
         
         BackgroundColor = themeColors.Background;
         
-        // Spawn and kill objects according to time
-        timeline.ProcessFrame(time);
-        
         // Update sequences
         CameraPosition = cameraPositionAnimation.Interpolate(time, themeColors);
         CameraScale = cameraScaleAnimation.Interpolate(time, themeColors);
@@ -73,14 +73,25 @@ public class AnimationRunner(
         Glitch = glitchSequence.Interpolate(time, themeColors);
         Shake = shakeSequence.Interpolate(time, themeColors);
         
+        // Process next frame in timelines
+        timeline.ProcessFrame(time);
+        prefabInstanceTimeline.ProcessFrame(time);
+        
         // Update all objects in parallel
         perFrameData.Clear();
+
+        var processingObjects = timeline.AliveObjects
+            .Select(x => new ProcessingBeatmapObject(0.0f, x))
+            .Concat(prefabInstanceTimeline.AliveObjects
+                .SelectMany(x => x.AliveObjects
+                    .Select(y => new ProcessingBeatmapObject(-x.StartTime, y))))
+            .Where(x => !x.BeatmapObject.Data.IsEmpty);
         
         var parallelOptions = new ParallelOptions
         {
             MaxDegreeOfParallelism = workers
         };
-        Parallel.ForEach(timeline.AliveObjects.Where(x => !x.Data.IsEmpty), parallelOptions, (x, _) => ProcessGameObject(x, themeColors, time));
+        Parallel.ForEach(processingObjects, parallelOptions, (x, _) => ProcessGameObject(x, themeColors, time));
         
         // Sort the per-frame data by depth
         sortedPerFrameData.Clear();
@@ -91,21 +102,24 @@ public class AnimationRunner(
         return sortedPerFrameData;
     }
 
-    private void ProcessGameObject(BeatmapObject beatmapObject, ThemeColors themeColors, float time)
+    private void ProcessGameObject(ProcessingBeatmapObject processingBeatmapObject, ThemeColors themeColors, float time)
     {
+        var timeOffset = processingBeatmapObject.TimeOffset;
+        var beatmapObject = processingBeatmapObject.BeatmapObject;
+        
         var parentDepth = 0;
         var transform = CalculateBeatmapObjectTransform(
             beatmapObject,
             true, true, true,
             0.0f, 0.0f, 0.0f,
-            time, ref parentDepth,
+            time + timeOffset, ref parentDepth,
             null);
         var originMatrix = MathUtil.CreateTranslation(beatmapObject.Data.Origin);
         var perFrameDatum = new PerFrameBeatmapObjectData
         {
             BeatmapObject = beatmapObject,
             Transform = originMatrix * transform,
-            Colors = CalculateBeatmapObjectThemeColor(beatmapObject, time, themeColors),
+            Colors = CalculateBeatmapObjectThemeColor(beatmapObject, time + timeOffset, themeColors),
             ParentDepth = parentDepth,
         };
         perFrameData.Add(perFrameDatum);

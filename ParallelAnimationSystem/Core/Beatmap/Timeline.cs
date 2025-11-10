@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using Pamx.Common.Enum;
 using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core.Beatmap;
@@ -20,8 +19,8 @@ public class Timeline : IDisposable
             return;
          
          startTimeOffset = value;
-         startTimeDirty = true;
          killTimeDirty = true;
+         startTimeDirty = true;
       }
    }
 
@@ -57,10 +56,6 @@ public class Timeline : IDisposable
          
          allObjects.Add(obj.Id, obj);
       });
-   }
-
-   public Timeline() : this(BeatmapObject.DefaultRoot)
-   {
    }
    
    ~Timeline()

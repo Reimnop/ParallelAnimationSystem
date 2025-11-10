@@ -22,6 +22,30 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
     {
         // Convert all the objects in the beatmap to Timeline
         var timeline = CreateTimeline(beatmap);
+        
+        // TODO: Make this work
+        // Convert all prefabs in the beatmap
+        // var prefabs = beatmap.Prefabs
+        //     .Select(CreatePrefab)
+        //     .ToDictionary(x => x.Id, x => x);
+        
+        // Create prefab instances
+        var prefabInstances = beatmap.PrefabObjects
+            .Select(x =>
+            {
+                var prefab = (IPrefab) x.Prefab;
+                var prefabInstanceId = ((IIdentifiable<string>) x).Id;
+                return (x.Time, CreatePrefab(prefab, prefabInstanceId));
+            })
+            .Select(x => new PrefabInstanceObject(x.Item2)
+            {
+                StartTime = x.Time,
+            });
+        
+        // Create prefab instance timeline
+        var prefabInstanceTimeline = new PrefabInstanceTimeline();
+        foreach (var prefabInstance in prefabInstances)
+            prefabInstanceTimeline.Add(prefabInstance);
 
         // Get theme sequence
         var themeColorSequence = CreateThemeSequence(beatmap.Events.Theme);
@@ -44,6 +68,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         // Create the runner with the GameObjects
         return new AnimationRunner(
             timeline,
+            prefabInstanceTimeline,
             themeColorSequence,
             cameraPositionSequence,
             cameraScaleSequence,
@@ -329,45 +354,70 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
 
     private Timeline CreateTimeline(IBeatmap beatmap)
     {
-        var objectLookup = beatmap.Objects
-            .Select(CreateBeatmapObjectData)
+        var objectDataLookup = beatmap.Objects
+            .Select(x => CreateBeatmapObjectData(x))
             .ToDictionary(x => x.id, x => x);
+        
+        var beatmapObjectsDictionary = new Dictionary<string, BeatmapObject>();
+        
+        var rootObject = BeatmapObject.DefaultRoot;
+        beatmapObjectsDictionary.Add(rootObject.Id, rootObject);
+        
+        foreach (var (_, tuple) in objectDataLookup)
+            CreateBeatmapObjectRecursively(tuple, objectDataLookup, beatmapObjectsDictionary, rootObject);
 
-        var timeline = new Timeline();
-        foreach (var (_, tuple) in objectLookup)
-            CreateBeatmapObjectRecursively(tuple, objectLookup, timeline);
+        return new Timeline(rootObject);
+    }
 
-        return timeline;
+    private Prefab CreatePrefab(IPrefab prefab, params object[] seeds)
+    {
+        var objectDataLookup = prefab.BeatmapObjects
+            .Select(x => CreateBeatmapObjectData(x, seeds))
+            .ToDictionary(x => x.id, x => x);
+        
+        var beatmapObjectsDictionary = new Dictionary<string, BeatmapObject>();
+        var convertedPrefab = new Prefab
+        {
+            Id = ((IIdentifiable<string>) prefab).Id,
+            Name = prefab.Name,
+        };
+        
+        foreach (var (_, tuple) in objectDataLookup)
+            CreateBeatmapObjectRecursively(tuple, objectDataLookup, beatmapObjectsDictionary, convertedPrefab.RootObject);
+
+        return convertedPrefab;
     }
 
     private BeatmapObject CreateBeatmapObjectRecursively(
         (string id, string? parentId, BeatmapObjectData data) tuple,
-        Dictionary<string, (string id, string? parentId, BeatmapObjectData data)> objectLookup,
-        Timeline timeline)
+        IReadOnlyDictionary<string, (string id, string? parentId, BeatmapObjectData data)> objectDataLookup,
+        Dictionary<string, BeatmapObject> beatmapObjectsDictionary,
+        BeatmapObject rootObject)
     {
         var (id, parentId, data) = tuple;
         
-        if (timeline.AllObjects.TryGetValue(id, out var beatmapObject))
+        if (beatmapObjectsDictionary.TryGetValue(id, out var beatmapObject))
             return beatmapObject;
         
         beatmapObject = new BeatmapObject(id, data)
         {
             Parent = parentId is not null
-                ? objectLookup.TryGetValue(parentId, out var parentObject)
-                    ? CreateBeatmapObjectRecursively(parentObject, objectLookup, timeline)
-                    : timeline.RootObject
-                : timeline.RootObject
+                ? objectDataLookup.TryGetValue(parentId, out var parentObject)
+                    ? CreateBeatmapObjectRecursively(parentObject, objectDataLookup, beatmapObjectsDictionary, rootObject)
+                    : rootObject
+                : rootObject
         };
+        beatmapObjectsDictionary.Add(id, beatmapObject);
         
         return beatmapObject;
     }
 
-    private (string id, string? parentId, BeatmapObjectData data) CreateBeatmapObjectData(IObject @object)
+    private (string id, string? parentId, BeatmapObjectData data) CreateBeatmapObjectData(IObject @object, params object[] seeds)
     {
         var objectId = ((IIdentifiable<string>) @object).Id;
-        var positionAnimation = EnumerateSequenceKeyframes(@object.PositionEvents, seeds: [objectId, 0]);
-        var scaleAnimation = EnumerateSequenceKeyframes(@object.ScaleEvents, seeds: [objectId, 1]);
-        var rotationAnimation = EnumerateRotationSequenceKeyframes(@object.RotationEvents, true, seeds: [objectId, 2]);
+        var positionAnimation = EnumerateSequenceKeyframes(@object.PositionEvents, seeds: [..seeds, objectId, 0]);
+        var scaleAnimation = EnumerateSequenceKeyframes(@object.ScaleEvents, seeds: [..seeds, objectId, 1]);
+        var rotationAnimation = EnumerateRotationSequenceKeyframes(@object.RotationEvents, true, seeds: [..seeds, objectId, 2]);
         var themeColorAnimation = EnumerateThemeColorKeyframes(@object.ColorEvents);
 
         var parentPositionTimeOffset = @object.ParentOffset.Position;

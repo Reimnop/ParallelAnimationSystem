@@ -7,6 +7,9 @@ public class PrefabInstanceObject : IDisposable
     public event EventHandler<PrefabInstanceObject>? StartTimeChanged;
     public event EventHandler<PrefabInstanceObject>? KillTimeChanged;
     
+    public IReadOnlyDictionary<string, BeatmapObject> AllObjects => timeline.AllObjects;
+    public IReadOnlyCollection<BeatmapObject> AliveObjects => timeline.AliveObjects;
+    
     public float StartTime
     {
         get => timeline.StartTimeOffset;
@@ -80,6 +83,9 @@ public class PrefabInstanceObject : IDisposable
             obj.Data.PropertyChanged -= OnBeatmapObjectDataPropertyChanged;
         });
     }
+    
+    public void ProcessFrame(float time)
+        => timeline.ProcessFrame(time);
 
     private void OnBeatmapObjectChildAdded(object? sender, BeatmapObject e)
     {

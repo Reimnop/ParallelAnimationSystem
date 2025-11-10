@@ -1,5 +1,3 @@
-using System.ComponentModel;
-using Pamx.Common.Enum;
 using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core.Beatmap;
@@ -158,6 +156,10 @@ public class PrefabInstanceTimeline : IDisposable
             startIndex--;
          }
       }
+      
+      // Update prefab instances
+      foreach (var obj in aliveObjects)
+         obj.ProcessFrame(time);
       
       currentTime = time;
    }
