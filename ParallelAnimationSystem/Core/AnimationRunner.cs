@@ -25,7 +25,7 @@ public class AnimationRunner(
     Sequence<SequenceKeyframe<GlitchData>, object?, GlitchData> glitchSequence,
     Sequence<SequenceKeyframe<float>, object?, float> shakeSequence)
 {
-    private record struct ProcessingBeatmapObject(float TimeOffset, BeatmapObject BeatmapObject);
+    private record struct ProcessingBeatmapObject(float TimeOffset, Matrix3 Transform, BeatmapObject BeatmapObject);
     
     public Vector2 CameraPosition { get; private set; }
     public float CameraScale { get; private set; }
@@ -79,10 +79,10 @@ public class AnimationRunner(
         perFrameData.Clear();
 
         var processingObjects = timeline.AliveObjects
-            .Select(x => new ProcessingBeatmapObject(0.0f, x))
+            .Select(x => new ProcessingBeatmapObject(0.0f, Matrix3.Identity, x))
             .Concat(prefabInstanceTimeline.AliveObjects
                 .SelectMany(x => x.AliveObjects
-                    .Select(y => new ProcessingBeatmapObject(-x.StartTime, y))))
+                    .Select(y => new ProcessingBeatmapObject(-x.StartTime, CreatePrefabInstanceTransform(x), y))))
             .Where(x => !x.BeatmapObject.Data.IsEmpty);
         
         var parallelOptions = new ParallelOptions
@@ -100,6 +100,11 @@ public class AnimationRunner(
         return sortedPerFrameData;
     }
 
+    private static Matrix3 CreatePrefabInstanceTransform(PrefabInstanceObject prefabInstanceObject)
+        => MathUtil.CreateScale(prefabInstanceObject.Scale) *
+           MathUtil.CreateRotation(prefabInstanceObject.Rotation) *
+           MathUtil.CreateTranslation(prefabInstanceObject.Position);
+
     private void ProcessGameObject(ProcessingBeatmapObject processingBeatmapObject, ThemeColorState themeColorState, float time)
     {
         var timeOffset = processingBeatmapObject.TimeOffset;
@@ -116,7 +121,7 @@ public class AnimationRunner(
         var perFrameDatum = new PerFrameBeatmapObjectData
         {
             BeatmapObject = beatmapObject,
-            Transform = originMatrix * transform,
+            Transform = originMatrix * transform * processingBeatmapObject.Transform,
             Color = beatmapObject.Data.ThemeColorSequence.Interpolate(time + timeOffset - beatmapObject.Data.StartTime, themeColorState),
             ParentDepth = parentDepth,
         };

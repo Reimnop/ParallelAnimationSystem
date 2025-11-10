@@ -33,11 +33,14 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             {
                 var prefab = (IPrefab) x.Prefab;
                 var prefabInstanceId = ((IIdentifiable<string>) x).Id;
-                return (x.Time - prefab.Offset, CreatePrefab(prefab, prefabInstanceId));
+                return (x.Time - prefab.Offset, CreatePrefab(prefab, prefabInstanceId), x);
             })
             .Select(x => new PrefabInstanceObject(x.Item2)
             {
                 StartTime = x.Item1,
+                Position = new Vector2(x.x.Position.X, x.x.Position.Y),
+                Scale = new Vector2(x.x.Scale.X, x.x.Scale.Y),
+                Rotation = MathHelper.DegreesToRadians(x.x.Rotation),
             });
         
         // Create prefab instance timeline

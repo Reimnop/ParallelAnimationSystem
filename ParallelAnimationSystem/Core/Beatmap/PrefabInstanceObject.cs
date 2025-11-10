@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using OpenTK.Mathematics;
 
 namespace ParallelAnimationSystem.Core.Beatmap;
 
@@ -38,7 +39,11 @@ public class PrefabInstanceObject : IDisposable
             return cachedKillTime;
         }
     }
-    
+
+    public Vector2 Position { get; set; }
+    public Vector2 Scale { get; set; } = Vector2.One;
+    public float Rotation { get; set; }
+
     private float cachedKillTime;
     
     private bool killTimeDirty = true;
