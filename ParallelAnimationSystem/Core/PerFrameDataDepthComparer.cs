@@ -15,7 +15,7 @@ public class PerFrameDataDepthComparer : IComparer<PerFrameBeatmapObjectData>
         var parentDepthComparison = y.ParentDepth.CompareTo(x.ParentDepth);
         if (parentDepthComparison != 0) 
             return parentDepthComparison;
-        var startTimeComparison = y.BeatmapObject.Data.StartTime.CompareTo(x.BeatmapObject.Data.StartTime);
+        var startTimeComparison = x.BeatmapObject.Data.StartTime.CompareTo(y.BeatmapObject.Data.StartTime);
         if (startTimeComparison != 0)
             return startTimeComparison;
         
