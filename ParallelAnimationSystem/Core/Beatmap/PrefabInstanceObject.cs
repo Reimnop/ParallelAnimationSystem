@@ -70,11 +70,7 @@ public class PrefabInstanceObject : IDisposable
     private void Dispose(bool disposing)
     {
         if (!disposing)
-        {
-            Console.Error.WriteLine(
-                "PrefabInstanceObject finalizer called without disposing. Did you forget to call Dispose()?\n{0}",
-                Environment.StackTrace);
-        }
+            Console.Error.WriteLine("PrefabInstanceObject finalizer called without disposing. Did you forget to call Dispose()?");
         
         // Unsubscribe from root object changes
         timeline.RootObject.Traverse(obj =>

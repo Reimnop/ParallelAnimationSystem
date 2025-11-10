@@ -81,11 +81,7 @@ public class Timeline : IDisposable
    private void Dispose(bool disposing)
    {
       if (!disposing)
-      {
-          Console.Error.WriteLine(
-             "Timeline finalizer called without disposing. Did you forget to call Dispose()?\n{0}",
-             Environment.StackTrace);
-      }
+          Console.Error.WriteLine("Timeline finalizer called without disposing. Did you forget to call Dispose()?");
       
       // Unsubscribe from events
       RootObject.Traverse(obj =>
