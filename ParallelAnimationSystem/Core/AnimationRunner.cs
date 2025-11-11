@@ -53,9 +53,8 @@ public class AnimationRunner(
     {
         // Update theme
         var themeColorState = themeColorSequence.Interpolate(time, null);
-        if (themeColorState is null)
-            throw new InvalidOperationException("Theme colors are null, theme color sequence might not be populated");
         
+        // Set background color
         BackgroundColor = themeColorState.Background;
         
         // Update sequences

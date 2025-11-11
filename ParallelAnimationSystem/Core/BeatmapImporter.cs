@@ -131,8 +131,8 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
     private static GradientEffectState ResolveGradientDataKeyframe(SequenceKeyframe<GradientData> keyframe, ThemeColorState context)
     {
         var value = keyframe.Value;
-        var color1Index = Math.Clamp(value.ColorA, 0, context.Effect.Count - 1);
-        var color2Index = Math.Clamp(value.ColorB, 0, context.Effect.Count - 1);
+        var color1Index = Math.Clamp(value.ColorA, 0, context.Effect.Length - 1);
+        var color2Index = Math.Clamp(value.ColorB, 0, context.Effect.Length - 1);
         var color1 = context.Effect[color1Index];
         var color2 = context.Effect[color2Index];
         var color1Vector = new Vector3(color1.R, color1.G, color1.B);
@@ -180,7 +180,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
     {
         var value = keyframe.Value;
         var color = value.Color.HasValue 
-            ? context.Effect[Math.Clamp(value.Color.Value, 0, context.Effect.Count - 1)]
+            ? context.Effect[Math.Clamp(value.Color.Value, 0, context.Effect.Length - 1)]
             : new ColorRgba(0.0f, 0.0f, 0.0f, 1.0f);
         var colorVector = new Vector3(color.R, color.G, color.B);
         var rounded = value.Rounded;
@@ -257,7 +257,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
 
     private static BloomEffectState ResolveBloomDataKeyframe(SequenceKeyframe<BloomData> keyframe, ThemeColorState context)
     {
-        var colorIndex = Math.Clamp(keyframe.Value.Color, 0, context.Effect.Count - 1);
+        var colorIndex = Math.Clamp(keyframe.Value.Color, 0, context.Effect.Length - 1);
         var color = context.Effect[colorIndex];
         var colorVector = new Vector3(color.R, color.G, color.B);
         return new BloomEffectState
@@ -339,32 +339,34 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
 
     private static ThemeColorState ResolveThemeKeyframe(SequenceKeyframe<ITheme> keyframe, object? _)
     {
+        var value = keyframe.Value;
+        
         var themeColorState = new ThemeColorState
         {
-            Background = keyframe.Value.Background.ToColorRgba(),
-            Gui = keyframe.Value.Gui.ToColorRgba(),
-            GuiAccent = keyframe.Value.GuiAccent.ToColorRgba(),
+            Background = value.Background.ToColorRgba(),
+            Gui = value.Gui.ToColorRgba(),
+            GuiAccent = value.GuiAccent.ToColorRgba(),
         };
         
-        for (var i = 0; i < keyframe.Value.Player.Count; i++)
-            themeColorState.Player.Add(keyframe.Value.Player[i].ToColorRgba());
-        for (var i = keyframe.Value.Player.Count; i < 4; i++)
-            themeColorState.Player.Add(new ColorRgba(1.0f, 1.0f, 1.0f, 1.0f));
+        for (var i = 0; i < Math.Min(value.Player.Count, themeColorState.Player.Length); i++)
+            themeColorState.Player[i] = value.Player[i].ToColorRgba();
+        for (var i = value.Player.Count; i < themeColorState.Player.Length; i++)
+            themeColorState.Player[i] = new ColorRgba(0.0f, 0.0f, 0.0f, 1.0f);
         
-        for (var i = 0; i < keyframe.Value.Object.Count; i++)
-            themeColorState.Object.Add(keyframe.Value.Object[i].ToColorRgba());
-        for (var i = keyframe.Value.Object.Count; i < 9; i++)
-            themeColorState.Object.Add(new ColorRgba(1.0f, 1.0f, 1.0f, 1.0f));
+        for (var i = 0; i < Math.Min(value.Object.Count, themeColorState.Object.Length); i++)
+            themeColorState.Object[i] = value.Object[i].ToColorRgba();
+        for (var i = value.Object.Count; i < themeColorState.Object.Length; i++)
+            themeColorState.Object[i] = new ColorRgba(0.0f, 0.0f, 0.0f, 1.0f);
         
-        for (var i = 0; i < keyframe.Value.Effect.Count; i++)
-            themeColorState.Effect.Add(keyframe.Value.Effect[i].ToColorRgba());
-        for (var i = keyframe.Value.Effect.Count; i < 9; i++)
-            themeColorState.Effect.Add(new ColorRgba(1.0f, 1.0f, 1.0f, 1.0f));
+        for (var i = 0; i < Math.Min(value.Effect.Count, themeColorState.Effect.Length); i++)
+            themeColorState.Effect[i] = value.Effect[i].ToColorRgba();
+        for (var i = value.Effect.Count; i < themeColorState.Effect.Length; i++)
+            themeColorState.Effect[i] = new ColorRgba(0.0f, 0.0f, 0.0f, 0.0f);
         
-        for (var i = 0; i < keyframe.Value.ParallaxObject.Count; i++)
-            themeColorState.ParallaxObject.Add(keyframe.Value.ParallaxObject[i].ToColorRgba());
-        for (var i = keyframe.Value.ParallaxObject.Count; i < 9; i++)
-            themeColorState.ParallaxObject.Add(new ColorRgba(1.0f, 1.0f, 1.0f, 1.0f));
+        for (var i = 0; i < Math.Min(value.ParallaxObject.Count, themeColorState.ParallaxObject.Length); i++)
+            themeColorState.ParallaxObject[i] = value.ParallaxObject[i].ToColorRgba();
+        for (var i = value.ParallaxObject.Count; i < themeColorState.ParallaxObject.Length; i++)
+            themeColorState.ParallaxObject[i] = new ColorRgba(0.0f, 0.0f, 0.0f, 1.0f);
         
         return themeColorState;
     }
@@ -377,14 +379,14 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             Gui = ColorRgba.Lerp(a.Gui, b.Gui, t),
             GuiAccent = ColorRgba.Lerp(a.GuiAccent, b.GuiAccent, t)
         };
-        for (var i = 0; i < Math.Min(a.Player.Count, b.Player.Count); i++)
-            themeColorState.Player.Add(ColorRgba.Lerp(a.Player[i], b.Player[i], t));
-        for (var i = 0; i < Math.Min(a.Object.Count, b.Object.Count); i++)
-            themeColorState.Object.Add(ColorRgba.Lerp(a.Object[i], b.Object[i], t));
-        for (var i = 0; i < Math.Min(a.Effect.Count, b.Effect.Count); i++)
-            themeColorState.Effect.Add(ColorRgba.Lerp(a.Effect[i], b.Effect[i], t));
-        for (var i = 0; i < Math.Min(a.ParallaxObject.Count, b.ParallaxObject.Count); i++)
-            themeColorState.ParallaxObject.Add(ColorRgba.Lerp(a.ParallaxObject[i], b.ParallaxObject[i], t));
+        for (var i = 0; i < themeColorState.Player.Length; i++)
+            themeColorState.Player[i] = ColorRgba.Lerp(a.Player[i], b.Player[i], t);
+        for (var i = 0; i < themeColorState.Object.Length; i++)
+            themeColorState.Object[i] = ColorRgba.Lerp(a.Object[i], b.Object[i], t);
+        for (var i = 0; i < themeColorState.Effect.Length; i++)
+            themeColorState.Effect[i] = ColorRgba.Lerp(a.Effect[i], b.Effect[i], t);
+        for (var i = 0; i < themeColorState.ParallaxObject.Length; i++)
+            themeColorState.ParallaxObject[i] = ColorRgba.Lerp(a.ParallaxObject[i], b.ParallaxObject[i], t);
         return themeColorState;
     }
 

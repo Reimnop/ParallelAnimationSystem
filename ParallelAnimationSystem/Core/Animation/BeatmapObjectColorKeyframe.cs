@@ -13,8 +13,8 @@ public struct BeatmapObjectColorKeyframe : IKeyframe
 
     public static BeatmapObjectColor ResolveToValue(BeatmapObjectColorKeyframe keyframe, ThemeColorState context)
     {
-        var colorIndex1 = Math.Clamp(keyframe.ColorIndex1, 0, context.Object.Count - 1);
-        var colorIndex2 = Math.Clamp(keyframe.ColorIndex2, 0, context.Object.Count - 1);
+        var colorIndex1 = Math.Clamp(keyframe.ColorIndex1, 0, context.Object.Length - 1);
+        var colorIndex2 = Math.Clamp(keyframe.ColorIndex2, 0, context.Object.Length - 1);
         var opacity = keyframe.Opacity;
         
         var resolvedColor1 = context.Object[colorIndex1];
