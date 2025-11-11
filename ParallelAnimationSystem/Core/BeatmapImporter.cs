@@ -283,7 +283,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             {
                 Time = x.Time,
                 Ease = x.Ease,
-                Value = x.Value,
+                Value = MathHelper.DegreesToRadians(x.Value),
             });
         return new Sequence<SequenceKeyframe<float>, object?, float>(keyframes, SequenceKeyframe<float>.ResolveToValue, MathUtil.Lerp);
     }
