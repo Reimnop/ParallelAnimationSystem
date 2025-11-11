@@ -163,13 +163,16 @@ public class AnimationRunner(
 
             if (beatmapObject.Parent is null) 
                 break;
+
+            var parentTypes = data.ParentTypes;
+            var parentTemporalOffsets = data.ParentTemporalOffsets;
             
-            animatePosition = beatmapObject.Data.ParentTypes.Position;
-            animateScale = beatmapObject.Data.ParentTypes.Scale;
-            animateRotation = beatmapObject.Data.ParentTypes.Rotation;
-            positionTimeOffset = beatmapObject.Data.ParentTemporalOffsets.Position;
-            scaleTimeOffset = beatmapObject.Data.ParentTemporalOffsets.Scale;
-            rotationTimeOffset = beatmapObject.Data.ParentTemporalOffsets.Rotation;
+            animatePosition = parentTypes.Position;
+            animateScale = parentTypes.Scale;
+            animateRotation = parentTypes.Rotation;
+            positionTimeOffset = parentTemporalOffsets.Position;
+            scaleTimeOffset = parentTemporalOffsets.Scale;
+            rotationTimeOffset = parentTemporalOffsets.Rotation;
             beatmapObject = beatmapObject.Parent;
         }
 
