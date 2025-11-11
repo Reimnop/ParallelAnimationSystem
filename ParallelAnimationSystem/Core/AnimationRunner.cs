@@ -110,12 +110,11 @@ public class AnimationRunner(
         var timeOffset = processingBeatmapObject.TimeOffset;
         var beatmapObject = processingBeatmapObject.BeatmapObject;
         
-        var parentDepth = 0;
         var transform = CalculateBeatmapObjectTransform(
             beatmapObject,
             true, true, true,
             0.0f, 0.0f, 0.0f,
-            time + timeOffset, ref parentDepth,
+            time + timeOffset, out var parentDepth,
             null);
         var originMatrix = MathUtil.CreateTranslation(beatmapObject.Data.Origin);
         var perFrameDatum = new PerFrameBeatmapObjectData
@@ -132,48 +131,49 @@ public class AnimationRunner(
         BeatmapObject beatmapObject,
         bool animatePosition, bool animateScale, bool animateRotation,
         float positionTimeOffset, float scaleTimeOffset, float rotationTimeOffset,
-        float time, ref int parentDepth,
+        float time, out int parentDepth,
         object? context)
     {
-        parentDepth++;
+        parentDepth = 0;
         
-        var data = beatmapObject.Data;
-        var parentTypes = data.ParentTypes;
-        var parentTemporalOffsets = data.ParentTemporalOffsets;
+        var matrix = Matrix3.Identity;
 
-        var matrix = beatmapObject.Parent is not null
-            ? CalculateBeatmapObjectTransform(
-                beatmapObject.Parent,
-                parentTypes.Position,
-                parentTypes.Scale,
-                parentTypes.Rotation,
-                parentTemporalOffsets.Position,
-                parentTemporalOffsets.Scale,
-                parentTemporalOffsets.Rotation,
-                time, ref parentDepth,
-                context)
-            : Matrix3.Identity;
-        
-        var currentMatrix = Matrix3.Identity;
+        do
+        {
+            parentDepth++;
             
-        if (animateScale)
-        {
-            var scale = data.ScaleSequence.Interpolate(time - data.StartTime - scaleTimeOffset, context);
-            currentMatrix *= MathUtil.CreateScale(scale);
-        }
-        
-        if (animateRotation)
-        {
-            var rotation = data.RotationSequence.Interpolate(time - data.StartTime - rotationTimeOffset, context);
-            currentMatrix *= MathUtil.CreateRotation(rotation);
-        }
-        
-        if (animatePosition)
-        {
-            var position = data.PositionSequence.Interpolate(time - data.StartTime - positionTimeOffset, context);
-            currentMatrix *= MathUtil.CreateTranslation(position);
-        }
-        
-        return currentMatrix * matrix;
+            var data = beatmapObject.Data;
+            
+            if (animateScale)
+            {
+                var scale = data.ScaleSequence.Interpolate(time - data.StartTime - scaleTimeOffset, context);
+                matrix *= MathUtil.CreateScale(scale);
+            }
+
+            if (animateRotation)
+            {
+                var rotation = data.RotationSequence.Interpolate(time - data.StartTime - rotationTimeOffset, context);
+                matrix *= MathUtil.CreateRotation(rotation);
+            }
+
+            if (animatePosition)
+            {
+                var position = data.PositionSequence.Interpolate(time - data.StartTime - positionTimeOffset, context);
+                matrix *= MathUtil.CreateTranslation(position);
+            }
+
+            if (beatmapObject.Parent is not null)
+            {
+                animatePosition = beatmapObject.Data.ParentTypes.Position;
+                animateScale = beatmapObject.Data.ParentTypes.Scale;
+                animateRotation = beatmapObject.Data.ParentTypes.Rotation;
+                positionTimeOffset = beatmapObject.Data.ParentTemporalOffsets.Position;
+                scaleTimeOffset = beatmapObject.Data.ParentTemporalOffsets.Scale;
+                rotationTimeOffset = beatmapObject.Data.ParentTemporalOffsets.Rotation;
+                beatmapObject = beatmapObject.Parent;
+            }
+        } while (beatmapObject.Parent is not null);
+
+        return matrix;
     }
 }
