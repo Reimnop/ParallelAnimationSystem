@@ -138,7 +138,7 @@ public class AnimationRunner(
         
         var matrix = Matrix3.Identity;
 
-        do
+        while (true)
         {
             parentDepth++;
             
@@ -162,17 +162,17 @@ public class AnimationRunner(
                 matrix *= MathUtil.CreateTranslation(position);
             }
 
-            if (beatmapObject.Parent is not null)
-            {
-                animatePosition = beatmapObject.Data.ParentTypes.Position;
-                animateScale = beatmapObject.Data.ParentTypes.Scale;
-                animateRotation = beatmapObject.Data.ParentTypes.Rotation;
-                positionTimeOffset = beatmapObject.Data.ParentTemporalOffsets.Position;
-                scaleTimeOffset = beatmapObject.Data.ParentTemporalOffsets.Scale;
-                rotationTimeOffset = beatmapObject.Data.ParentTemporalOffsets.Rotation;
-                beatmapObject = beatmapObject.Parent;
-            }
-        } while (beatmapObject.Parent is not null);
+            if (beatmapObject.Parent is null) 
+                break;
+            
+            animatePosition = beatmapObject.Data.ParentTypes.Position;
+            animateScale = beatmapObject.Data.ParentTypes.Scale;
+            animateRotation = beatmapObject.Data.ParentTypes.Rotation;
+            positionTimeOffset = beatmapObject.Data.ParentTemporalOffsets.Position;
+            scaleTimeOffset = beatmapObject.Data.ParentTemporalOffsets.Scale;
+            rotationTimeOffset = beatmapObject.Data.ParentTemporalOffsets.Rotation;
+            beatmapObject = beatmapObject.Parent;
+        }
 
         return matrix;
     }
