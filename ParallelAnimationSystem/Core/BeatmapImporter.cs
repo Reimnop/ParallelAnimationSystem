@@ -5,6 +5,7 @@ using OpenTK.Mathematics;
 using Pamx.Common;
 using Pamx.Common.Data;
 using Pamx.Common.Enum;
+using Pamx.Common.Implementation;
 using ParallelAnimationSystem.Core.Animation;
 using ParallelAnimationSystem.Core.Beatmap;
 using ParallelAnimationSystem.Core.Data;
@@ -396,7 +397,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         var beatmapObjects = timeline.BeatmapObjects;
         foreach (var @object in beatmap.Objects)
         {
-            var factory = CreateBeatmapObjectFactory(@object, randomSeed);
+            var factory = CreateBeatmapObjectFactory(@object, null, randomSeed, ((IIdentifiable<string>) @object).Id);
             beatmapObjects.Add(factory);
         }
         
@@ -409,6 +410,118 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
                 : null;
             if (parentId is not null && beatmapObjects.Contains(parentId))
                 beatmapObjects.SetParent(childId, parentId);
+        }
+        
+        // Expand prefabs
+        foreach (var prefabInstance in beatmap.PrefabObjects)
+        {
+            var positionKeyframes = new List<PositionScaleKeyframe> 
+            {
+                new()
+                {
+                    Time = 0.0f,
+                    Ease = Ease.Linear,
+                    Value = new Vector2(prefabInstance.Position.X, prefabInstance.Position.Y),
+                }
+            };
+            
+            var scaleKeyframes = new List<PositionScaleKeyframe> 
+            {
+                new()
+                {
+                    Time = 0.0f,
+                    Ease = Ease.Linear,
+                    Value = new Vector2(prefabInstance.Scale.X, prefabInstance.Scale.Y),
+                }
+            };
+            
+            var rotationKeyframes = new List<RotationKeyframe> 
+            {
+                new()
+                {
+                    Time = 0.0f,
+                    Ease = Ease.Linear,
+                    Value = MathHelper.DegreesToRadians(prefabInstance.Rotation),
+                }
+            };
+
+            var globalPrefabParent = beatmapObjects.Add(numericId =>
+            {
+                var stringId = RandomUtil.GenerateId();
+                return new BeatmapObject(
+                    new BeatmapObjectId(stringId, numericId),
+                    positionKeyframes,
+                    scaleKeyframes,
+                    rotationKeyframes,
+                    []);
+            });
+            
+            var prefab = (IPrefab)prefabInstance.Prefab;
+            var prefabObjectIdMap = prefab.BeatmapObjects
+                .ToDictionary(x => ((IIdentifiable<string>) x).Id, _ => RandomUtil.GenerateId());
+            var prefabObjectIdReverseMap = prefabObjectIdMap
+                .ToDictionary(x => x.Value, x => x.Key);
+            
+            var prefabInstanceId = ((IIdentifiable<string>) prefabInstance).Id;
+
+            foreach (var prefabObject in prefab.BeatmapObjects)
+            {
+                var objectId = ((IIdentifiable<string>) prefabObject).Id;
+                var mappedId = prefabObjectIdMap[objectId];
+                var factory = CreateBeatmapObjectFactory(prefabObject, mappedId, randomSeed, objectId, prefabInstanceId);
+                beatmapObjects.Add(numericId =>
+                {
+                    var beatmapObject = factory(numericId);
+                    beatmapObject.StartTime += prefabInstance.Time - prefab.Offset;
+                    return beatmapObject;
+                });
+            }
+            
+            // Resolve parenting
+            foreach (var prefabObject in prefab.BeatmapObjects)
+            {
+                var childId = ((IIdentifiable<string>) prefabObject).Id;
+                var mappedChildId = prefabObjectIdMap[childId];
+                
+                var parentId = prefabObject.Parent is IIdentifiable<string> parentIdentifiable 
+                    ? parentIdentifiable.Id
+                    : null;
+
+                if (parentId is not null)
+                {
+                    // Check if object is in prefab
+                    if (prefabObjectIdMap.TryGetValue(parentId, out var mappedParentId))
+                    {
+                        beatmapObjects.SetParent(mappedChildId, mappedParentId);
+                    }
+                    // If object is not in prefab, check if object is in beatmap
+                    else if (beatmapObjects.Contains(parentId))
+                    {
+                        var specificObjectParent = beatmapObjects.Add(numericId =>
+                        {
+                            var stringId = RandomUtil.GenerateId();
+                            return new BeatmapObject(
+                                new BeatmapObjectId(stringId, numericId),
+                                positionKeyframes,
+                                scaleKeyframes,
+                                rotationKeyframes,
+                                []);
+                        });
+                        beatmapObjects.SetParent(specificObjectParent.Id.String, parentId);
+                        beatmapObjects.SetParent(mappedChildId, specificObjectParent.Id.String);
+                    }
+                    // If object is not in beatmap, parent to global prefab parent
+                    else
+                    {
+                        beatmapObjects.SetParent(mappedChildId, globalPrefabParent.Id.String);
+                    }
+                }
+                else
+                {
+                    // No parent, parent to global prefab parent
+                    beatmapObjects.SetParent(mappedChildId, globalPrefabParent.Id.String);
+                }
+            }
         }
 
         return timeline;
@@ -433,12 +546,12 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
     //     return convertedPrefab;
     // }
 
-    private BeatmapObjectFactory CreateBeatmapObjectFactory(IObject @object, params object[] seeds)
+    private BeatmapObjectFactory CreateBeatmapObjectFactory(IObject @object, string? id, params object[] seeds)
     {
-        var objectId = ((IIdentifiable<string>) @object).Id;
-        var positionAnimation = EnumerateSequenceKeyframes(@object.PositionEvents, seeds: [..seeds, objectId, 0]);
-        var scaleAnimation = EnumerateSequenceKeyframes(@object.ScaleEvents, seeds: [..seeds, objectId, 1]);
-        var rotationAnimation = EnumerateRotationSequenceKeyframes(@object.RotationEvents, true, seeds: [..seeds, objectId, 2]);
+        var objectId = id ?? ((IIdentifiable<string>) @object).Id;
+        var positionAnimation = EnumerateSequenceKeyframes(@object.PositionEvents, seeds: [..seeds, 0]);
+        var scaleAnimation = EnumerateSequenceKeyframes(@object.ScaleEvents, seeds: [..seeds, 1]);
+        var rotationAnimation = EnumerateRotationSequenceKeyframes(@object.RotationEvents, true, seeds: [..seeds, 2]);
         var themeColorAnimation = EnumerateThemeColorKeyframes(@object.ColorEvents);
 
         var parentPositionTimeOffset = @object.ParentOffset.Position;
@@ -462,10 +575,8 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         var origin = new Vector2(@object.Origin.X, @object.Origin.Y);
 
         // TODO: Flag empty objects
-        var stringId = ((IIdentifiable<string>) @object).Id;
-
         return numericId => new BeatmapObject(
-            new BeatmapObjectId(stringId, numericId),
+            new BeatmapObjectId(objectId, numericId),
             positionAnimation,
             scaleAnimation,
             rotationAnimation,
@@ -578,13 +689,10 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         return MathF.Round(value / nearest) * nearest;
     }
     
-    private float RandomRange(float min, float max, params object[] seeds)
+    private static float RandomRange(float min, float max, params object[] seeds)
     {
         // Use xxHash to generate a random number
         var hash = new XxHash32();
-        
-        // Hash the base seed
-        hash.Append(BitConverter.GetBytes(randomSeed));
         
         // Hash the seeds
         foreach (var seed in seeds)

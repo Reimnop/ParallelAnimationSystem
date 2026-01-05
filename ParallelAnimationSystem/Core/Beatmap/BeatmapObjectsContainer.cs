@@ -25,7 +25,7 @@ public class BeatmapObjectsContainer : IEnumerable<BeatmapObject>
     private readonly Dictionary<string, int> stringIdToNumericId = [];
     private int count = 0;
 
-    public void Add(BeatmapObjectFactory factory)
+    public BeatmapObject Add(BeatmapObjectFactory factory)
     {
         var numericId = GetNextNumericId();
         var beatmapObject = factory(numericId);
@@ -43,6 +43,8 @@ public class BeatmapObjectsContainer : IEnumerable<BeatmapObject>
         count++;
         
         BeatmapObjectAdded?.Invoke(this, beatmapObject);
+        
+        return beatmapObject;
     }
     
     public bool Remove(string id)
