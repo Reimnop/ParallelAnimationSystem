@@ -20,7 +20,7 @@ public class Timeline
    }
 
    public BeatmapObjectsContainer BeatmapObjects { get; } = new();
-   public IReadOnlyCollection<BeatmapObject> AliveObjects => aliveObjects;
+   public IReadOnlySet<BeatmapObject> AliveObjects => aliveObjects;
    
    private readonly HashSet<BeatmapObject> nonEmptyObjects = [];
    private readonly HashSet<BeatmapObject> aliveObjects = [];
