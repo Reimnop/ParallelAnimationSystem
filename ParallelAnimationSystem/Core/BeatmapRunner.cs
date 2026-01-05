@@ -193,7 +193,7 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
             var beatmapObject = perFrameObjectData.BeatmapObject;
             Debug.Assert(beatmapObject is not null);
             
-            if (beatmapObject.ShapeIndex != 4) // 4 is text
+            if (beatmapObject.ShapeCategoryIndex != 4) // 4 is text
             {
                 var shapeCategory = beatmapObject.ShapeCategoryIndex;
                 if (shapeCategory >= 0 && shapeCategory < meshes.Count)
