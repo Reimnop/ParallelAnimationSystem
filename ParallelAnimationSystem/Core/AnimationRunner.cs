@@ -36,6 +36,8 @@ public class AnimationRunner(
     public GlitchData Glitch { get; private set; }
     public float Shake { get; private set; }
     public ColorRgb BackgroundColor { get; private set; }
+    
+    public Timeline Timeline => timeline;
 
     private PerFrameBeatmapObjectData[] perFrameData = Enumerable.Range(0, 1000)
         .Select(_ => new PerFrameBeatmapObjectData())

@@ -48,7 +48,7 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
         var beatmapImporter = new BeatmapImporter(appSettings.Seed, logger);
         runner = beatmapImporter.CreateRunner(beatmap);
         
-        logger.LogInformation("Loaded objects");
+        logger.LogInformation("Loaded {ObjectCount} objects", runner.Timeline.BeatmapObjects.Count);
     }
 
     private void RegisterMeshes()
