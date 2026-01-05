@@ -37,7 +37,9 @@ public class AnimationRunner(
     public float Shake { get; private set; }
     public ColorRgb BackgroundColor { get; private set; }
 
-    private PerFrameBeatmapObjectData[] perFrameData = [];
+    private PerFrameBeatmapObjectData[] perFrameData = Enumerable.Range(0, 1000)
+        .Select(_ => new PerFrameBeatmapObjectData())
+        .ToArray();
 
     /// <summary>
     /// Processes one frame of the animation. Do not call from multiple threads at the same time.
