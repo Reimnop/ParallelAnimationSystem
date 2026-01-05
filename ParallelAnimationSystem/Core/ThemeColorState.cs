@@ -24,11 +24,11 @@ public struct ThemeColorState
         private T element0;
     }
 
-    public Buffer4<ColorRgba> Player;
-    public Buffer9<ColorRgba> Object;
-    public Buffer9<ColorRgba> Effect;
-    public Buffer9<ColorRgba> ParallaxObject;
-    public required ColorRgba Background;
-    public required ColorRgba Gui;
-    public required ColorRgba GuiAccent;
+    public Buffer4<ColorRgb> Player;
+    public Buffer9<ColorRgb> Object;
+    public Buffer9<ColorRgb> Effect;
+    public Buffer9<ColorRgb> ParallaxObject;
+    public required ColorRgb Background;
+    public required ColorRgb Gui;
+    public required ColorRgb GuiAccent;
 }

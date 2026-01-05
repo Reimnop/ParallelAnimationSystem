@@ -146,7 +146,9 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
         // Start queueing up draw data
         var drawList = renderer.GetDrawList();
         
-        drawList.ClearColor = runner.BackgroundColor;
+        var backgroundColor = runner.BackgroundColor;
+        
+        drawList.ClearColor = new ColorRgba(backgroundColor.R, backgroundColor.G, backgroundColor.B, 1.0f);
         drawList.CameraData = new CameraData(
             runner.CameraPosition + shakeVector,
             runner.CameraScale,
@@ -185,28 +187,32 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
         {
             var transform = perFrameObjectData.Transform;
             var beatmapObjectColor = perFrameObjectData.Color;
-            var color1 = beatmapObjectColor.Color1 * beatmapObjectColor.Opacity;
-            var color2 = beatmapObjectColor.Color2 * beatmapObjectColor.Opacity;
-
-            var objectData = perFrameObjectData.BeatmapObject.Data;
             
-            if (objectData.ShapeIndex != 4) // 4 is text
+
+            var beatmapObject = perFrameObjectData.BeatmapObject;
+            
+            if (beatmapObject.ShapeIndex != 4) // 4 is text
             {
-                var shapeCategory = objectData.ShapeCategoryIndex;
+                var shapeCategory = beatmapObject.ShapeCategoryIndex;
                 if (shapeCategory >= 0 && shapeCategory < meshes.Count)
                 {
-                    var shapeIndex = objectData.ShapeIndex;
+                    var shapeIndex = beatmapObject.ShapeIndex;
                     var meshCategory = meshes[shapeCategory];
 
                     if (shapeIndex >= 0 && shapeIndex < meshCategory.Count)
                     {
-                        var mesh = meshCategory[objectData.ShapeIndex];
-                        var renderMode = objectData.RenderMode;
-
-                        if (color1 == color2)
-                            color2 = new ColorRgba(color2.R, color2.G, color2.B, 0.0f);
+                        var mesh = meshCategory[beatmapObject.ShapeIndex];
+                        var renderMode = beatmapObject.RenderMode;
+                        
+                        var color1 = beatmapObjectColor.Color1;
+                        var color2 = beatmapObjectColor.Color2;
+                        
+                        var color1Rgba = new ColorRgba(color1.R, color1.G, color1.B, beatmapObjectColor.Opacity);
+                        var color2Rgba = color1 == color2 
+                            ? new ColorRgba(color2.R, color2.G, color2.B, 0.0f)
+                            : new ColorRgba(color2.R, color2.G, color2.B, beatmapObjectColor.Opacity);
             
-                        drawList.AddMesh(mesh, transform, color1, color2, renderMode);
+                        drawList.AddMesh(mesh, transform, color1Rgba, color2Rgba, renderMode);
                     }
                 }
             }

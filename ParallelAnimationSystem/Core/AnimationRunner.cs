@@ -11,7 +11,6 @@ namespace ParallelAnimationSystem.Core;
 
 public class AnimationRunner(
     Timeline timeline,
-    PrefabInstanceTimeline prefabInstanceTimeline,
     Sequence<SequenceKeyframe<ITheme>, object?, ThemeColorState> themeColorSequence,
     Sequence<SequenceKeyframe<Vector2>, object?, Vector2> cameraPositionAnimation,
     Sequence<SequenceKeyframe<float>, object?, float> cameraScaleAnimation,
@@ -25,8 +24,6 @@ public class AnimationRunner(
     Sequence<SequenceKeyframe<GlitchData>, object?, GlitchData> glitchSequence,
     Sequence<SequenceKeyframe<float>, object?, float> shakeSequence)
 {
-    private record struct ProcessingBeatmapObject(float TimeOffset, Matrix3 Transform, BeatmapObject BeatmapObject);
-    
     public Vector2 CameraPosition { get; private set; }
     public float CameraScale { get; private set; }
     public float CameraRotation { get; private set; }
@@ -38,12 +35,12 @@ public class AnimationRunner(
     public GradientEffectState Gradient { get; private set; }
     public GlitchData Glitch { get; private set; }
     public float Shake { get; private set; }
-    public ColorRgba BackgroundColor { get; private set; }
+    public ColorRgb BackgroundColor { get; private set; }
 
     private readonly ConcurrentBag<PerFrameBeatmapObjectData> perFrameData = [];
     private readonly List<PerFrameBeatmapObjectData> sortedPerFrameData = [];
 
-    private readonly PerFrameDataDepthComparer depthComparer = new(); 
+    private readonly PerFrameDepthComparer depthComparer = new(); 
 
     /// <summary>
     /// Processes one frame of the animation. Do not call from multiple threads at the same time.
@@ -72,23 +69,15 @@ public class AnimationRunner(
         
         // Process next frame in timelines
         timeline.ProcessFrame(time);
-        prefabInstanceTimeline.ProcessFrame(time);
         
         // Update all objects in parallel
         perFrameData.Clear();
-
-        var processingObjects = timeline.AliveObjects
-            .Select(x => new ProcessingBeatmapObject(0.0f, Matrix3.Identity, x))
-            .Concat(prefabInstanceTimeline.AliveObjects
-                .SelectMany(x => x.AliveObjects
-                    .Select(y => new ProcessingBeatmapObject(-x.StartTime, CreatePrefabInstanceTransform(x), y))))
-            .Where(x => !x.BeatmapObject.Data.IsEmpty);
         
         var parallelOptions = new ParallelOptions
         {
             MaxDegreeOfParallelism = workers
         };
-        Parallel.ForEach(processingObjects, parallelOptions, (x, _) => ProcessGameObject(x, themeColorState, time));
+        Parallel.ForEach(timeline.AliveObjects.Where(x => !x.IsEmpty), parallelOptions, (x, _) => ProcessGameObject(x, themeColorState, time));
         
         // Sort the per-frame data by depth
         sortedPerFrameData.Clear();
@@ -99,34 +88,26 @@ public class AnimationRunner(
         return sortedPerFrameData;
     }
 
-    private static Matrix3 CreatePrefabInstanceTransform(PrefabInstanceObject prefabInstanceObject)
-        => MathUtil.CreateScale(prefabInstanceObject.Scale) *
-           MathUtil.CreateRotation(prefabInstanceObject.Rotation) *
-           MathUtil.CreateTranslation(prefabInstanceObject.Position);
-
-    private void ProcessGameObject(ProcessingBeatmapObject processingBeatmapObject, ThemeColorState themeColorState, float time)
+    private void ProcessGameObject(BeatmapObject beatmapObject, ThemeColorState themeColorState, float time)
     {
-        var timeOffset = processingBeatmapObject.TimeOffset;
-        var beatmapObject = processingBeatmapObject.BeatmapObject;
-        
         var transform = CalculateBeatmapObjectTransform(
             beatmapObject,
             true, true, true,
             0.0f, 0.0f, 0.0f,
-            time + timeOffset, out var parentDepth,
+            time, out var parentDepth,
             null);
-        var originMatrix = MathUtil.CreateTranslation(beatmapObject.Data.Origin);
+        var originMatrix = MathUtil.CreateTranslation(beatmapObject.Origin);
         var perFrameDatum = new PerFrameBeatmapObjectData
         {
             BeatmapObject = beatmapObject,
-            Transform = originMatrix * transform * processingBeatmapObject.Transform,
-            Color = beatmapObject.Data.ThemeColorSequence.Interpolate(time + timeOffset - beatmapObject.Data.StartTime, themeColorState),
+            Transform = originMatrix * transform,
+            Color = beatmapObject.ThemeColorSequence.Interpolate(time - beatmapObject.StartTime, themeColorState),
             ParentDepth = parentDepth,
         };
         perFrameData.Add(perFrameDatum);
     }
 
-    private static Matrix3 CalculateBeatmapObjectTransform(
+    private Matrix3 CalculateBeatmapObjectTransform(
         BeatmapObject beatmapObject,
         bool animatePosition, bool animateScale, bool animateRotation,
         float positionTimeOffset, float scaleTimeOffset, float rotationTimeOffset,
@@ -141,31 +122,29 @@ public class AnimationRunner(
         {
             parentDepth++;
             
-            var data = beatmapObject.Data;
-            
             if (animateScale)
             {
-                var scale = data.ScaleSequence.Interpolate(time - data.StartTime - scaleTimeOffset, context);
+                var scale = beatmapObject.ScaleSequence.Interpolate(time - beatmapObject.StartTime - scaleTimeOffset, context);
                 matrix *= MathUtil.CreateScale(scale);
             }
 
             if (animateRotation)
             {
-                var rotation = data.RotationSequence.Interpolate(time - data.StartTime - rotationTimeOffset, context);
+                var rotation = beatmapObject.RotationSequence.Interpolate(time - beatmapObject.StartTime - rotationTimeOffset, context);
                 matrix *= MathUtil.CreateRotation(rotation);
             }
 
             if (animatePosition)
             {
-                var position = data.PositionSequence.Interpolate(time - data.StartTime - positionTimeOffset, context);
+                var position = beatmapObject.PositionSequence.Interpolate(time - beatmapObject.StartTime - positionTimeOffset, context);
                 matrix *= MathUtil.CreateTranslation(position);
             }
 
-            if (beatmapObject.Parent is null) 
+            if (!timeline.BeatmapObjects.TryGetParent(beatmapObject.Id.Int, out var parent) || parent is null) 
                 break;
 
-            var parentTypes = data.ParentTypes;
-            var parentTemporalOffsets = data.ParentTemporalOffsets;
+            var parentTypes = beatmapObject.ParentTypes;
+            var parentTemporalOffsets = beatmapObject.ParentTemporalOffsets;
             
             animatePosition = parentTypes.Position;
             animateScale = parentTypes.Scale;
@@ -173,7 +152,7 @@ public class AnimationRunner(
             positionTimeOffset = parentTemporalOffsets.Position;
             scaleTimeOffset = parentTemporalOffsets.Scale;
             rotationTimeOffset = parentTemporalOffsets.Rotation;
-            beatmapObject = beatmapObject.Parent;
+            beatmapObject = parent;
         }
 
         return matrix;

@@ -1,108 +1,153 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using OpenTK.Mathematics;
+using Pamx.Common.Enum;
+using ParallelAnimationSystem.Core.Animation;
+using ParallelAnimationSystem.Core.Data;
+using ParallelAnimationSystem.Data;
+using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core.Beatmap;
 
-/// <summary>
-/// Represents a single object node in a beatmap.
-/// </summary>
-public class BeatmapObject(string id, BeatmapObjectData data) : INotifyPropertyChanged
+public class BeatmapObject(
+    BeatmapObjectId id,
+    IEnumerable<PositionScaleKeyframe> positionKeyframes,
+    IEnumerable<PositionScaleKeyframe> scaleKeyframes,
+    IEnumerable<RotationKeyframe> rotationKeyframes,
+    IEnumerable<BeatmapObjectColorKeyframe> themeColorKeyframes)
+    : INotifyPropertyChanged
 {
-    public static BeatmapObject DefaultRoot => new(
-        string.Empty,
-        new BeatmapObjectData([], [], [], []));
-    
-    [ThreadStatic]
-    private static Stack<BeatmapObject>? traverseStack;
-    
     public event PropertyChangedEventHandler? PropertyChanged;
-    public event EventHandler<BeatmapObject>? ChildAdded;
-    public event EventHandler<BeatmapObject>? ChildRemoved;
     
-    /// <summary>
-    /// The unique identifier for this beatmap object.
-    /// </summary>
-    public string Id => id;
-
-    /// <summary>
-    /// The object's name.
-    /// </summary>
+    public BeatmapObjectId Id { get; } = id;
+    
     public string Name
     {
         get => name;
         set => SetField(ref name, value);
     }
 
-    /// <summary>
-    /// The data associated with this beatmap object.
-    /// </summary>
-    public BeatmapObjectData Data => data;
-
-    /// <summary>
-    /// The object's parent.
-    /// </summary>
-    public BeatmapObject? Parent
+    public bool IsEmpty
     {
-        get => parent;
-        set
-        {
-            var previousParent = parent;
-            
-            if (SetField(ref parent, value))
-            {
-                // Remove this object from the previous parent's children
-                previousParent?.RemoveChild(this);
-                
-                // Add this object to the new parent's children
-                value?.AddChild(this);
-            }
-        }
+        get => isEmpty;
+        set => SetField(ref isEmpty, value);
     }
 
-    /// <summary>
-    /// The object's children.
-    /// </summary>
-    public IReadOnlyList<BeatmapObject> Children => children;
+    public ParentTemporalOffsets ParentTemporalOffsets
+    {
+        get => parentTemporalOffsets;
+        set => SetField(ref parentTemporalOffsets, value);
+    }
+
+    public ParentTypes ParentTypes
+    {
+        get => parentTypes;
+        set => SetField(ref parentTypes, value);
+    }
     
+    public RenderMode RenderMode
+    {
+        get => renderMode;
+        set => SetField(ref renderMode, value);
+    }
+
+    public Vector2 Origin
+    {
+        get => origin;
+        set => SetField(ref origin, value);
+    }
+
+    public int RenderDepth
+    {
+        get => renderDepth;
+        set => SetField(ref renderDepth, value);
+    }
+    
+    public AutoKillType AutoKillType
+    {
+        get => autoKillType;
+        set => SetField(ref autoKillType, value);
+    }
+    
+    public float StartTime
+    {
+        get => startTime;
+        set => SetField(ref startTime, value);
+    }
+    
+    public float KillTimeOffset
+    {
+        get => killTimeOffset;
+        set => SetField(ref killTimeOffset, value);
+    }
+    
+    // "Shape" in PA
+    public int ShapeCategoryIndex
+    {
+        get => shapeCategoryIndex;
+        set => SetField(ref shapeCategoryIndex, value);
+    }
+    
+    // "Shape Option" in PA
+    public int ShapeIndex
+    {
+        get => shapeIndex;
+        set => SetField(ref shapeIndex, value);
+    }
+
+    public Sequence<PositionScaleKeyframe, object?, Vector2> PositionSequence { get; } = new(
+        positionKeyframes,
+        PositionScaleKeyframe.ResolveToValue,
+        MathUtil.Lerp);
+    
+    public Sequence<PositionScaleKeyframe, object?, Vector2> ScaleSequence { get; } = new(
+        scaleKeyframes,
+        PositionScaleKeyframe.ResolveToValue,
+        MathUtil.Lerp);
+    
+    public Sequence<RotationKeyframe, object?, float> RotationSequence { get; } = new(
+        rotationKeyframes,
+        RotationKeyframe.ResolveToValue,
+        MathUtil.Lerp);
+    
+    public Sequence<BeatmapObjectColorKeyframe, ThemeColorState, BeatmapObjectColor> ThemeColorSequence { get; } = new(
+        themeColorKeyframes,
+        BeatmapObjectColorKeyframe.ResolveToValue,
+        BeatmapObjectColor.Lerp);
+
     private string name = string.Empty;
 
-    private BeatmapObject? parent = null;
-    private readonly List<BeatmapObject> children = [];
+    private bool isEmpty;
+
+    private ParentTemporalOffsets parentTemporalOffsets = new(0f, 0f, 0f);
+    private ParentTypes parentTypes = new(true, false, true);
     
-    // ONLY adds children, does NOT set the parent!
-    private void AddChild(BeatmapObject child)
+    private RenderMode renderMode = RenderMode.Normal;
+    
+    private Vector2 origin = new(0.5f);
+
+    private int renderDepth = 20;
+
+    private AutoKillType autoKillType = AutoKillType.FixedTime;
+    private float startTime = 0f;
+    private float killTimeOffset = 0f;
+
+    private int shapeCategoryIndex = 0;
+    private int shapeIndex = 0;
+
+    public float CalculateKillTime(float startTimeOffset)
     {
-        if (children.Contains(child))
-            return;
+        var actualStartTime = StartTime + startTimeOffset;
         
-        children.Add(child);
-        ChildAdded?.Invoke(this, child);
-    }
-    
-    // ONLY removes children, does NOT set the parent!
-    private void RemoveChild(BeatmapObject child)
-    {
-        if (!children.Remove(child))
-            return;
-        
-        ChildRemoved?.Invoke(this, child);
-    }
-    
-    /// <summary>
-    /// Depth-first traversal of the beatmap object tree, applying the specified action to each object.
-    /// </summary>
-    public void Traverse(Action<BeatmapObject> action)
-    {
-        traverseStack ??= new Stack<BeatmapObject>();
-        traverseStack.Push(this);
-        while (traverseStack.Count > 0)
+        return AutoKillType switch
         {
-            var current = traverseStack.Pop();
-            action(current);
-            
-            foreach (var child in current.Children)
-                traverseStack.Push(child);
-        }
+            AutoKillType.FixedTime => actualStartTime + KillTimeOffset,
+            AutoKillType.NoAutoKill => float.PositiveInfinity,
+            AutoKillType.LastKeyframe => actualStartTime + GetObjectLength(),
+            AutoKillType.LastKeyframeOffset => actualStartTime + GetObjectLength() + KillTimeOffset,
+            AutoKillType.SongTime => KillTimeOffset,
+            _ => throw new ArgumentOutOfRangeException(nameof(AutoKillType), $"Unknown AutoKillType '{AutoKillType}'!")
+        };
     }
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
@@ -117,4 +162,7 @@ public class BeatmapObject(string id, BeatmapObjectData data) : INotifyPropertyC
         OnPropertyChanged(propertyName);
         return true;
     }
+    
+    private float GetObjectLength()
+        => Math.Max(PositionSequence.Length, Math.Max(ScaleSequence.Length, Math.Max(RotationSequence.Length, ThemeColorSequence.Length)));
 }

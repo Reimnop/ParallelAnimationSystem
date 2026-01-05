@@ -28,25 +28,25 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         //     .ToDictionary(x => x.Id, x => x);
         
         // Create prefab instances
-        var prefabInstances = beatmap.PrefabObjects
-            .Select(x =>
-            {
-                var prefab = (IPrefab) x.Prefab;
-                var prefabInstanceId = ((IIdentifiable<string>) x).Id;
-                return (x.Time - prefab.Offset, CreatePrefab(prefab, prefabInstanceId), x);
-            })
-            .Select(x => new PrefabInstanceObject(x.Item2)
-            {
-                StartTime = x.Item1,
-                Position = new Vector2(x.x.Position.X, x.x.Position.Y),
-                Scale = new Vector2(x.x.Scale.X, x.x.Scale.Y),
-                Rotation = MathHelper.DegreesToRadians(x.x.Rotation),
-            });
+        // var prefabInstances = beatmap.PrefabObjects
+        //     .Select(x =>
+        //     {
+        //         var prefab = (IPrefab) x.Prefab;
+        //         var prefabInstanceId = ((IIdentifiable<string>) x).Id;
+        //         return (x.Time - prefab.Offset, CreatePrefab(prefab, prefabInstanceId), x);
+        //     })
+        //     .Select(x => new PrefabInstanceObject(x.Item2)
+        //     {
+        //         StartTime = x.Item1,
+        //         Position = new Vector2(x.x.Position.X, x.x.Position.Y),
+        //         Scale = new Vector2(x.x.Scale.X, x.x.Scale.Y),
+        //         Rotation = MathHelper.DegreesToRadians(x.x.Rotation),
+        //     });
         
         // Create prefab instance timeline
-        var prefabInstanceTimeline = new PrefabInstanceTimeline();
-        foreach (var prefabInstance in prefabInstances)
-            prefabInstanceTimeline.Add(prefabInstance);
+        // var prefabInstanceTimeline = new PrefabInstanceTimeline();
+        // foreach (var prefabInstance in prefabInstances)
+        //     prefabInstanceTimeline.Add(prefabInstance);
 
         // Get theme sequence
         var themeColorSequence = CreateThemeSequence(beatmap.Events.Theme);
@@ -69,7 +69,6 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         // Create the runner with the GameObjects
         return new AnimationRunner(
             timeline,
-            prefabInstanceTimeline,
             themeColorSequence,
             cameraPositionSequence,
             cameraScaleSequence,
@@ -181,7 +180,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         var value = keyframe.Value;
         var color = value.Color.HasValue 
             ? context.Effect[Math.Clamp(value.Color.Value, 0, context.Effect.Length - 1)]
-            : new ColorRgba(0.0f, 0.0f, 0.0f, 1.0f);
+            : new ColorRgb(0.0f, 0.0f, 0.0f);
         var colorVector = new Vector3(color.R, color.G, color.B);
         var rounded = value.Rounded;
         var roundness = value.Roundness ?? 1.0f;
@@ -343,30 +342,30 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         
         var themeColorState = new ThemeColorState
         {
-            Background = value.Background.ToColorRgba(),
-            Gui = value.Gui.ToColorRgba(),
-            GuiAccent = value.GuiAccent.ToColorRgba(),
+            Background = value.Background.ToColorRgb(),
+            Gui = value.Gui.ToColorRgb(),
+            GuiAccent = value.GuiAccent.ToColorRgb(),
         };
         
         for (var i = 0; i < Math.Min(value.Player.Count, themeColorState.Player.Length); i++)
-            themeColorState.Player[i] = value.Player[i].ToColorRgba();
+            themeColorState.Player[i] = value.Player[i].ToColorRgb();
         for (var i = value.Player.Count; i < themeColorState.Player.Length; i++)
-            themeColorState.Player[i] = new ColorRgba(0.0f, 0.0f, 0.0f, 1.0f);
+            themeColorState.Player[i] = new ColorRgb(0.0f, 0.0f, 0.0f);
         
         for (var i = 0; i < Math.Min(value.Object.Count, themeColorState.Object.Length); i++)
-            themeColorState.Object[i] = value.Object[i].ToColorRgba();
+            themeColorState.Object[i] = value.Object[i].ToColorRgb();
         for (var i = value.Object.Count; i < themeColorState.Object.Length; i++)
-            themeColorState.Object[i] = new ColorRgba(0.0f, 0.0f, 0.0f, 1.0f);
+            themeColorState.Object[i] = new ColorRgb(0.0f, 0.0f, 0.0f);
         
         for (var i = 0; i < Math.Min(value.Effect.Count, themeColorState.Effect.Length); i++)
-            themeColorState.Effect[i] = value.Effect[i].ToColorRgba();
+            themeColorState.Effect[i] = value.Effect[i].ToColorRgb();
         for (var i = value.Effect.Count; i < themeColorState.Effect.Length; i++)
-            themeColorState.Effect[i] = new ColorRgba(0.0f, 0.0f, 0.0f, 0.0f);
+            themeColorState.Effect[i] = new ColorRgb(0.0f, 0.0f, 0.0f);
         
         for (var i = 0; i < Math.Min(value.ParallaxObject.Count, themeColorState.ParallaxObject.Length); i++)
-            themeColorState.ParallaxObject[i] = value.ParallaxObject[i].ToColorRgba();
+            themeColorState.ParallaxObject[i] = value.ParallaxObject[i].ToColorRgb();
         for (var i = value.ParallaxObject.Count; i < themeColorState.ParallaxObject.Length; i++)
-            themeColorState.ParallaxObject[i] = new ColorRgba(0.0f, 0.0f, 0.0f, 1.0f);
+            themeColorState.ParallaxObject[i] = new ColorRgb(0.0f, 0.0f, 0.0f);
         
         return themeColorState;
     }
@@ -375,82 +374,66 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
     {
         var themeColorState = new ThemeColorState
         {
-            Background = ColorRgba.Lerp(a.Background, b.Background, t),
-            Gui = ColorRgba.Lerp(a.Gui, b.Gui, t),
-            GuiAccent = ColorRgba.Lerp(a.GuiAccent, b.GuiAccent, t)
+            Background = ColorRgb.Lerp(a.Background, b.Background, t),
+            Gui = ColorRgb.Lerp(a.Gui, b.Gui, t),
+            GuiAccent = ColorRgb.Lerp(a.GuiAccent, b.GuiAccent, t)
         };
         for (var i = 0; i < themeColorState.Player.Length; i++)
-            themeColorState.Player[i] = ColorRgba.Lerp(a.Player[i], b.Player[i], t);
+            themeColorState.Player[i] = ColorRgb.Lerp(a.Player[i], b.Player[i], t);
         for (var i = 0; i < themeColorState.Object.Length; i++)
-            themeColorState.Object[i] = ColorRgba.Lerp(a.Object[i], b.Object[i], t);
+            themeColorState.Object[i] = ColorRgb.Lerp(a.Object[i], b.Object[i], t);
         for (var i = 0; i < themeColorState.Effect.Length; i++)
-            themeColorState.Effect[i] = ColorRgba.Lerp(a.Effect[i], b.Effect[i], t);
+            themeColorState.Effect[i] = ColorRgb.Lerp(a.Effect[i], b.Effect[i], t);
         for (var i = 0; i < themeColorState.ParallaxObject.Length; i++)
-            themeColorState.ParallaxObject[i] = ColorRgba.Lerp(a.ParallaxObject[i], b.ParallaxObject[i], t);
+            themeColorState.ParallaxObject[i] = ColorRgb.Lerp(a.ParallaxObject[i], b.ParallaxObject[i], t);
         return themeColorState;
     }
 
     private Timeline CreateTimeline(IBeatmap beatmap)
     {
-        var objectDataLookup = beatmap.Objects
-            .Select(x => CreateBeatmapObjectData(x))
-            .ToDictionary(x => x.id, x => x);
+        var timeline = new Timeline();
         
-        var beatmapObjectsDictionary = new Dictionary<string, BeatmapObject>();
-        
-        var rootObject = BeatmapObject.DefaultRoot;
-        beatmapObjectsDictionary.Add(rootObject.Id, rootObject);
-        
-        foreach (var (_, tuple) in objectDataLookup)
-            CreateBeatmapObjectRecursively(tuple, objectDataLookup, beatmapObjectsDictionary, rootObject);
-
-        return new Timeline(rootObject);
-    }
-
-    private Prefab CreatePrefab(IPrefab prefab, params object[] seeds)
-    {
-        var objectDataLookup = prefab.BeatmapObjects
-            .Select(x => CreateBeatmapObjectData(x, seeds))
-            .ToDictionary(x => x.id, x => x);
-        
-        var beatmapObjectsDictionary = new Dictionary<string, BeatmapObject>();
-        var convertedPrefab = new Prefab
+        var beatmapObjects = timeline.BeatmapObjects;
+        foreach (var @object in beatmap.Objects)
         {
-            Id = ((IIdentifiable<string>) prefab).Id,
-            Name = prefab.Name,
-        };
+            var factory = CreateBeatmapObjectFactory(@object, randomSeed);
+            beatmapObjects.Add(factory);
+        }
         
-        foreach (var (_, tuple) in objectDataLookup)
-            CreateBeatmapObjectRecursively(tuple, objectDataLookup, beatmapObjectsDictionary, convertedPrefab.RootObject);
-
-        return convertedPrefab;
-    }
-
-    private BeatmapObject CreateBeatmapObjectRecursively(
-        (string id, string? parentId, BeatmapObjectData data) tuple,
-        IReadOnlyDictionary<string, (string id, string? parentId, BeatmapObjectData data)> objectDataLookup,
-        Dictionary<string, BeatmapObject> beatmapObjectsDictionary,
-        BeatmapObject rootObject)
-    {
-        var (id, parentId, data) = tuple;
-        
-        if (beatmapObjectsDictionary.TryGetValue(id, out var beatmapObject))
-            return beatmapObject;
-        
-        beatmapObject = new BeatmapObject(id, data)
+        // Connect parent tree relations
+        foreach (var obj in beatmap.Objects)
         {
-            Parent = parentId is not null
-                ? objectDataLookup.TryGetValue(parentId, out var parentObject)
-                    ? CreateBeatmapObjectRecursively(parentObject, objectDataLookup, beatmapObjectsDictionary, rootObject)
-                    : rootObject
-                : rootObject
-        };
-        beatmapObjectsDictionary.Add(id, beatmapObject);
-        
-        return beatmapObject;
+            var childId = ((IIdentifiable<string>) obj).Id;
+            var parentId = obj.Parent is IIdentifiable<string> parentIdentifiable 
+                ? parentIdentifiable.Id
+                : null;
+            if (parentId is not null && beatmapObjects.Contains(parentId))
+                beatmapObjects.SetParent(childId, parentId);
+        }
+
+        return timeline;
     }
 
-    private (string id, string? parentId, BeatmapObjectData data) CreateBeatmapObjectData(IObject @object, params object[] seeds)
+    // private Prefab CreatePrefab(IPrefab prefab, params object[] seeds)
+    // {
+    //     var objectDataLookup = prefab.BeatmapObjects
+    //         .Select(x => CreateBeatmapObjectData(x, seeds))
+    //         .ToDictionary(x => x.id, x => x);
+    //     
+    //     var beatmapObjectsDictionary = new Dictionary<string, BeatmapObject>();
+    //     var convertedPrefab = new Prefab
+    //     {
+    //         Id = ((IIdentifiable<string>) prefab).Id,
+    //         Name = prefab.Name,
+    //     };
+    //     
+    //     foreach (var (_, tuple) in objectDataLookup)
+    //         CreateBeatmapObjectRecursively(tuple, objectDataLookup, beatmapObjectsDictionary, convertedPrefab.RootObject);
+    //
+    //     return convertedPrefab;
+    // }
+
+    private BeatmapObjectFactory CreateBeatmapObjectFactory(IObject @object, params object[] seeds)
     {
         var objectId = ((IIdentifiable<string>) @object).Id;
         var positionAnimation = EnumerateSequenceKeyframes(@object.PositionEvents, seeds: [..seeds, objectId, 0]);
@@ -479,12 +462,16 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         var origin = new Vector2(@object.Origin.X, @object.Origin.Y);
 
         // TODO: Flag empty objects
-        var data = new BeatmapObjectData(
+        var stringId = ((IIdentifiable<string>) @object).Id;
+
+        return numericId => new BeatmapObject(
+            new BeatmapObjectId(stringId, numericId),
             positionAnimation,
             scaleAnimation,
             rotationAnimation,
             themeColorAnimation)
         {
+            Name = @object.Name,
             IsEmpty = @object.Type is ObjectType.Empty or ObjectType.LegacyEmpty,
             ParentTemporalOffsets = new ParentTemporalOffsets(
                 parentPositionTimeOffset,
@@ -503,8 +490,6 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             ShapeCategoryIndex = (int) @object.Shape,
             ShapeIndex = @object.ShapeOption,
         };
-        
-        return (objectId, @object.Parent is IIdentifiable<string> parentIdentifiable ? parentIdentifiable.Id : null, data);
     }
     
     private IEnumerable<BeatmapObjectColorKeyframe> EnumerateThemeColorKeyframes(IEnumerable<FixedKeyframe<ThemeColor>> events)
@@ -611,6 +596,9 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
                     break;
                 case int intSeed:
                     hash.Append(BitConverter.GetBytes(intSeed));
+                    break;
+                case ulong ulongSeed:
+                    hash.Append(BitConverter.GetBytes(ulongSeed));
                     break;
                 default:
                     throw new ArgumentException($"Unsupported seed type: '{seed.GetType()}'");

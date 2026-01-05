@@ -3,13 +3,8 @@ using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core.Beatmap;
 
-public class Timeline : IDisposable
+public class Timeline
 {
-   public event EventHandler<BeatmapObject>? BeatmapObjectAdded;
-   public event EventHandler<BeatmapObject>? BeatmapObjectRemoved;
-   
-   public BeatmapObject RootObject { get; }
-
    public float StartTimeOffset
    {
       get => startTimeOffset;
@@ -24,10 +19,9 @@ public class Timeline : IDisposable
       }
    }
 
-   public IReadOnlyDictionary<string, BeatmapObject> AllObjects => allObjects;
+   public BeatmapObjectsContainer BeatmapObjects { get; } = new();
    public IReadOnlyCollection<BeatmapObject> AliveObjects => aliveObjects;
-
-   private readonly Dictionary<string, BeatmapObject> allObjects = [];
+   
    private readonly HashSet<BeatmapObject> aliveObjects = [];
    
    private readonly List<(float Time, BeatmapObject Object)> startTimeSortedObjects = [];
@@ -43,86 +37,30 @@ public class Timeline : IDisposable
    
    private float currentTime = 0.0f;
 
-   public Timeline(BeatmapObject rootObject)
+   public Timeline()
    {
-      RootObject = rootObject;
-      
-      // Subscribe to events
-      RootObject.Traverse(obj =>
-      {
-         obj.ChildAdded += OnBeatmapObjectChildAdded;
-         obj.ChildRemoved += OnBeatmapObjectChildRemoved;
-         obj.Data.PropertyChanged += OnBeatmapObjectDataPropertyChanged;
-         
-         allObjects.Add(obj.Id, obj);
-      });
-   }
-   
-   ~Timeline()
-   {
-      Dispose(false);
-   }
-   
-   public void Dispose()
-   {
-      Dispose(true);
-      GC.SuppressFinalize(this);
+      BeatmapObjects.BeatmapObjectAdded += OnBeatmapObjectAdded;
+      BeatmapObjects.BeatmapObjectRemoved += OnBeatmapObjectRemoved;
    }
 
-   private void Dispose(bool disposing)
+   private void OnBeatmapObjectAdded(object? sender, BeatmapObject beatmapObject)
    {
-      if (!disposing)
-          Console.Error.WriteLine("Timeline finalizer called without disposing. Did you forget to call Dispose()?");
-      
-      // Unsubscribe from events
-      RootObject.Traverse(obj =>
-      {
-         obj.ChildAdded -= OnBeatmapObjectChildAdded;
-         obj.ChildRemoved -= OnBeatmapObjectChildRemoved;
-         obj.Data.PropertyChanged -= OnBeatmapObjectDataPropertyChanged;
-         
-         // We don't need to clear allObjects here since we're disposing
-      });
-   }
-
-   private void OnBeatmapObjectChildAdded(object? sender, BeatmapObject beatmapObject)
-   {
-      // Add object and all its children to allObjects
-      beatmapObject.Traverse(obj =>
-      {
-         obj.ChildAdded += OnBeatmapObjectChildAdded;
-         obj.ChildRemoved += OnBeatmapObjectChildRemoved;
-         obj.Data.PropertyChanged += OnBeatmapObjectDataPropertyChanged;
-         
-         allObjects.Add(obj.Id, obj);
-      });
-      
       // Flag start and kill times as dirty
       startTimeDirty = true;
       killTimeDirty = true;
       
-      // Call event handler
-      beatmapObject.Traverse(obj => BeatmapObjectAdded?.Invoke(this, obj));
+      // Subscribe to property changed events
+      beatmapObject.PropertyChanged += OnBeatmapObjectPropertyChanged;
    }
 
-   private void OnBeatmapObjectChildRemoved(object? sender, BeatmapObject beatmapObject)
+   private void OnBeatmapObjectRemoved(object? sender, BeatmapObject beatmapObject)
    {
-      // Remove object and all its children from allObjects
-      beatmapObject.Traverse(obj =>
-      {
-         obj.ChildAdded -= OnBeatmapObjectChildAdded;
-         obj.ChildRemoved -= OnBeatmapObjectChildRemoved;
-         obj.Data.PropertyChanged -= OnBeatmapObjectDataPropertyChanged;
-         
-         allObjects.Remove(obj.Id);
-      });
-      
       // Flag start and kill times as dirty
       startTimeDirty = true;
       killTimeDirty = true;
       
-      // Call event handler
-      beatmapObject.Traverse(obj => BeatmapObjectRemoved?.Invoke(this, obj));
+      // Unsubscribe from property changed events
+      beatmapObject.PropertyChanged -= OnBeatmapObjectPropertyChanged;
    }
 
    public void ProcessFrame(float time)
@@ -131,8 +69,8 @@ public class Timeline : IDisposable
       if (startTimeDirty)
       {
          startTimeSortedObjects.Clear();
-         foreach (var (_, obj) in allObjects)
-            startTimeSortedObjects.Add((obj.Data.StartTime + StartTimeOffset, obj));
+         foreach (var obj in BeatmapObjects)
+            startTimeSortedObjects.Add((obj.StartTime + StartTimeOffset, obj));
          startTimeSortedObjects.Sort((a, b) => a.Time.CompareTo(b.Time));
          startIndex = CalculateIndex(time, startTimeSortedObjects, x => x.Time);
       }
@@ -140,8 +78,8 @@ public class Timeline : IDisposable
       if (killTimeDirty)
       {
          killTimeSortedObjects.Clear();
-         foreach (var (_, obj) in allObjects)
-            killTimeSortedObjects.Add((obj.Data.CalculateKillTime(StartTimeOffset), obj));
+         foreach (var obj in BeatmapObjects)
+            killTimeSortedObjects.Add((obj.CalculateKillTime(StartTimeOffset), obj));
          killTimeSortedObjects.Sort((a, b) => a.Time.CompareTo(b.Time));
          killIndex = CalculateIndex(time, killTimeSortedObjects, x => x.Time);
       }
@@ -199,15 +137,15 @@ public class Timeline : IDisposable
       return index < 0 ? ~index : index + 1;
    }
 
-   private void OnBeatmapObjectDataPropertyChanged(object? sender, PropertyChangedEventArgs eventArgs)
+   private void OnBeatmapObjectPropertyChanged(object? sender, PropertyChangedEventArgs eventArgs)
    {
-      if (eventArgs.PropertyName is nameof(BeatmapObjectData.StartTime))
+      if (eventArgs.PropertyName is nameof(BeatmapObject.StartTime))
       {
          startTimeDirty = true;
          killTimeDirty = true;
       }
 
-      if (eventArgs.PropertyName is nameof(BeatmapObjectData.KillTimeOffset) or nameof(BeatmapObjectData.AutoKillType))
+      if (eventArgs.PropertyName is nameof(BeatmapObject.KillTimeOffset) or nameof(BeatmapObject.AutoKillType))
          killTimeDirty = true;
    }
 }
