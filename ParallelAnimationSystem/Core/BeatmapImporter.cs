@@ -459,8 +459,6 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             var prefab = (IPrefab)prefabInstance.Prefab;
             var prefabObjectIdMap = prefab.BeatmapObjects
                 .ToDictionary(x => ((IIdentifiable<string>) x).Id, _ => RandomUtil.GenerateId());
-            var prefabObjectIdReverseMap = prefabObjectIdMap
-                .ToDictionary(x => x.Value, x => x.Key);
             
             var prefabInstanceId = ((IIdentifiable<string>) prefabInstance).Id;
 

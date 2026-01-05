@@ -77,7 +77,7 @@ public class AnimationRunner(
         {
             MaxDegreeOfParallelism = workers
         };
-        Parallel.ForEach(timeline.AliveObjects.Where(x => !x.IsEmpty), parallelOptions, (x, _) => ProcessGameObject(x, themeColorState, time));
+        Parallel.ForEach(timeline.AliveObjects, parallelOptions, (x, _) => ProcessGameObject(x, themeColorState, time));
         
         // Sort the per-frame data by depth
         sortedPerFrameData.Clear();

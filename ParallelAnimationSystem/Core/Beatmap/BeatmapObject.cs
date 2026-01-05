@@ -117,7 +117,7 @@ public class BeatmapObject(
 
     private string name = string.Empty;
 
-    private bool isEmpty;
+    private bool isEmpty = true;
 
     private ParentTemporalOffsets parentTemporalOffsets = new(0f, 0f, 0f);
     private ParentTypes parentTypes = new(true, false, true);

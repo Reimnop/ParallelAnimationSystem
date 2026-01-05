@@ -22,6 +22,7 @@ public class Timeline
    public BeatmapObjectsContainer BeatmapObjects { get; } = new();
    public IReadOnlyCollection<BeatmapObject> AliveObjects => aliveObjects;
    
+   private readonly HashSet<BeatmapObject> nonEmptyObjects = [];
    private readonly HashSet<BeatmapObject> aliveObjects = [];
    
    private readonly List<(float Time, BeatmapObject Object)> startTimeSortedObjects = [];
@@ -45,9 +46,15 @@ public class Timeline
 
    private void OnBeatmapObjectAdded(object? sender, BeatmapObject beatmapObject)
    {
-      // Flag start and kill times as dirty
-      startTimeDirty = true;
-      killTimeDirty = true;
+      if (!beatmapObject.IsEmpty)
+      {
+         // Flag start and kill times as dirty
+         startTimeDirty = true;
+         killTimeDirty = true;
+         
+         // Add to non-empty objects list
+         nonEmptyObjects.Add(beatmapObject);
+      }
       
       // Subscribe to property changed events
       beatmapObject.PropertyChanged += OnBeatmapObjectPropertyChanged;
@@ -55,9 +62,15 @@ public class Timeline
 
    private void OnBeatmapObjectRemoved(object? sender, BeatmapObject beatmapObject)
    {
-      // Flag start and kill times as dirty
-      startTimeDirty = true;
-      killTimeDirty = true;
+      if (!beatmapObject.IsEmpty)
+      {
+         // Flag start and kill times as dirty
+         startTimeDirty = true;
+         killTimeDirty = true;
+         
+         // Remove from non-empty objects list
+         nonEmptyObjects.Remove(beatmapObject);
+      }
       
       // Unsubscribe from property changed events
       beatmapObject.PropertyChanged -= OnBeatmapObjectPropertyChanged;
@@ -69,7 +82,7 @@ public class Timeline
       if (startTimeDirty)
       {
          startTimeSortedObjects.Clear();
-         foreach (var obj in BeatmapObjects)
+         foreach (var obj in nonEmptyObjects)
             startTimeSortedObjects.Add((obj.StartTime + StartTimeOffset, obj));
          startTimeSortedObjects.Sort((a, b) => a.Time.CompareTo(b.Time));
          startIndex = CalculateIndex(time, startTimeSortedObjects, x => x.Time);
@@ -78,7 +91,7 @@ public class Timeline
       if (killTimeDirty)
       {
          killTimeSortedObjects.Clear();
-         foreach (var obj in BeatmapObjects)
+         foreach (var obj in nonEmptyObjects)
             killTimeSortedObjects.Add((obj.CalculateKillTime(StartTimeOffset), obj));
          killTimeSortedObjects.Sort((a, b) => a.Time.CompareTo(b.Time));
          killIndex = CalculateIndex(time, killTimeSortedObjects, x => x.Time);
@@ -139,6 +152,22 @@ public class Timeline
 
    private void OnBeatmapObjectPropertyChanged(object? sender, PropertyChangedEventArgs eventArgs)
    {
+      if (eventArgs.PropertyName is nameof(BeatmapObject.IsEmpty))
+      {
+         // Check if object is empty or not
+         if (sender is not BeatmapObject beatmapObject)
+            return;
+         
+         // Flag start and kill times as dirty
+         startTimeDirty = true;
+         killTimeDirty = true;
+
+         if (beatmapObject.IsEmpty) // State changed from non-empty to empty
+            nonEmptyObjects.Remove(beatmapObject);
+         else // State changed from empty to non-empty
+            nonEmptyObjects.Add(beatmapObject);
+      }
+      
       if (eventArgs.PropertyName is nameof(BeatmapObject.StartTime))
       {
          startTimeDirty = true;
