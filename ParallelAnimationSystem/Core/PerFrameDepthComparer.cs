@@ -1,11 +1,19 @@
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using ParallelAnimationSystem.Core.Data;
 
 namespace ParallelAnimationSystem.Core;
 
-public class PerFrameDepthComparer : IComparer<PerFrameBeatmapObjectData>
+public struct PerFrameDepthComparer : IComparer<PerFrameBeatmapObjectData>
 {
-    public int Compare(PerFrameBeatmapObjectData x, PerFrameBeatmapObjectData y)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public int Compare(PerFrameBeatmapObjectData? x, PerFrameBeatmapObjectData? y)
     {
+        Debug.Assert(x is not null);
+        Debug.Assert(y is not null);
+        Debug.Assert(x.BeatmapObject is not null);
+        Debug.Assert(y.BeatmapObject is not null);
+        
         if (x == y)
             return 0;
         
