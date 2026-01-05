@@ -45,7 +45,7 @@ public class AnimationRunner(
     /// Processes one frame of the animation. Do not call from multiple threads at the same time.
     /// </summary>
     /// <returns>The render data of the animation.</returns>
-    public IEnumerable<PerFrameBeatmapObjectData> ProcessFrame(float time, int workers = -1)
+    public (IReadOnlyList<PerFrameBeatmapObjectData> List, int Count) ProcessFrame(float time, int workers = -1)
     {
         // Update theme
         var themeColorState = themeColorSequence.Interpolate(time, null);
@@ -92,7 +92,7 @@ public class AnimationRunner(
         perFrameDataSpan.Sort(new PerFrameDepthComparer());
         
         // Return the sorted per-frame data
-        return perFrameData[..objectCount];
+        return (perFrameData, objectCount);
     }
 
     private void ProcessGameObject(BeatmapObject beatmapObject, int index, ThemeColorState themeColorState, float time)

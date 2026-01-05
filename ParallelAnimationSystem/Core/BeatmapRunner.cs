@@ -130,7 +130,7 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
             return false;
         
         // Update runner
-        var beatmapObjectDataList = runner.ProcessFrame(time, appSettings.WorkerCount);
+        var (beatmapObjectDataList, beatmapObjectDataCount) = runner.ProcessFrame(time, appSettings.WorkerCount);
         
         // Calculate shake vector
         const float shakeMagic1 = 123.97f;
@@ -183,13 +183,15 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
         }
 
         // Draw all alive game objects
-        foreach (var perFrameObjectData in beatmapObjectDataList)
+        for (var i = 0; i < beatmapObjectDataCount; i++)
         {
+            var perFrameObjectData = beatmapObjectDataList[i];
+            
             var transform = perFrameObjectData.Transform;
             var beatmapObjectColor = perFrameObjectData.Color;
-            
 
             var beatmapObject = perFrameObjectData.BeatmapObject;
+            Debug.Assert(beatmapObject is not null);
             
             if (beatmapObject.ShapeIndex != 4) // 4 is text
             {
