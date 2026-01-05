@@ -72,8 +72,8 @@ public class AnimationRunner(
         var objectCount = timeline.AliveObjects.Count;
         var oldPerFrameDataCount = perFrameData.Length;
         while (perFrameData.Length < objectCount)
-            Array.Resize(ref perFrameData, objectCount);
-        for (var i = oldPerFrameDataCount; i < objectCount; i++)
+            Array.Resize(ref perFrameData, perFrameData.Length * 2);
+        for (var i = oldPerFrameDataCount; i < perFrameData.Length; i++)
             perFrameData[i] = new PerFrameBeatmapObjectData();
         
         var parallelOptions = new ParallelOptions
