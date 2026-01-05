@@ -6,7 +6,7 @@ using ParallelAnimationSystem.Data;
 namespace ParallelAnimationSystem.Rendering.Common;
 
 // This should never be instantiated directly, but rather through the Renderer
-public class DrawList : IDrawList, IEnumerable<DrawData>
+public class DrawList : IDrawList, IReadOnlyCollection<DrawData>
 {
     public int Count => count;
     
