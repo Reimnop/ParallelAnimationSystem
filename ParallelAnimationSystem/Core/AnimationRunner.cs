@@ -37,13 +37,13 @@ public class AnimationRunner(
     public float Shake { get; private set; }
     public ColorRgb BackgroundColor { get; private set; }
 
-    private readonly List<PerFrameBeatmapObjectData> perFrameData = [];
+    private PerFrameBeatmapObjectData[] perFrameData = [];
 
     /// <summary>
     /// Processes one frame of the animation. Do not call from multiple threads at the same time.
     /// </summary>
     /// <returns>The render data of the animation.</returns>
-    public IReadOnlyList<PerFrameBeatmapObjectData> ProcessFrame(float time, int workers = -1)
+    public IEnumerable<PerFrameBeatmapObjectData> ProcessFrame(float time, int workers = -1)
     {
         // Update theme
         var themeColorState = themeColorSequence.Interpolate(time, null);
@@ -70,8 +70,11 @@ public class AnimationRunner(
         // Update all objects in parallel
         // Ensure per-frame data list is large enough
         var objectCount = timeline.AliveObjects.Count;
-        while (perFrameData.Count < objectCount)
-            perFrameData.Add(new PerFrameBeatmapObjectData());
+        var oldPerFrameDataCount = perFrameData.Length;
+        while (perFrameData.Length < objectCount)
+            Array.Resize(ref perFrameData, objectCount);
+        for (var i = oldPerFrameDataCount; i < objectCount; i++)
+            perFrameData[i] = new PerFrameBeatmapObjectData();
         
         var parallelOptions = new ParallelOptions
         {
@@ -83,10 +86,11 @@ public class AnimationRunner(
             (x, _) => ProcessGameObject(x.Value, x.Index, themeColorState, time));
         
         // Sort the per-frame data by depth
-        perFrameData.Sort(new PerFrameDepthComparer());
+        var perFrameDataSpan = perFrameData.AsSpan(0, objectCount);
+        perFrameDataSpan.Sort(new PerFrameDepthComparer());
         
         // Return the sorted per-frame data
-        return perFrameData;
+        return perFrameData[..objectCount];
     }
 
     private void ProcessGameObject(BeatmapObject beatmapObject, int index, ThemeColorState themeColorState, float time)
