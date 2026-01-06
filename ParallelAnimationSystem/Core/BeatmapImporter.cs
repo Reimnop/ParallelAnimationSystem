@@ -453,7 +453,10 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
                     positionKeyframes,
                     scaleKeyframes,
                     rotationKeyframes,
-                    []);
+                    [])
+                {
+                    ParentTypes = new ParentTypes(true, true, true),
+                };
             });
             
             var prefab = (IPrefab)prefabInstance.Prefab;
@@ -503,7 +506,10 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
                                 positionKeyframes,
                                 scaleKeyframes,
                                 rotationKeyframes,
-                                []);
+                                [])
+                            {
+                                ParentTypes = new ParentTypes(true, true, true),
+                            };
                         });
                         beatmapObjects.SetParent(specificObjectParent.Id.String, parentId);
                         beatmapObjects.SetParent(mappedChildId, specificObjectParent.Id.String);
