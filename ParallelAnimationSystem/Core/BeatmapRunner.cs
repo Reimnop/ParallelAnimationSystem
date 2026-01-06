@@ -24,6 +24,8 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
         RegisterFonts();
         
         // Load beatmap
+        var sw = Stopwatch.StartNew();
+        
         logger.LogInformation("Loading beatmap");
         var beatmap = mediaProvider.LoadBeatmap(out var format);
         
@@ -48,7 +50,10 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
         var beatmapImporter = new BeatmapImporter(appSettings.Seed, logger);
         runner = beatmapImporter.CreateRunner(beatmap);
         
-        logger.LogInformation("Loaded {ObjectCount} objects", runner.Timeline.BeatmapObjects.Count);
+        var elapsed = sw.Elapsed;
+        sw.Stop();
+        
+        logger.LogInformation("Loaded {ObjectCount} objects in {Elapsed}ms", runner.Timeline.BeatmapObjects.Count, elapsed.TotalMilliseconds);
     }
 
     private void RegisterMeshes()
