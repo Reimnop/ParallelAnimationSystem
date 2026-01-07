@@ -57,7 +57,7 @@ public class BeatmapObject(
         set => SetField(ref origin, value);
     }
 
-    public int RenderDepth
+    public float RenderDepth
     {
         get => renderDepth;
         set => SetField(ref renderDepth, value);
@@ -126,7 +126,7 @@ public class BeatmapObject(
     
     private Vector2 origin = new(0.5f);
 
-    private int renderDepth = 20;
+    private float renderDepth = 20f;
 
     private AutoKillType autoKillType = AutoKillType.FixedTime;
     private float startTime = 0f;

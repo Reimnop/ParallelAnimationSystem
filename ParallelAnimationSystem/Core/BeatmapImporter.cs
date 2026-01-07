@@ -444,7 +444,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
                     Value = MathHelper.DegreesToRadians(prefabInstance.Rotation),
                 }
             };
-
+        
             var globalPrefabParent = beatmapObjects.Add(numericId =>
             {
                 var stringId = RandomUtil.GenerateId();
@@ -464,7 +464,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
                 .ToDictionary(x => ((IIdentifiable<string>) x).Id, _ => RandomUtil.GenerateId());
             
             var prefabInstanceId = ((IIdentifiable<string>) prefabInstance).Id;
-
+        
             foreach (var prefabObject in prefab.BeatmapObjects)
             {
                 var objectId = ((IIdentifiable<string>) prefabObject).Id;
@@ -487,7 +487,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
                 var parentId = prefabObject.Parent is IIdentifiable<string> parentIdentifiable 
                     ? parentIdentifiable.Id
                     : null;
-
+        
                 if (parentId is not null)
                 {
                     // Check if object is in prefab
