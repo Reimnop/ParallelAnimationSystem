@@ -87,21 +87,18 @@ public class PasActivity : Activity
             using var reader = new StreamReader(stream);
             beatmapData = reader.ReadToEnd();
         }
-
-        byte[] audioData;
+        
+        using var audioStream = new MemoryStream();
+        
         using (var stream = contentResolver.OpenInputStream(audioPath))
         {
             if (stream is null)
                 throw new Exception("Failed to open audio stream");
             
-            using var memoryStream = new MemoryStream();
-            stream.CopyTo(memoryStream);
-            audioData = memoryStream.ToArray();
+            stream.CopyTo(audioStream);
         }
-        
-        using var audioStream = new MemoryStream(audioData);
-        if (audioStream is null)
-            throw new Exception("Failed to load audio stream");
+
+        audioStream.Seek(0L, SeekOrigin.Begin);
         
         using var audioPlayer = AudioPlayer.Load(audioStream);
         
