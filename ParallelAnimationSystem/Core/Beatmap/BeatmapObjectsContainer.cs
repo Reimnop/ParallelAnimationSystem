@@ -3,14 +3,12 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ParallelAnimationSystem.Core.Beatmap;
 
-// Numeric IDs are handled by the container
-// So we need a factory to create objects
-public delegate BeatmapObject BeatmapObjectFactory(int numericId);
-
-public class BeatmapObjectsContainer : IEnumerable<BeatmapObject>
+public class BeatmapObjectsContainer : IReadOnlyCollection<BeatmapObject>
 {
-    private class BeatmapObjectNode(BeatmapObject obj)
+    private class BeatmapObjectNode(BeatmapObject obj) : IIndexedObject
     {
+        public ObjectId Id => Object.Id;
+        
         public BeatmapObject Object { get; } = obj;
         public int? Parent { get; set; } = null;
         public List<int> Children { get; } = [];
@@ -19,94 +17,79 @@ public class BeatmapObjectsContainer : IEnumerable<BeatmapObject>
     public event EventHandler<BeatmapObject>? BeatmapObjectAdded;
     public event EventHandler<BeatmapObject>? BeatmapObjectRemoved;
     
-    public int Count => count;
+    public int Count => objectNodes.Count;
 
-    private readonly List<BeatmapObjectNode?> beatmapObjectNodes = [];
-    private readonly Dictionary<string, int> stringIdToNumericId = [];
-    private int count = 0;
+    private readonly IndexedCollection<BeatmapObjectNode> objectNodes = new();
 
-    public BeatmapObject Add(BeatmapObjectFactory factory)
+    public BeatmapObjectsContainer()
     {
-        var numericId = GetNextNumericId();
-        var beatmapObject = factory(numericId);
-        var node = new BeatmapObjectNode(beatmapObject);
-        
-        var stringId = beatmapObject.Id.String;
-        
-        // Check if there's already an object with the same ID
-        if (stringIdToNumericId.ContainsKey(stringId))
-            throw new InvalidOperationException($"Beatmap object with ID '{stringId}' already exists.");
-        
-        EnsureNodeListSize(numericId + 1);
-        beatmapObjectNodes[numericId] = node;
-        stringIdToNumericId[stringId] = numericId;
-        count++;
-        
-        BeatmapObjectAdded?.Invoke(this, beatmapObject);
-        
-        return beatmapObject;
+        objectNodes.ItemAdded += (_, node) => BeatmapObjectAdded?.Invoke(this, node.Object);
+        objectNodes.ItemRemoved += (_, node) => BeatmapObjectRemoved?.Invoke(this, node.Object);
     }
-    
+
+    public BeatmapObject Add(IndexedItemFactory<BeatmapObject> factory)
+        => objectNodes.Add(numericId => new BeatmapObjectNode(factory(numericId))).Object;
+
     public bool Remove(string id)
     {
-        if (!stringIdToNumericId.TryGetValue(id, out var numericId))
+        if (!objectNodes.TryConvertStringIdToNumericId(id, out var numericId))
             return false;
+        
         return Remove(numericId);
     }
     
     public bool Remove(int numericId)
     {
-        if (numericId < 0 || numericId >= beatmapObjectNodes.Count)
-            return false;
-        var node = beatmapObjectNodes[numericId];
-        if (node is null)
+        if (!objectNodes.TryGet(numericId, out var node))
             return false;
         
-        var stringId = node.Object.Id.String;
-        stringIdToNumericId.Remove(stringId);
-        
-        // Clear children's parent references
-        foreach (var child in node.Children)
+        // Remove children's parent references
+        foreach (var childNumericId in node.Children)
         {
-            var childNode = beatmapObjectNodes[child];
-            if (childNode is not null)
-                childNode.Parent = null;
+            if (!objectNodes.TryGet(childNumericId, out var childNode))
+                continue;
+            
+            childNode.Parent = null;
         }
         
-        beatmapObjectNodes[numericId] = null;
-        count--;
-        BeatmapObjectRemoved?.Invoke(this, node.Object);
+        // Remove from parent's children list
+        if (node.Parent.HasValue)
+        {
+            var parentNumericId = node.Parent.Value;
+            if (objectNodes.TryGet(parentNumericId, out var parentNode))
+                parentNode.Children.Remove(numericId);
+        }
         
+        // Remove the node
+        objectNodes.Remove(numericId);
         return true;
     }
 
     public void SetParent(string childId, string? parentId)
     {
-        var childNode = TryGetNode(childId, out var cn) ? cn : null;
-        if (childNode is null)
-            ThrowObjectNotFound(childId);
+        var childNode = objectNodes[childId];
 
         BeatmapObjectNode? parentNode = null;
         if (parentId is not null)
-        {
-            if (!TryGetNode(parentId, out parentNode))
-                ThrowObjectNotFound(parentId);
-        }
+            parentNode = objectNodes[parentId];
 
-        var childNumericId = childNode.Object.Id.Int;
+        var childNumericId = childNode.Object.Id.Numeric;
         
         // Remove from old parent
         if (childNode.Parent.HasValue)
         {
-            var oldParentNode = beatmapObjectNodes[childNode.Parent.Value];
-            oldParentNode?.Children.Remove(childNumericId);
+            if (objectNodes.TryGet(childNode.Parent.Value, out var oldParentNode))
+                oldParentNode.Children.Remove(childNumericId);
         }
         
         // Set new parent
         if (parentNode is not null)
         {
-            childNode.Parent = stringIdToNumericId[parentId!];
-            parentNode.Children.Add(childNumericId);
+            if (objectNodes.TryConvertStringIdToNumericId(parentId!, out var parentNumericId))
+            {
+                childNode.Parent = parentNumericId;
+                parentNode.Children.Add(childNumericId);
+            }
         }
         else
         {
@@ -116,18 +99,7 @@ public class BeatmapObjectsContainer : IEnumerable<BeatmapObject>
 
     public bool TryGetParent(string id, out BeatmapObject? parent)
     {
-        if (!stringIdToNumericId.TryGetValue(id, out var numericId))
-        {
-            parent = null;
-            return false;
-        }
-        
-        return TryGetParent(numericId, out parent);
-    }
-
-    public bool TryGetParent(int numericId, out BeatmapObject? parent)
-    {
-        if (!TryGetNode(numericId, out var node))
+        if (!objectNodes.TryGet(id, out var node))
         {
             parent = null;
             return false;
@@ -139,59 +111,73 @@ public class BeatmapObjectsContainer : IEnumerable<BeatmapObject>
             return true;
         }
         
-        var parentNode = beatmapObjectNodes[node.Parent.Value];
-        parent = parentNode?.Object;
+        if (!objectNodes.TryGet(node.Parent.Value, out var parentNode))
+        {
+            parent = null;
+            return false;
+        }
+        
+        parent = parentNode.Object;
+        return true;
+    }
+
+    public bool TryGetParent(int numericId, out BeatmapObject? parent)
+    {
+        if (!objectNodes.TryGet(numericId, out var node))
+        {
+            parent = null;
+            return false;
+        }
+        
+        if (!node.Parent.HasValue)
+        {
+            parent = null;
+            return true;
+        }
+        
+        if (!objectNodes.TryGet(node.Parent.Value, out var parentNode))
+        {
+            parent = null;
+            return false;
+        }
+        
+        parent = parentNode.Object;
         return true;
     }
     
     public bool TryGetChildren(string id, [MaybeNullWhen(false)] out List<BeatmapObject> children)
     {
-        if (!stringIdToNumericId.TryGetValue(id, out var numericId))
+        if (!objectNodes.TryGet(id, out var node))
         {
             children = null;
             return false;
         }
         
-        return TryGetChildren(numericId, out children);
+        children = node.Children
+            .Select(childNumericId => !objectNodes.TryGet(childNumericId, out var childNode) ? null : childNode.Object)
+            .OfType<BeatmapObject>()
+            .ToList();
+        return true;
     }
     
     public bool TryGetChildren(int numericId, [MaybeNullWhen(false)] out List<BeatmapObject> children)
     {
-        if (!TryGetNode(numericId, out var node))
+        if (!objectNodes.TryGet(numericId, out var node))
         {
             children = null;
             return false;
         }
-
+        
         children = node.Children
-            .Select(childNumericId => beatmapObjectNodes[childNumericId]?.Object)
+            .Select(childNumericId => !objectNodes.TryGet(childNumericId, out var childNode) ? null : childNode.Object)
             .OfType<BeatmapObject>()
             .ToList();
-        
         return true;
     }
     
     public bool TryGet(string id, [MaybeNullWhen(false)] out BeatmapObject beatmapObject)
     {
-        if (!stringIdToNumericId.TryGetValue(id, out var numericId))
-        {
-            beatmapObject = null;
-            return false;
-        }
-        
-        return TryGet(numericId, out beatmapObject);
-    }
-    
-    public bool TryGet(int numericId, [MaybeNullWhen(false)] out BeatmapObject beatmapObject)
-    {
-        if (numericId < 0 || numericId >= beatmapObjectNodes.Count)
-        {
-            beatmapObject = null;
-            return false;
-        }
-        
-        var node = beatmapObjectNodes[numericId];
-        if (node is null)
+        if (!objectNodes.TryGet(id, out var node))
         {
             beatmapObject = null;
             return false;
@@ -201,59 +187,25 @@ public class BeatmapObjectsContainer : IEnumerable<BeatmapObject>
         return true;
     }
     
-    private bool TryGetNode(string id, [MaybeNullWhen(false)] out BeatmapObjectNode node)
+    public bool TryGet(int numericId, [MaybeNullWhen(false)] out BeatmapObject beatmapObject)
     {
-        if (!stringIdToNumericId.TryGetValue(id, out var numericId))
+        if (!objectNodes.TryGet(numericId, out var node))
         {
-            node = null;
+            beatmapObject = null;
             return false;
         }
         
-        return TryGetNode(numericId, out node);
+        beatmapObject = node.Object;
+        return true;
     }
-    
-    private bool TryGetNode(int numericId, [MaybeNullWhen(false)] out BeatmapObjectNode node)
-    {
-        if (numericId < 0 || numericId >= beatmapObjectNodes.Count)
-        {
-            node = null;
-            return false;
-        }
-        
-        node = beatmapObjectNodes[numericId];
-        return node is not null;
-    }
-    
-    public bool Contains(string id)
-        => stringIdToNumericId.ContainsKey(id);
-    
-    public bool Contains(int numericId)
-        => numericId >= 0 && numericId < beatmapObjectNodes.Count && beatmapObjectNodes[numericId] is not null;
-    
-    private int GetNextNumericId()
-        => beatmapObjectNodes.Count;
 
-    private void EnsureNodeListSize(int size)
-    {
-        while (beatmapObjectNodes.Count < size)
-            beatmapObjectNodes.Add(null);
-    }
+    public bool Contains(string id) => objectNodes.Contains(id);
+    
+    public bool Contains(int numericId) => objectNodes.Contains(numericId);
 
     public IEnumerator<BeatmapObject> GetEnumerator()
-    {
-        foreach (var node in beatmapObjectNodes)
-        {
-            if (node is not null)
-                yield return node.Object;
-        }
-    }
+        => objectNodes.Select(node => node.Object).GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
-    
-    [DoesNotReturn]
-    private static void ThrowObjectNotFound(string id)
-        => throw new KeyNotFoundException($"Beatmap object with ID '{id}' not found.");
+        => GetEnumerator();
 }

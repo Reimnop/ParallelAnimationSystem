@@ -10,16 +10,16 @@ using ParallelAnimationSystem.Util;
 namespace ParallelAnimationSystem.Core.Beatmap;
 
 public class BeatmapObject(
-    BeatmapObjectId id,
+    ObjectId id,
     IEnumerable<PositionScaleKeyframe> positionKeyframes,
     IEnumerable<PositionScaleKeyframe> scaleKeyframes,
     IEnumerable<RotationKeyframe> rotationKeyframes,
     IEnumerable<BeatmapObjectColorKeyframe> themeColorKeyframes)
-    : INotifyPropertyChanged
+    : IIndexedObject, INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler? PropertyChanged;
     
-    public BeatmapObjectId Id { get; } = id;
+    public ObjectId Id { get; } = id;
     
     public string Name
     {

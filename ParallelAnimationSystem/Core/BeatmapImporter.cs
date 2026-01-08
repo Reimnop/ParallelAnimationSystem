@@ -21,33 +21,6 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
     {
         // Convert all the objects in the beatmap to Timeline
         var timeline = CreateTimeline(beatmap);
-        
-        // TODO: Make this work
-        // Convert all prefabs in the beatmap
-        // var prefabs = beatmap.Prefabs
-        //     .Select(CreatePrefab)
-        //     .ToDictionary(x => x.Id, x => x);
-        
-        // Create prefab instances
-        // var prefabInstances = beatmap.PrefabObjects
-        //     .Select(x =>
-        //     {
-        //         var prefab = (IPrefab) x.Prefab;
-        //         var prefabInstanceId = ((IIdentifiable<string>) x).Id;
-        //         return (x.Time - prefab.Offset, CreatePrefab(prefab, prefabInstanceId), x);
-        //     })
-        //     .Select(x => new PrefabInstanceObject(x.Item2)
-        //     {
-        //         StartTime = x.Item1,
-        //         Position = new Vector2(x.x.Position.X, x.x.Position.Y),
-        //         Scale = new Vector2(x.x.Scale.X, x.x.Scale.Y),
-        //         Rotation = MathHelper.DegreesToRadians(x.x.Rotation),
-        //     });
-        
-        // Create prefab instance timeline
-        // var prefabInstanceTimeline = new PrefabInstanceTimeline();
-        // foreach (var prefabInstance in prefabInstances)
-        //     prefabInstanceTimeline.Add(prefabInstance);
 
         // Get theme sequence
         var themeColorSequence = CreateThemeSequence(beatmap.Events.Theme);
@@ -449,7 +422,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             {
                 var stringId = RandomUtil.GenerateId();
                 return new BeatmapObject(
-                    new BeatmapObjectId(stringId, numericId),
+                    new ObjectId(stringId, numericId),
                     positionKeyframes,
                     scaleKeyframes,
                     rotationKeyframes,
@@ -502,7 +475,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
                         {
                             var stringId = RandomUtil.GenerateId();
                             return new BeatmapObject(
-                                new BeatmapObjectId(stringId, numericId),
+                                new ObjectId(stringId, numericId),
                                 positionKeyframes,
                                 scaleKeyframes,
                                 rotationKeyframes,
@@ -531,26 +504,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         return timeline;
     }
 
-    // private Prefab CreatePrefab(IPrefab prefab, params object[] seeds)
-    // {
-    //     var objectDataLookup = prefab.BeatmapObjects
-    //         .Select(x => CreateBeatmapObjectData(x, seeds))
-    //         .ToDictionary(x => x.id, x => x);
-    //     
-    //     var beatmapObjectsDictionary = new Dictionary<string, BeatmapObject>();
-    //     var convertedPrefab = new Prefab
-    //     {
-    //         Id = ((IIdentifiable<string>) prefab).Id,
-    //         Name = prefab.Name,
-    //     };
-    //     
-    //     foreach (var (_, tuple) in objectDataLookup)
-    //         CreateBeatmapObjectRecursively(tuple, objectDataLookup, beatmapObjectsDictionary, convertedPrefab.RootObject);
-    //
-    //     return convertedPrefab;
-    // }
-
-    private BeatmapObjectFactory CreateBeatmapObjectFactory(IObject @object, string? id, params object[] seeds)
+    private IndexedItemFactory<BeatmapObject> CreateBeatmapObjectFactory(IObject @object, string? id, params object[] seeds)
     {
         var objectId = id ?? ((IIdentifiable<string>) @object).Id;
         var positionAnimation = EnumerateSequenceKeyframes(@object.PositionEvents, seeds: [..seeds, 0]);
@@ -580,7 +534,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
 
         // TODO: Flag empty objects
         return numericId => new BeatmapObject(
-            new BeatmapObjectId(objectId, numericId),
+            new ObjectId(objectId, numericId),
             positionAnimation,
             scaleAnimation,
             rotationAnimation,

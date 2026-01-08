@@ -146,7 +146,7 @@ public class AnimationRunner(
                 matrix *= MathUtil.CreateTranslation(position);
             }
 
-            if (!timeline.BeatmapObjects.TryGetParent(beatmapObject.Id.Int, out var parent) || parent is null) 
+            if (!timeline.BeatmapObjects.TryGetParent(beatmapObject.Id.Numeric, out var parent) || parent is null) 
                 break;
 
             var parentTypes = beatmapObject.ParentTypes;
