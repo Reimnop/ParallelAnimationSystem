@@ -1,9 +1,11 @@
+using System.Diagnostics;
 using Android.Content;
 using Android.Content.PM;
 using Android.Provider;
 using Google.Android.Material.Button;
 using Google.Android.Material.MaterialSwitch;
 using ParallelAnimationSystem.Core;
+using Activity = Android.App.Activity;
 using Uri = Android.Net.Uri;
 
 namespace ParallelAnimationSystem.Android;
@@ -23,10 +25,10 @@ public class MainActivity : Activity
     private MaterialSwitch enableTextRenderingSwitch = null!;
     private MaterialButton chooseBeatmapFileButton = null!;
     private MaterialButton chooseAudioFileButton = null!;
-    
-    private byte[]? beatmapData;
+
+    private Uri? beatmapPath;
     private BeatmapFormat beatmapFormat;
-    private byte[]? audioData;
+    private Uri? audioPath;
     
     protected override void OnCreate(Bundle? savedInstanceState)
     {
@@ -84,12 +86,7 @@ public class MainActivity : Activity
                 if (extension.Equals(".lsb", StringComparison.InvariantCultureIgnoreCase) ||
                     extension.Equals(".vgd", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    var contentResolver = ContentResolver!;
-                    using var stream = contentResolver.OpenInputStream(uri)!;
-                    
-                    beatmapData = new byte[stream.Length];
-                    _ = stream.Read(beatmapData, 0, beatmapData.Length);
-                    
+                    beatmapPath = uri;
                     beatmapFormat = extension.ToLowerInvariant() switch
                     {
                         ".lsb" => BeatmapFormat.Lsb,
@@ -103,11 +100,7 @@ public class MainActivity : Activity
             }
             case RequestCodeAudio:
             {
-                var contentResolver = ContentResolver!;
-                using var stream = contentResolver.OpenInputStream(uri)!;
-                
-                audioData = new byte[stream.Length];
-                _ = stream.Read(audioData, 0, audioData.Length);
+                audioPath = uri;
                 
                 chooseAudioFileButton.Text = fileName;
                 break;
@@ -117,8 +110,11 @@ public class MainActivity : Activity
 
     private string GetFileName(Uri uri)
     {
+        var contentResolver = ContentResolver;
+        Debug.Assert(contentResolver is not null);
+        
         string? fileName = null;
-        var cursor = ContentResolver!.Query(uri, null, null, null, null);
+        var cursor = contentResolver.Query(uri, null, null, null, null);
         if (cursor is null)
             return string.Empty;
         var nameIndex = cursor.GetColumnIndex(IOpenableColumns.DisplayName);
@@ -129,19 +125,19 @@ public class MainActivity : Activity
 
     private void OnStartButtonClick(object? sender, EventArgs e)
     {
-        if (beatmapData is null)
+        if (beatmapPath is null)
             return;
         
-        if (audioData is null)
+        if (audioPath is null)
             return;
-        
-        BeatmapDataTransfer.Put(beatmapData, audioData);
         
         var intent = new Intent(this, typeof(PasActivity));
         intent.PutExtra("lockAspectRatio", lockAspectRatioSwitch.Checked);
         intent.PutExtra("postProcessing", enablePostProcessingSwitch.Checked);
         intent.PutExtra("textRendering", enableTextRenderingSwitch.Checked);
+        intent.PutExtra("beatmapPath", beatmapPath);
         intent.PutExtra("beatmapFormat", (int) beatmapFormat);
+        intent.PutExtra("audioPath", audioPath);
         StartActivity(intent);
     }
 }

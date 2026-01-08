@@ -1,8 +1,9 @@
-using System.Text;
-using Android.Content;
+using System.Diagnostics;
 using Android.Content.PM;
 using Android.Views;
 using ParallelAnimationSystem.Core;
+using Activity = Android.App.Activity;
+using Uri = Android.Net.Uri;
 
 namespace ParallelAnimationSystem.Android;
 
@@ -26,22 +27,24 @@ public class PasActivity : Activity
                                                            | ConfigChanges.UiMode;
 
     private const LaunchMode DefaultLaunchMode = LaunchMode.SingleInstance;
-    
-    private bool shouldExit = false;
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
         
-        System.Diagnostics.Debug.Assert(Intent is not null);
-        System.Diagnostics.Debug.Assert(Window is not null);
-        
-        Window.AddFlags(WindowManagerFlags.KeepScreenOn);
+        Debug.Assert(Intent is not null);
+        Debug.Assert(Window is not null);
         
         // Get settings from intent extras
         var lockAspectRatio = Intent.GetBooleanExtra("lockAspectRatio", true);
         var enablePostProcessing = Intent.GetBooleanExtra("postProcessing", true);
         var enableTextRendering = Intent.GetBooleanExtra("textRendering", true);
+        var beatmapFormat = (BeatmapFormat) Intent.GetIntExtra("beatmapFormat", 0);
+        
+#pragma warning disable CA1422
+        var beatmapPath = Intent.GetParcelableExtra("beatmapPath") as Uri ?? throw new Exception("Beatmap path not provided in intent extras");
+        var audioPath = Intent.GetParcelableExtra("audioPath") as Uri ?? throw new Exception("Audio path not provided in intent extras");
+#pragma warning restore CA1422
         
         var appSettings = new AndroidAppSettings(
             1, 6,
@@ -50,47 +53,59 @@ public class PasActivity : Activity
             enablePostProcessing,
             enableTextRendering);
         
-        // Load beatmap data
-        var (beatmapData, audioData) = BeatmapDataTransfer.GetBeatmapData() ?? throw new Exception("Failed to load beatmap data");
-        
-        // Load audio
-        if (audioData is null)
-            throw new Exception("Failed to load audio data");
-        
-        // Load beatmap
-        var beatmapFormat = (BeatmapFormat) Intent.GetIntExtra("beatmapFormat", 0);
-        var beatmapString = Encoding.UTF8.GetString(beatmapData);
-        
         // Create graphics surface
-        var surface = new GraphicsSurface(this);
+        var surfaceView = new GraphicsSurfaceView(this);
         
         // Start the app
-        surface.SurfaceCreatedCallback = holder =>
+        surfaceView.SurfaceCreatedCallback = surfaceHolder =>
         {
-            var thread = new Thread(() => RunApp(appSettings, beatmapString, beatmapFormat, audioData, holder));
+            var thread = new Thread(() => 
+                RunApp(appSettings, beatmapPath, beatmapFormat, audioPath, surfaceView, surfaceHolder));
             thread.Start();
         };
         
-        surface.SurfaceDestroyedCallback = _ =>
-        {
-            shouldExit = true;
-            
-            // Navigate back to the previous activity
-            RunOnUiThread(() => StartActivity(new Intent(this, typeof(MainActivity))));
-        };
-        
-        SetContentView(surface);
+        SetContentView(surfaceView);
     }
 
-    private void RunApp(AndroidAppSettings appSettings, string beatmapString, BeatmapFormat beatmapFormat, byte[] audioData, ISurfaceHolder holder)
+    private void RunApp(
+        AndroidAppSettings appSettings,
+        Uri beatmapPath,
+        BeatmapFormat beatmapFormat,
+        Uri audioPath, 
+        GraphicsSurfaceView surfaceView,
+        ISurfaceHolder surfaceHolder)
     {
+        var contentResolver = ContentResolver;
+        Debug.Assert(contentResolver is not null);
+
+        string beatmapData;
+        using (var stream = contentResolver.OpenInputStream(beatmapPath))
+        {
+            if (stream is null)
+                throw new Exception("Failed to open beatmap stream");
+            
+            using var reader = new StreamReader(stream);
+            beatmapData = reader.ReadToEnd();
+        }
+
+        byte[] audioData;
+        using (var stream = contentResolver.OpenInputStream(audioPath))
+        {
+            if (stream is null)
+                throw new Exception("Failed to open audio stream");
+            
+            using var memoryStream = new MemoryStream();
+            stream.CopyTo(memoryStream);
+            audioData = memoryStream.ToArray();
+        }
+        
         using var audioStream = new MemoryStream(audioData);
         if (audioStream is null)
             throw new Exception("Failed to load audio stream");
         
         using var audioPlayer = AudioPlayer.Load(audioStream);
         
-        var startup = new AndroidStartup(appSettings, beatmapString, beatmapFormat, holder);
+        var startup = new AndroidStartup(appSettings, beatmapData, beatmapFormat, surfaceView, surfaceHolder);
         using var app = startup.InitializeApp();
             
         var beatmapRunner = app.BeatmapRunner;
@@ -100,7 +115,7 @@ public class PasActivity : Activity
         {
             // ReSharper disable once AccessToModifiedClosure
             // ReSharper disable once LoopVariableIsNeverChangedInsideLoop
-            while (!shouldExit)
+            while (!renderer.Window.ShouldClose)
                 // ReSharper disable once AccessToDisposedClosure
                 if (!beatmapRunner.ProcessFrame((float) audioPlayer.Position))
                     Thread.Yield();
@@ -110,11 +125,8 @@ public class PasActivity : Activity
         
         audioPlayer.Play();
 
-        while (!shouldExit)
+        while (!renderer.Window.ShouldClose)
         {
-            if (renderer.Window.ShouldClose)
-                shouldExit = true;
-            
             if (!renderer.ProcessFrame())
                 Thread.Yield();
         }

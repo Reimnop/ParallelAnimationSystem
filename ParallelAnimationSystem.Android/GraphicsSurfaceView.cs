@@ -9,13 +9,13 @@ public delegate void SurfaceCreatedCallback(ISurfaceHolder holder);
 public delegate void SurfaceDestroyedCallback(ISurfaceHolder holder);
 public delegate void SurfaceChangedCallback(ISurfaceHolder holder, Format format, int width, int height);
 
-public class GraphicsSurface : SurfaceView, ISurfaceHolderCallback
+public class GraphicsSurfaceView : SurfaceView, ISurfaceHolderCallback
 {
     public SurfaceCreatedCallback? SurfaceCreatedCallback { get; set; }
     public SurfaceDestroyedCallback? SurfaceDestroyedCallback { get; set; }
     public SurfaceChangedCallback? SurfaceChangedCallback { get; set; }
     
-    public GraphicsSurface(Context? p0) : base(p0)
+    public GraphicsSurfaceView(Context? p0) : base(p0)
     {
         var holder = Holder;
         Debug.Assert(holder is not null);

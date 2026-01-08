@@ -9,12 +9,21 @@ using IWindowManager = ParallelAnimationSystem.Windowing.IWindowManager;
 
 namespace ParallelAnimationSystem.Android;
 
-public class AndroidWindowManager(ISurfaceHolder holder) : IWindowManager, IDisposable
+public class AndroidWindowManager : IWindowManager, IDisposable
 {
     private const string LibAndroid = "libandroid.so";
     
     private AndroidWindow? window;
     private IntPtr aNativeWindowPtr;
+    
+    private readonly ISurfaceHolder surfaceHolder;
+
+    public AndroidWindowManager(GraphicsSurfaceView surfaceView, ISurfaceHolder surfaceHolder)
+    {
+        this.surfaceHolder = surfaceHolder;
+        
+        surfaceView.SurfaceDestroyedCallback = _ => window?.Close();
+    }
     
     public IWindow CreateWindow(string title, Vector2i size, GLContextSettings glContextSettings)
     {
@@ -23,10 +32,6 @@ public class AndroidWindowManager(ISurfaceHolder holder) : IWindowManager, IDisp
         
         if (!glContextSettings.ES)
             throw new NotSupportedException("Desktop OpenGL is not supported on Android, use OpenGL ES instead");
-        
-        // Get the Android surface from the holder
-        var androidSurface = holder.Surface;
-        Debug.Assert(androidSurface is not null);
         
         // Initialize EGL
         var display = Egl.GetDisplay(Egl.DEFAULT_DISPLAY);
@@ -60,16 +65,19 @@ public class AndroidWindowManager(ISurfaceHolder holder) : IWindowManager, IDisp
         if (context == IntPtr.Zero)
             throw new Exception("Failed to create EGL context");
         
-        aNativeWindowPtr = ANativeWindow_fromSurface(JNIEnv.Handle, androidSurface.Handle);
+        var surface = surfaceHolder.Surface;
+        Debug.Assert(surface is not null);
+        
+        aNativeWindowPtr = ANativeWindow_fromSurface(JNIEnv.Handle, surface.Handle);
         if (aNativeWindowPtr == IntPtr.Zero)
             throw new Exception("Failed to get ANativeWindow pointer from surface");
         
-        var surface = Egl.CreateWindowSurface(display, config, aNativeWindowPtr, IntPtr.Zero);
-        if (surface == IntPtr.Zero)
+        var windowSurface = Egl.CreateWindowSurface(display, config, aNativeWindowPtr, IntPtr.Zero);
+        if (windowSurface == IntPtr.Zero)
             throw new Exception("Failed to create EGL window surface");
         
         // Create window
-        window = new AndroidWindow(display, context, surface);
+        window = new AndroidWindow(display, context, windowSurface);
         return window;
     }
 

@@ -10,7 +10,12 @@ using IWindowManager = ParallelAnimationSystem.Windowing.IWindowManager;
 
 namespace ParallelAnimationSystem.Android;
 
-public class AndroidStartup(IAppSettings appSettings, string beatmapData, BeatmapFormat beatmapFormat, ISurfaceHolder holder) : IStartup
+public class AndroidStartup(
+    IAppSettings appSettings,
+    string beatmapData,
+    BeatmapFormat beatmapFormat, 
+    GraphicsSurfaceView surfaceView,
+    ISurfaceHolder surfaceHolder) : IStartup
 {
     private const string LogcatTag = "ParallelAnimationSystem";
 
@@ -23,7 +28,7 @@ public class AndroidStartup(IAppSettings appSettings, string beatmapData, Beatma
         => null;
 
     public IWindowManager CreateWindowManager(IServiceProvider serviceProvider)
-        => new AndroidWindowManager(holder);
+        => new AndroidWindowManager(surfaceView, surfaceHolder);
 
     public IRenderer CreateRenderer(IServiceProvider serviceProvider)
         => new Renderer(
