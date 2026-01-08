@@ -1,3 +1,4 @@
+using Android.Views;
 using MattiasCibien.Extensions.Logging.Logcat;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -5,11 +6,11 @@ using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.OpenGLES;
-using ParallelAnimationSystem.Windowing;
+using IWindowManager = ParallelAnimationSystem.Windowing.IWindowManager;
 
 namespace ParallelAnimationSystem.Android;
 
-public class AndroidStartup(IAppSettings appSettings, string beatmapData, BeatmapFormat beatmapFormat) : IStartup
+public class AndroidStartup(IAppSettings appSettings, string beatmapData, BeatmapFormat beatmapFormat, ISurfaceHolder holder) : IStartup
 {
     private const string LogcatTag = "ParallelAnimationSystem";
 
@@ -22,7 +23,7 @@ public class AndroidStartup(IAppSettings appSettings, string beatmapData, Beatma
         => null;
 
     public IWindowManager CreateWindowManager(IServiceProvider serviceProvider)
-        => new AndroidWindowManager();
+        => new AndroidWindowManager(holder);
 
     public IRenderer CreateRenderer(IServiceProvider serviceProvider)
         => new Renderer(

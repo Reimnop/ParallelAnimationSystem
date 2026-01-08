@@ -1,7 +1,7 @@
 using System.Text;
 using Android.Content;
 using Android.Content.PM;
-using Org.Libsdl.App;
+using Android.Views;
 using ParallelAnimationSystem.Core;
 
 namespace ParallelAnimationSystem.Android;
@@ -13,11 +13,8 @@ namespace ParallelAnimationSystem.Android;
     ConfigurationChanges = DefaultConfigChanges,
     LaunchMode = DefaultLaunchMode,
     ScreenOrientation = ScreenOrientation.Landscape)]
-public class PasActivity : SDLActivity
+public class PasActivity : Activity
 {
-    public static AndroidSurface? Surface => MSurface as AndroidSurface;
-    public static bool SurfaceReady => Surface?.SurfaceReady ?? false;
-    
     private const ConfigChanges DefaultConfigChanges = ConfigChanges.Keyboard
                                                            | ConfigChanges.KeyboardHidden
                                                            | ConfigChanges.Navigation
@@ -30,12 +27,21 @@ public class PasActivity : SDLActivity
 
     private const LaunchMode DefaultLaunchMode = LaunchMode.SingleInstance;
     
-    // This can be treated as our program's entry point on Android
-    protected override void Main()
+    private bool shouldExit = false;
+
+    protected override void OnCreate(Bundle? savedInstanceState)
     {
-        var lockAspectRatio = Intent!.GetBooleanExtra("lockAspectRatio", true);
-        var enablePostProcessing = Intent!.GetBooleanExtra("postProcessing", true);
-        var enableTextRendering = Intent!.GetBooleanExtra("textRendering", true);
+        base.OnCreate(savedInstanceState);
+        
+        System.Diagnostics.Debug.Assert(Intent is not null);
+        System.Diagnostics.Debug.Assert(Window is not null);
+        
+        Window.AddFlags(WindowManagerFlags.KeepScreenOn);
+        
+        // Get settings from intent extras
+        var lockAspectRatio = Intent.GetBooleanExtra("lockAspectRatio", true);
+        var enablePostProcessing = Intent.GetBooleanExtra("postProcessing", true);
+        var enableTextRendering = Intent.GetBooleanExtra("textRendering", true);
         
         var appSettings = new AndroidAppSettings(
             1, 6,
@@ -44,55 +50,77 @@ public class PasActivity : SDLActivity
             enablePostProcessing,
             enableTextRendering);
         
+        // Load beatmap data
         var (beatmapData, audioData) = BeatmapDataTransfer.GetBeatmapData() ?? throw new Exception("Failed to load beatmap data");
         
-        var beatmapFormat = (BeatmapFormat) Intent.GetIntExtra("beatmapFormat", 0);
-        var beatmapString = Encoding.UTF8.GetString(beatmapData);
-        
-        var startup = new AndroidStartup(appSettings, beatmapString, beatmapFormat);
-        using var app = startup.InitializeApp();
-        
+        // Load audio
         if (audioData is null)
             throw new Exception("Failed to load audio data");
         
+        // Load beatmap
+        var beatmapFormat = (BeatmapFormat) Intent.GetIntExtra("beatmapFormat", 0);
+        var beatmapString = Encoding.UTF8.GetString(beatmapData);
+        
+        // Create graphics surface
+        var surface = new GraphicsSurface(this);
+        
+        // Start the app
+        surface.SurfaceCreatedCallback = holder =>
+        {
+            var thread = new Thread(() => RunApp(appSettings, beatmapString, beatmapFormat, audioData, holder));
+            thread.Start();
+        };
+        
+        surface.SurfaceDestroyedCallback = _ =>
+        {
+            shouldExit = true;
+            
+            // Navigate back to the previous activity
+            RunOnUiThread(() => StartActivity(new Intent(this, typeof(MainActivity))));
+        };
+        
+        SetContentView(surface);
+    }
+
+    private void RunApp(AndroidAppSettings appSettings, string beatmapString, BeatmapFormat beatmapFormat, byte[] audioData, ISurfaceHolder holder)
+    {
         using var audioStream = new MemoryStream(audioData);
         if (audioStream is null)
             throw new Exception("Failed to load audio stream");
         
         using var audioPlayer = AudioPlayer.Load(audioStream);
         
+        var startup = new AndroidStartup(appSettings, beatmapString, beatmapFormat, holder);
+        using var app = startup.InitializeApp();
+            
         var beatmapRunner = app.BeatmapRunner;
         var renderer = app.Renderer;
-        
-        var appShutdown = false;
-        var appThread = new Thread(() =>
+                
+        var logicThread = new Thread(() =>
         {
             // ReSharper disable once AccessToModifiedClosure
             // ReSharper disable once LoopVariableIsNeverChangedInsideLoop
-            while (!appShutdown)
+            while (!shouldExit)
                 // ReSharper disable once AccessToDisposedClosure
                 if (!beatmapRunner.ProcessFrame((float) audioPlayer.Position))
                     Thread.Yield();
         });
-        appThread.Start();
+                
+        logicThread.Start();
         
         audioPlayer.Play();
-        
-        // Enter the render loop
-        while (!renderer.Window.ShouldClose)
-            if (!SurfaceReady || !renderer.ProcessFrame())
+
+        while (!shouldExit)
+        {
+            if (renderer.Window.ShouldClose)
+                shouldExit = true;
+            
+            if (!renderer.ProcessFrame())
                 Thread.Yield();
+        }
         
-        // When renderer exits, we'll shut down the services
-        appShutdown = true;
+        logicThread.Join();
         
-        // Wait for the app thread to finish
-        appThread.Join();
+        audioPlayer.Stop();
     }
-
-    protected override SDLSurface CreateSDLSurface(Context? p0)
-        => new AndroidSurface(p0);
-
-    protected override string[] GetLibraries()
-        => ["SDL3"];
 }
