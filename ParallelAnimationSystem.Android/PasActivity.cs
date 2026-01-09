@@ -17,16 +17,7 @@ namespace ParallelAnimationSystem.Android;
     ScreenOrientation = ScreenOrientation.Landscape)]
 public class PasActivity : Activity
 {
-    private const ConfigChanges DefaultConfigChanges = ConfigChanges.Keyboard
-                                                           | ConfigChanges.KeyboardHidden
-                                                           | ConfigChanges.Navigation
-                                                           | ConfigChanges.Orientation
-                                                           | ConfigChanges.ScreenLayout
-                                                           | ConfigChanges.ScreenSize
-                                                           | ConfigChanges.SmallestScreenSize
-                                                           | ConfigChanges.Touchscreen
-                                                           | ConfigChanges.UiMode;
-
+    private const ConfigChanges DefaultConfigChanges = (ConfigChanges) ~0;
     private const LaunchMode DefaultLaunchMode = LaunchMode.SingleTask;
 
     protected override void OnCreate(Bundle? savedInstanceState)
