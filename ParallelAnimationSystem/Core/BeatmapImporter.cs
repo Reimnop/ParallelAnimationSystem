@@ -556,8 +556,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             KillTimeOffset = @object.AutoKillOffset,
             Origin = origin,
             RenderDepth = @object.RenderDepth,
-            ShapeCategoryIndex = (int) @object.Shape,
-            ShapeIndex = @object.ShapeOption,
+            Shape = @object.Shape,
         };
     }
     

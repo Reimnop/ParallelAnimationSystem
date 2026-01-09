@@ -198,17 +198,18 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
             var beatmapObject = perFrameObjectData.BeatmapObject;
             Debug.Assert(beatmapObject is not null);
             
-            if (beatmapObject.ShapeCategoryIndex != 4) // 4 is text
+            var shapeIndex = (int) beatmapObject.Shape & 0xffff;
+            var shapeOptionIndex = (int) beatmapObject.Shape >> 16;
+            
+            if (shapeIndex != 4) // 4 is text
             {
-                var shapeCategory = beatmapObject.ShapeCategoryIndex;
-                if (shapeCategory >= 0 && shapeCategory < meshes.Count)
+                if (shapeIndex >= 0 && shapeIndex < meshes.Count)
                 {
-                    var shapeIndex = beatmapObject.ShapeIndex;
-                    var meshCategory = meshes[shapeCategory];
+                    var meshOptionList = meshes[shapeIndex];
 
-                    if (shapeIndex >= 0 && shapeIndex < meshCategory.Count)
+                    if (shapeOptionIndex >= 0 && shapeOptionIndex < meshOptionList.Count)
                     {
-                        var mesh = meshCategory[beatmapObject.ShapeIndex];
+                        var mesh = meshOptionList[shapeOptionIndex];
                         var renderMode = beatmapObject.RenderMode;
                         
                         var color1 = beatmapObjectColor.Color1;

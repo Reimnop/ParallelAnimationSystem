@@ -82,17 +82,10 @@ public class BeatmapObject(
     }
     
     // "Shape" in PA
-    public int ShapeCategoryIndex
+    public ObjectShape Shape
     {
-        get => shapeCategoryIndex;
-        set => SetField(ref shapeCategoryIndex, value);
-    }
-    
-    // "Shape Option" in PA
-    public int ShapeIndex
-    {
-        get => shapeIndex;
-        set => SetField(ref shapeIndex, value);
+        get => shape;
+        set => SetField(ref shape, value);
     }
 
     public Sequence<PositionScaleKeyframe, object?, Vector2> PositionSequence { get; } = new(
@@ -132,8 +125,7 @@ public class BeatmapObject(
     private float startTime = 0f;
     private float killTimeOffset = 0f;
 
-    private int shapeCategoryIndex = 0;
-    private int shapeIndex = 0;
+    private ObjectShape shape = ObjectShape.SquareSolid;
 
     public float CalculateKillTime(float startTimeOffset)
     {
