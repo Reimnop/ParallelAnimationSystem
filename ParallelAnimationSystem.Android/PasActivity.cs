@@ -11,6 +11,7 @@ namespace ParallelAnimationSystem.Android;
     Label = "@string/app_name",
     Theme = "@android:style/Theme.Black.NoTitleBar.Fullscreen",
     HardwareAccelerated = false,
+    AlwaysRetainTaskState = true,
     ConfigurationChanges = DefaultConfigChanges,
     LaunchMode = DefaultLaunchMode,
     ScreenOrientation = ScreenOrientation.Landscape)]
@@ -26,7 +27,7 @@ public class PasActivity : Activity
                                                            | ConfigChanges.Touchscreen
                                                            | ConfigChanges.UiMode;
 
-    private const LaunchMode DefaultLaunchMode = LaunchMode.SingleInstance;
+    private const LaunchMode DefaultLaunchMode = LaunchMode.SingleTask;
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
