@@ -5,6 +5,8 @@ namespace ParallelAnimationSystem.Core.Beatmap;
 
 public class PrefabInstance(ObjectId id) : IIndexedObject, INotifyPropertyChanged
 {
+    public event PropertyChangedEventHandler? PropertyChanged;
+    
     public ObjectId Id { get; } = id;
 
     public string Name
@@ -13,9 +15,14 @@ public class PrefabInstance(ObjectId id) : IIndexedObject, INotifyPropertyChange
         set => SetField(ref name, value);
     }
     
-    private string name = string.Empty;
+    public float StartTime
+    {
+        get => startTime;
+        set => SetField(ref startTime, value);
+    }
     
-    public event PropertyChangedEventHandler? PropertyChanged;
+    private string name = string.Empty;
+    private float startTime = 0f;
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {

@@ -1,9 +1,10 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core.Beatmap;
 
-public class PrefabsContainer
+public class PrefabsContainer : IDisposable
 {
     public class PrefabInstancePrefabChangedEventArgs(PrefabInstance prefabInstance, Prefab? oldPrefab, Prefab? newPrefab) : EventArgs
     {
@@ -12,12 +13,154 @@ public class PrefabsContainer
         public Prefab? NewPrefab => newPrefab;
     }
     
-    private class PrefabInstanceNode(PrefabInstance prefabInstance) : IIndexedObject
+    private class PrefabInstanceNode : IIndexedObject, IDisposable
     {
+        public event EventHandler? KillTimeChanged; 
+        
         public ObjectId Id => PrefabInstance.Id;
         
-        public PrefabInstance PrefabInstance { get; } = prefabInstance;
-        public int? Prefab { get; set; } = null;
+        public PrefabInstance PrefabInstance { get; }
+
+        public int? Prefab
+        {
+            get => prefabNumericId;
+            set
+            {
+                if (prefabNumericId != value)
+                {
+                    UnloadPrefab(prefabNumericId);
+                    prefabNumericId = value;
+                    LoadPrefab(prefabNumericId);
+                    
+                    killTimeDirty = true;
+                }
+            }
+        }
+
+        public float KillTime
+        {
+            get
+            {
+                if (!killTimeDirty) 
+                    return cachedKillTime;
+                
+                killTimeDirty = false;
+                cachedKillTime = CalculateKillTime();
+                return cachedKillTime;
+            }
+        }
+
+        private float cachedKillTime = float.NegativeInfinity;
+        private bool killTimeDirty = false;
+        private int? prefabNumericId = null;
+
+        private readonly PrefabsContainer container;
+
+        public PrefabInstanceNode(PrefabInstance prefabInstance, PrefabsContainer container)
+        {
+            PrefabInstance = prefabInstance;
+            this.container = container;
+            
+            // Subscribe to events
+            PrefabInstance.PropertyChanged += OnPrefabInstancePropertyChanged;
+        }
+        
+        public void Dispose()
+        {
+            // Unsubscribe from events
+            PrefabInstance.PropertyChanged -= OnPrefabInstancePropertyChanged;
+            
+            // Unload prefab
+            UnloadPrefab(prefabNumericId);
+        }
+
+        private void OnPrefabInstancePropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(PrefabInstance.StartTime))
+            {
+                killTimeDirty = true;
+                KillTimeChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
+
+        private void LoadPrefab(int? prefabNumericId)
+        {
+            var prefab = GetPrefab(prefabNumericId);
+            if (prefab is null)
+                return;
+            
+            // Subscribe to events
+            var beatmapObjects = prefab.BeatmapObjects;
+            beatmapObjects.BeatmapObjectAdded += OnPrefabBeatmapObjectAdded;
+            beatmapObjects.BeatmapObjectRemoved += OnPrefabBeatmapObjectRemoved;
+            
+            foreach (var obj in beatmapObjects)
+                obj.PropertyChanged += OnPrefabBeatmapObjectPropertyChanged;
+        }
+        
+        private void UnloadPrefab(int? prefabNumericId)
+        {
+            var prefab = GetPrefab(prefabNumericId);
+            if (prefab is null)
+                return;
+            
+            // Unsubscribe from events
+            var beatmapObjects = prefab.BeatmapObjects;
+            beatmapObjects.BeatmapObjectAdded -= OnPrefabBeatmapObjectAdded;
+            beatmapObjects.BeatmapObjectRemoved -= OnPrefabBeatmapObjectRemoved;
+            
+            foreach (var obj in beatmapObjects)
+                obj.PropertyChanged -= OnPrefabBeatmapObjectPropertyChanged;
+        }
+
+        private void OnPrefabBeatmapObjectAdded(object? sender, BeatmapObject e)
+        {
+            killTimeDirty = true;
+            
+            // Subscribe to property changed event
+            e.PropertyChanged += OnPrefabBeatmapObjectPropertyChanged;
+            
+            KillTimeChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void OnPrefabBeatmapObjectRemoved(object? sender, BeatmapObject e)
+        {
+            killTimeDirty = true;
+            
+            // Unsubscribe from property changed event
+            e.PropertyChanged -= OnPrefabBeatmapObjectPropertyChanged;
+            
+            KillTimeChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void OnPrefabBeatmapObjectPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName is nameof(BeatmapObject.StartTime) or nameof(BeatmapObject.KillTimeOffset) or nameof(BeatmapObject.AutoKillType))
+            {
+                killTimeDirty = true;
+                KillTimeChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
+
+        private float CalculateKillTime()
+        {
+            var prefab = GetPrefab(Prefab);
+            if (prefab is null)
+                return float.NegativeInfinity;
+            
+            return prefab.CalculateKillTime(PrefabInstance.StartTime);
+        }
+
+        private Prefab? GetPrefab(int? prefabNumericId)
+        {
+            if (!prefabNumericId.HasValue)
+                return null;
+            
+            if (!container.TryGetPrefabInstancePrefab(prefabNumericId.Value, out var prefab))
+                return null;
+
+            return prefab;
+        }
     }
     
     private class PrefabNode(Prefab prefab) : IIndexedObject
@@ -29,6 +172,7 @@ public class PrefabsContainer
     }
     
     public event EventHandler<PrefabInstancePrefabChangedEventArgs>? PrefabInstancePrefabChanged;
+    public event EventHandler<PrefabInstance>? PrefabInstanceKillTimeChanged;
     public event EventHandler<PrefabInstance>? PrefabInstanceAdded;
     public event EventHandler<PrefabInstance>? PrefabInstanceRemoved;
     public event EventHandler<Prefab>? PrefabAdded;
@@ -49,6 +193,12 @@ public class PrefabsContainer
         prefabInstanceNodes.ItemRemoved += (_, node) => PrefabInstanceRemoved?.Invoke(this, node.PrefabInstance);
         prefabNodes.ItemAdded += (_, node) => PrefabAdded?.Invoke(this, node.Prefab);
         prefabNodes.ItemRemoved += (_, node) => PrefabRemoved?.Invoke(this, node.Prefab);
+    }
+    
+    public void Dispose()
+    {
+        foreach (var prefabInstanceNode in prefabInstanceNodes)
+            prefabInstanceNode.Dispose();
     }
     
     public Prefab AddPrefab(IndexedItemFactory<Prefab> factory)
@@ -80,7 +230,19 @@ public class PrefabsContainer
     }
 
     public PrefabInstance AddPrefabInstance(IndexedItemFactory<PrefabInstance> factory)
-        => prefabInstanceNodes.Add(numericId => new PrefabInstanceNode(factory(numericId))).PrefabInstance;
+    {
+        var node = prefabInstanceNodes.Add(numericId => new PrefabInstanceNode(factory(numericId), this));
+        node.KillTimeChanged += OnPrefabInstanceKillTimeChanged;
+        return node.PrefabInstance;
+    }
+
+    private void OnPrefabInstanceKillTimeChanged(object? sender, EventArgs e)
+    {
+        if (sender is not PrefabInstanceNode node)
+            return;
+        
+        PrefabInstanceKillTimeChanged?.Invoke(this, node.PrefabInstance);
+    }
 
     public bool RemovePrefabInstance(string id)
     {
@@ -102,6 +264,9 @@ public class PrefabsContainer
             // Remove from prefab's instances list
             prefabNode.PrefabInstances.Remove(numericId);
         }
+        
+        // Dispose prefab instance node
+        prefabInstanceNode.Dispose();
         
         return prefabInstanceNodes.Remove(numericId);
     }
@@ -160,6 +325,30 @@ public class PrefabsContainer
             return true;
         }
         
+        return false;
+    }
+    
+    public bool TryGetPrefabInstanceKillTime(string id, out float killTime)
+    {
+        if (prefabInstanceNodes.TryGet(id, out var prefabInstanceNode))
+        {
+            killTime = prefabInstanceNode.KillTime;
+            return true;
+        }
+
+        killTime = float.NegativeInfinity;
+        return false;
+    }
+    
+    public bool TryGetPrefabInstanceKillTime(int id, out float killTime)
+    {
+        if (prefabInstanceNodes.TryGet(id, out var prefabInstanceNode))
+        {
+            killTime = prefabInstanceNode.KillTime;
+            return true;
+        }
+
+        killTime = float.NegativeInfinity;
         return false;
     }
     

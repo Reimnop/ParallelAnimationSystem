@@ -5,6 +5,8 @@ namespace ParallelAnimationSystem.Core.Beatmap;
 
 public class Prefab(ObjectId id) : IIndexedObject, INotifyPropertyChanged
 {
+    public event PropertyChangedEventHandler? PropertyChanged;
+    
     public ObjectId Id { get; } = id;
 
     public string Name
@@ -23,8 +25,6 @@ public class Prefab(ObjectId id) : IIndexedObject, INotifyPropertyChanged
     
     private string name = string.Empty;
     private float offset = 0f;
-    
-    public event PropertyChangedEventHandler? PropertyChanged;
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
@@ -37,5 +37,18 @@ public class Prefab(ObjectId id) : IIndexedObject, INotifyPropertyChanged
         field = value;
         OnPropertyChanged(propertyName);
         return true;
+    }
+    
+    public float CalculateKillTime(float instanceStartTime)
+    {
+        var killTime = float.NegativeInfinity;
+        
+        foreach (var obj in BeatmapObjects)
+        {
+            var objectKillTime = obj.CalculateKillTime(instanceStartTime);
+            killTime = MathF.Max(killTime, objectKillTime);
+        }
+
+        return killTime;
     }
 }
