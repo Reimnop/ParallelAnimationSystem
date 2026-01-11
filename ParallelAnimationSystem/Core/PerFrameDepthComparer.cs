@@ -4,9 +4,8 @@ using ParallelAnimationSystem.Core.Data;
 
 namespace ParallelAnimationSystem.Core;
 
-public struct PerFrameDepthComparer : IComparer<PerFrameBeatmapObjectData>
+public class PerFrameDepthComparer : IComparer<PerFrameBeatmapObjectData>
 {
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int Compare(PerFrameBeatmapObjectData? x, PerFrameBeatmapObjectData? y)
     {
         Debug.Assert(x is not null);
