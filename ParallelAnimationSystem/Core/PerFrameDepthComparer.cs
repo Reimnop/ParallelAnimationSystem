@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using ParallelAnimationSystem.Core.Data;
 
 namespace ParallelAnimationSystem.Core;
@@ -27,8 +26,8 @@ public class PerFrameDepthComparer : IComparer<PerFrameBeatmapObjectData>
             return startTimeComparison;
         
         // Hash both IDs
-        var xIdHash = x.BeatmapObject.Id.String.GetHashCode();
-        var yIdHash = y.BeatmapObject.Id.String.GetHashCode();
+        var xIdHash = x.BeatmapObject.Id.Hash.GetHashCode();
+        var yIdHash = y.BeatmapObject.Id.Hash.GetHashCode();
         
         // Compare the hashes
         return xIdHash.CompareTo(yIdHash);
