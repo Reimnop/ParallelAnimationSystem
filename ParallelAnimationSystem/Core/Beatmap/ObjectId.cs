@@ -6,7 +6,7 @@ public record struct ObjectId(string String, int Numeric)
     
     private int? hashCache = null;
     
-    private int ComputeHash()
+    private int ComputeHash() // FNV-1a hash
     {
         var hash = 2166136261u;
         foreach (var c in String)
