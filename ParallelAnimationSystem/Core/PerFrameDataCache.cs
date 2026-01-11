@@ -16,8 +16,9 @@ public class PerFrameDataCache : IReadOnlyList<PerFrameBeatmapObjectData>
             cache.Add(new PerFrameBeatmapObjectData());
     }
     
-    public void SetCount(int newCount)
+    public void EnsureSize(int size)
     {
+        var newCount = Math.Max(size, count);
         while (cache.Count < newCount)
             cache.Add(new PerFrameBeatmapObjectData());
         count = newCount;
@@ -32,7 +33,7 @@ public class PerFrameDataCache : IReadOnlyList<PerFrameBeatmapObjectData>
     {
         cache.Sort(0, count, comparer);
     }
-        
+    
     public IEnumerator<PerFrameBeatmapObjectData> GetEnumerator()
     {
         for (var i = 0; i < count; i++)

@@ -10,7 +10,7 @@ public class BeatmapObjectsProcessor(PerFrameDataCache cache, Timeline timeline)
     {
         var aliveObjects = timeline.AliveObjects;
         
-        cache.SetCount(cacheIndexOffset + aliveObjects.Count);
+        cache.EnsureSize(cacheIndexOffset + aliveObjects.Count);
         Parallel.ForEach(aliveObjects, parallelOptions, (item, _, index) => 
             ProcessBeatmapObject(item, time, themeColorState, cacheIndexOffset + (int) index));
     }
