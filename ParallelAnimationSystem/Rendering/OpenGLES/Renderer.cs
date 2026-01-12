@@ -3,7 +3,8 @@ using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGLES2;
-using OpenTK.Mathematics;
+using System.Numerics;
+using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering.Common;
 using ParallelAnimationSystem.Rendering.OpenGLES.PostProcessing;
@@ -289,7 +290,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
             var indexBufferHandle = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, indexBufferHandle);
             
-            var vertexBufferSize = verticesBuffer.Length * Vector2.SizeInBytes;
+            var vertexBufferSize = verticesBuffer.Length * Unsafe.SizeOf<Vector2>();
             var indexBufferSize = indicesBuffer.Length * sizeof(int);
         
             GL.BufferData(BufferTarget.ArrayBuffer, vertexBufferSize, verticesBuffer, BufferUsage.StaticDraw);
@@ -300,7 +301,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
             GL.BindVertexArray(vertexArrayHandle);
         
             GL.EnableVertexAttribArray(0);
-            GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, Vector2.SizeInBytes, 0);
+            GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, Unsafe.SizeOf<Vector2>(), 0);
             
             // Set mesh handle data
             meshHandle.VertexArrayHandle = vertexArrayHandle;
@@ -441,7 +442,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         UpdateOpenGlData(renderSize);
         
         // Get camera matrix (view and projection)
-        var camera = GetCameraMatrix(drawList.CameraData, renderSize);
+        var camera = RenderUtil.GetCameraMatrix(drawList.CameraData, renderSize);
         
         // Split draw list into opaque and transparent
         opaqueDrawData.Clear();
@@ -566,7 +567,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         return texture1;
     }
     
-    private void RenderDrawDataList(IReadOnlyList<DrawData> drawDataList, Matrix3 camera)
+    private void RenderDrawDataList(IReadOnlyList<DrawData> drawDataList, Matrix3x2 camera)
     {
         foreach (var drawData in drawDataList)
         {
@@ -583,7 +584,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
                     // Set transform
                     unsafe
                     {
-                        GL.UniformMatrix3fv(mvpUniformLocation, 1, false, (float*)&transform);
+                        GL.UniformMatrix3x2fv(mvpUniformLocation, 1, false, (float*)&transform);
                     }
             
                     GL.Uniform1f(zUniformLocation, RenderUtil.EncodeIntDepth(drawData.Index));
@@ -644,17 +645,6 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
                     break;
             }
         }
-    }
-    
-    private static Matrix3 GetCameraMatrix(CameraData camera, Vector2i size)
-    {
-        var aspectRatio = size.X / (float) size.Y;
-        var view = Matrix3.Invert(
-            MathUtil.CreateScale(Vector2.One * camera.Scale) *
-            MathUtil.CreateRotation(camera.Rotation) *
-            MathUtil.CreateTranslation(camera.Position));
-        var projection = Matrix3.CreateScale(1.0f / aspectRatio, 1.0f, 1.0f);
-        return view * projection;
     }
     
     private void UpdateOpenGlData(Vector2i size)

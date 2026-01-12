@@ -1,11 +1,11 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using OpenTK.Mathematics;
+using System.Numerics;
 using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core.Animation;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Data;
-using ParallelAnimationSystem.Util;
+using ParallelAnimationSystem.Mathematics;
 
 namespace ParallelAnimationSystem.Core.Beatmap;
 

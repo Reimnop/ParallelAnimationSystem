@@ -1,5 +1,5 @@
 using System.Runtime.InteropServices;
-using OpenTK.Mathematics;
+using System.Numerics;
 
 namespace ParallelAnimationSystem.Rendering.OpenGL;
 

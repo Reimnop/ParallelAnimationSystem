@@ -1,5 +1,5 @@
-using OpenTK.Mathematics;
-using ParallelAnimationSystem.Util;
+using System.Numerics;
+using ParallelAnimationSystem.Mathematics;
 
 namespace ParallelAnimationSystem.Core.Data;
 

@@ -1,4 +1,4 @@
-using OpenTK.Mathematics;
+using System.Numerics;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Data;
 
@@ -10,6 +10,6 @@ public interface IDrawList
     PostProcessingData PostProcessingData { get; set; }
     ColorRgba ClearColor { get; set; }
     
-    void AddMesh(IMeshHandle mesh, Matrix3 transform, ColorRgba color1, ColorRgba color2, RenderMode renderMode);
-    void AddText(ITextHandle text, Matrix3 transform, ColorRgba color);
+    void AddMesh(IMeshHandle mesh, Matrix3x2 transform, ColorRgba color1, ColorRgba color2, RenderMode renderMode);
+    void AddText(ITextHandle text, Matrix3x2 transform, ColorRgba color);
 }

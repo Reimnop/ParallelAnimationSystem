@@ -1,4 +1,4 @@
-using OpenTK.Mathematics;
+using ParallelAnimationSystem.Mathematics;
 
 namespace ParallelAnimationSystem.Desktop;
 

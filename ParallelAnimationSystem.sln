@@ -33,6 +33,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParallelAnimationSystem.Was
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParallelAnimationSystem.FFmpeg", "ParallelAnimationSystem.FFmpeg\ParallelAnimationSystem.FFmpeg.csproj", "{E06FD357-FB06-4E56-9B44-8AB924E001C5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParallelAnimationSystem.Mathematics", "ParallelAnimationSystem.Mathematics\ParallelAnimationSystem.Mathematics.csproj", "{2CD33E13-9FEC-48A9-912A-BA828161B056}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -93,6 +95,10 @@ Global
 		{E06FD357-FB06-4E56-9B44-8AB924E001C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E06FD357-FB06-4E56-9B44-8AB924E001C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E06FD357-FB06-4E56-9B44-8AB924E001C5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2CD33E13-9FEC-48A9-912A-BA828161B056}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2CD33E13-9FEC-48A9-912A-BA828161B056}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2CD33E13-9FEC-48A9-912A-BA828161B056}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2CD33E13-9FEC-48A9-912A-BA828161B056}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

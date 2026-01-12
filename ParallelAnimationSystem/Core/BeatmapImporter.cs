@@ -1,7 +1,7 @@
 using System.IO.Hashing;
 using System.Text;
 using Microsoft.Extensions.Logging;
-using OpenTK.Mathematics;
+using System.Numerics;
 using Pamx.Common;
 using Pamx.Common.Data;
 using Pamx.Common.Enum;
@@ -11,6 +11,7 @@ using ParallelAnimationSystem.Core.Beatmap;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Util;
+using ParallelAnimationSystem.Mathematics;
 using BeatmapObject = ParallelAnimationSystem.Core.Beatmap.BeatmapObject;
 
 namespace ParallelAnimationSystem.Core;
@@ -256,7 +257,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             {
                 Time = x.Time,
                 Ease = x.Ease,
-                Value = MathHelper.DegreesToRadians(x.Value),
+                Value = MathUtil.DegreesToRadians(x.Value),
             });
         return new Sequence<SequenceKeyframe<float>, object?, float>(keyframes, SequenceKeyframe<float>.ResolveToValue, MathUtil.Lerp);
     }
@@ -292,7 +293,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
                 {
                     Time = x.Time,
                     Ease = x.Ease,
-                    Value = MathHelper.DegreesToRadians(x.Value),
+                    Value = MathUtil.DegreesToRadians(x.Value),
                 });
             return new Sequence<SequenceKeyframe<float>, object?, float>(keyframes, SequenceKeyframe<float>.ResolveToValue, MathUtil.Lerp);
         }
@@ -414,7 +415,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
                 {
                     Time = 0.0f,
                     Ease = Ease.Linear,
-                    Value = MathHelper.DegreesToRadians(prefabInstance.Rotation),
+                    Value = MathUtil.DegreesToRadians(prefabInstance.Rotation),
                 }
             };
         
@@ -602,7 +603,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         foreach (var @event in events)
         {
             var time = @event.Time;
-            var newValue = MathHelper.DegreesToRadians(ParseRandomFloat(@event, [..seeds, i++]));
+            var newValue = MathUtil.DegreesToRadians(ParseRandomFloat(@event, [..seeds, i++]));
             value = additive ? value + newValue : newValue;
             yield return new RotationKeyframe
             {
@@ -623,14 +624,14 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             _ => keyframe.Value
         };
 
-    private System.Numerics.Vector2 ParseRandomVector2(Keyframe<System.Numerics.Vector2> keyframe, params object[] seeds)
+    private Vector2 ParseRandomVector2(Keyframe<Vector2> keyframe, params object[] seeds)
         => keyframe.RandomMode switch
         {
             RandomMode.None => keyframe.Value,
-            RandomMode.Range => new System.Numerics.Vector2(
+            RandomMode.Range => new Vector2(
                 RoundToNearest(RandomRange(keyframe.Value.X, keyframe.RandomValue.X, [..seeds, 0]), keyframe.RandomInterval),
                 RoundToNearest(RandomRange(keyframe.Value.Y, keyframe.RandomValue.Y, [..seeds, 1]), keyframe.RandomInterval)),
-            RandomMode.Snap => new System.Numerics.Vector2(
+            RandomMode.Snap => new Vector2(
                 MathF.Round(RandomRange(keyframe.Value.X, keyframe.Value.X + keyframe.RandomInterval, [..seeds, 0])),
                 MathF.Round(RandomRange(keyframe.Value.Y, keyframe.Value.Y + keyframe.RandomInterval, [..seeds, 1]))),
             RandomMode.Select => RandomRange(0.0f, 1.0f, seeds) < 0.5f ? keyframe.Value : keyframe.RandomValue,

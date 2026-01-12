@@ -1,5 +1,5 @@
 using OpenTK.Graphics.OpenGLES2;
-using OpenTK.Mathematics;
+using ParallelAnimationSystem.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using ParallelAnimationSystem.Windowing;
 

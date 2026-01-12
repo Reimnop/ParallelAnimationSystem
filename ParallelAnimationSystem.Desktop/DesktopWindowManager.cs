@@ -1,5 +1,5 @@
-using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Windowing;
 
 namespace ParallelAnimationSystem.Desktop;

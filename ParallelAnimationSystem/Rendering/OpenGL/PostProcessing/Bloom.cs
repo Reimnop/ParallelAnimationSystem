@@ -1,7 +1,6 @@
 using OpenTK.Graphics.OpenGL;
-using OpenTK.Mathematics;
+using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Data;
-using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Rendering.OpenGL.PostProcessing;
 
@@ -55,7 +54,7 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
             return false;
         
         // diffusion = MathHelper.Lerp(0.05f, 0.95f, diffusion);
-        diffusion = MathHelper.Lerp(0.5f, 0.95f, diffusion);
+        diffusion = MathUtil.Lerp(0.5f, 0.95f, diffusion);
         
         // Update mip chain if size has changed
         if (size != currentSize)
@@ -73,7 +72,7 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
         
         GL.BindImageTexture(0, inputTexture, 0, false, 0, BufferAccess.ReadOnly, InternalFormat.Rgba16f);
         GL.BindImageTexture(1, downsampleMipChain[0], 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f);
-        GL.Uniform2i(prefilterSizeUniformLocation, 1, size);
+        GL.Uniform2i(prefilterSizeUniformLocation, size.X, size.Y);
         GL.Uniform1f(prefilterThresholdUniformLocation, 0.95f);
         
         GL.DispatchCompute(
@@ -92,7 +91,7 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
             // Downsample pass (mip[i - 1] -> mip[i])
             GL.BindImageTexture(0, downsampleMipChain[i], 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f);
             GL.BindTextureUnit(0, downsampleMipChain[i - 1]);
-            GL.Uniform2i(downsampleSizeUniformLocation, 1, mipSize);
+            GL.Uniform2i(downsampleSizeUniformLocation, mipSize.X, mipSize.Y);
             
             GL.DispatchCompute(
                 (uint)MathUtil.DivideCeil(mipSize.X, 8), 
@@ -117,7 +116,7 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
             GL.BindImageTexture(0, outputMip, 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f);
             GL.BindTextureUnit(0, lowMip);
             GL.BindTextureUnit(1, highMip);
-            GL.Uniform2i(upsampleOutputSizeUniformLocation, 1, outputSize);
+            GL.Uniform2i(upsampleOutputSizeUniformLocation, outputSize.X, outputSize.Y);
             GL.Uniform1f(upsampleDiffusionUniformLocation, diffusion);
             
             GL.DispatchCompute(
@@ -132,7 +131,7 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
         GL.BindImageTexture(0, inputTexture, 0, false, 0, BufferAccess.ReadOnly, InternalFormat.Rgba16f);
         GL.BindImageTexture(1, upsampleMipChain[^1], 0, false, 0, BufferAccess.ReadOnly, InternalFormat.Rgba16f);
         GL.BindImageTexture(2, outputTexture, 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f);
-        GL.Uniform2i(combineSizeUniformLocation, 1, size);
+        GL.Uniform2i(combineSizeUniformLocation, size.X, size.Y);
         GL.Uniform1f(combineIntensityUniformLocation, intensity);
         
         GL.DispatchCompute(

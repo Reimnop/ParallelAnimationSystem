@@ -1,4 +1,4 @@
-﻿using OpenTK.Mathematics;
+﻿using System.Numerics;
 using ParallelAnimationSystem.Core.Beatmap;
 using ParallelAnimationSystem.Util;
 
@@ -23,7 +23,7 @@ public class BeatmapObjectsProcessor(PerFrameDataCache cache, Timeline timeline)
             0.0f, 0.0f, 0.0f,
             time, out var parentDepth,
             null);
-        var originMatrix = MathUtil.CreateTranslation(beatmapObject.Origin);
+        var originMatrix = Matrix3x2.CreateTranslation(beatmapObject.Origin);
         var perFrameData = cache[cacheIndex];
         perFrameData.BeatmapObject = beatmapObject;
         perFrameData.Transform = originMatrix * transform;
@@ -31,7 +31,7 @@ public class BeatmapObjectsProcessor(PerFrameDataCache cache, Timeline timeline)
         perFrameData.ParentDepth = parentDepth;
     }
 
-    private Matrix3 CalculateBeatmapObjectTransform(
+    private Matrix3x2 CalculateBeatmapObjectTransform(
         BeatmapObject beatmapObject,
         bool animatePosition, bool animateScale, bool animateRotation,
         float positionTimeOffset, float scaleTimeOffset, float rotationTimeOffset,
@@ -40,7 +40,7 @@ public class BeatmapObjectsProcessor(PerFrameDataCache cache, Timeline timeline)
     {
         parentDepth = 0;
         
-        var matrix = Matrix3.Identity;
+        var matrix = Matrix3x2.Identity;
 
         while (true)
         {
@@ -49,19 +49,19 @@ public class BeatmapObjectsProcessor(PerFrameDataCache cache, Timeline timeline)
             if (animateScale)
             {
                 var scale = beatmapObject.ScaleSequence.Interpolate(time - beatmapObject.StartTime - scaleTimeOffset, context);
-                matrix *= MathUtil.CreateScale(scale);
+                matrix *= Matrix3x2.CreateScale(scale);
             }
 
             if (animateRotation)
             {
                 var rotation = beatmapObject.RotationSequence.Interpolate(time - beatmapObject.StartTime - rotationTimeOffset, context);
-                matrix *= MathUtil.CreateRotation(rotation);
+                matrix *= Matrix3x2.CreateRotation(rotation);
             }
 
             if (animatePosition)
             {
                 var position = beatmapObject.PositionSequence.Interpolate(time - beatmapObject.StartTime - positionTimeOffset, context);
-                matrix *= MathUtil.CreateTranslation(position);
+                matrix *= Matrix3x2.CreateTranslation(position);
             }
 
             if (!timeline.BeatmapObjects.TryGetParent(beatmapObject.Id.Numeric, out var parent) || parent is null) 

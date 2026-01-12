@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using Android.Runtime;
 using Android.Views;
 using OpenTK.Graphics.Egl;
-using OpenTK.Mathematics;
+using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Windowing;
 using IWindowManager = ParallelAnimationSystem.Windowing.IWindowManager;
 

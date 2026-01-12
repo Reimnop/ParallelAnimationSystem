@@ -12,7 +12,7 @@ out flat int vBoldItalic;
 out flat int vFontIndex;
 
 struct MultiDrawItem {
-    mat3 mvp;
+    mat3x2 mvp;
     vec4 color1;
     vec4 color2;
     float z;

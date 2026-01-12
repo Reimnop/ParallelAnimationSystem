@@ -25,7 +25,7 @@ out highp vec4 vGlyphColor;
 flat out highp int vBoldItalic;
 flat out highp int vFontIndex;
 
-uniform highp mat3 uMvp;
+uniform highp mat3x2 uMvp;
 uniform highp float uZ;
 uniform highp vec4 uBaseColor;
 

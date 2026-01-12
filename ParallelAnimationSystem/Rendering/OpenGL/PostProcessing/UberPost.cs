@@ -1,8 +1,8 @@
 using OpenTK.Graphics.OpenGL;
-using OpenTK.Mathematics;
+using System.Numerics;
 using Pamx.Common.Enum;
+using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Data;
-using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Rendering.OpenGL.PostProcessing;
 
@@ -130,7 +130,7 @@ public class UberPost(IResourceManager resourceManager) : IDisposable
         GL.BindTextureUnit(0, inputTexture);
         GL.BindSampler(0, sampler);
         
-        GL.Uniform2i(sizeUniformLocation, 1, size);
+        GL.Uniform2i(sizeUniformLocation, size.X, size.Y);
         
         GL.Uniform1f(timeUniformLocation, time);
         
@@ -151,10 +151,17 @@ public class UberPost(IResourceManager resourceManager) : IDisposable
         GL.Uniform3f(gradientColor1UniformLocation, 1, gradientColor1);
         GL.Uniform3f(gradientColor2UniformLocation, 1, gradientColor2);
         GL.Uniform1f(gradientIntensityUniformLocation, gradientIntensity);
-        var rotation = new Matrix2(
-            MathF.Cos(gradientRotation), -MathF.Sin(gradientRotation),
-            MathF.Sin(gradientRotation), MathF.Cos(gradientRotation));
-        GL.UniformMatrix2f(gradientRotationUniformLocation, 1, false, in rotation);
+
+        unsafe
+        {
+            var rotationMatrix = stackalloc float[4];
+            rotationMatrix[0] = MathF.Cos(gradientRotation);
+            rotationMatrix[1] = MathF.Sin(gradientRotation);
+            rotationMatrix[2] = -MathF.Sin(gradientRotation);
+            rotationMatrix[3] = MathF.Cos(gradientRotation);
+            GL.UniformMatrix2fv(gradientRotationUniformLocation, 1, false, rotationMatrix);
+        }
+        
         GL.Uniform1i(gradientModeUniformLocation, (int) gradientMode);
         
         GL.Uniform1f(glitchIntensityUniformLocation, glitchIntensity);

@@ -3,7 +3,7 @@ using FFMpegCore;
 using FFMpegCore.Pipes;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using OpenTK.Mathematics;
+using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering;

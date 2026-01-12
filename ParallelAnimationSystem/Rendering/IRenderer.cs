@@ -1,4 +1,4 @@
-using OpenTK.Mathematics;
+using System.Numerics;
 using ParallelAnimationSystem.Rendering.TextProcessing;
 using ParallelAnimationSystem.Windowing;
 using TmpParser;

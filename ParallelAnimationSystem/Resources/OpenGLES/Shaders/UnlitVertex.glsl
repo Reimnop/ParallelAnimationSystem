@@ -6,7 +6,7 @@ layout(location = 0) in highp vec2 aPos;
 
 out highp vec2 vUv;
 
-uniform highp mat3 uMvp;
+uniform highp mat3x2 uMvp;
 uniform highp float uZ;
 
 void main() {

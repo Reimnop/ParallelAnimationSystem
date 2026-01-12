@@ -4,12 +4,12 @@ using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
-using OpenTK.Mathematics;
+using System.Numerics;
+using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering.Common;
 using ParallelAnimationSystem.Rendering.OpenGL.PostProcessing;
 using ParallelAnimationSystem.Rendering.TextProcessing;
-using ParallelAnimationSystem.Util;
 using ParallelAnimationSystem.Windowing;
 using TmpIO;
 using TmpParser;
@@ -94,7 +94,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         {
             newMeshData = true;
 
-            var vertexOffset = vertexBuffer.Data.Length / Vector2.SizeInBytes;
+            var vertexOffset = vertexBuffer.Data.Length / Unsafe.SizeOf<Vector2>();
             var indexOffset = indexBuffer.Data.Length / sizeof(int);
             var vertexCount = vertices.Length;
             var indexCount = indices.Length;
@@ -224,7 +224,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         {
             var vertexBufferData = vertexBuffer.Data;
             var indexBufferData = indexBuffer.Data;
-            var vertexBufferSize = vertexBufferData.Length * Vector2.SizeInBytes;
+            var vertexBufferSize = vertexBufferData.Length * Unsafe.SizeOf<Vector2>();
             var indexBufferSize = indexBufferData.Length * sizeof(int);
         
             GL.NamedBufferData(vertexBufferHandle, vertexBufferSize, vertexBuffer.Data, VertexBufferObjectUsage.StaticDraw);
@@ -235,7 +235,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         
         // Bind buffers to vertex array
         GL.EnableVertexArrayAttrib(vertexArrayHandle, 0);
-        GL.VertexArrayVertexBuffer(vertexArrayHandle, 0, vertexBufferHandle, IntPtr.Zero, Vector2.SizeInBytes);
+        GL.VertexArrayVertexBuffer(vertexArrayHandle, 0, vertexBufferHandle, IntPtr.Zero, Unsafe.SizeOf<Vector2>());
         GL.VertexArrayAttribFormat(vertexArrayHandle, 0, 2, VertexAttribType.Float, false, 0);
         GL.VertexArrayAttribBinding(vertexArrayHandle, 0, 0);
                 
@@ -401,7 +401,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         opaqueDrawData.Reverse();
         
         // Get camera matrix (view and projection)
-        var camera = GetCameraMatrix(drawList.CameraData, renderSize);
+        var camera = RenderUtil.GetCameraMatrix(drawList.CameraData, renderSize);
         
         // Render
         GL.Viewport(0, 0, currentFboSize.X, currentFboSize.Y);
@@ -506,7 +506,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         drawListPool.Enqueue(drawList);
     }
 
-    private void RenderDrawDataList(List<DrawData> drawDataList, Matrix3 camera)
+    private void RenderDrawDataList(List<DrawData> drawDataList, Matrix3x2 camera)
     {
         if (drawDataList.Count == 0)
             return;
@@ -530,9 +530,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
             
             multiDrawStorageBuffer.Append(new MultiDrawItem
             {
-                MvpRow1 = mvp.Row0,
-                MvpRow2 = mvp.Row1,
-                MvpRow3 = mvp.Row2,
+                Mvp = mvp,
                 Color1 = color1.ToVector(),
                 Color2 = color2.ToVector(),
                 Z = RenderUtil.EncodeIntDepth(drawData.Index),
@@ -637,20 +635,6 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         return texture1;
     }
 
-    private static Matrix3 GetCameraMatrix(CameraData camera, Vector2i size)
-    {
-        if (camera.Scale == 0.0f)
-            return Matrix3.Zero;
-        
-        var aspectRatio = size.X / (float) size.Y;
-        var view = Matrix3.Invert(
-            MathUtil.CreateScale(Vector2.One * camera.Scale) *
-            MathUtil.CreateRotation(camera.Rotation) *
-            MathUtil.CreateTranslation(camera.Position));
-        var projection = Matrix3.CreateScale(1.0f / aspectRatio, 1.0f, 1.0f);
-        return view * projection;
-    }
-
     private void UpdateOpenGlData(Vector2i size)
     {
         UpdateMeshData();
@@ -675,7 +659,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
             GL.NamedBufferSubData(indexBufferHandle, IntPtr.Zero, indexBufferData.Length, indexBufferData);
         }
         
-        logger.LogInformation("OpenGL mesh buffers updated, now at {VertexSize} vertices and {IndexSize} indices", vertexBuffer.Data.Length / Vector2.SizeInBytes, indexBuffer.Data.Length / sizeof(int));
+        logger.LogInformation("OpenGL mesh buffers updated, now at {VertexSize} vertices and {IndexSize} indices", vertexBuffer.Data.Length / Unsafe.SizeOf<Vector2>(), indexBuffer.Data.Length / sizeof(int));
     }
     
     private void UpdateFontData()

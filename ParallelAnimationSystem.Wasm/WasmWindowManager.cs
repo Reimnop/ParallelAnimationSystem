@@ -1,5 +1,5 @@
 using OpenTK.Graphics.Egl;
-using OpenTK.Mathematics;
+using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Windowing;
 
 namespace ParallelAnimationSystem.Wasm;

@@ -1,4 +1,4 @@
-using ParallelAnimationSystem.Util;
+using ParallelAnimationSystem.Mathematics;
 
 namespace ParallelAnimationSystem.Core.Data;
 

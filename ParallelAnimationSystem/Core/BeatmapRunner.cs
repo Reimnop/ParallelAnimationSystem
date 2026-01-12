@@ -1,10 +1,11 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
-using OpenTK.Mathematics;
+using System.Numerics;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.TextProcessing;
+using ParallelAnimationSystem.Mathematics;
 
 namespace ParallelAnimationSystem.Core;
 
@@ -166,7 +167,7 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
             var lensDistortionData = runner.LensDistortion;
             var vignetteData = runner.Vignette;
             var gradientData = runner.Gradient;
-            var bloomDiffusion01 = MathHelper.MapRange(bloomData.Diffusion, 5.0f, 30.0f, 0.0f, 1.0f);
+            var bloomDiffusion01 = MathUtil.MapRange(bloomData.Diffusion, 5.0f, 30.0f, 0.0f, 1.0f);
             // var glitchIntensity = runner.Glitch.Intensity;
             // var glitchSpeed = MathHelper.MapRange(runner.Glitch.Speed, 0.0f, 2.0f, 7.0f, 40.0f);
             // var glitchSize = new Vector2(MathHelper.MapRange(runner.Glitch.Width, 0.0f, 1.0f, 0.02f, 1.0f), 0.015f);

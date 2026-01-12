@@ -1,5 +1,5 @@
 using System.Collections;
-using OpenTK.Mathematics;
+using System.Numerics;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Data;
 
@@ -17,7 +17,7 @@ public class DrawList : IDrawList, IReadOnlyCollection<DrawData>
     private readonly List<DrawData> drawDataList = [];
     private int count;
     
-    public void AddMesh(IMeshHandle mesh, Matrix3 transform, ColorRgba color1, ColorRgba color2, RenderMode renderMode)
+    public void AddMesh(IMeshHandle mesh, Matrix3x2 transform, ColorRgba color1, ColorRgba color2, RenderMode renderMode)
     {
         DrawData drawData;
         if (drawDataList.Count > count)
@@ -39,7 +39,7 @@ public class DrawList : IDrawList, IReadOnlyCollection<DrawData>
         count++;
     }
     
-    public void AddText(ITextHandle text, Matrix3 transform, ColorRgba color)
+    public void AddText(ITextHandle text, Matrix3x2 transform, ColorRgba color)
     {
         DrawData drawData;
         if (drawDataList.Count > count)

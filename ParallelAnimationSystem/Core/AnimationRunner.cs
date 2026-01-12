@@ -1,4 +1,4 @@
-using OpenTK.Mathematics;
+using System.Numerics;
 using Pamx.Common;
 using Pamx.Common.Data;
 using ParallelAnimationSystem.Core.Animation;

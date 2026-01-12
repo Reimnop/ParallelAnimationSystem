@@ -12,7 +12,6 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.0" />
     <PackageReference Include="OpenTK.Graphics" Version="5.0.0-pre.11" />
-    <PackageReference Include="OpenTK.Mathematics" Version="5.0.0-pre.11" />
     <PackageReference Include="System.IO.Hashing" Version="10.0.0" />
   </ItemGroup>
 
@@ -24,6 +23,7 @@
     <ProjectReference Include="../Pamx/Pamx/Pamx.csproj" />
     <ProjectReference Include="../TmpEmulation/TmpIO/TmpIO.csproj" />
     <ProjectReference Include="../TmpEmulation/TmpParser/TmpParser.csproj" />
+    <ProjectReference Include="../ParallelAnimationSystem.Mathematics/ParallelAnimationSystem.Mathematics.csproj" />
   </ItemGroup>
 
 </Project>

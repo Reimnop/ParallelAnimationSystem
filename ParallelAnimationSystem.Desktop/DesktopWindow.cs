@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using Ico.Reader;
-using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Windowing;
 using ReFuel.Stb;
 

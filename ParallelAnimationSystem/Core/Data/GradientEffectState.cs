@@ -1,4 +1,4 @@
-using OpenTK.Mathematics;
+using System.Numerics;
 using Pamx.Common.Enum;
 
 namespace ParallelAnimationSystem.Core.Data;
