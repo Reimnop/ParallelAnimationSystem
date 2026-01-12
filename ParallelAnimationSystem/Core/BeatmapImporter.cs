@@ -429,7 +429,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
                     rotationKeyframes,
                     [])
                 {
-                    ParentTypes = new ParentTypes(true, true, true),
+                    ParentType = ParentType.All,
                 };
             });
             
@@ -482,7 +482,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
                                 rotationKeyframes,
                                 [])
                             {
-                                ParentTypes = new ParentTypes(true, true, true),
+                                ParentType = ParentType.All,
                             };
                         });
                         beatmapObjects.SetParent(specificObjectParent.Id.String, parentId);
@@ -513,14 +513,6 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         var rotationAnimation = EnumerateRotationSequenceKeyframes(@object.RotationEvents, true, seeds: [..seeds, 2]);
         var themeColorAnimation = EnumerateThemeColorKeyframes(@object.ColorEvents);
 
-        var parentPositionTimeOffset = @object.ParentOffset.Position;
-        var parentScaleTimeOffset = @object.ParentOffset.Scale;
-        var parentRotationTimeOffset = @object.ParentOffset.Rotation;
-
-        var parentAnimatePosition = @object.ParentType.HasFlag(ParentType.Position);
-        var parentAnimateScale = @object.ParentType.HasFlag(ParentType.Scale);
-        var parentAnimateRotation = @object.ParentType.HasFlag(ParentType.Rotation);
-
         var renderMode = @object.RenderType switch
         {
             RenderType.Normal => RenderMode.Normal,
@@ -543,15 +535,8 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         {
             Name = @object.Name,
             IsEmpty = @object.Type is ObjectType.Empty or ObjectType.LegacyEmpty,
-            ParentTemporalOffsets = new ParentTemporalOffsets(
-                parentPositionTimeOffset,
-                parentScaleTimeOffset,
-                parentRotationTimeOffset),
-            ParentTypes = new ParentTypes(
-                parentAnimatePosition,
-                parentAnimateScale,
-                parentAnimateRotation),
-            RenderMode = renderMode,
+            ParentOffset = @object.ParentOffset,
+            ParentType = @object.ParentType,
             AutoKillType = @object.AutoKillType,
             StartTime = @object.StartTime,
             KillTimeOffset = @object.AutoKillOffset,

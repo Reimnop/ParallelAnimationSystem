@@ -33,16 +33,16 @@ public class BeatmapObject(
         set => SetField(ref isEmpty, value);
     }
 
-    public ParentTemporalOffsets ParentTemporalOffsets
+    public ParentOffset ParentOffset
     {
-        get => parentTemporalOffsets;
-        set => SetField(ref parentTemporalOffsets, value);
+        get => parentOffset;
+        set => SetField(ref parentOffset, value);
     }
 
-    public ParentTypes ParentTypes
+    public ParentType ParentType
     {
-        get => parentTypes;
-        set => SetField(ref parentTypes, value);
+        get => parentType;
+        set => SetField(ref parentType, value);
     }
     
     public RenderMode RenderMode
@@ -112,8 +112,8 @@ public class BeatmapObject(
 
     private bool isEmpty = true;
 
-    private ParentTemporalOffsets parentTemporalOffsets = new(0f, 0f, 0f);
-    private ParentTypes parentTypes = new(true, false, true);
+    private ParentOffset parentOffset = new(0f, 0f, 0f);
+    private ParentType parentType = ParentType.Position | ParentType.Scale | ParentType.Rotation;
     
     private RenderMode renderMode = RenderMode.Normal;
     

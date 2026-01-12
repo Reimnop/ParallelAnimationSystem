@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core.Beatmap;
 using ParallelAnimationSystem.Util;
 
@@ -19,8 +20,7 @@ public class BeatmapObjectsProcessor(PerFrameDataCache cache, Timeline timeline)
     {
         var transform = CalculateBeatmapObjectTransform(
             beatmapObject,
-            true, true, true,
-            0.0f, 0.0f, 0.0f,
+            ParentType.All, ParentOffset.Zero,
             time, out var parentDepth,
             null);
         var originMatrix = Matrix3x2.CreateTranslation(beatmapObject.Origin);
@@ -33,8 +33,7 @@ public class BeatmapObjectsProcessor(PerFrameDataCache cache, Timeline timeline)
 
     private Matrix3x2 CalculateBeatmapObjectTransform(
         BeatmapObject beatmapObject,
-        bool animatePosition, bool animateScale, bool animateRotation,
-        float positionTimeOffset, float scaleTimeOffset, float rotationTimeOffset,
+        ParentType parentType, ParentOffset parentOffset,
         float time, out int parentDepth,
         object? context)
     {
@@ -46,36 +45,29 @@ public class BeatmapObjectsProcessor(PerFrameDataCache cache, Timeline timeline)
         {
             parentDepth++;
             
-            if (animateScale)
+            if (parentType.HasFlag(ParentType.Scale))
             {
-                var scale = beatmapObject.ScaleSequence.Interpolate(time - beatmapObject.StartTime - scaleTimeOffset, context);
+                var scale = beatmapObject.ScaleSequence.Interpolate(time - beatmapObject.StartTime - parentOffset.Scale, context);
                 matrix *= Matrix3x2.CreateScale(scale);
             }
 
-            if (animateRotation)
+            if (parentType.HasFlag(ParentType.Rotation))
             {
-                var rotation = beatmapObject.RotationSequence.Interpolate(time - beatmapObject.StartTime - rotationTimeOffset, context);
+                var rotation = beatmapObject.RotationSequence.Interpolate(time - beatmapObject.StartTime - parentOffset.Rotation, context);
                 matrix *= Matrix3x2.CreateRotation(rotation);
             }
 
-            if (animatePosition)
+            if (parentType.HasFlag(ParentType.Position))
             {
-                var position = beatmapObject.PositionSequence.Interpolate(time - beatmapObject.StartTime - positionTimeOffset, context);
+                var position = beatmapObject.PositionSequence.Interpolate(time - beatmapObject.StartTime - parentOffset.Position, context);
                 matrix *= Matrix3x2.CreateTranslation(position);
             }
 
             if (!timeline.BeatmapObjects.TryGetParent(beatmapObject.Id.Numeric, out var parent) || parent is null) 
                 break;
 
-            var parentTypes = beatmapObject.ParentTypes;
-            var parentTemporalOffsets = beatmapObject.ParentTemporalOffsets;
-            
-            animatePosition = parentTypes.Position;
-            animateScale = parentTypes.Scale;
-            animateRotation = parentTypes.Rotation;
-            positionTimeOffset = parentTemporalOffsets.Position;
-            scaleTimeOffset = parentTemporalOffsets.Scale;
-            rotationTimeOffset = parentTemporalOffsets.Rotation;
+            parentType = beatmapObject.ParentType;
+            parentOffset = beatmapObject.ParentOffset;
             beatmapObject = parent;
         }
 
