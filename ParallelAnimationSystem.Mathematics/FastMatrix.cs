@@ -22,7 +22,7 @@ public static class FastMatrix
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Matrix3x2 GetRotationMatrix(float phi)
     {
-        var (sin,cos) = MathF.SinCos(phi);
+        var (sin, cos) = MathF.SinCos(phi);
         
         return new Matrix3x2(
             cos, sin,
@@ -40,7 +40,7 @@ public static class FastMatrix
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Matrix3x2 GetTranslationRotationMatrix(float tx, float ty, float phi)
     {
-        var (sin,cos) = MathF.SinCos(phi);
+        var (sin, cos) = MathF.SinCos(phi);
         
         return new Matrix3x2(
             cos, sin,
@@ -51,7 +51,7 @@ public static class FastMatrix
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Matrix3x2 GetRotationScaleMatrix(float sx, float sy, float phi)
     {
-        var (sin,cos) = MathF.SinCos(phi);
+        var (sin, cos) = MathF.SinCos(phi);
         
         return new Matrix3x2(
             cos * sx, sin * sx,
@@ -62,7 +62,7 @@ public static class FastMatrix
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Matrix3x2 GetTranslationRotationScaleMatrix(float tx, float ty, float sx, float sy, float phi)
     {
-        var (sin,cos) = MathF.SinCos(phi);
+        var (sin, cos) = MathF.SinCos(phi);
         
         return new Matrix3x2(
             cos * sx, sin * sx,
