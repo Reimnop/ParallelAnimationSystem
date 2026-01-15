@@ -8,20 +8,20 @@ using ParallelAnimationSystem.Data;
 
 namespace ParallelAnimationSystem.Android;
 
-public class AndroidMediaProvider(string beatmapData, BeatmapFormat beatmapFormat) : IMediaProvider
+public class AndroidMediaProvider(BeatmapContext context) : IMediaProvider
 {
     public IBeatmap LoadBeatmap(out BeatmapFormat format)
     {
-        var json = JsonNode.Parse(beatmapData);
+        var json = JsonNode.Parse(context.Data);
         if (json is not JsonObject jsonObject)
             throw new InvalidDataException("Invalid beatmap JSON");
 
-        format = beatmapFormat;
-        return beatmapFormat switch
+        format = context.Format;
+        return format switch
         {
             BeatmapFormat.Lsb => LsDeserialization.DeserializeBeatmap(jsonObject),
             BeatmapFormat.Vgd => VgDeserialization.DeserializeBeatmap(jsonObject),
-            _ => throw new NotSupportedException($"Unsupported beatmap format '{beatmapFormat}'")
+            _ => throw new NotSupportedException($"Unsupported beatmap format '{format}'")
         };
     }
 }

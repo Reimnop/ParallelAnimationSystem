@@ -1,30 +1,30 @@
 using OpenTK.Graphics.OpenGLES2;
+using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Mathematics;
-using ParallelAnimationSystem.Data;
 
 namespace ParallelAnimationSystem.Rendering.OpenGLES.PostProcessing;
 
-public class Bloom(IResourceManager resourceManager) : IDisposable
+public class Bloom : IDisposable
 {
-    private int prefilterProgram, downsampleProgram, upsampleProgram, combineProgram;
-    private int prefilterThresholdUniformLocation;
-    private int downsampleSizeUniformLocation;
-    private int upsampleSizeUniformLocation, upsampleDiffusionUniformLocation, upsampleLowMipUniformLocation, upsampleHighMipUniformLocation;
-    private int combineIntensityUniformLocation, combineTexture1UniformLocation, combineTexture2UniformLocation;
+    private readonly int prefilterProgram, downsampleProgram, upsampleProgram, combineProgram;
+    private readonly int prefilterThresholdUniformLocation;
+    private readonly int downsampleSizeUniformLocation;
+    private readonly int upsampleSizeUniformLocation, upsampleDiffusionUniformLocation, upsampleLowMipUniformLocation, upsampleHighMipUniformLocation;
+    private readonly int combineIntensityUniformLocation, combineTexture1UniformLocation, combineTexture2UniformLocation;
     
-    private int textureSampler;
-    private int framebuffer;
+    private readonly int textureSampler;
+    private readonly int framebuffer;
     
     private readonly List<int> downsamplingMipChain = [];
     private readonly List<int> upsamplingMipChain = [];
     private Vector2i currentSize = -Vector2i.One;
 
-    public void Initialize(int vertexShader)
+    public Bloom(ResourceLoader loader, int vertexShader)
     {
-        prefilterProgram = CreateProgram("BloomPrefilter", vertexShader);
-        downsampleProgram = CreateProgram("BloomDownsample", vertexShader);
-        upsampleProgram = CreateProgram("BloomUpsample", vertexShader);
-        combineProgram = CreateProgram("BloomCombine", vertexShader);
+        prefilterProgram = LoaderUtil.LoadPPProgram(loader, "BloomPrefilter", vertexShader);
+        downsampleProgram = LoaderUtil.LoadPPProgram(loader, "BloomDownsample", vertexShader);
+        upsampleProgram = LoaderUtil.LoadPPProgram(loader, "BloomUpsample", vertexShader);
+        combineProgram = LoaderUtil.LoadPPProgram(loader, "BloomCombine", vertexShader);
         
         prefilterThresholdUniformLocation = GL.GetUniformLocation(prefilterProgram, "uThreshold");
         
@@ -188,37 +188,6 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
     {
         var minDim = Math.Min(size.X, size.Y);
         return (int) MathF.Floor(MathF.Log(minDim, 2));
-    }
-    
-    private int CreateProgram(string shaderName, int vertexShader)
-    {
-        var shaderSource = resourceManager.LoadResourceString($"OpenGLES/Shaders/PostProcessing/{shaderName}.glsl");
-        var fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
-        GL.ShaderSource(fragmentShader, shaderSource);
-        GL.CompileShader(fragmentShader);
-        
-        var fragmentShaderCompileStatus = GL.GetShaderi(fragmentShader, ShaderParameterName.CompileStatus);
-        if (fragmentShaderCompileStatus == 0)
-        {
-            GL.GetShaderInfoLog(fragmentShader, out var infoLog);
-            throw new Exception($"Failed to compile fragment shader: {infoLog}");
-        }
-        
-        var program = GL.CreateProgram();
-        GL.AttachShader(program, vertexShader);
-        GL.AttachShader(program, fragmentShader);
-        GL.LinkProgram(program);
-        
-        var programLinkStatus = GL.GetProgrami(program, ProgramProperty.LinkStatus);
-        if (programLinkStatus == 0)
-        {
-            GL.GetProgramInfoLog(program, out var infoLog);
-            throw new Exception($"Failed to link program: {infoLog}");
-        }
-        
-        GL.DeleteShader(fragmentShader);
-        
-        return program;
     }
 
     private static void Swap<T>(ref T a, ref T b)

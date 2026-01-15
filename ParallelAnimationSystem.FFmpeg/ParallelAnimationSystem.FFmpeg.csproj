@@ -17,6 +17,7 @@
     <PackageReference Include="FFMpegCore" Version="5.1.0" />
     <PackageReference Include="ManagedBass" Version="3.1.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.0" />
+    <PackageReference Include="OpenTK.Graphics" Version="5.0.0-pre.11" />
     <PackageReference Include="OpenTK.Windowing.GraphicsLibraryFramework" Version="5.0.0-pre.11" />
     <PackageReference Include="StbVorbisSharp" Version="1.22.4" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
@@ -24,6 +25,8 @@
   
   <ItemGroup>
     <ProjectReference Include="../ParallelAnimationSystem/ParallelAnimationSystem.csproj" />
+    <ProjectReference Include="../ParallelAnimationSystem.Rendering.OpenGLES/ParallelAnimationSystem.Rendering.OpenGLES.csproj" />
+    <ProjectReference Include="../ParallelAnimationSystem.Rendering.OpenGL/ParallelAnimationSystem.Rendering.OpenGL.csproj" />
   </ItemGroup>
   
   <ItemGroup>

@@ -3,11 +3,23 @@ using System.Numerics;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Data;
 
-namespace ParallelAnimationSystem.Rendering.Common;
+namespace ParallelAnimationSystem.Rendering.OpenGLES;
 
-// This should never be instantiated directly, but rather through the Renderer
-public class DrawList : IDrawList, IReadOnlyCollection<DrawData>
+public class DrawList : IDrawList, IReadOnlyCollection<DrawList.DrawData>
 {
+    public class DrawData
+    {
+        public RenderType RenderType { get; set; }
+        public Renderer.MeshHandle? Mesh { get; set; }
+        public Renderer.TextHandle? Text { get; set; }
+        public Matrix3x2 Transform { get; set; }
+        public ColorRgba Color1 { get; set; }
+        public ColorRgba Color2 { get; set; }
+        public RenderMode RenderMode { get; set; }
+    
+        public int Index { get; set; }
+    }
+    
     public int Count => count;
     
     public CameraData CameraData { get; set; } = new(Vector2.Zero, 10.0f, 0.0f);
@@ -19,6 +31,9 @@ public class DrawList : IDrawList, IReadOnlyCollection<DrawData>
     
     public void AddMesh(IMeshHandle mesh, Matrix3x2 transform, ColorRgba color1, ColorRgba color2, RenderMode renderMode)
     {
+        if (mesh is not Renderer.MeshHandle rendererMesh)
+            throw new ArgumentException("Invalid mesh handle type", nameof(mesh));
+        
         DrawData drawData;
         if (drawDataList.Count > count)
             drawData = drawDataList[count];
@@ -29,7 +44,7 @@ public class DrawList : IDrawList, IReadOnlyCollection<DrawData>
         }
         
         drawData.RenderType = RenderType.Mesh;
-        drawData.Mesh = mesh;
+        drawData.Mesh = rendererMesh;
         drawData.Transform = transform;
         drawData.Color1 = color1;
         drawData.Color2 = color2;
@@ -41,6 +56,9 @@ public class DrawList : IDrawList, IReadOnlyCollection<DrawData>
     
     public void AddText(ITextHandle text, Matrix3x2 transform, ColorRgba color)
     {
+        if (text is not Renderer.TextHandle rendererText)
+            throw new ArgumentException("Invalid text handle type", nameof(text));
+        
         DrawData drawData;
         if (drawDataList.Count > count)
             drawData = drawDataList[count];
@@ -51,7 +69,7 @@ public class DrawList : IDrawList, IReadOnlyCollection<DrawData>
         }
         
         drawData.RenderType = RenderType.Text;
-        drawData.Text = text;
+        drawData.Text = rendererText;
         drawData.Transform = transform;
         drawData.Color1 = color;
         drawData.Index = count;

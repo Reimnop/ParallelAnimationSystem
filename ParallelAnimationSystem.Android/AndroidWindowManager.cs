@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Android.Runtime;
-using Android.Views;
 using OpenTK.Graphics.Egl;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Windowing;
@@ -16,13 +15,13 @@ public class AndroidWindowManager : IWindowManager, IDisposable
     private AndroidWindow? window;
     private IntPtr aNativeWindowPtr;
     
-    private readonly ISurfaceHolder surfaceHolder;
+    private readonly AndroidSurfaceContext context;
 
-    public AndroidWindowManager(GraphicsSurfaceView surfaceView, ISurfaceHolder surfaceHolder)
+    public AndroidWindowManager(AndroidSurfaceContext context)
     {
-        this.surfaceHolder = surfaceHolder;
+        this.context = context;
         
-        surfaceView.SurfaceDestroyedCallback = _ => window?.Close();
+        context.SurfaceView.SurfaceDestroyedCallback = _ => window?.Close();
     }
     
     public IWindow CreateWindow(string title, Vector2i size, GLContextSettings glContextSettings)
@@ -61,11 +60,11 @@ public class AndroidWindowManager : IWindowManager, IDisposable
             Egl.NONE
         ];
         
-        var context = Egl.CreateContext(display, config, IntPtr.Zero, contextAttribs);
-        if (context == IntPtr.Zero)
+        var eglContext = Egl.CreateContext(display, config, IntPtr.Zero, contextAttribs);
+        if (eglContext == IntPtr.Zero)
             throw new Exception("Failed to create EGL context");
         
-        var surface = surfaceHolder.Surface;
+        var surface = context.SurfaceHolder.Surface;
         Debug.Assert(surface is not null);
         
         aNativeWindowPtr = ANativeWindow_fromSurface(JNIEnv.Handle, surface.Handle);
@@ -77,7 +76,7 @@ public class AndroidWindowManager : IWindowManager, IDisposable
             throw new Exception("Failed to create EGL window surface");
         
         // Create window
-        window = new AndroidWindow(display, context, windowSurface);
+        window = new AndroidWindow(display, eglContext, windowSurface);
         return window;
     }
 

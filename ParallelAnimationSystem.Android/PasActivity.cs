@@ -1,7 +1,12 @@
 using System.Diagnostics;
 using Android.Content.PM;
 using Android.Views;
+using MattiasCibien.Extensions.Logging.Logcat;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Core;
+using ParallelAnimationSystem.Mathematics;
+using ParallelAnimationSystem.Rendering.OpenGLES;
 using Activity = Android.App.Activity;
 using Uri = Android.Net.Uri;
 
@@ -37,13 +42,17 @@ public class PasActivity : Activity
         var beatmapPath = Intent.GetParcelableExtra("beatmapPath") as Uri ?? throw new Exception("Beatmap path not provided in intent extras");
         var audioPath = Intent.GetParcelableExtra("audioPath") as Uri ?? throw new Exception("Audio path not provided in intent extras");
 #pragma warning restore CA1422
-        
-        var appSettings = new AndroidAppSettings(
-            1, 6,
-            (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds(),
-            lockAspectRatio ? 16.0f / 9.0f : null,
-            enablePostProcessing,
-            enableTextRendering);
+
+        var appSettings = new AppSettings
+        {
+            InitialSize = new Vector2i(1366, 768),
+            SwapInterval = 1,
+            WorkerCount = 6,
+            Seed = (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds(),
+            AspectRatio = lockAspectRatio ? 16.0f / 9.0f : null,
+            EnablePostProcessing = enablePostProcessing,
+            EnableTextRendering = enableTextRendering,
+        };
         
         // Create graphics surface
         var surfaceView = new GraphicsSurfaceView(this);
@@ -60,68 +69,112 @@ public class PasActivity : Activity
     }
 
     private void RunApp(
-        AndroidAppSettings appSettings,
+        AppSettings appSettings,
         Uri beatmapPath,
         BeatmapFormat beatmapFormat,
         Uri audioPath, 
         GraphicsSurfaceView surfaceView,
         ISurfaceHolder surfaceHolder)
     {
+        var beatmapData = ReadBeatmapData(beatmapPath);
+        var audioData = ReadAudioData(audioPath);
+        
+        var services = new ServiceCollection();
+        
+        // Register contexts
+        services.AddSingleton(new AndroidSurfaceContext
+        {
+            SurfaceView = surfaceView,
+            SurfaceHolder = surfaceHolder
+        });
+
+        services.AddSingleton(new BeatmapContext
+        {
+            Data = beatmapData,
+            Format = beatmapFormat
+        });
+        
+        // Register logging
+        services.AddLogging(builder =>
+        {
+            builder.SetMinimumLevel(LogLevel.Information);
+            builder.AddLogcat("ParallelAnimationSystem");
+        });
+        
+        // Register PAS services
+        services.AddPAS(builder =>
+        {
+            builder.UseAppSettings(appSettings);
+            builder.UseWindowManager<AndroidWindowManager>();
+            builder.UseMediaProvider<AndroidMediaProvider>();
+            builder.UseOpenGLESRenderer();
+        });
+        
+        // Initialize PAS
+        using var _ = services.InitializePAS(out var beatmapRunner, out var renderer);
+
+        var appShutdown = false;
+        
+        var appThread = new Thread(() =>
+        {
+            // Create audio player
+            using var audioPlayer = AudioPlayer.Load(audioData);
+            
+            // Start playback
+            audioPlayer.Play();
+            var baseFrequency = audioPlayer.Frequency;
+            var speed = 1.0f;
+            audioPlayer.Frequency = baseFrequency * speed;
+
+            // ReSharper disable once LoopVariableIsNeverChangedInsideLoop
+            // ReSharper disable once AccessToModifiedClosure
+            while (!appShutdown)
+                if (!beatmapRunner.ProcessFrame((float) audioPlayer.Position))
+                    Thread.Yield();
+            
+            // Stop playback
+            audioPlayer.Stop();
+        });
+        
+        appThread.Start();
+        
+        // Enter the render loop
+        while (!renderer.Window.ShouldClose)
+            if (!renderer.ProcessFrame())
+                Thread.Yield();
+        
+        // When renderer exits, we'll shut down the services
+        appShutdown = true;
+        
+        // Wait for the app thread to finish
+        appThread.Join();
+    }
+    
+    private string ReadBeatmapData(Uri beatmapPath)
+    {
         var contentResolver = ContentResolver;
         Debug.Assert(contentResolver is not null);
 
-        string beatmapData;
-        using (var stream = contentResolver.OpenInputStream(beatmapPath))
-        {
-            if (stream is null)
-                throw new Exception("Failed to open beatmap stream");
-            
-            using var reader = new StreamReader(stream);
-            beatmapData = reader.ReadToEnd();
-        }
+        using var stream = contentResolver.OpenInputStream(beatmapPath);
+        if (stream is null)
+            throw new Exception("Failed to open beatmap stream");
         
-        using var audioStream = new MemoryStream();
-        
-        using (var stream = contentResolver.OpenInputStream(audioPath))
-        {
-            if (stream is null)
-                throw new Exception("Failed to open audio stream");
-            
-            stream.CopyTo(audioStream);
-        }
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
+    }
+    
+    private byte[] ReadAudioData(Uri audioPath)
+    {
+        var contentResolver = ContentResolver;
+        Debug.Assert(contentResolver is not null);
 
-        audioStream.Seek(0L, SeekOrigin.Begin);
+        using var stream = contentResolver.OpenInputStream(audioPath);
+        if (stream is null)
+            throw new Exception("Failed to open audio stream");
         
-        using var audioPlayer = AudioPlayer.Load(audioStream);
+        var memoryStream = new MemoryStream();
+        stream.CopyTo(memoryStream);
         
-        var startup = new AndroidStartup(appSettings, beatmapData, beatmapFormat, surfaceView, surfaceHolder);
-        using var app = startup.InitializeApp();
-            
-        var beatmapRunner = app.BeatmapRunner;
-        var renderer = app.Renderer;
-                
-        var logicThread = new Thread(() =>
-        {
-            // ReSharper disable once AccessToModifiedClosure
-            // ReSharper disable once LoopVariableIsNeverChangedInsideLoop
-            while (!renderer.Window.ShouldClose)
-                // ReSharper disable once AccessToDisposedClosure
-                if (!beatmapRunner.ProcessFrame((float) audioPlayer.Position))
-                    Thread.Yield();
-        });
-                
-        logicThread.Start();
-        
-        audioPlayer.Play();
-
-        while (!renderer.Window.ShouldClose)
-        {
-            if (!renderer.ProcessFrame())
-                Thread.Yield();
-        }
-        
-        logicThread.Join();
-        
-        audioPlayer.Stop();
+        return memoryStream.ToArray();
     }
 }

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using System.Numerics;
+using Microsoft.Extensions.DependencyInjection;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering;
@@ -9,15 +10,31 @@ using ParallelAnimationSystem.Mathematics;
 
 namespace ParallelAnimationSystem.Core;
 
-public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvider, IResourceManager resourceManager, IRenderer renderer, ILogger<BeatmapRunner> logger)
+public class BeatmapRunner
 {
     private readonly List<List<IMeshHandle>> meshes = [];
     
-    private AnimationRunner? runner;
+    private readonly AnimationRunner runner;
     private readonly List<FontStack> fonts = [];
+
+    private readonly AppSettings appSettings;
+    private readonly ResourceLoader loader;
+    private readonly IRenderer renderer;
+    private readonly ILogger<BeatmapRunner> logger;
     
-    public void Initialize()
+    public BeatmapRunner(
+        IServiceProvider sp,
+        AppSettings appSettings,
+        ResourceLoader loader,
+        IMediaProvider mediaProvider,
+        IRenderer renderer,
+        ILogger<BeatmapRunner> logger)
     {
+        this.appSettings = appSettings;
+        this.loader = loader;
+        this.renderer = renderer;
+        this.logger = logger;
+        
         // Register all meshes
         RegisterMeshes();
         
@@ -37,10 +54,10 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
         switch (format) 
         {
             case BeatmapFormat.Lsb:
-                LsMigration.MigrateBeatmap(beatmap, resourceManager);
+                sp.GetRequiredService<LsMigration>().MigrateBeatmap(beatmap);
                 break;
             case BeatmapFormat.Vgd:
-                VgMigration.MigrateBeatmap(beatmap, resourceManager);
+                sp.GetRequiredService<VgMigration>().MigrateBeatmap(beatmap);
                 break;
         }
         
@@ -122,16 +139,14 @@ public class BeatmapRunner(IAppSettings appSettings, IMediaProvider mediaProvide
 
     private IFontHandle ReadFont(string path)
     {
-        using var stream = resourceManager.LoadResource(path);
+        using var stream = loader.OpenResource(path);
         if (stream is null)
-            throw new InvalidOperationException($"Failed to load font '{path}'");
+            throw new InvalidOperationException($"Could not load font data '{path}'");
         return renderer.RegisterFont(stream);
     }
     
     public bool ProcessFrame(float time)
     {
-        Debug.Assert(runner is not null);
-
         if (renderer.QueuedDrawListCount > 2)
             return false;
         

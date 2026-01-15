@@ -1,18 +1,14 @@
-using System.Runtime.InteropServices;
-using FFMpegCore;
-using FFMpegCore.Pipes;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using OpenTK.Graphics.OpenGL;
 using ParallelAnimationSystem.Mathematics;
-using ParallelAnimationSystem.Core;
-using ParallelAnimationSystem.Data;
-using ParallelAnimationSystem.Rendering;
-using ParallelAnimationSystem.Windowing;
+using ParallelAnimationSystem.Rendering.OpenGL;
+using ParallelAnimationSystem.Rendering.OpenGLES;
 using StbVorbisSharp;
 
 namespace ParallelAnimationSystem.FFmpeg;
 
-public class FFmpegStartup(FFmpegAppSettings appSettings, string beatmapPath, RenderingBackend backend) : IStartup
+public static class FFmpegStartup
 {
     public static void ConsumeOptions(
         string beatmapPath,
@@ -29,115 +25,65 @@ public class FFmpegStartup(FFmpegAppSettings appSettings, string beatmapPath, Re
         bool enablePostProcessing,
         bool enableTextRendering)
     {
-        var appSettings = new FFmpegAppSettings(
-            new Vector2i(sizeX, sizeY),
-            0,
-            -1,
-            seed < 0
+        var appSettings = new AppSettings
+        {
+            InitialSize = new Vector2i(sizeX, sizeY),
+            SwapInterval = 0,
+            WorkerCount = -1,
+            Seed = seed < 0
                 ? (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds()
                 : (ulong) seed,
-            null,
-            enablePostProcessing,
-            enableTextRendering
-        );
+            AspectRatio = null,
+            EnablePostProcessing = enablePostProcessing,
+            EnableTextRendering = enableTextRendering,
+        };
         
-        var startup = new FFmpegStartup(appSettings, beatmapPath, backend);
-        using var app = startup.InitializeApp();
+        var services = new ServiceCollection();
 
-        var logger = app.ServiceProvider.GetRequiredService<ILogger<FFmpegStartup>>();
-        
-        var beatmapRunner = app.BeatmapRunner;
-        var renderer = app.Renderer;
-        
-        using var vorbis = Vorbis.FromMemory(File.ReadAllBytes(audioPath));
-        
-        var step = 1.0f / framerate * speed;
-        var duration = vorbis.LengthInSeconds;
-        
-        var videoFramesSource = new RawVideoPipeSource(CreateVideoFrames(step, duration, beatmapRunner, renderer, logger))
+        // Register contexts
+        services.AddSingleton(new MediaContext
+        {
+            BeatmapPath = beatmapPath,
+            AudioPath = audioPath
+        });
+
+        services.AddSingleton(new FFmpegParameters
         {
             FrameRate = framerate,
-        };
-
-        var audioFramesSource = new RawAudioPipeSource(CreateAudioFrames(vorbis))
-        {
-            Channels = (uint) vorbis.Channels,
-            SampleRate = (uint) (vorbis.SampleRate * speed),
-            Format = "s16le",
-        };
-
-        FFMpegArguments
-            .FromPipeInput(videoFramesSource)
-            .AddPipeInput(audioFramesSource)
-            .OutputToFile(outputPath, true, options => options
-                .WithVideoCodec(videoCodec)
-                .WithAudioCodec(audioCodec))
-            .ProcessSynchronously();
-    }
-
-    private static IEnumerable<IVideoFrame> CreateVideoFrames(
-        float step, float duration,
-        BeatmapRunner beatmapRunner, IRenderer renderer, ILogger logger)
-    {
-        var i = 0;
-        for (var t = 0.0f; t <= duration; t += step)
-        {
-            beatmapRunner.ProcessFrame(t);
-            renderer.ProcessFrame();
-            
-            var window = (FFmpegWindow) renderer.Window;
-            var currentFrame = window.CurrentFrame;
-            if (currentFrame is null)
-                continue;
-            
-            yield return new FFmpegFrameData(currentFrame);
-            
-            logger.LogInformation("Rendered {FrameCount} frames ({Time}/{Duration} seconds)", ++i, t, duration);
-        }
-    }
-
-    private static IEnumerable<IAudioSample> CreateAudioFrames(Vorbis vorbis)
-    {
-        while (true)
-        {
-            vorbis.SubmitBuffer();
+            Speed = speed,
+            VideoCodec = videoCodec,
+            AudioCodec = audioCodec,
+            OutputPath = outputPath
+        });
         
-            if (vorbis.Decoded == 0)
-                yield break;
-
-            var sBuffer = vorbis.SongBuffer;
-            var bBuffer = MemoryMarshal.Cast<short, byte>(sBuffer);
-            yield return new FFmpegAudioFrame(bBuffer.ToArray());
-        }
-    }
-
-    public IAppSettings AppSettings { get; } = appSettings;
-
-    public void ConfigureLogging(ILoggingBuilder loggingBuilder)
-        => loggingBuilder.AddConsole();
-
-    public IResourceManager? CreateResourceManager(IServiceProvider serviceProvider)
-        => null;
-
-    public IWindowManager CreateWindowManager(IServiceProvider serviceProvider)
-        => new FFmpegWindowManager();
-
-    public IRenderer CreateRenderer(IServiceProvider serviceProvider)
-        => backend switch
+        services.AddLogging(builder =>
         {
-            RenderingBackend.OpenGL => new Rendering.OpenGL.Renderer(
-                serviceProvider.GetRequiredService<IAppSettings>(),
-                serviceProvider.GetRequiredService<IWindowManager>(),
-                serviceProvider.GetRequiredService<IResourceManager>(),
-                serviceProvider.GetRequiredService<ILogger<Rendering.OpenGL.Renderer>>()),
-            RenderingBackend.OpenGLES => new Rendering.OpenGLES.Renderer(
-                serviceProvider.GetRequiredService<IAppSettings>(),
-                serviceProvider.GetRequiredService<IWindowManager>(),
-                serviceProvider.GetRequiredService<IResourceManager>(),
-                serviceProvider.GetRequiredService<ILogger<Rendering.OpenGLES.Renderer>>()),
-            _ => throw new NotSupportedException($"Rendering backend '{backend}' is not supported")
-        };
+            builder.SetMinimumLevel(LogLevel.Information);
+            builder.AddConsole();
+        });
+        
+        services.AddPAS(builder =>
+        {
+            builder.UseAppSettings(appSettings);
+            builder.UseWindowManager<FFmpegWindowManager>();
+            builder.UseMediaProvider<FFmpegMediaProvider>();
+            switch (backend)
+            {
+                case RenderingBackend.OpenGL:
+                    builder.UseOpenGLRenderer();
+                    break;
+                case RenderingBackend.OpenGLES:
+                    builder.UseOpenGLESRenderer();
+                    break;
+            }
+        });
+        
+        // Register frame generator
+        services.AddTransient<FFmpegFrameGenerator>();
 
-    public IMediaProvider CreateMediaProvider(IServiceProvider serviceProvider)
-        => new FFmpegMediaProvider(beatmapPath);
+        using var sp = services.InitializePAS(out _, out _);
+        
+        var frameGenerator = sp.GetRequiredService<FFmpegFrameGenerator>();
+        frameGenerator.Generate();
+    }
 }

@@ -1,13 +1,14 @@
 using OpenTK.Graphics.OpenGL;
+using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Data;
 
 namespace ParallelAnimationSystem.Rendering.OpenGL.PostProcessing;
 
-public class Bloom(IResourceManager resourceManager) : IDisposable
+public class Bloom : IDisposable
 {
-    private int prefilterProgram, downsampleProgram, upsampleProgram, combineProgram;
-    private int 
+    private readonly int prefilterProgram, downsampleProgram, upsampleProgram, combineProgram;
+    private readonly int 
         prefilterSizeUniformLocation,
         prefilterThresholdUniformLocation,
         downsampleSizeUniformLocation,
@@ -18,18 +19,18 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
         combineSizeUniformLocation,
         combineIntensityUniformLocation;
     
-    private int textureSampler;
+    private readonly int textureSampler;
     
     private readonly List<int> downsampleMipChain = [];
     private readonly List<int> upsampleMipChain = [];
     private Vector2i currentSize = -Vector2i.One;
 
-    public void Initialize()
+    public Bloom(ResourceLoader loader)
     {
-        prefilterProgram = CreateProgram("BloomPrefilter");
-        downsampleProgram = CreateProgram("BloomDownsample");
-        upsampleProgram = CreateProgram("BloomUpsample");
-        combineProgram = CreateProgram("BloomCombine");
+        prefilterProgram = LoaderUtil.LoadComputeProgram(loader, "BloomPrefilter");
+        downsampleProgram = LoaderUtil.LoadComputeProgram(loader, "BloomDownsample");
+        upsampleProgram = LoaderUtil.LoadComputeProgram(loader, "BloomUpsample");
+        combineProgram = LoaderUtil.LoadComputeProgram(loader, "BloomCombine");
         
         prefilterSizeUniformLocation = GL.GetUniformLocation(prefilterProgram, "uSize");
         prefilterThresholdUniformLocation = GL.GetUniformLocation(prefilterProgram, "uThreshold");
@@ -178,36 +179,6 @@ public class Bloom(IResourceManager resourceManager) : IDisposable
     {
         var minDim = Math.Min(size.X, size.Y);
         return (int) MathF.Floor(MathF.Log(minDim, 2));
-    }
-    
-    private int CreateProgram(string shaderName)
-    {
-        var shaderSource = resourceManager.LoadResourceString($"OpenGL/Shaders/PostProcessing/{shaderName}.glsl");
-        var shader = GL.CreateShader(ShaderType.ComputeShader);
-        GL.ShaderSource(shader, shaderSource);
-        GL.CompileShader(shader);
-        
-        var compileStatus = GL.GetShaderi(shader, ShaderParameterName.CompileStatus);
-        if (compileStatus == 0)
-        {
-            GL.GetShaderInfoLog(shader, out var infoLog);
-            throw new Exception($"Failed to compile shader: {infoLog}");
-        }
-        
-        var program = GL.CreateProgram();
-        GL.AttachShader(program, shader);
-        GL.LinkProgram(program);
-        
-        var linkStatus = GL.GetProgrami(program, ProgramProperty.LinkStatus);
-        if (linkStatus == 0)
-        {
-            GL.GetProgramInfoLog(program, out var infoLog);
-            throw new Exception($"Failed to link program: {infoLog}");
-        }
-        
-        GL.DeleteShader(shader);
-        
-        return program;
     }
 
     public void Dispose()

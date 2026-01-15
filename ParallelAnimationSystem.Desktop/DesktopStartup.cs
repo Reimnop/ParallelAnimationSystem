@@ -1,13 +1,12 @@
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using ParallelAnimationSystem.Data;
-using ParallelAnimationSystem.Rendering;
-using ParallelAnimationSystem.Windowing;
+using ParallelAnimationSystem.Mathematics;
+using ParallelAnimationSystem.Rendering.OpenGL;
+using ParallelAnimationSystem.Rendering.OpenGLES;
 
 namespace ParallelAnimationSystem.Desktop;
 
-public class DesktopStartup(DesktopAppSettings appSettings, string beatmapPath, string audioPath, RenderingBackend backend) : IStartup
+public static class DesktopStartup
 {
     public static void ConsumeOptions(
         string beatmapPath,
@@ -21,39 +20,72 @@ public class DesktopStartup(DesktopAppSettings appSettings, string beatmapPath, 
         bool enablePostProcessing,
         bool enableTextRendering)
     {
-        var appSettings = new DesktopAppSettings(
-            vsync ? 1 : 0,
-            workerCount,
-            seed < 0
+        var appSettings = new AppSettings
+        {
+            InitialSize = new Vector2i(1366, 768),
+            SwapInterval = vsync ? 1 : 0,
+            WorkerCount = workerCount,
+            Seed = seed < 0
                 ? (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds()
                 : (ulong) seed,
-            lockAspectRatio ? 16.0f / 9.0f : null,
-            enablePostProcessing,
-            enableTextRendering
-        );
+            AspectRatio = lockAspectRatio ? 16.0f / 9.0f : null,
+            EnablePostProcessing = enablePostProcessing,
+            EnableTextRendering = enableTextRendering,
+        };
+
+        var services = new ServiceCollection();
+
+        services.AddSingleton(new MediaContext
+        {
+            BeatmapPath = beatmapPath
+        });
         
-        var startup = new DesktopStartup(appSettings, beatmapPath, audioPath, backend);
-        using var app = startup.InitializeApp();
-        using var audioPlayer = AudioPlayer.Load(audioPath);
-        var baseFrequency = audioPlayer.Frequency;
-        audioPlayer.Frequency = baseFrequency * speed;
+        services.AddLogging(builder =>
+        {
+            builder.SetMinimumLevel(LogLevel.Information);
+            builder.AddConsole();
+        });
         
-        var beatmapRunner = app.BeatmapRunner;
-        var renderer = app.Renderer;
+        services.AddPAS(builder =>
+        {
+            builder.UseAppSettings(appSettings);
+            builder.UseWindowManager<DesktopWindowManager>();
+            builder.UseMediaProvider<DesktopMediaProvider>();
+            switch (backend)
+            {
+                case RenderingBackend.OpenGL:
+                    builder.UseOpenGLRenderer();
+                    break;
+                case RenderingBackend.OpenGLES:
+                    builder.UseOpenGLESRenderer();
+                    break;
+            }
+        });
+
+        using var _ = services.InitializePAS(out var beatmapRunner, out var renderer);
         
         var appShutdown = false;
         var appThread = new Thread(() =>
         {
-            // ReSharper disable once AccessToModifiedClosure
+            // Load audio in app thread
+            using var audioPlayer = AudioPlayer.Load(audioPath);
+            var baseFrequency = audioPlayer.Frequency;
+            audioPlayer.Frequency = baseFrequency * speed;
+            
+            // Start playback
+            audioPlayer.Play();
+            
             // ReSharper disable once LoopVariableIsNeverChangedInsideLoop
+            // ReSharper disable once AccessToModifiedClosure
             while (!appShutdown)
-                // ReSharper disable once AccessToDisposedClosure
                 if (!beatmapRunner.ProcessFrame((float) audioPlayer.Position))
                     Thread.Yield();
+            
+            // Stop playback
+            audioPlayer.Stop();
         });
-        appThread.Start();
         
-        audioPlayer.Play();
+        appThread.Start();
         
         // Enter the render loop
         while (!renderer.Window.ShouldClose)
@@ -66,34 +98,4 @@ public class DesktopStartup(DesktopAppSettings appSettings, string beatmapPath, 
         // Wait for the app thread to finish
         appThread.Join();
     }
-
-    public IAppSettings AppSettings { get; } = appSettings;
-
-    public void ConfigureLogging(ILoggingBuilder loggingBuilder)
-        => loggingBuilder.AddConsole();
-
-    public IResourceManager? CreateResourceManager(IServiceProvider serviceProvider)
-        => null;
-
-    public IWindowManager CreateWindowManager(IServiceProvider serviceProvider)
-        => new DesktopWindowManager();
-
-    public IRenderer CreateRenderer(IServiceProvider serviceProvider)
-        => backend switch
-        {
-            RenderingBackend.OpenGL => new Rendering.OpenGL.Renderer(
-                serviceProvider.GetRequiredService<IAppSettings>(),
-                serviceProvider.GetRequiredService<IWindowManager>(),
-                serviceProvider.GetRequiredService<IResourceManager>(),
-                serviceProvider.GetRequiredService<ILogger<Rendering.OpenGL.Renderer>>()),
-            RenderingBackend.OpenGLES => new Rendering.OpenGLES.Renderer(
-                serviceProvider.GetRequiredService<IAppSettings>(),
-                serviceProvider.GetRequiredService<IWindowManager>(),
-                serviceProvider.GetRequiredService<IResourceManager>(),
-                serviceProvider.GetRequiredService<ILogger<Rendering.OpenGLES.Renderer>>()),
-            _ => throw new NotSupportedException($"Rendering backend '{backend}' is not supported")
-        };
-
-    public IMediaProvider CreateMediaProvider(IServiceProvider serviceProvider)
-        => new DesktopMediaProvider(beatmapPath);
 }

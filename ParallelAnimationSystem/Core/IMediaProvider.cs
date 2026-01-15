@@ -1,7 +1,6 @@
 using Pamx.Common;
-using ParallelAnimationSystem.Core;
 
-namespace ParallelAnimationSystem.Data;
+namespace ParallelAnimationSystem.Core;
 
 public interface IMediaProvider
 {

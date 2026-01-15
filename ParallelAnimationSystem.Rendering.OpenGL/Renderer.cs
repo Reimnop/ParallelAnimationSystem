@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using System.Numerics;
+using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering.Common;
@@ -16,10 +17,10 @@ using TmpParser;
 
 namespace ParallelAnimationSystem.Rendering.OpenGL;
 
-public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IResourceManager resourceManager, ILogger<Renderer> logger) : IRenderer
+public class Renderer : IRenderer, IDisposable
 {
-    private record MeshHandle(int VertexOffset, int VertexCount, int IndexOffset, int IndexCount) : IMeshHandle;
-    private class FontHandle(TmpFile fontFile, Dictionary<char, TmpCharacter> ordinalToCharacter, Dictionary<int, TmpGlyph> glyphIdToGlyph) : IFontHandle
+    public record MeshHandle(int VertexOffset, int VertexCount, int IndexOffset, int IndexCount) : IMeshHandle;
+    public class FontHandle(TmpFile fontFile, Dictionary<char, TmpCharacter> ordinalToCharacter, Dictionary<int, TmpGlyph> glyphIdToGlyph) : IFontHandle
     { 
         public TmpFile FontFile { get; } = fontFile;
         public TmpMetadata Metadata { get; } = fontFile.Metadata;
@@ -37,18 +38,16 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
             AtlasHandle = atlasHandle;
         }
     }
-    private record TextHandle(RenderGlyph[] Glyphs) : ITextHandle;
+    public record TextHandle(RenderGlyph[] Glyphs) : ITextHandle;
     
     private const int MaxFonts = 12;
     private const int MsaaSamples = 4;
 
-    public IWindow Window => windowHandle ?? throw new InvalidOperationException("Renderer has not been initialized");
+    public IWindow Window { get; }
     public int QueuedDrawListCount => drawListQueue.Count;
 
-    private IWindow? windowHandle;
-
     // Synchronization
-    private readonly object meshDataLock = new();
+    private readonly Lock meshDataLock = new();
     
     // Draw list stuff
     private readonly ConcurrentQueue<DrawList> drawListPool = [];
@@ -57,40 +56,207 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
     // Rendering data
     private readonly Buffer vertexBuffer = new();
     private readonly Buffer indexBuffer = new();
-    private bool newMeshData = true;
+    private bool newMeshData;
     
     // Post processors
-    private readonly Bloom bloom = new(resourceManager);
-    private readonly UberPost uberPost = new(resourceManager);
+    private readonly Bloom bloom;
+    private readonly UberPost uberPost;
     
     // Graphics data
     private readonly List<FontHandle> registeredFonts = [];
-    private IMeshHandle? baseFontMeshHandle;
+    private readonly MeshHandle baseFontMeshHandle;
     
-    private int vertexArrayHandle, vertexBufferHandle, indexBufferHandle;
-    private int multiDrawIndirectBufferHandle, multiDrawIndirectBufferSize;
-    private int multiDrawStorageBufferHandle, multiDrawStorageBufferSize;
-    private int multiDrawGlyphBufferHandle, multiDrawGlyphBufferSize;
-    private int programHandle;
-    private int fontAtlasesUniformLocation;
-    private int fontAtlasSampler;
+    private readonly int vertexArrayHandle, vertexBufferHandle, indexBufferHandle;
+    private readonly int multiDrawIndirectBufferHandle;
+    private int multiDrawIndirectBufferSize;
+    private readonly int multiDrawStorageBufferHandle;
+    private int multiDrawStorageBufferSize;
+    private readonly int multiDrawGlyphBufferHandle;
+    private int multiDrawGlyphBufferSize;
+    private readonly int programHandle;
+    private readonly int fontAtlasesUniformLocation;
+    private readonly int fontAtlasSampler;
     
     private Vector2i currentFboSize;
     private int fboColorBufferHandle, fboDepthBufferHandle;
-    private int fboHandle;
+    private readonly int fboHandle;
     private int postProcessTextureHandle1, postProcessTextureHandle2;
-    private int postProcessFboHandle;
+    private readonly int postProcessFboHandle;
 
-    private readonly List<DrawData> opaqueDrawData = [];
-    private readonly List<DrawData> transparentDrawData = [];
+    private readonly List<DrawList.DrawData> opaqueDrawData = [];
+    private readonly List<DrawList.DrawData> transparentDrawData = [];
     
     private readonly Buffer multiDrawIndirectBuffer = new();
     private readonly Buffer multiDrawStorageBuffer = new();
     private readonly Buffer multiDrawGlyphBuffer = new();
+
+    private readonly AppSettings appSettings;
+    private readonly ILogger<Renderer> logger;
+
+    public Renderer(AppSettings appSettings, IWindowManager windowManager, ResourceLoader loader, ILogger<Renderer> logger)
+    {
+        this.appSettings = appSettings;
+        this.logger = logger;
+
+        logger.LogInformation("Initializing OpenGL renderer");
+        
+        // Create window
+        Window = windowManager.CreateWindow(
+            "Parallel Animation System", 
+            appSettings.InitialSize,
+            new GLContextSettings
+            {
+                Version = new Version(4, 6),
+                ES = false,
+            });
+        Window.MakeContextCurrent();
+        
+        // Set swap interval
+        Window.SetSwapInterval(appSettings.SwapInterval);
+        
+        // Load OpenGL bindings
+        GLLoader.LoadBindings(new WMBindingsContext(windowManager));
+        
+        logger.LogInformation("Window created");
+        
+        // Enable multisampling
+        GL.Enable(EnableCap.Multisample);
+        
+        // Log OpenGL info
+        logger.LogInformation("OpenGL: {Version}", GL.GetString(StringName.Version));
+        logger.LogInformation("Renderer: {Renderer}", GL.GetString(StringName.Renderer));
+        logger.LogInformation("Vendor: {Vendor}", GL.GetString(StringName.Vendor));
+        logger.LogInformation("Shading language: {ShadingLanguage}", GL.GetString(StringName.ShadingLanguageVersion));
+        
+        // Register text mesh
+        baseFontMeshHandle = (MeshHandle) RegisterMesh([
+            new Vector2(0.0f, 1.0f),
+            new Vector2(1.0f, 1.0f),
+            new Vector2(0.0f, 0.0f),
+            new Vector2(1.0f, 0.0f),
+        ], [
+            0, 1, 2,
+            3, 2, 1,
+        ]);
+        
+        #region OpenGL Data Initialization
+
+        {
+            var size = Window.FramebufferSize;
+            
+            // We will exclusively use DSA for this project
+            vertexArrayHandle = GL.CreateVertexArray();
+            vertexBufferHandle = GL.CreateBuffer();
+            indexBufferHandle = GL.CreateBuffer();
+
+            // Bind buffers to vertex array
+            GL.EnableVertexArrayAttrib(vertexArrayHandle, 0);
+            GL.VertexArrayVertexBuffer(vertexArrayHandle, 0, vertexBufferHandle, IntPtr.Zero, Unsafe.SizeOf<Vector2>());
+            GL.VertexArrayAttribFormat(vertexArrayHandle, 0, 2, VertexAttribType.Float, false, 0);
+            GL.VertexArrayAttribBinding(vertexArrayHandle, 0, 0);
+
+            GL.VertexArrayElementBuffer(vertexArrayHandle, indexBufferHandle);
+
+            // Initialize multi draw buffer
+            multiDrawIndirectBufferHandle = GL.CreateBuffer();
+            multiDrawStorageBufferHandle = GL.CreateBuffer();
+            multiDrawGlyphBufferHandle = GL.CreateBuffer();
+
+            // Initialize shader program
+            var vertexShaderSource = loader.ReadResourceString("Shaders/UberVertex.glsl");
+            if (vertexShaderSource is null)
+                throw new InvalidOperationException("Could not load Uber vertex shader source");
+
+            var fragmentShaderSource = loader.ReadResourceString("Shaders/UberFragment.glsl");
+            if (fragmentShaderSource is null)
+                throw new InvalidOperationException("Could not load Uber fragment shader source");
+
+            // Create shaders
+            var vertexShader = GL.CreateShader(ShaderType.VertexShader);
+            GL.ShaderSource(vertexShader, vertexShaderSource);
+            GL.CompileShader(vertexShader);
+
+            // Check for vertex shader compilation errors
+            var vertexStatus = GL.GetShaderi(vertexShader, ShaderParameterName.CompileStatus);
+            if (vertexStatus == 0)
+            {
+                GL.GetShaderInfoLog(vertexShader, out var infoLog);
+                throw new InvalidOperationException($"Vertex shader compilation failed: {infoLog}");
+            }
+
+            var fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
+            GL.ShaderSource(fragmentShader, fragmentShaderSource);
+            GL.CompileShader(fragmentShader);
+
+            // Check for fragment shader compilation errors
+            var fragmentStatus = GL.GetShaderi(fragmentShader, ShaderParameterName.CompileStatus);
+            if (fragmentStatus == 0)
+            {
+                GL.GetShaderInfoLog(fragmentShader, out var infoLog);
+                throw new InvalidOperationException($"Fragment shader compilation failed: {infoLog}");
+            }
+
+            // Create program
+            programHandle = GL.CreateProgram();
+            GL.AttachShader(programHandle, vertexShader);
+            GL.AttachShader(programHandle, fragmentShader);
+            GL.LinkProgram(programHandle);
+
+            // Check for program linking errors
+            var linkStatus = GL.GetProgrami(programHandle, ProgramProperty.LinkStatus);
+            if (linkStatus == 0)
+            {
+                GL.GetProgramInfoLog(programHandle, out var infoLog);
+                throw new InvalidOperationException($"Program linking failed: {infoLog}");
+            }
+
+            // Clean up
+            GL.DeleteShader(vertexShader);
+            GL.DeleteShader(fragmentShader);
+
+            // Get uniform locations
+            fontAtlasesUniformLocation = GL.GetUniformLocation(programHandle, "uFontAtlases");
+
+            // Initialize font atlas sampler
+            fontAtlasSampler = GL.CreateSampler();
+            GL.SamplerParameteri(fontAtlasSampler, SamplerParameterI.TextureMinFilter, (int)TextureMinFilter.Linear);
+            GL.SamplerParameteri(fontAtlasSampler, SamplerParameterI.TextureMagFilter, (int)TextureMagFilter.Linear);
+
+            // Initialize fbos
+            // Initialize scene fbo
+            fboColorBufferHandle = GL.CreateRenderbuffer();
+            GL.NamedRenderbufferStorageMultisample(fboColorBufferHandle, MsaaSamples, InternalFormat.Rgba16f, size.X, size.Y);
+
+            fboDepthBufferHandle = GL.CreateRenderbuffer();
+            GL.NamedRenderbufferStorageMultisample(fboDepthBufferHandle, MsaaSamples, InternalFormat.DepthComponent32f, size.X, size.Y);
+
+            fboHandle = GL.CreateFramebuffer();
+            GL.NamedFramebufferRenderbuffer(fboHandle, FramebufferAttachment.ColorAttachment0, RenderbufferTarget.Renderbuffer, fboColorBufferHandle);
+            GL.NamedFramebufferRenderbuffer(fboHandle, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, fboDepthBufferHandle);
+
+            // Initialize post process fbo
+            postProcessTextureHandle1 = GL.CreateTexture(TextureTarget.Texture2d);
+            GL.TextureStorage2D(postProcessTextureHandle1, 1, SizedInternalFormat.Rgba16f, size.X, size.Y);
+
+            postProcessTextureHandle2 = GL.CreateTexture(TextureTarget.Texture2d);
+            GL.TextureStorage2D(postProcessTextureHandle2, 1, SizedInternalFormat.Rgba16f, size.X, size.Y);
+
+            postProcessFboHandle = GL.CreateFramebuffer();
+            // We will bind the texture later
+
+            currentFboSize = size;
+
+            // Initialize post processors
+            uberPost = new UberPost(loader);
+            bloom = new Bloom(loader);
+        }
+
+        #endregion
+    }
     
     public IMeshHandle RegisterMesh(ReadOnlySpan<Vector2> vertices, ReadOnlySpan<int> indices)
     {
-        lock (meshDataLock)
+        using(meshDataLock.EnterScope())
         {
             newMeshData = true;
 
@@ -153,53 +319,6 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         }
     }
 
-    public void Initialize()
-    {
-        logger.LogInformation("Initializing renderer");
-
-        // Create window
-        windowHandle = windowManager.CreateWindow(
-            "Parallel Animation System", 
-            appSettings.InitialSize,
-            new GLContextSettings
-            {
-                Version = new Version(4, 6),
-                ES = false,
-            });
-        windowHandle.MakeContextCurrent();
-        
-        // Set swap interval
-        windowHandle.SetSwapInterval(appSettings.SwapInterval);
-        
-        // Load OpenGL bindings
-        GLLoader.LoadBindings(new BindingsContext(windowManager));
-        
-        logger.LogInformation("Window created");
-        
-        // Register text mesh
-        baseFontMeshHandle = RegisterMesh([
-            new Vector2(0.0f, 1.0f),
-            new Vector2(1.0f, 1.0f),
-            new Vector2(0.0f, 0.0f),
-            new Vector2(1.0f, 0.0f),
-        ], [
-            0, 1, 2,
-            3, 2, 1,
-        ]);
-        
-        // Initialize OpenGL data
-        InitializeOpenGlData(windowHandle.FramebufferSize);
-        
-        // Enable multisampling
-        GL.Enable(EnableCap.Multisample);
-        
-        // Log OpenGL info
-        logger.LogInformation("OpenGL: {Version}", GL.GetString(StringName.Version));
-        logger.LogInformation("Renderer: {Renderer}", GL.GetString(StringName.Renderer));
-        logger.LogInformation("Vendor: {Vendor}", GL.GetString(StringName.Vendor));
-        logger.LogInformation("Shading language: {ShadingLanguage}", GL.GetString(StringName.ShadingLanguageVersion));
-    }
-
     public IDrawList GetDrawList()
     {
         if (!drawListPool.TryDequeue(out var drawList))
@@ -212,142 +331,17 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         drawListQueue.Enqueue((DrawList) drawList);
     }
 
-    private void InitializeOpenGlData(Vector2i size)
-    {
-        // We will exclusively use DSA for this project
-        vertexArrayHandle = GL.CreateVertexArray();
-        vertexBufferHandle = GL.CreateBuffer();
-        indexBufferHandle = GL.CreateBuffer();
-
-        // Upload data to GPU
-        lock (meshDataLock)
-        {
-            var vertexBufferData = vertexBuffer.Data;
-            var indexBufferData = indexBuffer.Data;
-            var vertexBufferSize = vertexBufferData.Length * Unsafe.SizeOf<Vector2>();
-            var indexBufferSize = indexBufferData.Length * sizeof(int);
-        
-            GL.NamedBufferData(vertexBufferHandle, vertexBufferSize, vertexBuffer.Data, VertexBufferObjectUsage.StaticDraw);
-            GL.NamedBufferData(indexBufferHandle, indexBufferSize, indexBuffer.Data, VertexBufferObjectUsage.StaticDraw);
-        
-            newMeshData = false;
-        }
-        
-        // Bind buffers to vertex array
-        GL.EnableVertexArrayAttrib(vertexArrayHandle, 0);
-        GL.VertexArrayVertexBuffer(vertexArrayHandle, 0, vertexBufferHandle, IntPtr.Zero, Unsafe.SizeOf<Vector2>());
-        GL.VertexArrayAttribFormat(vertexArrayHandle, 0, 2, VertexAttribType.Float, false, 0);
-        GL.VertexArrayAttribBinding(vertexArrayHandle, 0, 0);
-                
-        GL.VertexArrayElementBuffer(vertexArrayHandle, indexBufferHandle);
-        
-        // Initialize multi draw buffer
-        multiDrawIndirectBufferHandle = GL.CreateBuffer();
-        multiDrawStorageBufferHandle = GL.CreateBuffer();
-        multiDrawGlyphBufferHandle = GL.CreateBuffer();
-        
-        // Initialize shader program
-        var vertexShaderSource = resourceManager.LoadResourceString("OpenGL/Shaders/UberVertex.glsl");
-        var fragmentShaderSource = resourceManager.LoadResourceString("OpenGL/Shaders/UberFragment.glsl");
-        
-        // Create shaders
-        var vertexShader = GL.CreateShader(ShaderType.VertexShader);
-        GL.ShaderSource(vertexShader, vertexShaderSource);
-        GL.CompileShader(vertexShader);
-        
-        // Check for vertex shader compilation errors
-        var vertexStatus = GL.GetShaderi(vertexShader, ShaderParameterName.CompileStatus);
-        if (vertexStatus == 0)
-        {
-            GL.GetShaderInfoLog(vertexShader, out var infoLog);
-            throw new InvalidOperationException($"Vertex shader compilation failed: {infoLog}");
-        }
-        
-        var fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
-        GL.ShaderSource(fragmentShader, fragmentShaderSource);
-        GL.CompileShader(fragmentShader);
-        
-        // Check for fragment shader compilation errors
-        var fragmentStatus = GL.GetShaderi(fragmentShader, ShaderParameterName.CompileStatus);
-        if (fragmentStatus == 0)
-        {
-            GL.GetShaderInfoLog(fragmentShader, out var infoLog);
-            throw new InvalidOperationException($"Fragment shader compilation failed: {infoLog}");
-        }
-        
-        // Create program
-        programHandle = GL.CreateProgram();
-        GL.AttachShader(programHandle, vertexShader);
-        GL.AttachShader(programHandle, fragmentShader);
-        GL.LinkProgram(programHandle);
-        
-        // Check for program linking errors
-        var linkStatus = GL.GetProgrami(programHandle, ProgramProperty.LinkStatus);
-        if (linkStatus == 0)
-        {
-            GL.GetProgramInfoLog(programHandle, out var infoLog);
-            throw new InvalidOperationException($"Program linking failed: {infoLog}");
-        }
-        
-        // Clean up
-        GL.DeleteShader(vertexShader);
-        GL.DeleteShader(fragmentShader);
-        
-        // Get uniform locations
-        fontAtlasesUniformLocation = GL.GetUniformLocation(programHandle, "uFontAtlases");
-        
-        // Initialize font atlas sampler
-        fontAtlasSampler = GL.CreateSampler();
-        GL.SamplerParameteri(fontAtlasSampler, SamplerParameterI.TextureMinFilter, (int) TextureMinFilter.Linear);
-        GL.SamplerParameteri(fontAtlasSampler, SamplerParameterI.TextureMagFilter, (int) TextureMagFilter.Linear);
-        
-        // Initialize fbos
-        // Initialize scene fbo
-        fboColorBufferHandle = GL.CreateRenderbuffer();
-        GL.NamedRenderbufferStorageMultisample(fboColorBufferHandle, MsaaSamples, InternalFormat.Rgba16f, size.X, size.Y);
-        
-        fboDepthBufferHandle = GL.CreateRenderbuffer();
-        GL.NamedRenderbufferStorageMultisample(fboDepthBufferHandle, MsaaSamples, InternalFormat.DepthComponent32f, size.X, size.Y);
-        
-        fboHandle = GL.CreateFramebuffer();
-        GL.NamedFramebufferRenderbuffer(fboHandle, FramebufferAttachment.ColorAttachment0, RenderbufferTarget.Renderbuffer, fboColorBufferHandle);
-        GL.NamedFramebufferRenderbuffer(fboHandle, FramebufferAttachment.DepthAttachment, RenderbufferTarget.Renderbuffer, fboDepthBufferHandle);
-        
-        // Initialize post process fbo
-        postProcessTextureHandle1 = GL.CreateTexture(TextureTarget.Texture2d);
-        GL.TextureStorage2D(postProcessTextureHandle1, 1, SizedInternalFormat.Rgba16f, size.X, size.Y);
-        
-        postProcessTextureHandle2 = GL.CreateTexture(TextureTarget.Texture2d);
-        GL.TextureStorage2D(postProcessTextureHandle2, 1, SizedInternalFormat.Rgba16f, size.X, size.Y);
-        
-        postProcessFboHandle = GL.CreateFramebuffer();
-        // We will bind the texture later
-        
-        currentFboSize = size;
-        
-        // Initialize post processors
-        uberPost.Initialize();
-        bloom.Initialize();
-    }
-
     public bool ProcessFrame()
     {
-        if (windowHandle is null)
-            return false;
-        
-        // Check if window is closed
-        if (windowHandle.ShouldClose)
-            return false;
-        
         // Get current draw list
         if (!drawListQueue.TryDequeue(out var drawList))
             return false;
         
         // Request animation frame
-        windowHandle.RequestAnimationFrame((_, drawFramebuffer) =>
+        Window.RequestAnimationFrame((_, drawFramebuffer) =>
         {
             // Check framebuffer size
-            var size = windowHandle.FramebufferSize;
+            var size = Window.FramebufferSize;
             if (size.X <= 0 || size.Y <= 0)
                 return false;
             
@@ -506,7 +500,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         drawListPool.Enqueue(drawList);
     }
 
-    private void RenderDrawDataList(List<DrawData> drawDataList, Matrix3x2 camera)
+    private void RenderDrawDataList(List<DrawList.DrawData> drawDataList, Matrix3x2 camera)
     {
         if (drawDataList.Count == 0)
             return;
@@ -514,8 +508,6 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
         multiDrawIndirectBuffer.Clear();
         multiDrawStorageBuffer.Clear();
         multiDrawGlyphBuffer.Clear();
-        
-        var baseFontMesh = baseFontMeshHandle as MeshHandle;
         
         // Append data
         foreach (var drawData in drawDataList)
@@ -541,7 +533,10 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
 
             switch (renderType)
             {
-                case RenderType.Mesh when drawData.Mesh is MeshHandle mesh:
+                case RenderType.Mesh:
+                    var mesh = drawData.Mesh;
+                    Debug.Assert(mesh is not null);
+                    
                     multiDrawIndirectBuffer.Append(new DrawElementsIndirectCommand
                     {
                         Count = mesh.IndexCount,
@@ -551,17 +546,19 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
                         BaseInstance = 0
                     });
                     break;
-                case RenderType.Text when drawData.Text is TextHandle text:
-                    Debug.Assert(baseFontMesh is not null);
+                case RenderType.Text:
+                    var text = drawData.Text;
+                    Debug.Assert(text is not null);
+                    
                     multiDrawIndirectBuffer.Append(new DrawElementsIndirectCommand
                     {
-                        Count = baseFontMesh.IndexCount,
+                        Count = baseFontMeshHandle.IndexCount,
                         InstanceCount = text.Glyphs.Length,
-                        FirstIndex = baseFontMesh.IndexOffset,
-                        BaseVertex = baseFontMesh.VertexOffset,
+                        FirstIndex = baseFontMeshHandle.IndexOffset,
+                        BaseVertex = baseFontMeshHandle.VertexOffset,
                         BaseInstance = 0
                     });
-                    multiDrawGlyphBuffer.Append<RenderGlyph>(text.Glyphs);
+                    multiDrawGlyphBuffer.Append(text.Glyphs);
                     break;
                 default:
                     throw new InvalidOperationException($"Unsupported or invalid data for render type '{renderType}'");
@@ -644,7 +641,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
 
     private void UpdateMeshData()
     {
-        lock (meshDataLock)
+        using(meshDataLock.EnterScope())
         {
             if (!newMeshData)
                 return;
@@ -655,8 +652,8 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
             var vertexBufferData = vertexBuffer.Data;
             var indexBufferData = indexBuffer.Data;
                 
-            GL.NamedBufferSubData(vertexBufferHandle, IntPtr.Zero, vertexBufferData.Length, vertexBufferData);
-            GL.NamedBufferSubData(indexBufferHandle, IntPtr.Zero, indexBufferData.Length, indexBufferData);
+            GL.NamedBufferData(vertexBufferHandle, vertexBufferData.Length, vertexBufferData, VertexBufferObjectUsage.DynamicDraw);
+            GL.NamedBufferData(indexBufferHandle, indexBufferData.Length, indexBufferData, VertexBufferObjectUsage.DynamicDraw);
         }
         
         logger.LogInformation("OpenGL mesh buffers updated, now at {VertexSize} vertices and {IndexSize} indices", vertexBuffer.Data.Length / Unsafe.SizeOf<Vector2>(), indexBuffer.Data.Length / sizeof(int));
@@ -718,7 +715,7 @@ public class Renderer(IAppSettings appSettings, IWindowManager windowManager, IR
 
     public void Dispose()
     {
-        if (windowHandle is IDisposable disposable)
+        if (Window is IDisposable disposable)
             disposable.Dispose();
     }
 

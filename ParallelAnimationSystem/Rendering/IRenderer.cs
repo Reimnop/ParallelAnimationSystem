@@ -5,12 +5,10 @@ using TmpParser;
 
 namespace ParallelAnimationSystem.Rendering;
 
-public interface IRenderer : IDisposable
+public interface IRenderer
 {
     IWindow Window { get; }
     int QueuedDrawListCount { get; }
-    
-    void Initialize();
     
     IMeshHandle RegisterMesh(ReadOnlySpan<Vector2> vertices, ReadOnlySpan<int> indices);
     IFontHandle RegisterFont(Stream stream);

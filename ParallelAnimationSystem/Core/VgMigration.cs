@@ -9,12 +9,12 @@ using ParallelAnimationSystem.Data;
 
 namespace ParallelAnimationSystem.Core;
 
-public static class VgMigration
+public class VgMigration(ResourceLoader loader)
 {
-    public static void MigrateBeatmap(IBeatmap beatmap, IResourceManager resourceManager)
+    public void MigrateBeatmap(IBeatmap beatmap)
     {
         // Load themes
-        var themes = LoadThemes(resourceManager);
+        var themes = LoadThemes();
         
         // Add to beatmap
         beatmap.Themes.AddRange(themes.Values);
@@ -150,7 +150,7 @@ public static class VgMigration
             OffsetLayersRecursively(childrenLookup, child, offsetBy);
     }
 
-    private static Dictionary<string, ITheme> LoadThemes(IResourceManager resourceManager)
+    private Dictionary<string, ITheme> LoadThemes()
     {
         var themeNames = new[]
         {
@@ -181,7 +181,10 @@ public static class VgMigration
         
         foreach (var themeName in themeNames)
         {
-            var themeString = resourceManager.LoadResourceString($"Themes/{themeName}");
+            var themeString = loader.ReadResourceString($"Themes/{themeName}");
+            if (themeString is null)
+                throw new InvalidOperationException($"Could not load theme data for '{themeName}'");
+            
             var json = JsonNode.Parse(themeString);
             if (json is not JsonObject jsonObject)
                 continue;
