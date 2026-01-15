@@ -537,6 +537,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             IsEmpty = @object.Type is ObjectType.Empty or ObjectType.LegacyEmpty,
             ParentOffset = @object.ParentOffset,
             ParentType = @object.ParentType,
+            RenderMode = renderMode,
             AutoKillType = @object.AutoKillType,
             StartTime = @object.StartTime,
             KillTimeOffset = @object.AutoKillOffset,
