@@ -32,9 +32,21 @@ public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
 
     public DesktopWindow(string title, DesktopWindowSettings settings, OpenGLSettings glSettings)
     {
-        GLFW.WindowHint(WindowHintClientApi.ClientApi, glSettings.IsES ? ClientApi.OpenGlEsApi : ClientApi.OpenGlApi);
-        if (!glSettings.IsES)
+        if (glSettings.IsES)
+        {
+            GLFW.WindowHint(WindowHintClientApi.ClientApi, ClientApi.OpenGlEsApi);
+        }
+        else
+        {
+            GLFW.WindowHint(WindowHintClientApi.ClientApi, ClientApi.OpenGlApi);
             GLFW.WindowHint(WindowHintOpenGlProfile.OpenGlProfile, OpenGlProfile.Core);
+        }
+
+        if (settings.UseEgl) 
+        {
+            GLFW.WindowHint(WindowHintContextApi.ContextCreationApi, ContextApi.EglContextApi);
+        }
+        
         GLFW.WindowHint(WindowHintInt.ContextVersionMajor, glSettings.MajorVersion);
         GLFW.WindowHint(WindowHintInt.ContextVersionMinor, glSettings.MinorVersion);
         

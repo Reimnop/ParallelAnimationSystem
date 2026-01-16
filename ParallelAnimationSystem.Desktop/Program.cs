@@ -23,6 +23,12 @@ var vsyncOption = new Option<bool>(
     getDefaultValue: () => true
 );
 
+var useEglOption = new Option<bool>(
+    aliases: ["--use-egl"],
+    description: "Use EGL for context creation",
+    getDefaultValue: () => false
+);
+
 var workersOption = new Option<int>(
     aliases: ["--workers"],
     description: "Number of worker threads, set to -1 to use all available threads",
@@ -75,6 +81,7 @@ rootCommand.SetHandler(context =>
     var beatmapPath = context.ParseResult.GetValueForOption(beatmapOption)!;
     var audioPath = context.ParseResult.GetValueForOption(audioOption)!;
     var vsync = context.ParseResult.GetValueForOption(vsyncOption);
+    var useEgl = context.ParseResult.GetValueForOption(useEglOption);
     var workerCount = context.ParseResult.GetValueForOption(workersOption);
     var seed = context.ParseResult.GetValueForOption(seedOption);
     var backend = context.ParseResult.GetValueForOption(backendOption);
@@ -86,6 +93,7 @@ rootCommand.SetHandler(context =>
         beatmapPath,
         audioPath,
         vsync,
+        useEgl,
         workerCount,
         seed,
         backend,

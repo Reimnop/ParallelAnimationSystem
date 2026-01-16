@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering.OpenGL;
 using ParallelAnimationSystem.Rendering.OpenGLES;
 
@@ -12,6 +11,7 @@ public static class DesktopStartup
         string beatmapPath,
         string audioPath,
         bool vsync,
+        bool useEgl,
         int workerCount,
         long seed,
         RenderingBackend backend,
@@ -35,6 +35,7 @@ public static class DesktopStartup
         services.AddSingleton(new DesktopWindowSettings
         {
             VSync = vsync,
+            UseEgl = useEgl,
         });
 
         services.AddSingleton(new MediaContext

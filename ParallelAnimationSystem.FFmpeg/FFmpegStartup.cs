@@ -14,6 +14,7 @@ public static class FFmpegStartup
         string outputPath,
         int sizeX,
         int sizeY,
+        bool useEgl,
         int framerate,
         string videoCodec,
         string audioCodec,
@@ -39,7 +40,8 @@ public static class FFmpegStartup
         // Register contexts
         services.AddSingleton(new FFmpegWindowSettings
         {
-            Size = new Vector2i(sizeX, sizeY)
+            Size = new Vector2i(sizeX, sizeY),
+            UseEgl = useEgl,
         });
         
         services.AddSingleton(new MediaContext

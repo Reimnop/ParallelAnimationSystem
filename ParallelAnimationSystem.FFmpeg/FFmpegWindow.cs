@@ -32,9 +32,21 @@ public unsafe class FFmpegWindow : IOpenGLWindow, IDisposable
 
     public FFmpegWindow(string title, FFmpegWindowSettings settings, OpenGLSettings glSettings)
     {
-        GLFW.WindowHint(WindowHintClientApi.ClientApi, glSettings.IsES ? ClientApi.OpenGlEsApi : ClientApi.OpenGlApi);
-        if (!glSettings.IsES)
+        if (glSettings.IsES)
+        {
+            GLFW.WindowHint(WindowHintClientApi.ClientApi, ClientApi.OpenGlEsApi);
+        }
+        else
+        {
+            GLFW.WindowHint(WindowHintClientApi.ClientApi, ClientApi.OpenGlApi);
             GLFW.WindowHint(WindowHintOpenGlProfile.OpenGlProfile, OpenGlProfile.Core);
+        }
+
+        if (settings.UseEgl) 
+        {
+            GLFW.WindowHint(WindowHintContextApi.ContextCreationApi, ContextApi.EglContextApi);
+        }
+        
         GLFW.WindowHint(WindowHintInt.ContextVersionMajor, glSettings.MajorVersion);
         GLFW.WindowHint(WindowHintInt.ContextVersionMinor, glSettings.MinorVersion);
         GLFW.WindowHint(WindowHintBool.Visible, false);
