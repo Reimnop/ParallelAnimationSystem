@@ -69,6 +69,7 @@ var rootCommand = new RootCommand("Parallel Animation System");
 rootCommand.AddOption(beatmapOption);
 rootCommand.AddOption(audioOption);
 rootCommand.AddOption(vsyncOption);
+rootCommand.AddOption(useEglOption);
 rootCommand.AddOption(workersOption);
 rootCommand.AddOption(seedOption);
 rootCommand.AddOption(backendOption);

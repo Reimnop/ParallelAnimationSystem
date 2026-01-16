@@ -97,6 +97,7 @@ rootCommand.AddOption(audioOption);
 rootCommand.AddOption(outputOption);
 rootCommand.AddOption(widthOption);
 rootCommand.AddOption(heightOption);
+rootCommand.AddOption(useEglOption);
 rootCommand.AddOption(framerateOption);
 rootCommand.AddOption(videoCodecOption);
 rootCommand.AddOption(audioCodecOption);
