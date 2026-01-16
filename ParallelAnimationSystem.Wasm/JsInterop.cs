@@ -29,8 +29,6 @@ public static class JsInterop
 
         var appSettings = new AppSettings
         {
-            InitialSize = new Vector2i(1366, 768),
-            SwapInterval = 0,
             WorkerCount = -1,
             Seed = unchecked((ulong) seed),
             AspectRatio = null,

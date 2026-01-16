@@ -30,7 +30,7 @@ public unsafe class FFmpegWindow : IOpenGLWindow, IDisposable
 
     private readonly Window* window;
 
-    public FFmpegWindow(string title, Vector2i size, OpenGLSettings glSettings)
+    public FFmpegWindow(string title, FFmpegWindowSettings settings, OpenGLSettings glSettings)
     {
         GLFW.WindowHint(WindowHintClientApi.ClientApi, glSettings.IsES ? ClientApi.OpenGlEsApi : ClientApi.OpenGlApi);
         if (!glSettings.IsES)
@@ -41,7 +41,7 @@ public unsafe class FFmpegWindow : IOpenGLWindow, IDisposable
         GLFW.WindowHint(WindowHintBool.Resizable, false);
         GLFW.WindowHint(WindowHintBool.Decorated, false);
         
-        window = GLFW.CreateWindow(size.X, size.Y, title, null, null);
+        window = GLFW.CreateWindow(settings.Size.X, settings.Size.Y, title, null, null);
     }
     
     public void MakeContextCurrent()

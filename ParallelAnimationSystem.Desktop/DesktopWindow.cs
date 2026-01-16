@@ -30,7 +30,7 @@ public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
 
     private readonly Window* window;
 
-    public DesktopWindow(string title, Vector2i size, OpenGLSettings glSettings)
+    public DesktopWindow(string title, DesktopWindowSettings settings, OpenGLSettings glSettings)
     {
         GLFW.WindowHint(WindowHintClientApi.ClientApi, glSettings.IsES ? ClientApi.OpenGlEsApi : ClientApi.OpenGlApi);
         if (!glSettings.IsES)
@@ -38,7 +38,10 @@ public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
         GLFW.WindowHint(WindowHintInt.ContextVersionMajor, glSettings.MajorVersion);
         GLFW.WindowHint(WindowHintInt.ContextVersionMinor, glSettings.MinorVersion);
         
-        window = GLFW.CreateWindow(size.X, size.Y, title, null, null);
+        window = GLFW.CreateWindow(1366, 768, title, null, null);
+        
+        GLFW.MakeContextCurrent(window);
+        GLFW.SwapInterval(settings.VSync ? 1 : 0);
         
         // Load window icon
         using var iconStream = typeof(DesktopWindow).Assembly.GetManifestResourceStream("ParallelAnimationSystem.Desktop.icon.ico");

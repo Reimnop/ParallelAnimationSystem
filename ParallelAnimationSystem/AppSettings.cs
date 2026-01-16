@@ -1,11 +1,7 @@
-using ParallelAnimationSystem.Mathematics;
-
 namespace ParallelAnimationSystem;
 
 public class AppSettings
 {
-    public required Vector2i InitialSize { get; init; }
-    public required int SwapInterval { get; init; }
     public required int WorkerCount { get; init; }
     public required ulong Seed { get; init; }
     public required float? AspectRatio {  init;get; }

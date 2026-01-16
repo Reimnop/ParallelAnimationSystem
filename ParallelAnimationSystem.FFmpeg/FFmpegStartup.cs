@@ -1,10 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using OpenTK.Graphics.OpenGL;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering.OpenGL;
 using ParallelAnimationSystem.Rendering.OpenGLES;
-using StbVorbisSharp;
 
 namespace ParallelAnimationSystem.FFmpeg;
 
@@ -27,8 +25,6 @@ public static class FFmpegStartup
     {
         var appSettings = new AppSettings
         {
-            InitialSize = new Vector2i(sizeX, sizeY),
-            SwapInterval = 0,
             WorkerCount = -1,
             Seed = seed < 0
                 ? (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds()
@@ -41,6 +37,11 @@ public static class FFmpegStartup
         var services = new ServiceCollection();
 
         // Register contexts
+        services.AddSingleton(new FFmpegWindowSettings
+        {
+            Size = new Vector2i(sizeX, sizeY)
+        });
+        
         services.AddSingleton(new MediaContext
         {
             BeatmapPath = beatmapPath,

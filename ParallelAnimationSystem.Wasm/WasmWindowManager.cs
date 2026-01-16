@@ -18,7 +18,7 @@ public class WasmWindowManager : IOpenGLWindowManager, IDisposable
             throw new InvalidOperationException("Failed to initialize EGL");
     }
 
-    public IOpenGLWindow CreateWindow(string title, Vector2i size, OpenGLSettings glSettings)
+    public IOpenGLWindow CreateWindow(string title, OpenGLSettings glSettings)
         => new WasmWindow(display, title, glSettings);
 
     public IntPtr GetProcAddress(string procName)

@@ -80,11 +80,6 @@ public class WasmWindow : IOpenGLWindow, IDisposable
         if (!Egl.MakeCurrent(display, surface, surface, context))
             throw new InvalidOperationException("Failed to make context current");
     }
-
-    public void SetSwapInterval(int interval)
-    {
-        // Do nothing
-    }
     
     public void Present(int framebuffer, Vector4 clearColor, Vector2i size, Vector2i offset)
     {

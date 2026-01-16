@@ -1,18 +1,16 @@
-﻿using ParallelAnimationSystem.Mathematics;
-
-namespace ParallelAnimationSystem.Windowing.OpenGL;
+﻿namespace ParallelAnimationSystem.Windowing.OpenGL;
 
 public interface IOpenGLWindowManager : IWindowManager
 {
-    IWindow IWindowManager.CreateWindow(string title, Vector2i size, IGraphicsApiSettings graphicsApiSettings)
+    IWindow IWindowManager.CreateWindow(string title, IGraphicsApiSettings graphicsApiSettings)
     {
         if (graphicsApiSettings is not OpenGLSettings glSettings)
             throw GetUnsupportedGraphicsApiException("OpenGL");
         
-        return CreateWindow(title, size, glSettings);
+        return CreateWindow(title, glSettings);
     }
     
-    IOpenGLWindow CreateWindow(string title, Vector2i size, OpenGLSettings glSettings);
+    IOpenGLWindow CreateWindow(string title, OpenGLSettings glSettings);
 
     IntPtr GetProcAddress(string procName);
 }

@@ -46,8 +46,6 @@ public class PasActivity : Activity
 
         var appSettings = new AppSettings
         {
-            InitialSize = new Vector2i(1366, 768),
-            SwapInterval = 1,
             WorkerCount = 6,
             Seed = (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds(),
             AspectRatio = lockAspectRatio ? 16.0f / 9.0f : null,

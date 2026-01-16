@@ -86,7 +86,6 @@ public class Renderer : IRenderer, IDisposable
         // Create window
         window = (IOpenGLWindow) windowManager.CreateWindow(
             "Parallel Animation System", 
-            appSettings.InitialSize,
             new OpenGLSettings
             {
                 MajorVersion = 4,
@@ -94,9 +93,6 @@ public class Renderer : IRenderer, IDisposable
                 IsES = false
             });
         window.MakeContextCurrent();
-        
-        // Set swap interval
-        window.SetSwapInterval(appSettings.SwapInterval);
         
         // Load OpenGL bindings
         GLLoader.LoadBindings(new WMBindingsContext((IOpenGLWindowManager) windowManager));
@@ -283,6 +279,9 @@ public class Renderer : IRenderer, IDisposable
             }
         }
         var renderSize = new Vector2i(renderWidth, renderHeight);
+        
+        // Set context
+        window.MakeContextCurrent();
         
         // Update OpenGL data
         UpdateOpenGlData(renderSize);

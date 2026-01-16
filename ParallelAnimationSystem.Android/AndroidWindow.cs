@@ -38,12 +38,6 @@ public class AndroidWindow(IntPtr display, IntPtr context, IntPtr surface) : IOp
         if (!Egl.MakeCurrent(display, surface, surface, context))
             throw new Exception("Failed to make EGL context current");
     }
-
-    public void SetSwapInterval(int interval)
-    {
-        if (!Egl.SwapInterval(display, interval))
-            throw new Exception("Failed to set swap interval");
-    }
     
     public void Present(int framebuffer, Vector4 clearColor, Vector2i size, Vector2i offset)
     {

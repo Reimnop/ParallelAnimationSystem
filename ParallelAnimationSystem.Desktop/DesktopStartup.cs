@@ -14,7 +14,6 @@ public static class DesktopStartup
         bool vsync,
         int workerCount,
         long seed,
-        float speed,
         RenderingBackend backend,
         bool lockAspectRatio,
         bool enablePostProcessing,
@@ -22,8 +21,6 @@ public static class DesktopStartup
     {
         var appSettings = new AppSettings
         {
-            InitialSize = new Vector2i(1366, 768),
-            SwapInterval = vsync ? 1 : 0,
             WorkerCount = workerCount,
             Seed = seed < 0
                 ? (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds()
@@ -34,6 +31,11 @@ public static class DesktopStartup
         };
 
         var services = new ServiceCollection();
+
+        services.AddSingleton(new DesktopWindowSettings
+        {
+            VSync = vsync,
+        });
 
         services.AddSingleton(new MediaContext
         {

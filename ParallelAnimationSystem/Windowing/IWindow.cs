@@ -9,7 +9,6 @@ public interface IWindow
     bool ShouldClose { get; }
 
     void PollEvents();
-    void SetSwapInterval(int interval);
     
     void Close();
 }

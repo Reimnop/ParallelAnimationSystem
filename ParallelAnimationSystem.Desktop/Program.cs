@@ -35,12 +35,6 @@ var seedOption = new Option<long>(
     getDefaultValue: () => -1
 );
 
-var speedOption = new Option<float>(
-    aliases: ["--speed"],
-    description: "Sets the playback speed",
-    getDefaultValue: () => 1.0f
-);
-
 var backendOption = new Option<RenderingBackend>(
     aliases: ["--backend"],
     description: "Sets the rendering backend to use",
@@ -71,7 +65,6 @@ rootCommand.AddOption(audioOption);
 rootCommand.AddOption(vsyncOption);
 rootCommand.AddOption(workersOption);
 rootCommand.AddOption(seedOption);
-rootCommand.AddOption(speedOption);
 rootCommand.AddOption(backendOption);
 rootCommand.AddOption(lockAspectOption);
 rootCommand.AddOption(postProcessingOption);
@@ -84,7 +77,6 @@ rootCommand.SetHandler(context =>
     var vsync = context.ParseResult.GetValueForOption(vsyncOption);
     var workerCount = context.ParseResult.GetValueForOption(workersOption);
     var seed = context.ParseResult.GetValueForOption(seedOption);
-    var speed = context.ParseResult.GetValueForOption(speedOption);
     var backend = context.ParseResult.GetValueForOption(backendOption);
     var lockAspectRatio = context.ParseResult.GetValueForOption(lockAspectOption);
     var enablePostProcessing = context.ParseResult.GetValueForOption(postProcessingOption);
@@ -96,7 +88,6 @@ rootCommand.SetHandler(context =>
         vsync,
         workerCount,
         seed,
-        speed,
         backend,
         lockAspectRatio,
         enablePostProcessing,

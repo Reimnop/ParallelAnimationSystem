@@ -3,9 +3,7 @@ using System.Runtime.InteropServices;
 using Android.Runtime;
 using OpenTK.Graphics.Egl;
 using ParallelAnimationSystem.Mathematics;
-using ParallelAnimationSystem.Windowing;
 using ParallelAnimationSystem.Windowing.OpenGL;
-using IWindowManager = ParallelAnimationSystem.Windowing.IWindowManager;
 
 namespace ParallelAnimationSystem.Android;
 
@@ -25,7 +23,7 @@ public class AndroidWindowManager : IOpenGLWindowManager, IDisposable
         context.SurfaceView.SurfaceDestroyedCallback = _ => window?.Close();
     }
     
-    public IOpenGLWindow CreateWindow(string title, Vector2i size, OpenGLSettings glSettings)
+    public IOpenGLWindow CreateWindow(string title, OpenGLSettings glSettings)
     {
         if (window is not null)
             throw new NotSupportedException("Only one window is supported on Android");
