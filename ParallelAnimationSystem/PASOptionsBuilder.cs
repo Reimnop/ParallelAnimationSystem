@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.DependencyInjection;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Util;
@@ -6,13 +7,16 @@ using ParallelAnimationSystem.Windowing;
 
 namespace ParallelAnimationSystem;
 
-public class PASOptionsBuilder
+public class PASOptionsBuilder(IServiceCollection services)
 {
+    public IServiceCollection Services { get; } = services;
+    
     private AppSettings? appSettings;
     private readonly List<Func<IResourceSource>> resourceSourceFactories = [];
     private ServiceDefinition<IWindowManager>? windowManagerDefinition;
     private ServiceDefinition<IMediaProvider>? mediaProviderDefinition;
     private ServiceDefinition<IRenderer>? rendererDefinition;
+    private ServiceDefinition<IRenderingFactory>? renderingFactoryDefinition;
 
     public PASOptionsBuilder UseAppSettings(AppSettings settings)
     {
@@ -61,6 +65,16 @@ public class PASOptionsBuilder
     public PASOptionsBuilder UseRenderer<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>()
         where T : IRenderer
         => UseRenderer(typeof(T));
+    
+    public PASOptionsBuilder UseRenderingFactory(ServiceDefinition<IRenderingFactory> definition)
+    {
+        renderingFactoryDefinition = definition;
+        return this;
+    }
+    
+    public PASOptionsBuilder UseRenderingFactory<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>()
+        where T : IRenderingFactory
+        => UseRenderingFactory(typeof(T));
 
     public PASOptions Build()
     {
@@ -72,6 +86,8 @@ public class PASOptionsBuilder
             ThrowNotSet(nameof(mediaProviderDefinition));
         if (rendererDefinition is null)
             ThrowNotSet(nameof(rendererDefinition));
+        if (renderingFactoryDefinition is null)
+            ThrowNotSet(nameof(renderingFactoryDefinition));
 
         return new PASOptions
         {
@@ -80,6 +96,7 @@ public class PASOptionsBuilder
             WindowManagerDefinition = windowManagerDefinition,
             MediaProviderDefinition = mediaProviderDefinition,
             RendererDefinition = rendererDefinition,
+            RenderingFactoryDefinition = renderingFactoryDefinition,
         };
     }
     

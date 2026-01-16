@@ -8,7 +8,7 @@ public static class StartupExtension
 {
     public static IServiceCollection AddPAS(this IServiceCollection services, Action<PASOptionsBuilder> builder)
     {
-        var optionsBuilder = new PASOptionsBuilder();
+        var optionsBuilder = new PASOptionsBuilder(services);
         builder(optionsBuilder);
         var options = optionsBuilder.Build();
         return services.AddPAS(options);
@@ -25,6 +25,7 @@ public static class StartupExtension
         options.WindowManagerDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);
         options.MediaProviderDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);
         options.RendererDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);
+        options.RenderingFactoryDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);
         
         // Copy resource source factories to our own list
         var resourceSourceFactories = new List<Func<IResourceSource>>();
@@ -42,12 +43,10 @@ public static class StartupExtension
         
         return services;
     }
-    
-    public static ServiceProvider InitializePAS(this IServiceCollection services, out BeatmapRunner beatmapRunner, out IRenderer renderer)
-    {
-        var sp = services.BuildServiceProvider();
-        beatmapRunner = sp.GetRequiredService<BeatmapRunner>();
-        renderer = sp.GetRequiredService<IRenderer>();
-        return sp;
-    }
+
+    public static BeatmapRunner InitializeBeatmapRunner(this IServiceProvider serviceProvider)
+        => serviceProvider.GetRequiredService<BeatmapRunner>();
+
+    public static IRenderer InitializeRenderer(this IServiceProvider serviceProvider)
+        => serviceProvider.GetRequiredService<IRenderer>();
 }

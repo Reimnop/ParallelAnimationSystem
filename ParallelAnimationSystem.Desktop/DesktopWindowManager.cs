@@ -1,19 +1,19 @@
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using ParallelAnimationSystem.Mathematics;
-using ParallelAnimationSystem.Windowing;
+using ParallelAnimationSystem.Windowing.OpenGL;
 
 namespace ParallelAnimationSystem.Desktop;
 
-public class DesktopWindowManager : IWindowManager, IDisposable
+public class DesktopWindowManager : IOpenGLWindowManager, IDisposable
 {
     public DesktopWindowManager()
         => GLFW.Init();
-    
-    public IWindow CreateWindow(string title, Vector2i size, GLContextSettings glContextSettings)
-        => new DesktopWindow(title, size, glContextSettings);
 
     public void PollEvents()
         => GLFW.PollEvents();
+
+    public IOpenGLWindow CreateWindow(string title, Vector2i size, OpenGLSettings glSettings)
+        => new DesktopWindow(title, size, glSettings);
 
     public IntPtr GetProcAddress(string procName)
         => GLFW.GetProcAddress(procName);

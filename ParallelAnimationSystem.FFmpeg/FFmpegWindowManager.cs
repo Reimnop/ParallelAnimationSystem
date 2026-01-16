@@ -1,19 +1,16 @@
 using ParallelAnimationSystem.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
-using ParallelAnimationSystem.Windowing;
+using ParallelAnimationSystem.Windowing.OpenGL;
 
 namespace ParallelAnimationSystem.FFmpeg;
 
-public class FFmpegWindowManager : IWindowManager, IDisposable
+public class FFmpegWindowManager : IOpenGLWindowManager, IDisposable
 {
     public FFmpegWindowManager()
         => GLFW.Init();
     
-    public IWindow CreateWindow(string title, Vector2i size, GLContextSettings glContextSettings)
-        => new FFmpegWindow(title, size, glContextSettings);
-
-    public void PollEvents()
-        => GLFW.PollEvents();
+    public IOpenGLWindow CreateWindow(string title, Vector2i size, OpenGLSettings glSettings)
+        => new FFmpegWindow(title, size, glSettings);
 
     public IntPtr GetProcAddress(string procName)
         => GLFW.GetProcAddress(procName);

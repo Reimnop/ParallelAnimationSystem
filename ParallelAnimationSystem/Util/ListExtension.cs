@@ -18,6 +18,13 @@ public static class ListExtension
             else
                 max = mid - 1;
         }
+
         return ~min;
+    }
+
+    public static void EnsureCount<T>(this List<T?> list, int count)
+    {
+        while (list.Count < count)
+            list.Add(default);
     }
 }

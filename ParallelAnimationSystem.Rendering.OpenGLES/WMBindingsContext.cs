@@ -1,9 +1,9 @@
 ﻿using OpenTK;
-using ParallelAnimationSystem.Windowing;
+using ParallelAnimationSystem.Windowing.OpenGL;
 
 namespace ParallelAnimationSystem.Rendering.OpenGLES;
 
-public class WMBindingsContext(IWindowManager windowManager) : IBindingsContext
+public class WMBindingsContext(IOpenGLWindowManager windowManager) : IBindingsContext
 {
     public IntPtr GetProcAddress(string procName)
         => windowManager.GetProcAddress(procName);

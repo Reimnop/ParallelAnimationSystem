@@ -80,10 +80,10 @@ public static class FFmpegStartup
         
         // Register frame generator
         services.AddTransient<FFmpegFrameGenerator>();
-
-        using var sp = services.InitializePAS(out _, out _);
         
-        var frameGenerator = sp.GetRequiredService<FFmpegFrameGenerator>();
+        var serviceProvider = services.BuildServiceProvider();
+        
+        var frameGenerator = serviceProvider.GetRequiredService<FFmpegFrameGenerator>();
         frameGenerator.Generate();
     }
 }

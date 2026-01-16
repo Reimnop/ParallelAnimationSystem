@@ -12,6 +12,7 @@ public class FFmpegFrameGenerator(
     FFmpegParameters parameters,
     MediaContext mediaContext,
     BeatmapRunner runner,
+    IRenderingFactory renderingFactory,
     IRenderer renderer,
     ILogger<FFmpegFrameGenerator> logger)
 {
@@ -51,14 +52,19 @@ public class FFmpegFrameGenerator(
     
     private IEnumerable<IVideoFrame> CreateVideoFrames(float duration, int frameRate)
     {
-        var frameCount = (int) (duration * frameRate);
+        var drawList = renderingFactory.CreateDrawList();
         
+        var frameCount = (int) (duration * frameRate);
         for (var i = 0; i < frameCount; i++)
         {
             var t = i / (float) frameRate;
             
-            runner.ProcessFrame(t);
-            renderer.ProcessFrame();
+            // Process frame
+            runner.ProcessFrame(t, drawList);
+            renderer.ProcessFrame(drawList);
+            
+            // Clear draw list for next frame
+            drawList.Clear();
             
             var window = (FFmpegWindow) renderer.Window;
             var currentFrame = window.CurrentFrame;

@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Mathematics;
+using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.OpenGLES;
 
 namespace ParallelAnimationSystem.Wasm;
@@ -62,13 +63,19 @@ public static class JsInterop
             builder.AddResourceSource(new EmbeddedResourceSource(typeof(WasmApp).Assembly));
         });
 
-        var sp = services.InitializePAS(out var runner, out var renderer);
+        var sp = services.BuildServiceProvider();
+        var runner = sp.InitializeBeatmapRunner();
+        var renderer = sp.InitializeRenderer();
+        
+        var renderingFactory = sp.GetRequiredService<IRenderingFactory>();
+        var drawList = renderingFactory.CreateDrawList();
 
         app = new WasmApp
         {
             ServiceProvider = sp,
             Runner = runner,
-            Renderer = renderer
+            Renderer = renderer,
+            DrawList = drawList
         };
     }
 
@@ -78,8 +85,13 @@ public static class JsInterop
         if (app is null)
             throw new InvalidOperationException("App not initialized");
         
-        app.Runner.ProcessFrame(time);
-        app.Renderer.ProcessFrame();
+        var runner = app.Runner;
+        var renderer = app.Renderer;
+        var drawList = app.DrawList;
+
+        drawList.Clear();
+        runner.ProcessFrame(time, drawList);
+        renderer.ProcessFrame(drawList);
     }
 
     [UnmanagedCallersOnly(EntryPoint = "dispose")]

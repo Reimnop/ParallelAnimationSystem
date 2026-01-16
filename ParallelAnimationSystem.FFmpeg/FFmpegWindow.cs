@@ -1,11 +1,13 @@
+using System.Numerics;
 using OpenTK.Graphics.OpenGL;
 using ParallelAnimationSystem.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using ParallelAnimationSystem.Windowing;
+using ParallelAnimationSystem.Windowing.OpenGL;
 
 namespace ParallelAnimationSystem.FFmpeg;
 
-public unsafe class FFmpegWindow : IWindow, IDisposable
+public unsafe class FFmpegWindow : IOpenGLWindow, IDisposable
 {
     public string Title
     {
@@ -28,13 +30,13 @@ public unsafe class FFmpegWindow : IWindow, IDisposable
 
     private readonly Window* window;
 
-    public FFmpegWindow(string title, Vector2i size, GLContextSettings glContextSettings)
+    public FFmpegWindow(string title, Vector2i size, OpenGLSettings glSettings)
     {
-        GLFW.WindowHint(WindowHintClientApi.ClientApi, glContextSettings.ES ? ClientApi.OpenGlEsApi : ClientApi.OpenGlApi);
-        if (!glContextSettings.ES)
+        GLFW.WindowHint(WindowHintClientApi.ClientApi, glSettings.IsES ? ClientApi.OpenGlEsApi : ClientApi.OpenGlApi);
+        if (!glSettings.IsES)
             GLFW.WindowHint(WindowHintOpenGlProfile.OpenGlProfile, OpenGlProfile.Core);
-        GLFW.WindowHint(WindowHintInt.ContextVersionMajor, glContextSettings.Version.Major);
-        GLFW.WindowHint(WindowHintInt.ContextVersionMinor, glContextSettings.Version.Minor);
+        GLFW.WindowHint(WindowHintInt.ContextVersionMajor, glSettings.MajorVersion);
+        GLFW.WindowHint(WindowHintInt.ContextVersionMinor, glSettings.MinorVersion);
         GLFW.WindowHint(WindowHintBool.Visible, false);
         GLFW.WindowHint(WindowHintBool.Resizable, false);
         GLFW.WindowHint(WindowHintBool.Decorated, false);
@@ -47,47 +49,61 @@ public unsafe class FFmpegWindow : IWindow, IDisposable
         GLFW.MakeContextCurrent(window);
     }
 
+    public void PollEvents()
+    {
+        GLFW.PollEvents();
+    }
+
     public void SetSwapInterval(int interval)
     {
         GLFW.MakeContextCurrent(window);
         GLFW.SwapInterval(interval);
     }
 
-    public void RequestAnimationFrame(AnimationFrameCallback callback)
+    public void Present(int framebuffer, Vector4 clearColor, Vector2i size, Vector2i offset)
     {
-        // GLFW.PollEvents();
+        MakeContextCurrent();
         
-        GLFW.MakeContextCurrent(window);
-        var time = GLFW.GetTime();
-        if (callback(time, 0))
-        {
-            var size = FramebufferSize;
-            var frame = new FrameData(size.X, size.Y);
+        var dstSize = FramebufferSize;
+        
+        GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, framebuffer);
+        GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);
+        
+        // Clear the default framebuffer
+        GL.ClearColor(clearColor.X, clearColor.Y, clearColor.Z, clearColor.W);
+        GL.Viewport(0, 0, dstSize.X, dstSize.Y);
+        GL.Clear(ClearBufferMask.ColorBufferBit);
+        
+        // Blit the framebuffer to the default framebuffer
+        GL.BlitFramebuffer(
+            offset.X, offset.Y, size.X, size.Y,
+            0, 0, dstSize.X, dstSize.Y,
+            ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Linear);
+        
+        // Read pixels from the default framebuffer
+        var frame = new FrameData(dstSize.X, dstSize.Y);
             
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
-            GL.ReadPixels(0, 0, size.X, size.Y, PixelFormat.Rgba, PixelType.UnsignedByte, frame.Data);
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+        GL.ReadPixels(0, 0, dstSize.X, dstSize.Y, PixelFormat.Rgba, PixelType.UnsignedByte, frame.Data);
 
-            var frameData = (Span<byte>) frame.Data;
+        var frameData = (Span<byte>) frame.Data;
             
-            // Flip the image vertically
-            for (var y = 0; y < size.Y / 2; y++)
-            {
-                var topRow = y * size.X * 4;
-                var bottomRow = (size.Y - y - 1) * size.X * 4;
+        // Flip the image vertically
+        for (var y = 0; y < dstSize.Y / 2; y++)
+        {
+            var topRow = y * dstSize.X * 4;
+            var bottomRow = (dstSize.Y - y - 1) * dstSize.X * 4;
                 
-                // Swap the rows
-                var temp = new byte[size.X * 4];
-                frameData.Slice(topRow, size.X * 4).CopyTo(temp);
-                frameData.Slice(bottomRow, size.X * 4).CopyTo(frameData.Slice(topRow, size.X * 4));
-                temp.CopyTo(frameData.Slice(bottomRow, size.X * 4));
-            }
-            
-            CurrentFrame = frame;
-            
-            // GLFW.SwapBuffers(window);
+            // Swap the rows
+            var temp = new byte[dstSize.X * 4];
+            frameData.Slice(topRow, dstSize.X * 4).CopyTo(temp);
+            frameData.Slice(bottomRow, dstSize.X * 4).CopyTo(frameData.Slice(topRow, dstSize.X * 4));
+            temp.CopyTo(frameData.Slice(bottomRow, dstSize.X * 4));
         }
-        
-        GLFW.MakeContextCurrent(null);
+            
+        CurrentFrame = frame;
+            
+        // GLFW.SwapBuffers(window);
     }
 
     public void Close()

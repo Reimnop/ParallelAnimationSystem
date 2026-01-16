@@ -10,8 +10,8 @@ public class DrawList : IDrawList, IReadOnlyCollection<DrawList.DrawData>
     public class DrawData
     {
         public RenderType RenderType { get; set; }
-        public Renderer.MeshHandle? Mesh { get; set; }
-        public Renderer.TextHandle? Text { get; set; }
+        public Mesh? Mesh { get; set; }
+        public Text? Text { get; set; }
         public Matrix3x2 Transform { get; set; }
         public ColorRgba Color1 { get; set; }
         public ColorRgba Color2 { get; set; }
@@ -29,9 +29,9 @@ public class DrawList : IDrawList, IReadOnlyCollection<DrawList.DrawData>
     private readonly List<DrawData> drawDataList = [];
     private int count;
     
-    public void AddMesh(IMeshHandle mesh, Matrix3x2 transform, ColorRgba color1, ColorRgba color2, RenderMode renderMode)
+    public void AddMesh(IMesh mesh, Matrix3x2 transform, ColorRgba color1, ColorRgba color2, RenderMode renderMode)
     {
-        if (mesh is not Renderer.MeshHandle rendererMesh)
+        if (mesh is not Mesh rendererMesh)
             throw new ArgumentException("Invalid mesh handle type", nameof(mesh));
         
         DrawData drawData;
@@ -54,9 +54,9 @@ public class DrawList : IDrawList, IReadOnlyCollection<DrawList.DrawData>
         count++;
     }
     
-    public void AddText(ITextHandle text, Matrix3x2 transform, ColorRgba color)
+    public void AddText(IText text, Matrix3x2 transform, ColorRgba color)
     {
-        if (text is not Renderer.TextHandle rendererText)
+        if (text is not Text rendererText)
             throw new ArgumentException("Invalid text handle type", nameof(text));
         
         DrawData drawData;
@@ -76,6 +76,14 @@ public class DrawList : IDrawList, IReadOnlyCollection<DrawList.DrawData>
         
         count++;
     }
+    
+    public void Clear()
+    {
+        CameraData = new CameraData(Vector2.Zero, 10.0f, 0.0f);
+        PostProcessingData = default;
+        ClearColor = new ColorRgba(0.0f, 0.0f, 0.0f, 1.0f);
+        count = 0;
+    }
 
     public IEnumerator<DrawData> GetEnumerator()
     {
@@ -86,13 +94,5 @@ public class DrawList : IDrawList, IReadOnlyCollection<DrawList.DrawData>
     IEnumerator IEnumerable.GetEnumerator()
     {
         return GetEnumerator();
-    }
-
-    public void Reset()
-    {
-        CameraData = new CameraData(Vector2.Zero, 10.0f, 0.0f);
-        PostProcessingData = default;
-        ClearColor = new ColorRgba(0.0f, 0.0f, 0.0f, 1.0f);
-        count = 0;
     }
 }

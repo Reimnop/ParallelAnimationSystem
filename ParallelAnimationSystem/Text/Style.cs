@@ -1,6 +1,6 @@
 using TmpParser;
 
-namespace ParallelAnimationSystem.Rendering.TextProcessing;
+namespace ParallelAnimationSystem.Text;
 
 public readonly record struct Style(
     bool Bold, 

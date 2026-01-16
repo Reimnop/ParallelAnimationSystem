@@ -12,4 +12,5 @@ public class PASOptions
     public required ServiceDefinition<IWindowManager> WindowManagerDefinition { get; init; }
     public required ServiceDefinition<IMediaProvider> MediaProviderDefinition { get; init; }
     public required ServiceDefinition<IRenderer> RendererDefinition { get; init; }
+    public required ServiceDefinition<IRenderingFactory> RenderingFactoryDefinition { get; init; }
 }

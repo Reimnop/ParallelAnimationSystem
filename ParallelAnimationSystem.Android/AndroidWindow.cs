@@ -1,11 +1,12 @@
-using System.Diagnostics;
+using System.Numerics;
 using OpenTK.Graphics.Egl;
+using OpenTK.Graphics.OpenGLES2;
 using ParallelAnimationSystem.Mathematics;
-using ParallelAnimationSystem.Windowing;
+using ParallelAnimationSystem.Windowing.OpenGL;
 
 namespace ParallelAnimationSystem.Android;
 
-public class AndroidWindow : IWindow, IDisposable
+public class AndroidWindow(IntPtr display, IntPtr context, IntPtr surface) : IOpenGLWindow, IDisposable
 {
     // Does nothing on Android
     public string Title
@@ -32,23 +33,6 @@ public class AndroidWindow : IWindow, IDisposable
 
     private string title = string.Empty;
 
-    private readonly IntPtr display;
-    private readonly IntPtr context;
-    private readonly IntPtr surface;
-
-    private readonly Stopwatch stopwatch;
-
-    private double currentTime = 0;
-
-    public AndroidWindow(IntPtr display, IntPtr context, IntPtr surface)
-    {
-        this.display = display;
-        this.context = context;
-        this.surface = surface;
-        
-        stopwatch = Stopwatch.StartNew();
-    }
-
     public void MakeContextCurrent()
     {
         if (!Egl.MakeCurrent(display, surface, surface, context))
@@ -60,17 +44,33 @@ public class AndroidWindow : IWindow, IDisposable
         if (!Egl.SwapInterval(display, interval))
             throw new Exception("Failed to set swap interval");
     }
-
-    public void RequestAnimationFrame(AnimationFrameCallback callback)
+    
+    public void Present(int framebuffer, Vector4 clearColor, Vector2i size, Vector2i offset)
     {
         MakeContextCurrent();
         
-        var time = stopwatch.Elapsed.TotalSeconds;
-        var deltaTime = time - currentTime;
-        currentTime = time;
+        var dstSize = FramebufferSize;
+        
+        GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, framebuffer);
+        GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);
+        
+        // Clear the default framebuffer
+        GL.ClearColor(clearColor.X, clearColor.Y, clearColor.Z, clearColor.W);
+        GL.Viewport(0, 0, dstSize.X, dstSize.Y);
+        GL.Clear(ClearBufferMask.ColorBufferBit);
+        
+        // Blit the framebuffer to the default framebuffer
+        GL.BlitFramebuffer(
+            offset.X, offset.Y, size.X, size.Y,
+            0, 0, dstSize.X, dstSize.Y,
+            ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Linear);
+        
+        Egl.SwapBuffers(display, surface);
+    }
 
-        if (callback(deltaTime, 0))
-            Egl.SwapBuffers(display, surface);
+    public void PollEvents()
+    {
+        // Not needed on Android
     }
 
     public void Close()

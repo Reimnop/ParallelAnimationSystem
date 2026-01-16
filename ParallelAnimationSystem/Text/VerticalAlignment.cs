@@ -1,4 +1,4 @@
-namespace ParallelAnimationSystem.Rendering.TextProcessing;
+namespace ParallelAnimationSystem.Text;
 
 public enum VerticalAlignment
 {

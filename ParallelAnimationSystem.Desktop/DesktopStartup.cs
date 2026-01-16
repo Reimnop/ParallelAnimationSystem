@@ -37,7 +37,8 @@ public static class DesktopStartup
 
         services.AddSingleton(new MediaContext
         {
-            BeatmapPath = beatmapPath
+            BeatmapPath = beatmapPath,
+            AudioPath = audioPath,
         });
         
         services.AddLogging(builder =>
@@ -62,40 +63,13 @@ public static class DesktopStartup
             }
         });
 
-        using var _ = services.InitializePAS(out var beatmapRunner, out var renderer);
+        services.AddTransient<DesktopApp>();
         
-        var appShutdown = false;
-        var appThread = new Thread(() =>
-        {
-            // Load audio in app thread
-            using var audioPlayer = AudioPlayer.Load(audioPath);
-            var baseFrequency = audioPlayer.Frequency;
-            audioPlayer.Frequency = baseFrequency * speed;
-            
-            // Start playback
-            audioPlayer.Play();
-            
-            // ReSharper disable once LoopVariableIsNeverChangedInsideLoop
-            // ReSharper disable once AccessToModifiedClosure
-            while (!appShutdown)
-                if (!beatmapRunner.ProcessFrame((float) audioPlayer.Position))
-                    Thread.Yield();
-            
-            // Stop playback
-            audioPlayer.Stop();
-        });
+        // Build service provider
+        using var serviceProvider = services.BuildServiceProvider();
         
-        appThread.Start();
-        
-        // Enter the render loop
-        while (!renderer.Window.ShouldClose)
-            if (!renderer.ProcessFrame())
-                Thread.Yield();
-        
-        // When renderer exits, we'll shut down the services
-        appShutdown = true;
-        
-        // Wait for the app thread to finish
-        appThread.Join();
+        // Start the app
+        var app = serviceProvider.GetRequiredService<DesktopApp>();
+        app.StartApp();
     }
 }

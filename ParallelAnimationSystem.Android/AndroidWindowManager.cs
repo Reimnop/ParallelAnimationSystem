@@ -4,11 +4,12 @@ using Android.Runtime;
 using OpenTK.Graphics.Egl;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Windowing;
+using ParallelAnimationSystem.Windowing.OpenGL;
 using IWindowManager = ParallelAnimationSystem.Windowing.IWindowManager;
 
 namespace ParallelAnimationSystem.Android;
 
-public class AndroidWindowManager : IWindowManager, IDisposable
+public class AndroidWindowManager : IOpenGLWindowManager, IDisposable
 {
     private const string LibAndroid = "libandroid.so";
     
@@ -24,12 +25,12 @@ public class AndroidWindowManager : IWindowManager, IDisposable
         context.SurfaceView.SurfaceDestroyedCallback = _ => window?.Close();
     }
     
-    public IWindow CreateWindow(string title, Vector2i size, GLContextSettings glContextSettings)
+    public IOpenGLWindow CreateWindow(string title, Vector2i size, OpenGLSettings glSettings)
     {
         if (window is not null)
             throw new NotSupportedException("Only one window is supported on Android");
         
-        if (!glContextSettings.ES)
+        if (!glSettings.IsES)
             throw new NotSupportedException("Desktop OpenGL is not supported on Android, use OpenGL ES instead");
         
         // Initialize EGL

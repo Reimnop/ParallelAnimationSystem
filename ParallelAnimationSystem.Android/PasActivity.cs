@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Mathematics;
+using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.OpenGLES;
 using Activity = Android.App.Activity;
 using Uri = Android.Net.Uri;
@@ -110,44 +111,34 @@ public class PasActivity : Activity
             builder.UseOpenGLESRenderer();
         });
         
-        // Initialize PAS
-        using var _ = services.InitializePAS(out var beatmapRunner, out var renderer);
+        // Initialize PAS services
+        var serviceProvider = services.BuildServiceProvider();
 
-        var appShutdown = false;
+        var beatmapRunner = serviceProvider.InitializeBeatmapRunner();
+        var renderer = serviceProvider.InitializeRenderer();
         
-        var appThread = new Thread(() =>
-        {
-            // Create audio player
-            using var audioPlayer = AudioPlayer.Load(audioData);
-            
-            // Start playback
-            audioPlayer.Play();
-            var baseFrequency = audioPlayer.Frequency;
-            var speed = 1.0f;
-            audioPlayer.Frequency = baseFrequency * speed;
-
-            // ReSharper disable once LoopVariableIsNeverChangedInsideLoop
-            // ReSharper disable once AccessToModifiedClosure
-            while (!appShutdown)
-                if (!beatmapRunner.ProcessFrame((float) audioPlayer.Position))
-                    Thread.Yield();
-            
-            // Stop playback
-            audioPlayer.Stop();
-        });
+        // Get a draw list
+        var renderingFactory = serviceProvider.GetRequiredService<IRenderingFactory>();
+        var drawList = renderingFactory.CreateDrawList();
         
-        appThread.Start();
+        // Initialize audio player
+        using var audioPlayer = AudioPlayer.Load(audioData);
+        audioPlayer.Play();
         
-        // Enter the render loop
+        // Enter main loop
         while (!renderer.Window.ShouldClose)
-            if (!renderer.ProcessFrame())
-                Thread.Yield();
+        {
+            renderer.Window.PollEvents();
+            
+            // Process a frame
+            beatmapRunner.ProcessFrame((float) audioPlayer.Position, drawList);
+            renderer.ProcessFrame(drawList);
+            
+            // Clear the draw list for the next frame
+            drawList.Clear();
+        }
         
-        // When renderer exits, we'll shut down the services
-        appShutdown = true;
-        
-        // Wait for the app thread to finish
-        appThread.Join();
+        audioPlayer.Stop();
     }
     
     private string ReadBeatmapData(Uri beatmapPath)

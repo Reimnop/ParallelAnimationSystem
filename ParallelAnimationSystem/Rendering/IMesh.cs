@@ -1,3 +1,3 @@
 namespace ParallelAnimationSystem.Rendering;
 
-public interface IMeshHandle;
+public interface IMesh;
