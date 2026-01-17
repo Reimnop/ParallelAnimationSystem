@@ -95,7 +95,7 @@ public class WasmWindow : IOpenGLWindow, IDisposable
         
         // Blit the framebuffer to the default framebuffer
         GL.BlitFramebuffer(
-            offset.X, offset.Y, size.X, size.Y,
+            0, 0, size.X, size.Y,
             offset.X, offset.Y, size.X, size.Y,
             ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Nearest);
     }
