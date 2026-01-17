@@ -56,7 +56,7 @@ public class AndroidWindow(IntPtr display, IntPtr context, IntPtr surface) : IOp
         // Blit the framebuffer to the default framebuffer
         GL.BlitFramebuffer(
             0, 0, size.X, size.Y,
-            offset.X, offset.Y, size.X, size.Y,
+            offset.X, offset.Y, offset.X + size.X, offset.Y + size.Y,
             ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Nearest);
         
         Egl.SwapBuffers(display, surface);
