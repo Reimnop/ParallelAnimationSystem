@@ -89,7 +89,7 @@ public unsafe class FFmpegWindow : IOpenGLWindow, IDisposable
         // Blit the framebuffer to the default framebuffer
         GL.BlitFramebuffer(
             offset.X, offset.Y, size.X, size.Y,
-            0, 0, dstSize.X, dstSize.Y,
+            offset.X, offset.Y, size.X, size.Y,
             ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Nearest);
         
         // Read pixels from the default framebuffer
