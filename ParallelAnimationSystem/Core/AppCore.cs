@@ -242,7 +242,7 @@ public class AppCore
             else if (appSettings.EnableTextRendering)
             {
                 // Create text
-                var textTask = textCache.GetValue(beatmapObject, OnCreateTextAsync);
+                var textTask = textCache.GetValue(beatmapObject, CreateTextAsync);
 
                 // Draw text if ready
                 if (textTask is { IsCompletedSuccessfully: true, Result: not null })
@@ -255,7 +255,7 @@ public class AppCore
         }
     }
 
-    private Task<IText?> OnCreateTextAsync(BeatmapObject beatmapObject)
+    private Task<IText?> CreateTextAsync(BeatmapObject beatmapObject)
     {
         var task = Task.Run(() =>
         {
