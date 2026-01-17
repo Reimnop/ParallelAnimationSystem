@@ -18,7 +18,15 @@ namespace ParallelAnimationSystem.Core;
 
 public class BeatmapImporter(ulong randomSeed, ILogger logger)
 {
-    public AnimationRunner CreateRunner(IBeatmap beatmap)
+    public class Statistics
+    {
+        public int ObjectCount { get; set; }
+        
+        public override string ToString()
+            => $"Statistics(ObjectCount: {ObjectCount})";
+    }
+    
+    public AnimationRunner CreateRunner(IBeatmap beatmap, out Statistics statistics)
     {
         // Convert all the objects in the beatmap to Timeline
         var timeline = CreateTimeline(beatmap);
@@ -40,6 +48,12 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
         var gradientSequence = CreateGradientSequence(beatmap.Events.Gradient);
         var glitchSequence = CreateGlitchSequence(beatmap.Events.Glitch);
         var shakeSequence = CreateShakeSequence(beatmap.Events.Shake);
+        
+        // Prepare statistics
+        statistics = new Statistics
+        {
+            ObjectCount = timeline.BeatmapObjects.Count
+        };
 
         // Create the runner with the GameObjects
         return new AnimationRunner(

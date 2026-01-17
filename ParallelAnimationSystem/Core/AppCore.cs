@@ -1,7 +1,9 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.DependencyInjection;
+using ParallelAnimationSystem.Core.Beatmap;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering;
@@ -10,7 +12,7 @@ using ParallelAnimationSystem.Text;
 
 namespace ParallelAnimationSystem.Core;
 
-public class BeatmapRunner
+public class AppCore
 {
     private readonly List<List<IMesh>> meshes = [];
     
@@ -20,7 +22,7 @@ public class BeatmapRunner
     private readonly AppSettings appSettings;
     private readonly ResourceLoader loader;
     private readonly IRenderingFactory renderingFactory;
-    private readonly ILogger<BeatmapRunner> logger;
+    private readonly ILogger<AppCore> logger;
     
     public BeatmapRunner(
         IServiceProvider sp,
@@ -28,20 +30,81 @@ public class BeatmapRunner
         ResourceLoader loader,
         IMediaProvider mediaProvider,
         IRenderingFactory renderingFactory,
-        ILogger<BeatmapRunner> logger)
+        ILogger<AppCore> logger)
     {
         this.appSettings = appSettings;
         this.loader = loader;
         this.renderingFactory = renderingFactory;
         this.logger = logger;
+
+        #region Mesh Loading
+
+        {
+            meshes.Add([
+                renderingFactory.CreateMesh(PaAssets.SquareFilledVertices, PaAssets.SquareFilledIndices),
+                renderingFactory.CreateMesh(PaAssets.SquareOutlineVertices, PaAssets.SquareOutlineIndices),
+                renderingFactory.CreateMesh(PaAssets.SquareOutlineThinVertices, PaAssets.SquareOutlineThinIndices),
+            ]);
+
+            meshes.Add([
+                renderingFactory.CreateMesh(PaAssets.CircleFilledVertices, PaAssets.CircleFilledIndices),
+                renderingFactory.CreateMesh(PaAssets.CircleOutlineVertices, PaAssets.CircleOutlineIndices),
+                renderingFactory.CreateMesh(PaAssets.CircleHalfVertices, PaAssets.CircleHalfIndices),
+                renderingFactory.CreateMesh(PaAssets.CircleHalfOutlineVertices, PaAssets.CircleHalfOutlineIndices),
+                renderingFactory.CreateMesh(PaAssets.CircleOutlineThinVertices, PaAssets.CircleOutlineThinIndices),
+                renderingFactory.CreateMesh(PaAssets.CircleQuarterVertices, PaAssets.CircleQuarterIndices),
+                renderingFactory.CreateMesh(PaAssets.CircleQuarterOutlineVertices, PaAssets.CircleQuarterOutlineIndices),
+                renderingFactory.CreateMesh(PaAssets.CircleHalfQuarterVertices, PaAssets.CircleHalfQuarterIndices),
+                renderingFactory.CreateMesh(PaAssets.CircleHalfQuarterOutlineVertices, PaAssets.CircleHalfQuarterOutlineIndices),
+            ]);
+
+            meshes.Add([
+                renderingFactory.CreateMesh(PaAssets.TriangleFilledVertices, PaAssets.TriangleFilledIndices),
+                renderingFactory.CreateMesh(PaAssets.TriangleOutlineVertices, PaAssets.TriangleOutlineIndices),
+                renderingFactory.CreateMesh(PaAssets.TriangleRightFilledVertices, PaAssets.TriangleRightFilledIndices),
+                renderingFactory.CreateMesh(PaAssets.TriangleRightOutlineVertices, PaAssets.TriangleRightOutlineIndices),
+            ]);
+
+            meshes.Add([
+                renderingFactory.CreateMesh(PaAssets.ArrowVertices, PaAssets.ArrowIndices),
+                renderingFactory.CreateMesh(PaAssets.ArrowHeadVertices, PaAssets.ArrowHeadIndices),
+            ]);
+
+            meshes.Add([]);
+
+            meshes.Add([
+                renderingFactory.CreateMesh(PaAssets.HexagonFilledVertices, PaAssets.HexagonFilledIndices),
+                renderingFactory.CreateMesh(PaAssets.HexagonOutlineVertices, PaAssets.HexagonOutlineIndices),
+                renderingFactory.CreateMesh(PaAssets.HexagonOutlineThinVertices, PaAssets.HexagonOutlineThinIndices),
+                renderingFactory.CreateMesh(PaAssets.HexagonHalfVertices, PaAssets.HexagonHalfIndices),
+                renderingFactory.CreateMesh(PaAssets.HexagonHalfOutlineVertices, PaAssets.HexagonHalfOutlineIndices),
+                renderingFactory.CreateMesh(PaAssets.HexagonHalfOutlineThinVertices, PaAssets.HexagonHalfOutlineThinIndices),
+            ]);
+        }
+
+        #endregion
+
+        #region Font Loading
+
+        {
+            var inconsolata = LoadFont("Fonts/Inconsolata.tmpe");
+            var arialuni = LoadFont("Fonts/Arialuni.tmpe");
+            var seguisym = LoadFont("Fonts/Seguisym.tmpe");
+            var code2000 = LoadFont("Fonts/Code2000.tmpe");
+            fonts.Add(new FontStack("Inconsolata SDF", 16.0f, [inconsolata, arialuni, seguisym, code2000]));
         
-        // Register all meshes
-        RegisterMeshes();
+            var liberationSans = LoadFont("Fonts/LiberationSans.tmpe");
+            fonts.Add(new FontStack("LiberationSans SDF", 16.0f, [liberationSans, arialuni, seguisym, code2000]));
         
-        // Register all fonts
-        RegisterFonts();
+            var notoMono = LoadFont("Fonts/NotoMono.tmpe");
+            fonts.Add(new FontStack("NotoMono SDF", 16.0f, [notoMono, arialuni, seguisym, code2000]));
+        }
+
+        #endregion
         
         // Load beatmap
+        var sw = Stopwatch.StartNew();
+        
         logger.LogInformation("Loading beatmap");
         var beatmap = mediaProvider.LoadBeatmap(out var format);
         
@@ -62,79 +125,21 @@ public class BeatmapRunner
         logger.LogInformation("Using seed '{Seed}'", appSettings.Seed);
         
         // Create animation runner
-        logger.LogInformation("Initializing animation runner");
+        logger.LogInformation("Importing beatmap");
         var beatmapImporter = new BeatmapImporter(appSettings.Seed, logger);
-        runner = beatmapImporter.CreateRunner(beatmap);
+        runner = beatmapImporter.CreateRunner(beatmap, out var statistics);
+        
+        sw.Stop();
+        
+        // Print statistics
+        logger.LogInformation("Beatmap loaded in {ElapsedMilliseconds}ms, {Statistics}", sw.ElapsedMilliseconds, statistics);
     }
 
-    private void RegisterMeshes()
-    {
-        logger.LogInformation("Registering meshes");
-        
-        meshes.Add([
-            renderingFactory.CreateMesh(PaAssets.SquareFilledVertices, PaAssets.SquareFilledIndices),
-            renderingFactory.CreateMesh(PaAssets.SquareOutlineVertices, PaAssets.SquareOutlineIndices),
-            renderingFactory.CreateMesh(PaAssets.SquareOutlineThinVertices, PaAssets.SquareOutlineThinIndices),
-        ]);
-        
-        meshes.Add([
-            renderingFactory.CreateMesh(PaAssets.CircleFilledVertices, PaAssets.CircleFilledIndices),
-            renderingFactory.CreateMesh(PaAssets.CircleOutlineVertices, PaAssets.CircleOutlineIndices),
-            renderingFactory.CreateMesh(PaAssets.CircleHalfVertices, PaAssets.CircleHalfIndices),
-            renderingFactory.CreateMesh(PaAssets.CircleHalfOutlineVertices, PaAssets.CircleHalfOutlineIndices),
-            renderingFactory.CreateMesh(PaAssets.CircleOutlineThinVertices, PaAssets.CircleOutlineThinIndices),
-            renderingFactory.CreateMesh(PaAssets.CircleQuarterVertices, PaAssets.CircleQuarterIndices),
-            renderingFactory.CreateMesh(PaAssets.CircleQuarterOutlineVertices, PaAssets.CircleQuarterOutlineIndices),
-            renderingFactory.CreateMesh(PaAssets.CircleHalfQuarterVertices, PaAssets.CircleHalfQuarterIndices),
-            renderingFactory.CreateMesh(PaAssets.CircleHalfQuarterOutlineVertices, PaAssets.CircleHalfQuarterOutlineIndices),
-        ]);
-        
-        meshes.Add([
-            renderingFactory.CreateMesh(PaAssets.TriangleFilledVertices, PaAssets.TriangleFilledIndices),
-            renderingFactory.CreateMesh(PaAssets.TriangleOutlineVertices, PaAssets.TriangleOutlineIndices),
-            renderingFactory.CreateMesh(PaAssets.TriangleRightFilledVertices, PaAssets.TriangleRightFilledIndices),
-            renderingFactory.CreateMesh(PaAssets.TriangleRightOutlineVertices, PaAssets.TriangleRightOutlineIndices),
-        ]);
-        
-        meshes.Add([
-            renderingFactory.CreateMesh(PaAssets.ArrowVertices, PaAssets.ArrowIndices),
-            renderingFactory.CreateMesh(PaAssets.ArrowHeadVertices, PaAssets.ArrowHeadIndices),
-        ]);
-        
-        meshes.Add([]);
-        
-        meshes.Add([
-            renderingFactory.CreateMesh(PaAssets.HexagonFilledVertices, PaAssets.HexagonFilledIndices),
-            renderingFactory.CreateMesh(PaAssets.HexagonOutlineVertices, PaAssets.HexagonOutlineIndices),
-            renderingFactory.CreateMesh(PaAssets.HexagonOutlineThinVertices, PaAssets.HexagonOutlineThinIndices),
-            renderingFactory.CreateMesh(PaAssets.HexagonHalfVertices, PaAssets.HexagonHalfIndices),
-            renderingFactory.CreateMesh(PaAssets.HexagonHalfOutlineVertices, PaAssets.HexagonHalfOutlineIndices),
-            renderingFactory.CreateMesh(PaAssets.HexagonHalfOutlineThinVertices, PaAssets.HexagonHalfOutlineThinIndices),
-        ]);
-    }
-    
-    private void RegisterFonts()
-    {
-        logger.LogInformation("Registering fonts");
-
-        var inconsolata = ReadFont("Fonts/Inconsolata.tmpe");
-        var arialuni = ReadFont("Fonts/Arialuni.tmpe");
-        var seguisym = ReadFont("Fonts/Seguisym.tmpe");
-        var code2000 = ReadFont("Fonts/Code2000.tmpe");
-        fonts.Add(new FontStack("Inconsolata SDF", 16.0f, [inconsolata, arialuni, seguisym, code2000]));
-        
-        var liberationSans = ReadFont("Fonts/LiberationSans.tmpe");
-        fonts.Add(new FontStack("LiberationSans SDF", 16.0f, [liberationSans, arialuni, seguisym, code2000]));
-        
-        var notoMono = ReadFont("Fonts/NotoMono.tmpe");
-        fonts.Add(new FontStack("NotoMono SDF", 16.0f, [notoMono, arialuni, seguisym, code2000]));
-    }
-
-    private IFont ReadFont(string path)
+    private IFont LoadFont(string path)
     {
         using var stream = loader.OpenResource(path);
         if (stream is null)
-            throw new InvalidOperationException($"Could not load font data '{path}'");
+            throw new InvalidOperationException($"Could not load font data at '{path}'");
         return renderingFactory.CreateFont(stream);
     }
     

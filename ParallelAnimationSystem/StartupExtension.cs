@@ -19,7 +19,7 @@ public static class StartupExtension
         services.AddSingleton(options.AppSettings);
         
         // Add beatmap runner
-        services.AddSingleton<BeatmapRunner>();
+        services.AddSingleton<AppCore>();
         
         // Add external services
         options.WindowManagerDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);
@@ -44,8 +44,8 @@ public static class StartupExtension
         return services;
     }
 
-    public static BeatmapRunner InitializeBeatmapRunner(this IServiceProvider serviceProvider)
-        => serviceProvider.GetRequiredService<BeatmapRunner>();
+    public static AppCore InitializeAppCore(this IServiceProvider serviceProvider)
+        => serviceProvider.GetRequiredService<AppCore>();
 
     public static IRenderer InitializeRenderer(this IServiceProvider serviceProvider)
         => serviceProvider.GetRequiredService<IRenderer>();

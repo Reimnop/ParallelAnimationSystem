@@ -11,7 +11,7 @@ namespace ParallelAnimationSystem.FFmpeg;
 public class FFmpegFrameGenerator(
     FFmpegParameters parameters,
     MediaContext mediaContext,
-    BeatmapRunner runner,
+    AppCore appCore,
     IRenderingFactory renderingFactory,
     IRenderer renderer,
     ILogger<FFmpegFrameGenerator> logger)
@@ -60,7 +60,7 @@ public class FFmpegFrameGenerator(
             var t = i / (float) frameRate;
             
             // Process frame
-            runner.ProcessFrame(t, drawList);
+            appCore.ProcessFrame(t, drawList);
             renderer.ProcessFrame(drawList);
             
             // Clear draw list for next frame

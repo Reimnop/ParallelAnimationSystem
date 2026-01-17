@@ -7,7 +7,7 @@ namespace ParallelAnimationSystem.Wasm;
 public class WasmApp : IDisposable
 {
     public required ServiceProvider ServiceProvider { get; init; }
-    public required BeatmapRunner Runner { get; init; }
+    public required AppCore AppCore { get; init; }
     public required IRenderer Renderer { get; init; }
     public required IDrawList DrawList { get; init; }
 

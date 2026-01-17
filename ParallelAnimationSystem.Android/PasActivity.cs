@@ -112,7 +112,7 @@ public class PasActivity : Activity
         // Initialize PAS services
         var serviceProvider = services.BuildServiceProvider();
 
-        var beatmapRunner = serviceProvider.InitializeBeatmapRunner();
+        var appCore = serviceProvider.InitializeAppCore();
         var renderer = serviceProvider.InitializeRenderer();
         
         // Get a draw list
@@ -129,7 +129,7 @@ public class PasActivity : Activity
             renderer.Window.PollEvents();
             
             // Process a frame
-            beatmapRunner.ProcessFrame((float) audioPlayer.Position, drawList);
+            appCore.ProcessFrame((float) audioPlayer.Position, drawList);
             renderer.ProcessFrame(drawList);
             
             // Clear the draw list for the next frame

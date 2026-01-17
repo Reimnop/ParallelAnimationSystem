@@ -24,8 +24,8 @@ public sealed class DesktopApp
 
     public void StartApp()
     {
-        // Initialize beatmap runner
-        var beatmapRunner = serviceProvider.InitializeBeatmapRunner();
+        // Initialize app core
+        var appCore = serviceProvider.InitializeAppCore();
         
         // Create audio player
         using var audioPlayer = AudioPlayer.Load(mediaContext.AudioPath);
@@ -44,7 +44,7 @@ public sealed class DesktopApp
                 Thread.Yield();
             
             // Populate the draw list
-            beatmapRunner.ProcessFrame((float) audioPlayer.Position, drawList);
+            appCore.ProcessFrame((float) audioPlayer.Position, drawList);
             
             // Enqueue the draw list for rendering
             queuedDrawLists.Enqueue(drawList);

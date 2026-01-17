@@ -62,7 +62,7 @@ public static class JsInterop
         });
 
         var sp = services.BuildServiceProvider();
-        var runner = sp.InitializeBeatmapRunner();
+        var appCore = sp.InitializeAppCore();
         var renderer = sp.InitializeRenderer();
         
         var renderingFactory = sp.GetRequiredService<IRenderingFactory>();
@@ -71,7 +71,7 @@ public static class JsInterop
         app = new WasmApp
         {
             ServiceProvider = sp,
-            Runner = runner,
+            AppCore = appCore,
             Renderer = renderer,
             DrawList = drawList
         };
@@ -83,12 +83,12 @@ public static class JsInterop
         if (app is null)
             throw new InvalidOperationException("App not initialized");
         
-        var runner = app.Runner;
+        var appCore = app.AppCore;
         var renderer = app.Renderer;
         var drawList = app.DrawList;
 
         drawList.Clear();
-        runner.ProcessFrame(time, drawList);
+        appCore.ProcessFrame(time, drawList);
         renderer.ProcessFrame(drawList);
     }
 
