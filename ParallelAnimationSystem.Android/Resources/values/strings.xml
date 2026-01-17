@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ParallelAnimationSystem.Android</string>
+    <string name="app_name">Pocket PAS</string>
     <string name="welcome">Parallel Animation System</string>
     <string name="play">Play</string>
     <string name="lock_aspect_ratio">Lock Aspect Ratio</string>
