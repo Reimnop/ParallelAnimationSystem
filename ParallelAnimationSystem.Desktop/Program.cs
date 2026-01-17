@@ -65,36 +65,6 @@ var lockAspectOption = new Option<bool>(
     getDefaultValue: () => true
 );
 
-var backgroundOpacityOption = new Option<float>(
-    aliases: ["--background-opacity"],
-    description: "Sets the background opacity (0.0 - 1.0)",
-    getDefaultValue: () => 1.0f
-);
-
-var transparentOption = new Option<bool>(
-    aliases: ["--transparent"],
-    description: "Enable window transparency",
-    getDefaultValue: () => false
-);
-
-var resizableOption = new Option<bool>(
-    aliases: ["--resizable"],
-    description: "Enable window resizing",
-    getDefaultValue: () => true
-);
-
-var borderlessOption = new Option<bool>(
-    aliases: ["--borderless"],
-    description: "Enable borderless window",
-    getDefaultValue: () => false
-);
-
-var floatingOption = new Option<bool>(
-    aliases: ["--floating"],
-    description: "Enable floating window (always on top)",
-    getDefaultValue: () => false
-);
-
 var postProcessingOption = new Option<bool>(
     aliases: ["--post-processing"],
     description: "Enable post-processing",
@@ -118,11 +88,6 @@ rootCommand.AddOption(workersOption);
 rootCommand.AddOption(seedOption);
 rootCommand.AddOption(backendOption);
 rootCommand.AddOption(lockAspectOption);
-rootCommand.AddOption(backgroundOpacityOption);
-rootCommand.AddOption(transparentOption);
-rootCommand.AddOption(resizableOption);
-rootCommand.AddOption(borderlessOption);
-rootCommand.AddOption(floatingOption);
 rootCommand.AddOption(postProcessingOption);
 rootCommand.AddOption(textRenderingOption);
 
@@ -138,11 +103,6 @@ rootCommand.SetHandler(context =>
     var seed = context.ParseResult.GetValueForOption(seedOption);
     var backend = context.ParseResult.GetValueForOption(backendOption);
     var lockAspectRatio = context.ParseResult.GetValueForOption(lockAspectOption);
-    var backgroundOpacity = context.ParseResult.GetValueForOption(backgroundOpacityOption);
-    var transparent = context.ParseResult.GetValueForOption(transparentOption);
-    var resizable = context.ParseResult.GetValueForOption(resizableOption);
-    var borderless = context.ParseResult.GetValueForOption(borderlessOption);
-    var floating = context.ParseResult.GetValueForOption(floatingOption);
     var enablePostProcessing = context.ParseResult.GetValueForOption(postProcessingOption);
     var enableTextRendering = context.ParseResult.GetValueForOption(textRenderingOption);
     
@@ -157,11 +117,6 @@ rootCommand.SetHandler(context =>
         seed,
         backend,
         lockAspectRatio,
-        backgroundOpacity,
-        transparent,
-        resizable,
-        borderless,
-        floating,
         enablePostProcessing,
         enableTextRendering
     );

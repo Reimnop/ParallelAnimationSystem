@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering.OpenGL;
 using ParallelAnimationSystem.Rendering.OpenGLES;
 
@@ -10,6 +11,8 @@ public static class DesktopStartup
     public static void ConsumeOptions(
         string beatmapPath,
         string audioPath,
+        int width,
+        int height,
         bool vsync,
         bool useEgl,
         int workerCount,
@@ -34,6 +37,7 @@ public static class DesktopStartup
 
         services.AddSingleton(new DesktopWindowSettings
         {
+            Size = new Vector2i(width, height),
             VSync = vsync,
             UseEgl = useEgl,
         });

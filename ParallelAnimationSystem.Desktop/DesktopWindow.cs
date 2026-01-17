@@ -50,7 +50,7 @@ public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
         GLFW.WindowHint(WindowHintInt.ContextVersionMajor, glSettings.MajorVersion);
         GLFW.WindowHint(WindowHintInt.ContextVersionMinor, glSettings.MinorVersion);
         
-        window = GLFW.CreateWindow(1366, 768, title, null, null);
+        window = GLFW.CreateWindow(settings.Size.X, settings.Size.Y, title, null, null);
         
         GLFW.MakeContextCurrent(window);
         GLFW.SwapInterval(settings.VSync ? 1 : 0);
