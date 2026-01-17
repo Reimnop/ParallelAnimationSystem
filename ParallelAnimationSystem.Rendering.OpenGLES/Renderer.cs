@@ -120,6 +120,11 @@ public class Renderer : IRenderer, IDisposable
             glyphZUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uZ");
             glyphFontAtlasesUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uFontAtlases");
             glyphBaseColorUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uBaseColor");
+            
+            // Set font atlas texture unit uniforms
+            GL.UseProgram(glyphProgramHandle);
+            for (var i = 0; i < MaxFontsCount; i++)
+                GL.Uniform1i(glyphFontAtlasesUniformLocation + i, i);
 
             // Initialize text buffers
             var renderGlyphSize = Unsafe.SizeOf<RenderGlyph>();
@@ -327,6 +332,18 @@ public class Renderer : IRenderer, IDisposable
         // Bind FBO
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, fboHandle);
         
+        // Bind atlas texture
+        for (var i = 0; i < fontInfos.Count; i++)
+        {
+            var fontInfoNullable = fontInfos[i];
+            if (!fontInfoNullable.HasValue)
+                continue;
+                        
+            var fontInfo = fontInfoNullable.Value;
+            GL.ActiveTexture((TextureUnit)((int)TextureUnit.Texture0 + i));
+            GL.BindTexture(TextureTarget.Texture2d, fontInfo.AtlasHandle);
+        }
+        
         // Clear the screen
         GL.Viewport(0, 0, renderSize.X, renderSize.Y);
         var clearColor = drawList.ClearColor;
@@ -411,6 +428,9 @@ public class Renderer : IRenderer, IDisposable
     
     private void RenderDrawDataList(IReadOnlyList<DrawList.DrawData> drawDataList, Matrix3x2 camera)
     {
+        var currentProgram = -1;
+        var currentVertexArray = -1;
+        
         foreach (var drawData in drawDataList)
         {
             var transform = drawData.Transform * camera;
@@ -429,7 +449,11 @@ public class Renderer : IRenderer, IDisposable
                     var meshInfo = meshInfoNullable.Value;
                     
                     // Use our program
-                    GL.UseProgram(programHandle);
+                    if (currentProgram != programHandle)
+                    {
+                        currentProgram = programHandle;
+                        GL.UseProgram(programHandle);
+                    }
             
                     // Set transform
                     unsafe
@@ -443,8 +467,12 @@ public class Renderer : IRenderer, IDisposable
                     GL.Uniform4f(color2UniformLocation, color2.R, color2.G, color2.B, color2.A);
             
                     // Bind our buffers
-                    GL.BindVertexArray(mainVertexArrayHandle);
-                    GL.BindBuffer(BufferTarget.ElementArrayBuffer, mainIndexBufferHandle);
+                    if (currentVertexArray != mainVertexArrayHandle)
+                    {
+                        currentVertexArray = mainVertexArrayHandle;
+                        GL.BindVertexArray(mainVertexArrayHandle);
+                        GL.BindBuffer(BufferTarget.ElementArrayBuffer, mainIndexBufferHandle);
+                    }
             
                     // Draw
                     GL.DrawElements(PrimitiveType.Triangles, meshInfo.IndexCount, DrawElementsType.UnsignedInt, meshInfo.IndexOffset * sizeof(uint));
@@ -454,7 +482,11 @@ public class Renderer : IRenderer, IDisposable
                     Debug.Assert(textHandle is not null);
                     
                     // Use our program
-                    GL.UseProgram(glyphProgramHandle);
+                    if (currentProgram != glyphProgramHandle)
+                    {
+                        currentProgram = glyphProgramHandle;
+                        GL.UseProgram(glyphProgramHandle);
+                    }
                     
                     unsafe
                     {
@@ -462,24 +494,8 @@ public class Renderer : IRenderer, IDisposable
                     }
                     GL.Uniform1f(glyphZUniformLocation, RenderUtil.EncodeIntDepth(drawData.Index));
                     
-                    // Set textures
-                    for (var i = 0; i < fontInfos.Count; i++)
-                    {
-                        var fontInfoNullable = fontInfos[i];
-                        if (!fontInfoNullable.HasValue)
-                            continue;
-                        
-                        var fontInfo = fontInfoNullable.Value;
-                        GL.ActiveTexture((TextureUnit)((int)TextureUnit.Texture0 + i));
-                        GL.BindTexture(TextureTarget.Texture2d, fontInfo.AtlasHandle);
-                        GL.Uniform1i(glyphFontAtlasesUniformLocation + i, i);
-                    }
-
                     // Set color
                     GL.Uniform4f(glyphBaseColorUniformLocation, color1.R, color1.G, color1.B, color1.A);
-
-                    // Bind our buffers
-                    GL.BindVertexArray(textVertexArrayHandle);
                     
                     // Update buffer data
                     var renderGlyphSize = Unsafe.SizeOf<RenderGlyph>();
@@ -494,6 +510,13 @@ public class Renderer : IRenderer, IDisposable
                     else
                     {
                         GL.BufferSubData(BufferTarget.ArrayBuffer, IntPtr.Zero, renderGlyphs.Length * renderGlyphSize, renderGlyphs);
+                    }
+                    
+                    // Bind our VAO
+                    if (currentVertexArray != textVertexArrayHandle)
+                    {
+                        currentVertexArray = textVertexArrayHandle;
+                        GL.BindVertexArray(textVertexArrayHandle);
                     }
                     
                     // Draw
