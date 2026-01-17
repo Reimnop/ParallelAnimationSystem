@@ -57,7 +57,7 @@ public class AndroidWindow(IntPtr display, IntPtr context, IntPtr surface) : IOp
         GL.BlitFramebuffer(
             offset.X, offset.Y, size.X, size.Y,
             0, 0, dstSize.X, dstSize.Y,
-            ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Linear);
+            ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Nearest);
         
         Egl.SwapBuffers(display, surface);
     }

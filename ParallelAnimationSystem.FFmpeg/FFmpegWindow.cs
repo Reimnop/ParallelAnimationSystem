@@ -90,7 +90,7 @@ public unsafe class FFmpegWindow : IOpenGLWindow, IDisposable
         GL.BlitFramebuffer(
             offset.X, offset.Y, size.X, size.Y,
             0, 0, dstSize.X, dstSize.Y,
-            ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Linear);
+            ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Nearest);
         
         // Read pixels from the default framebuffer
         var frame = new FrameData(dstSize.X, dstSize.Y);

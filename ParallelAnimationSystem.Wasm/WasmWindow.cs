@@ -97,7 +97,7 @@ public class WasmWindow : IOpenGLWindow, IDisposable
         GL.BlitFramebuffer(
             offset.X, offset.Y, size.X, size.Y,
             0, 0, dstSize.X, dstSize.Y,
-            ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Linear);
+            ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Nearest);
     }
 
     public void PollEvents()
