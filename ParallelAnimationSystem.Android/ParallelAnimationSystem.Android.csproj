@@ -12,6 +12,8 @@
 
     <InvariantGlobalization>true</InvariantGlobalization>
     <PublishTrimmed>true</PublishTrimmed>
+    
+    <UseMonoRuntime>false</UseMonoRuntime>
   </PropertyGroup>
   
   <ItemGroup>
