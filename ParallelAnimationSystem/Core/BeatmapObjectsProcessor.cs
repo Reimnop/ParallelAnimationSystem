@@ -8,6 +8,9 @@ namespace ParallelAnimationSystem.Core;
 
 public class BeatmapObjectsProcessor(PerFrameDataCache cache, Timeline timeline)
 {
+    private const float TextScaleFactor = 3.0f / 32.0f;
+    private static readonly Matrix3x2 TextScaleMatrix = FastMatrix.GetScaleMatrix(TextScaleFactor, TextScaleFactor);
+    
     public void ProcessBeatmapObjects(ParallelOptions parallelOptions, float time, ThemeColorState themeColorState, int cacheIndexOffset = 0)
     {
         var aliveObjects = timeline.AliveObjects;
@@ -24,10 +27,20 @@ public class BeatmapObjectsProcessor(PerFrameDataCache cache, Timeline timeline)
             ParentType.All, ParentOffset.Zero,
             time, out var parentDepth,
             null);
-        var originMatrix = Matrix3x2.CreateTranslation(beatmapObject.Origin);
+        
+        // Use origin matrix if shape is not text
+        var originMatrix = beatmapObject.Shape == ObjectShape.Text 
+            ? Matrix3x2.Identity 
+            : Matrix3x2.CreateTranslation(beatmapObject.Origin);
+        
+        // Apply text scale if the shape is text
+        var textScale = beatmapObject.Shape == ObjectShape.Text 
+            ? TextScaleMatrix 
+            : Matrix3x2.Identity;
+        
         var perFrameData = cache[cacheIndex];
         perFrameData.BeatmapObject = beatmapObject;
-        perFrameData.Transform = originMatrix * transform;
+        perFrameData.Transform = originMatrix * textScale * transform;
         perFrameData.Color = beatmapObject.ThemeColorSequence.Interpolate(time - beatmapObject.StartTime, themeColorState);
         perFrameData.ParentDepth = parentDepth;
     }

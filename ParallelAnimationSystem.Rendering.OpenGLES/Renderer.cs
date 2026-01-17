@@ -458,7 +458,7 @@ public class Renderer : IRenderer, IDisposable
                     
                     unsafe
                     {
-                        GL.UniformMatrix3fv(glyphMvpUniformLocation, 1, false, (float*)&transform);
+                        GL.UniformMatrix3x2fv(glyphMvpUniformLocation, 1, false, (float*)&transform);
                     }
                     GL.Uniform1f(glyphZUniformLocation, RenderUtil.EncodeIntDepth(drawData.Index));
                     
@@ -466,7 +466,7 @@ public class Renderer : IRenderer, IDisposable
                     for (var i = 0; i < fontInfos.Count; i++)
                     {
                         var fontInfoNullable = fontInfos[i];
-                        if (fontInfoNullable is null)
+                        if (!fontInfoNullable.HasValue)
                             continue;
                         
                         var fontInfo = fontInfoNullable.Value;

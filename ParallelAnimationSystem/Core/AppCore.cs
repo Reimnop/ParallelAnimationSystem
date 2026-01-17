@@ -3,12 +3,15 @@ using Microsoft.Extensions.Logging;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.DependencyInjection;
+using Pamx.Common;
+using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core.Beatmap;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Text;
+using TmpParser;
 
 namespace ParallelAnimationSystem.Core;
 
@@ -17,14 +20,16 @@ public class AppCore
     private readonly List<List<IMesh>> meshes = [];
     
     private readonly AnimationRunner runner;
-    private readonly List<FontStack> fonts = [];
+    private readonly FontCollection fonts;
 
     private readonly AppSettings appSettings;
     private readonly ResourceLoader loader;
     private readonly IRenderingFactory renderingFactory;
     private readonly ILogger<AppCore> logger;
     
-    public BeatmapRunner(
+    private readonly ConditionalWeakTable<BeatmapObject, Task<IText?>> textCache = new();
+    
+    public AppCore(
         IServiceProvider sp,
         AppSettings appSettings,
         ResourceLoader loader,
@@ -91,13 +96,15 @@ public class AppCore
             var arialuni = LoadFont("Fonts/Arialuni.tmpe");
             var seguisym = LoadFont("Fonts/Seguisym.tmpe");
             var code2000 = LoadFont("Fonts/Code2000.tmpe");
-            fonts.Add(new FontStack("Inconsolata SDF", 16.0f, [inconsolata, arialuni, seguisym, code2000]));
+            var inconsolataStack = new FontStack("Inconsolata SDF", 16.0f, [inconsolata, arialuni, seguisym, code2000]);
         
             var liberationSans = LoadFont("Fonts/LiberationSans.tmpe");
-            fonts.Add(new FontStack("LiberationSans SDF", 16.0f, [liberationSans, arialuni, seguisym, code2000]));
+            var liberationSansStack = new FontStack("LiberationSans SDF", 16.0f, [liberationSans, arialuni, seguisym, code2000]);
         
             var notoMono = LoadFont("Fonts/NotoMono.tmpe");
-            fonts.Add(new FontStack("NotoMono SDF", 16.0f, [notoMono, arialuni, seguisym, code2000]));
+            var notoMonoStack = new FontStack("NotoMono SDF", 16.0f, [notoMono, arialuni, seguisym, code2000]);
+            
+            fonts = new FontCollection([inconsolataStack, liberationSansStack, notoMonoStack]);
         }
 
         #endregion
@@ -207,11 +214,10 @@ public class AppCore
             var beatmapObject = perFrameObjectData.BeatmapObject;
             Debug.Assert(beatmapObject is not null);
             
-            var shapeIndex = (int) beatmapObject.Shape & 0xffff;
-            var shapeOptionIndex = (int) beatmapObject.Shape >> 16;
-            
-            if (shapeIndex != 4) // 4 is text
+            if (beatmapObject.Shape != ObjectShape.Text)
             {
+                beatmapObject.Shape.ToSeparate(out var shapeIndex, out var shapeOptionIndex);
+                
                 if (shapeIndex >= 0 && shapeIndex < meshes.Count)
                 {
                     var meshOptionList = meshes[shapeIndex];
@@ -235,10 +241,46 @@ public class AppCore
             }
             else if (appSettings.EnableTextRendering)
             {
-                // TODO: Handle text rendering
-                // if (cachedTextHandles.TryGetValue(gameObject, out var task) && task.IsCompleted)
-                //     drawList.AddText(task.Result, transform, color1);
+                // Create text
+                var textTask = textCache.GetValue(beatmapObject, OnCreateTextAsync);
+
+                // Draw text if ready
+                if (textTask is { IsCompletedSuccessfully: true, Result: not null })
+                {
+                    var color1 = beatmapObjectColor.Color1;
+                    var color1Rgba = new ColorRgba(color1.R, color1.G, color1.B, beatmapObjectColor.Opacity);
+                    drawList.AddText(textTask.Result, transform, color1Rgba);
+                }
             }
         }
+    }
+
+    private Task<IText?> OnCreateTextAsync(BeatmapObject beatmapObject)
+    {
+        var task = Task.Run(() =>
+        {
+            if (beatmapObject.Text is null)
+                return null;
+
+            var richText = new RichText(
+                beatmapObject.Text,
+                "NotoMono SDF",
+                beatmapObject.Origin.X switch
+                {
+                    -0.5f => HorizontalAlignment.Left,
+                    0.5f => HorizontalAlignment.Right,
+                    _ => HorizontalAlignment.Center,
+                },
+                beatmapObject.Origin.Y switch
+                {
+                    -0.5f => VerticalAlignment.Bottom,
+                    0.5f => VerticalAlignment.Top,
+                    _ => VerticalAlignment.Center,
+                });
+            var text = renderingFactory.CreateText(richText, fonts);
+            return text;
+        });
+        
+        return task;
     }
 }

@@ -558,6 +558,7 @@ public class BeatmapImporter(ulong randomSeed, ILogger logger)
             Origin = origin,
             RenderDepth = @object.RenderDepth,
             Shape = @object.Shape,
+            Text = @object.Text,
         };
     }
     

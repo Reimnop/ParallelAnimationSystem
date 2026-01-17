@@ -88,6 +88,12 @@ public class BeatmapObject(
         set => SetField(ref shape, value);
     }
 
+    public string? Text
+    {
+        get => text;
+        set => SetField(ref text, value);
+    }
+
     public Sequence<PositionScaleKeyframe, object?, Vector2> PositionSequence { get; } = new(
         positionKeyframes,
         PositionScaleKeyframe.ResolveToValue,
@@ -126,6 +132,7 @@ public class BeatmapObject(
     private float killTimeOffset = 0f;
 
     private ObjectShape shape = ObjectShape.SquareSolid;
+    private string? text = null;
 
     public float CalculateKillTime(float startTimeOffset)
     {
