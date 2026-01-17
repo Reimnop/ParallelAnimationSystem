@@ -5,16 +5,14 @@ using Pamx.Common.Data;
 using Pamx.Common.Enum;
 using Pamx.Common.Implementation;
 using Pamx.Ls;
-using ParallelAnimationSystem.Data;
 
 namespace ParallelAnimationSystem.Core;
 
-public static class LsMigration
+public class LsMigration(ResourceLoader loader)
 {
-    public static void MigrateBeatmap(IBeatmap beatmap, IResourceManager resourceManager)
+    public void MigrateBeatmap(IBeatmap beatmap)
     {
-        // Load built-in themes
-        var themes = LoadThemes(resourceManager);
+        var themes = LoadThemes();
         
         // Add to beatmap
         beatmap.Themes.AddRange(themes.Values);
@@ -99,7 +97,7 @@ public static class LsMigration
         }
     }
     
-    private static Dictionary<int, ITheme> LoadThemes(IResourceManager resourceManager)
+    private Dictionary<int, ITheme> LoadThemes()
     {
         var themeNames = new[]
         {
@@ -118,7 +116,10 @@ public static class LsMigration
 
         foreach (var themeName in themeNames)
         {
-            var themeData = resourceManager.LoadResourceString($"Themes/{themeName}");
+            var themeData = loader.ReadResourceString($"Themes/{themeName}");
+            if (themeData is null)
+                throw new InvalidOperationException($"Could not load theme data for '{themeName}'");
+            
             var json = JsonNode.Parse(themeData);
             if (json is not JsonObject jsonObject)
                 continue;
@@ -129,7 +130,7 @@ public static class LsMigration
         return themes;
     }
 
-    private static void FixTheme(ITheme theme)
+    private void FixTheme(ITheme theme)
     {
         // Make sure theme has correct amount of colors
         for (var i = theme.Player.Count; i < 4; i++)

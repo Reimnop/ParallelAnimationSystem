@@ -1,10 +1,10 @@
 using OpenTK.Graphics.Egl;
-using OpenTK.Mathematics;
-using ParallelAnimationSystem.Windowing;
+using ParallelAnimationSystem.Mathematics;
+using ParallelAnimationSystem.Windowing.OpenGL;
 
 namespace ParallelAnimationSystem.Wasm;
 
-public class WasmWindowManager : IWindowManager, IDisposable
+public class WasmWindowManager : IOpenGLWindowManager, IDisposable
 {
     private readonly IntPtr display;
     
@@ -18,13 +18,8 @@ public class WasmWindowManager : IWindowManager, IDisposable
             throw new InvalidOperationException("Failed to initialize EGL");
     }
 
-    public IWindow CreateWindow(string title, Vector2i size, GLContextSettings glContextSettings)
-    {
-        if (!glContextSettings.ES)
-            throw new NotSupportedException("Only OpenGL ES is supported in WebAssembly");
-        
-        return new WasmWindow(display, title, glContextSettings);
-    }
+    public IOpenGLWindow CreateWindow(string title, OpenGLSettings glSettings)
+        => new WasmWindow(display, title, glSettings);
 
     public IntPtr GetProcAddress(string procName)
         => Egl.GetProcAddress(procName);

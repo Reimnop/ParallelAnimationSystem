@@ -6,10 +6,8 @@ public class WasmLoggerProvider : ILoggerProvider
 {
     private class WasmLogger(string categoryName) : ILogger
     {
-#pragma warning disable CS8633
-        public IDisposable BeginScope<TState>(TState state)
-#pragma warning restore CS8633
-            => null!;
+        public IDisposable BeginScope<TState>(TState state) where TState : notnull
+            => throw new NotImplementedException();
 
         public bool IsEnabled(LogLevel logLevel)
             => true;

@@ -1,69 +1,63 @@
-using OpenTK.Mathematics;
+using System.Numerics;
 using Pamx.Common;
 using Pamx.Common.Data;
 using ParallelAnimationSystem.Core.Animation;
+using ParallelAnimationSystem.Core.Beatmap;
+using ParallelAnimationSystem.Core.Data;
+using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core;
 
 public class AnimationRunner
 {
-    public IReadOnlySet<GameObject> AliveGameObjects => aliveGameObjects;
     public Vector2 CameraPosition { get; private set; }
     public float CameraScale { get; private set; }
     public float CameraRotation { get; private set; }
-    public BloomData Bloom { get; private set; }
+    public BloomEffectState Bloom { get; private set; }
     public float Hue { get; private set; }
     public LensDistortionData LensDistortion { get; private set; }
     public float ChromaticAberration { get; private set; }
-    public Data.VignetteData Vignette { get; private set; }
-    public Data.GradientData Gradient { get; private set; }
+    public VignetteEffectState Vignette { get; private set; }
+    public GradientEffectState Gradient { get; private set; }
     public GlitchData Glitch { get; private set; }
     public float Shake { get; private set; }
-    public Color4<Rgba> BackgroundColor { get; private set; }
+    public ColorRgb BackgroundColor { get; private set; }
+    public IReadOnlyList<PerFrameBeatmapObjectData> PerFrameData => perFrameDataCache;
 
-    public event EventHandler<GameObject>? ObjectSpawned;
-    public event EventHandler<GameObject>? ObjectKilled;
+    private readonly Timeline timeline;
+    private readonly Sequence<SequenceKeyframe<ITheme>, object?, ThemeColorState> themeColorSequence;
+    private readonly Sequence<SequenceKeyframe<Vector2>, object?, Vector2> cameraPositionAnimation;
+    private readonly Sequence<SequenceKeyframe<float>, object?, float> cameraScaleAnimation;
+    private readonly Sequence<SequenceKeyframe<float>, object?, float> cameraRotationAnimation;
+    private readonly Sequence<SequenceKeyframe<BloomData>, ThemeColorState, BloomEffectState> bloomSequence;
+    private readonly Sequence<SequenceKeyframe<float>, object?, float> hueSequence;
+    private readonly Sequence<SequenceKeyframe<LensDistortionData>, object?, LensDistortionData> lensDistortionSequence;
+    private readonly Sequence<SequenceKeyframe<float>, object?, float> chromaticAberrationSequence;
+    private readonly Sequence<SequenceKeyframe<VignetteData>, ThemeColorState, VignetteEffectState> vignetteSequence;
+    private readonly Sequence<SequenceKeyframe<GradientData>, ThemeColorState, GradientEffectState> gradientSequence;
+    private readonly Sequence<SequenceKeyframe<GlitchData>, object?, GlitchData> glitchSequence;
+    private readonly Sequence<SequenceKeyframe<float>, object?, float> shakeSequence;
     
-    public int ObjectCount => startTimeSortedGameObjects.Count;
+    private readonly PerFrameDataCache perFrameDataCache = new();
+    private readonly BeatmapObjectsProcessor beatmapObjectsProcessor;
+    private readonly PerFrameDepthComparer perFrameComparer = new();
 
-    private readonly List<GameObject> startTimeSortedGameObjects = [];
-    private readonly List<GameObject> killTimeSortedGameObjects = [];
-    private int spawnIndex;
-    private int killIndex;
-    private readonly SortedSet<GameObject> aliveGameObjects = new(new GameObjectDepthComparer());
-    
-    private readonly Sequence<ITheme, ThemeColors> themeColorSequence;
-    private readonly Sequence<Vector2, Vector2> cameraPositionAnimation;
-    private readonly Sequence<float, float> cameraScaleAnimation;
-    private readonly Sequence<float, float> cameraRotationAnimation;
-
-    private readonly Sequence<BloomData, BloomData> bloomSequence;
-    private readonly Sequence<float, float> hueSequence;
-    private readonly Sequence<LensDistortionData, LensDistortionData> lensDistortionSequence;
-    private readonly Sequence<float, float> chromaticAberrationSequence;
-    private readonly Sequence<VignetteData, Data.VignetteData> vignetteSequence;
-    private readonly Sequence<GradientData, Data.GradientData> gradientSequence;
-    private readonly Sequence<GlitchData, GlitchData> glitchSequence;
-    private readonly Sequence<float, float> shakeSequence;
-        
-    private float lastTime;
-    
     public AnimationRunner(
-        IEnumerable<GameObject> gameObjects, 
-        Sequence<ITheme, ThemeColors> themeColorSequence,
-        Sequence<Vector2, Vector2> cameraPositionAnimation,
-        Sequence<float, float> cameraScaleAnimation,
-        Sequence<float, float> cameraRotationAnimation,
-        Sequence<BloomData, BloomData> bloomSequence,
-        Sequence<float, float> hueSequence,
-        Sequence<LensDistortionData, LensDistortionData> lensDistortionSequence,
-        Sequence<float, float> chromaticAberrationSequence,
-        Sequence<VignetteData, Data.VignetteData> vignetteSequence,
-        Sequence<GradientData, Data.GradientData> gradientSequence,
-        Sequence<GlitchData, GlitchData> glitchSequence,
-        Sequence<float, float> shakeSequence)
+        Timeline timeline,
+        Sequence<SequenceKeyframe<ITheme>, object?, ThemeColorState> themeColorSequence,
+        Sequence<SequenceKeyframe<Vector2>, object?, Vector2> cameraPositionAnimation,
+        Sequence<SequenceKeyframe<float>, object?, float> cameraScaleAnimation,
+        Sequence<SequenceKeyframe<float>, object?, float> cameraRotationAnimation,
+        Sequence<SequenceKeyframe<BloomData>, ThemeColorState, BloomEffectState> bloomSequence,
+        Sequence<SequenceKeyframe<float>, object?, float> hueSequence,
+        Sequence<SequenceKeyframe<LensDistortionData>, object?, LensDistortionData> lensDistortionSequence,
+        Sequence<SequenceKeyframe<float>, object?, float> chromaticAberrationSequence,
+        Sequence<SequenceKeyframe<VignetteData>, ThemeColorState, VignetteEffectState> vignetteSequence,
+        Sequence<SequenceKeyframe<GradientData>, ThemeColorState, GradientEffectState> gradientSequence,
+        Sequence<SequenceKeyframe<GlitchData>, object?, GlitchData> glitchSequence,
+        Sequence<SequenceKeyframe<float>, object?, float> shakeSequence)
     {
-        // Set sequences
+        this.timeline = timeline;
         this.themeColorSequence = themeColorSequence;
         this.cameraPositionAnimation = cameraPositionAnimation;
         this.cameraScaleAnimation = cameraScaleAnimation;
@@ -76,103 +70,49 @@ public class AnimationRunner
         this.gradientSequence = gradientSequence;
         this.glitchSequence = glitchSequence;
         this.shakeSequence = shakeSequence;
-
-        foreach (var gameObject in gameObjects)
-        {
-            startTimeSortedGameObjects.Add(gameObject);
-            killTimeSortedGameObjects.Add(gameObject);
-        }
         
-        // Sort them
-        startTimeSortedGameObjects.Sort((x, y) => x.StartTime.CompareTo(y.StartTime));
-        killTimeSortedGameObjects.Sort((x, y) => x.KillTime.CompareTo(y.KillTime));
+        beatmapObjectsProcessor = new BeatmapObjectsProcessor(perFrameDataCache, timeline);
     }
 
-    public void Process(float time, int workers = -1)
+    /// <summary>
+    /// Processes one frame of the animation. Do not call from multiple threads at the same time.
+    /// </summary>
+    /// <returns>The render data of the animation.</returns>
+    public void ProcessFrame(float time, int workers = -1)
     {
         // Update theme
-        var themeColors = themeColorSequence.Interpolate(time);
-        if (themeColors is null)
-            throw new InvalidOperationException("Theme colors are null, theme color sequence might not be populated");
+        var themeColorState = themeColorSequence.Interpolate(time, null);
         
-        BackgroundColor = themeColors.Background;
-        
-        // Spawn and kill objects according to time
-        SpawnAndKillObjects(time);
+        // Set background color
+        BackgroundColor = themeColorState.Background;
         
         // Update sequences
-        CameraPosition = cameraPositionAnimation.Interpolate(time, themeColors);
-        CameraScale = cameraScaleAnimation.Interpolate(time, themeColors);
-        CameraRotation = cameraRotationAnimation.Interpolate(time, themeColors);
-        Bloom = bloomSequence.Interpolate(time, themeColors);
-        Hue = hueSequence.Interpolate(time, themeColors);
-        LensDistortion = lensDistortionSequence.Interpolate(time, themeColors);
-        ChromaticAberration = chromaticAberrationSequence.Interpolate(time, themeColors);
-        Vignette = vignetteSequence.Interpolate(time, themeColors);
-        Gradient = gradientSequence.Interpolate(time, themeColors);
-        Glitch = glitchSequence.Interpolate(time, themeColors);
-        Shake = shakeSequence.Interpolate(time, themeColors);
+        CameraPosition = cameraPositionAnimation.Interpolate(time, null);
+        CameraScale = cameraScaleAnimation.Interpolate(time, null);
+        CameraRotation = cameraRotationAnimation.Interpolate(time, null);
+        Bloom = bloomSequence.Interpolate(time, themeColorState);
+        Hue = hueSequence.Interpolate(time, null);
+        LensDistortion = lensDistortionSequence.Interpolate(time, null);
+        ChromaticAberration = chromaticAberrationSequence.Interpolate(time, null);
+        Vignette = vignetteSequence.Interpolate(time, themeColorState);
+        Gradient = gradientSequence.Interpolate(time, themeColorState);
+        Glitch = glitchSequence.Interpolate(time, null);
+        Shake = shakeSequence.Interpolate(time, null);
+        
+        // Process next frame in timelines
+        timeline.ProcessFrame(time);
+        
+        // Reset per-frame data cache
+        perFrameDataCache.Reset();
         
         // Update all objects in parallel
         var parallelOptions = new ParallelOptions
         {
             MaxDegreeOfParallelism = workers
         };
-        Parallel.ForEach(aliveGameObjects, parallelOptions, (x, _) => ProcessGameObjectAsync(x, themeColors, time));
-    }
-
-    private static void ProcessGameObjectAsync(GameObject gameObject, ThemeColors themeColors, float time)
-    {
-        gameObject.CalculateTransform(time);
-        gameObject.CalculateThemeColor(time, themeColors);
-    }
-
-    private void SpawnAndKillObjects(float time)
-    {
-        if (time > lastTime)
-        {
-            // Update objects forward in time
-            // Spawn
-            while (spawnIndex < startTimeSortedGameObjects.Count && time >= startTimeSortedGameObjects[spawnIndex].StartTime)
-            {
-                var obj = startTimeSortedGameObjects[spawnIndex];
-                aliveGameObjects.Add(obj);
-                spawnIndex++;
-                ObjectSpawned?.Invoke(this, obj);
-            }
-
-            // Kill
-            while (killIndex < killTimeSortedGameObjects.Count && time >= killTimeSortedGameObjects[killIndex].KillTime)
-            {
-                var obj = killTimeSortedGameObjects[killIndex];
-                aliveGameObjects.Remove(obj);
-                killIndex++;
-                ObjectKilled?.Invoke(this, obj);
-            }
-        }
-        else if (time < lastTime)
-        {
-            // Update objects backwards in time
-            // Spawn
-            while (killIndex - 1 >= 0 && time < killTimeSortedGameObjects[killIndex - 1].KillTime)
-            {
-                var obj = killTimeSortedGameObjects[killIndex - 1];
-                aliveGameObjects.Add(obj);
-                killIndex--;
-                ObjectSpawned?.Invoke(this, obj);
-            }
-            
-            // Kill
-            while (spawnIndex - 1 >= 0 && time < startTimeSortedGameObjects[spawnIndex - 1].StartTime)
-            {
-                var obj = startTimeSortedGameObjects[spawnIndex - 1];
-                aliveGameObjects.Remove(obj);
-                spawnIndex--;
-                ObjectKilled?.Invoke(this, obj);
-            }
-        }
+        beatmapObjectsProcessor.ProcessBeatmapObjects(parallelOptions, time, themeColorState);
         
-        // Update last time
-        lastTime = time;
+        // Sort the per-frame data by depth
+        perFrameDataCache.Sort(perFrameComparer);
     }
 }

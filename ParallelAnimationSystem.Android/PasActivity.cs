@@ -1,8 +1,15 @@
-using System.Text;
-using Android.Content;
+using System.Diagnostics;
 using Android.Content.PM;
-using Org.Libsdl.App;
+using Android.Views;
+using MattiasCibien.Extensions.Logging.Logcat;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Core;
+using ParallelAnimationSystem.Mathematics;
+using ParallelAnimationSystem.Rendering;
+using ParallelAnimationSystem.Rendering.OpenGLES;
+using Activity = Android.App.Activity;
+using Uri = Android.Net.Uri;
 
 namespace ParallelAnimationSystem.Android;
 
@@ -10,89 +17,153 @@ namespace ParallelAnimationSystem.Android;
     Label = "@string/app_name",
     Theme = "@android:style/Theme.Black.NoTitleBar.Fullscreen",
     HardwareAccelerated = false,
+    AlwaysRetainTaskState = true,
     ConfigurationChanges = DefaultConfigChanges,
     LaunchMode = DefaultLaunchMode,
     ScreenOrientation = ScreenOrientation.Landscape)]
-public class PasActivity : SDLActivity
+public class PasActivity : Activity
 {
-    public static AndroidSurface? Surface => MSurface as AndroidSurface;
-    public static bool SurfaceReady => Surface?.SurfaceReady ?? false;
-    
-    private const ConfigChanges DefaultConfigChanges = ConfigChanges.Keyboard
-                                                           | ConfigChanges.KeyboardHidden
-                                                           | ConfigChanges.Navigation
-                                                           | ConfigChanges.Orientation
-                                                           | ConfigChanges.ScreenLayout
-                                                           | ConfigChanges.ScreenSize
-                                                           | ConfigChanges.SmallestScreenSize
-                                                           | ConfigChanges.Touchscreen
-                                                           | ConfigChanges.UiMode;
+    private const ConfigChanges DefaultConfigChanges = (ConfigChanges) ~0;
+    private const LaunchMode DefaultLaunchMode = LaunchMode.SingleTask;
 
-    private const LaunchMode DefaultLaunchMode = LaunchMode.SingleInstance;
-    
-    // This can be treated as our program's entry point on Android
-    protected override void Main()
+    protected override void OnCreate(Bundle? savedInstanceState)
     {
-        var lockAspectRatio = Intent!.GetBooleanExtra("lockAspectRatio", true);
-        var enablePostProcessing = Intent!.GetBooleanExtra("postProcessing", true);
-        var enableTextRendering = Intent!.GetBooleanExtra("textRendering", true);
+        base.OnCreate(savedInstanceState);
         
-        var appSettings = new AndroidAppSettings(
-            1, 6,
-            (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds(),
-            lockAspectRatio ? 16.0f / 9.0f : null,
-            enablePostProcessing,
-            enableTextRendering);
+        Debug.Assert(Intent is not null);
+        Debug.Assert(Window is not null);
         
-        var (beatmapData, audioData) = BeatmapDataTransfer.GetBeatmapData() ?? throw new Exception("Failed to load beatmap data");
-        
+        // Get settings from intent extras
+        var lockAspectRatio = Intent.GetBooleanExtra("lockAspectRatio", true);
+        var enablePostProcessing = Intent.GetBooleanExtra("postProcessing", true);
+        var enableTextRendering = Intent.GetBooleanExtra("textRendering", true);
         var beatmapFormat = (BeatmapFormat) Intent.GetIntExtra("beatmapFormat", 0);
-        var beatmapString = Encoding.UTF8.GetString(beatmapData);
         
-        var startup = new AndroidStartup(appSettings, beatmapString, beatmapFormat);
-        using var app = startup.InitializeApp();
-        
-        if (audioData is null)
-            throw new Exception("Failed to load audio data");
-        
-        using var audioStream = new MemoryStream(audioData);
-        if (audioStream is null)
-            throw new Exception("Failed to load audio stream");
-        
-        using var audioPlayer = AudioPlayer.Load(audioStream);
-        
-        var beatmapRunner = app.BeatmapRunner;
-        var renderer = app.Renderer;
-        
-        var appShutdown = false;
-        var appThread = new Thread(() =>
+#pragma warning disable CA1422
+        var beatmapPath = Intent.GetParcelableExtra("beatmapPath") as Uri ?? throw new Exception("Beatmap path not provided in intent extras");
+        var audioPath = Intent.GetParcelableExtra("audioPath") as Uri ?? throw new Exception("Audio path not provided in intent extras");
+#pragma warning restore CA1422
+
+        var appSettings = new AppSettings
         {
-            // ReSharper disable once AccessToModifiedClosure
-            // ReSharper disable once LoopVariableIsNeverChangedInsideLoop
-            while (!appShutdown)
-                // ReSharper disable once AccessToDisposedClosure
-                if (!beatmapRunner.ProcessFrame((float) audioPlayer.Position))
-                    Thread.Yield();
-        });
-        appThread.Start();
+            WorkerCount = 6,
+            Seed = (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds(),
+            AspectRatio = lockAspectRatio ? 16.0f / 9.0f : null,
+            EnablePostProcessing = enablePostProcessing,
+            EnableTextRendering = enableTextRendering,
+        };
         
-        audioPlayer.Play();
+        // Create graphics surface
+        var surfaceView = new GraphicsSurfaceView(this);
         
-        // Enter the render loop
-        while (!renderer.Window.ShouldClose)
-            if (!SurfaceReady || !renderer.ProcessFrame())
-                Thread.Yield();
+        // Start the app
+        surfaceView.SurfaceCreatedCallback = surfaceHolder =>
+        {
+            var thread = new Thread(() => 
+                RunApp(appSettings, beatmapPath, beatmapFormat, audioPath, surfaceView, surfaceHolder));
+            thread.Start();
+        };
         
-        // When renderer exits, we'll shut down the services
-        appShutdown = true;
-        
-        // Wait for the app thread to finish
-        appThread.Join();
+        SetContentView(surfaceView);
     }
 
-    protected override SDLSurface CreateSDLSurface(Context? p0)
-        => new AndroidSurface(p0);
+    private void RunApp(
+        AppSettings appSettings,
+        Uri beatmapPath,
+        BeatmapFormat beatmapFormat,
+        Uri audioPath, 
+        GraphicsSurfaceView surfaceView,
+        ISurfaceHolder surfaceHolder)
+    {
+        var beatmapData = ReadBeatmapData(beatmapPath);
+        var audioData = ReadAudioData(audioPath);
+        
+        var services = new ServiceCollection();
+        
+        // Register contexts
+        services.AddSingleton(new AndroidSurfaceContext
+        {
+            SurfaceView = surfaceView,
+            SurfaceHolder = surfaceHolder
+        });
 
-    protected override string[] GetLibraries()
-        => ["SDL3"];
+        services.AddSingleton(new BeatmapContext
+        {
+            Data = beatmapData,
+            Format = beatmapFormat
+        });
+        
+        // Register logging
+        services.AddLogging(builder =>
+        {
+            builder.SetMinimumLevel(LogLevel.Information);
+            builder.AddLogcat("ParallelAnimationSystem");
+        });
+        
+        // Register PAS services
+        services.AddPAS(builder =>
+        {
+            builder.UseAppSettings(appSettings);
+            builder.UseWindowManager<AndroidWindowManager>();
+            builder.UseMediaProvider<AndroidMediaProvider>();
+            builder.UseOpenGLESRenderer();
+        });
+        
+        // Initialize PAS services
+        var serviceProvider = services.BuildServiceProvider();
+
+        var appCore = serviceProvider.InitializeAppCore();
+        var renderer = serviceProvider.InitializeRenderer();
+        
+        // Get a draw list
+        var renderingFactory = serviceProvider.GetRequiredService<IRenderingFactory>();
+        var drawList = renderingFactory.CreateDrawList();
+        
+        // Initialize audio player
+        using var audioPlayer = AudioPlayer.Load(audioData);
+        audioPlayer.Play();
+        
+        // Enter main loop
+        while (!renderer.Window.ShouldClose)
+        {
+            renderer.Window.PollEvents();
+            
+            // Process a frame
+            appCore.ProcessFrame((float) audioPlayer.Position, drawList);
+            renderer.ProcessFrame(drawList);
+            
+            // Clear the draw list for the next frame
+            drawList.Clear();
+        }
+        
+        audioPlayer.Stop();
+    }
+    
+    private string ReadBeatmapData(Uri beatmapPath)
+    {
+        var contentResolver = ContentResolver;
+        Debug.Assert(contentResolver is not null);
+
+        using var stream = contentResolver.OpenInputStream(beatmapPath);
+        if (stream is null)
+            throw new Exception("Failed to open beatmap stream");
+        
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
+    }
+    
+    private byte[] ReadAudioData(Uri audioPath)
+    {
+        var contentResolver = ContentResolver;
+        Debug.Assert(contentResolver is not null);
+
+        using var stream = contentResolver.OpenInputStream(audioPath);
+        if (stream is null)
+            throw new Exception("Failed to open audio stream");
+        
+        var memoryStream = new MemoryStream();
+        stream.CopyTo(memoryStream);
+        
+        return memoryStream.ToArray();
+    }
 }

@@ -3,15 +3,14 @@ using Pamx.Common;
 using Pamx.Ls;
 using Pamx.Vg;
 using ParallelAnimationSystem.Core;
-using ParallelAnimationSystem.Data;
 
 namespace ParallelAnimationSystem.Desktop;
 
-public class DesktopMediaProvider(string beatmapPath) : IMediaProvider
+public class DesktopMediaProvider(MediaContext context) : IMediaProvider
 {
     public IBeatmap LoadBeatmap(out BeatmapFormat format)
     {
-        var fileExtension = Path.GetExtension(beatmapPath);
+        var fileExtension = Path.GetExtension(context.BeatmapPath);
         format = fileExtension switch
         {
             ".lsb" => BeatmapFormat.Lsb,
@@ -19,7 +18,7 @@ public class DesktopMediaProvider(string beatmapPath) : IMediaProvider
             _ => throw new NotSupportedException($"Unsupported beatmap type '{fileExtension}'"),
         };
         
-        var jsonString = File.ReadAllText(beatmapPath);
+        var jsonString = File.ReadAllText(context.BeatmapPath);
         var json = JsonNode.Parse(jsonString);
         if (json is not JsonObject jsonObject)
             throw new InvalidDataException("Invalid beatmap JSON");

@@ -1,75 +1,58 @@
-using System.Runtime.CompilerServices;
+using ParallelAnimationSystem.Util;
+using ParallelAnimationSystem.Mathematics;
 
 namespace ParallelAnimationSystem.Core.Animation;
 
-public class Sequence<TIn, TOut>
+public delegate T Interpolator<T>(T first, T second, float t);
+
+public delegate T KeyframeResolver<in TKeyframe, in TContext, out T>(TKeyframe keyframe, TContext context) where TKeyframe : IKeyframe;
+
+public class Sequence<TKeyframe, TContext, T> where TKeyframe : IKeyframe
 {
-    public ReadOnlySpan<Keyframe<TIn>> Keyframes => keyframes;
+    public IReadOnlyList<TKeyframe> Keyframes => keyframes;
+    public float Length => keyframes.Count == 0 ? 0.0f : keyframes[^1].Time;
     
-    private readonly Keyframe<TIn>[] keyframes;
-    private readonly Interpolator<TIn, TOut> interpolator;
+    private readonly List<TKeyframe> keyframes;
+    private readonly KeyframeResolver<TKeyframe, TContext, T> resolver;
+    private readonly Interpolator<T> interpolator;
 
-    public Sequence(IEnumerable<Keyframe<TIn>> keyframes, Interpolator<TIn, TOut> interpolator)
+    public Sequence(
+        IEnumerable<TKeyframe> keyframes,
+        KeyframeResolver<TKeyframe, TContext, T> resolver,
+        Interpolator<T> interpolator)
     {
-        this.keyframes = keyframes.ToArray();
+        this.keyframes = keyframes.ToList();
+        this.resolver = resolver;
         this.interpolator = interpolator;
-        Array.Sort(this.keyframes, (x, y) => x.Time.CompareTo(y.Time));
+        this.keyframes.Sort((x, y) => x.Time.CompareTo(y.Time));
     }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public TOut? Interpolate(float time, object? context = null)
+    
+    public T? Interpolate(float time, TContext context)
     {
-        if (keyframes.Length == 0)
+        if (keyframes.Count == 0)
             return default;
 
-        if (keyframes.Length == 1)
-            return ResultFromSingleKeyframe(keyframes[0], context);
+        if (keyframes.Count == 1)
+            return resolver(keyframes[0], context);
 
         if (time < keyframes[0].Time)
-            return ResultFromSingleKeyframe(keyframes[0], context);
+            return resolver(keyframes[0], context);
         
         if (time >= keyframes[^1].Time)
-            return ResultFromSingleKeyframe(keyframes[^1], context);
+            return resolver(keyframes[^1], context);
 
-        var index = Search(time);
+        var index = keyframes.BinarySearchKey(time, kf => kf.Time, Comparer<float>.Default);
+        index = index < 0 ? ~index - 1 : index;
         var first = keyframes[index];
         var second = keyframes[index + 1];
+        
+        var resolvedFirst = resolver(first, context);
+        var resolvedSecond = resolver(second, context);
+        var easeFunction = EaseFunctions.GetOrLinear(second.Ease);
 
-        var t = InverseLerp(first.Time, second.Time, time);
-        return interpolator(first.Value, second.Value, second.Ease(t), context);
+        var t = MathUtil.InverseLerp(first.Time, second.Time, time);
+        var easedT = easeFunction(t);
+        
+        return interpolator(resolvedFirst, resolvedSecond, easedT);
     }
-    
-    // Binary search for the keyframe pair that contains the given time
-    private int Search(float time)
-    {
-        int low = 0;
-        int high = keyframes.Length - 1;
-
-        while (low <= high)
-        {
-            int mid = (low + high) / 2;
-            float midTime = keyframes[mid].Time;
-
-            if (time < midTime)
-            {
-                high = mid - 1;
-            }
-            else if (time > midTime)
-            {
-                low = mid + 1;
-            }
-            else
-            {
-                return mid;
-            }
-        }
-
-        return low - 1;
-    }
-    
-    private TOut ResultFromSingleKeyframe(Keyframe<TIn> keyframe, object? context)
-        => interpolator(keyframe.Value, keyframe.Value, 0.0f, context);
-    
-    private static float InverseLerp(float a, float b, float value)
-        => (value - a) / (b - a);
 }

@@ -37,6 +37,12 @@ var heightOption = new Option<int>(
     getDefaultValue: () => 1080
 );
 
+var useEglOption = new Option<bool>(
+    aliases: ["--use-egl"],
+    description: "Use EGL for context creation",
+    getDefaultValue: () => false
+);
+
 var framerateOption = new Option<int>(
     aliases: ["--framerate"],
     description: "Framerate of the output video",
@@ -91,6 +97,7 @@ rootCommand.AddOption(audioOption);
 rootCommand.AddOption(outputOption);
 rootCommand.AddOption(widthOption);
 rootCommand.AddOption(heightOption);
+rootCommand.AddOption(useEglOption);
 rootCommand.AddOption(framerateOption);
 rootCommand.AddOption(videoCodecOption);
 rootCommand.AddOption(audioCodecOption);
@@ -107,6 +114,7 @@ rootCommand.SetHandler(context =>
     var outputPath = context.ParseResult.GetValueForOption(outputOption)!;
     var sizeX = context.ParseResult.GetValueForOption(widthOption);
     var sizeY = context.ParseResult.GetValueForOption(heightOption);
+    var useEgl = context.ParseResult.GetValueForOption(useEglOption);
     var framerate = context.ParseResult.GetValueForOption(framerateOption);
     var videoCodec = context.ParseResult.GetValueForOption(videoCodecOption)!;
     var audioCodec = context.ParseResult.GetValueForOption(audioCodecOption)!;
@@ -122,6 +130,7 @@ rootCommand.SetHandler(context =>
         outputPath,
         sizeX,
         sizeY,
+        useEgl,
         framerate,
         videoCodec,
         audioCodec,

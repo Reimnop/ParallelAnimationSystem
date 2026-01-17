@@ -35,6 +35,12 @@ var vsyncOption = new Option<bool>(
     getDefaultValue: () => true
 );
 
+var useEglOption = new Option<bool>(
+    aliases: ["--use-egl"],
+    description: "Use EGL for context creation",
+    getDefaultValue: () => false
+);
+
 var workersOption = new Option<int>(
     aliases: ["--workers"],
     description: "Number of worker threads, set to -1 to use all available threads",
@@ -45,12 +51,6 @@ var seedOption = new Option<long>(
     aliases: ["--seed"],
     description: "Seed for the random number generator, set to -1 to use a random seed",
     getDefaultValue: () => -1
-);
-
-var speedOption = new Option<float>(
-    aliases: ["--speed"],
-    description: "Sets the playback speed",
-    getDefaultValue: () => 1.0f
 );
 
 var backendOption = new Option<RenderingBackend>(
@@ -113,9 +113,9 @@ rootCommand.AddOption(audioOption);
 rootCommand.AddOption(widthOption);
 rootCommand.AddOption(heightOption);
 rootCommand.AddOption(vsyncOption);
+rootCommand.AddOption(useEglOption);
 rootCommand.AddOption(workersOption);
 rootCommand.AddOption(seedOption);
-rootCommand.AddOption(speedOption);
 rootCommand.AddOption(backendOption);
 rootCommand.AddOption(lockAspectOption);
 rootCommand.AddOption(backgroundOpacityOption);
@@ -133,9 +133,9 @@ rootCommand.SetHandler(context =>
     var width = context.ParseResult.GetValueForOption(widthOption);
     var height = context.ParseResult.GetValueForOption(heightOption);
     var vsync = context.ParseResult.GetValueForOption(vsyncOption);
+    var useEgl = context.ParseResult.GetValueForOption(useEglOption);
     var workerCount = context.ParseResult.GetValueForOption(workersOption);
     var seed = context.ParseResult.GetValueForOption(seedOption);
-    var speed = context.ParseResult.GetValueForOption(speedOption);
     var backend = context.ParseResult.GetValueForOption(backendOption);
     var lockAspectRatio = context.ParseResult.GetValueForOption(lockAspectOption);
     var backgroundOpacity = context.ParseResult.GetValueForOption(backgroundOpacityOption);
@@ -152,9 +152,9 @@ rootCommand.SetHandler(context =>
         width,
         height,
         vsync,
+        useEgl,
         workerCount,
         seed,
-        speed,
         backend,
         lockAspectRatio,
         backgroundOpacity,

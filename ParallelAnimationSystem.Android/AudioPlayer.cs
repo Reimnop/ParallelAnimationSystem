@@ -39,14 +39,14 @@ public class AudioPlayer(int stream) : IDisposable
         Bass.ChannelStop(stream);
     }
     
-    public static AudioPlayer Load(Stream stream)
+    public static unsafe AudioPlayer Load(ReadOnlySpan<byte> data)
     {
-        var bytes = new byte[stream.Length];
-        _ = stream.Read(bytes, 0, bytes.Length);
-        
-        // Load the audio file
-        var bassStream = Bass.CreateStream(bytes, 0L, bytes.Length, BassFlags.Default);
-        return new AudioPlayer(bassStream);
+        fixed (byte* ptr = data)
+        {
+            // Load the audio file
+            var bassStream = Bass.CreateStream((IntPtr) ptr, 0L, data.Length);
+            return new AudioPlayer(bassStream);
+        }
     }
 
     public void Dispose()

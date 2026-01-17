@@ -1,88 +1,70 @@
-using System.Runtime.CompilerServices;
-using OpenTK.Mathematics;
-using ParallelAnimationSystem.Windowing;
-using SDL;
-using static SDL.SDL3;
+using System.Numerics;
+using OpenTK.Graphics.Egl;
+using OpenTK.Graphics.OpenGLES2;
+using ParallelAnimationSystem.Mathematics;
+using ParallelAnimationSystem.Windowing.OpenGL;
 
 namespace ParallelAnimationSystem.Android;
 
-public unsafe class AndroidWindow : IWindow, IDisposable
+public class AndroidWindow(IntPtr display, IntPtr context, IntPtr surface) : IOpenGLWindow, IDisposable
 {
+    // Does nothing on Android
     public string Title
     {
-        get => SDL_GetWindowTitle(window) ?? string.Empty;
-        set => SDL_SetWindowTitle(window, value);
+        get => title;
+        set => title = value;
     }
 
     public Vector2i FramebufferSize
     {
         get
         {
-            int width, height;
-            SDL_GetWindowSizeInPixels(window, &width, &height);
+            if (!Egl.QuerySurface(display, surface, Egl.WIDTH, out var width))
+                throw new Exception("Failed to query surface width");
+            
+            if (!Egl.QuerySurface(display, surface, Egl.HEIGHT, out var height))
+                throw new Exception("Failed to query surface height");
+            
             return new Vector2i(width, height);
         }
-        set => SDL_SetWindowSize(window, value.X, value.Y);
     }
     
     public bool ShouldClose { get; private set; }
 
-    private const int EventsPerPeep = 64;
-    private readonly SDL_Event[] events = new SDL_Event[EventsPerPeep];
-    
-    private readonly SDL_Window* window;
-    private readonly SDL_GLContextState* context;
-    
-    public AndroidWindow(string title, Vector2i size, GLContextSettings glContextSettings)
-    {
-        SDL_GL_SetAttribute(SDL_GLattr.SDL_GL_RED_SIZE, 8);
-        SDL_GL_SetAttribute(SDL_GLattr.SDL_GL_GREEN_SIZE, 8);
-        SDL_GL_SetAttribute(SDL_GLattr.SDL_GL_BLUE_SIZE, 8);
-        SDL_GL_SetAttribute(SDL_GLattr.SDL_GL_ALPHA_SIZE, 0);
-        SDL_GL_SetAttribute(SDL_GLattr.SDL_GL_CONTEXT_MAJOR_VERSION, glContextSettings.Version.Major);
-        SDL_GL_SetAttribute(SDL_GLattr.SDL_GL_CONTEXT_MINOR_VERSION, glContextSettings.Version.Minor);
-        SDL_GL_SetAttribute(SDL_GLattr.SDL_GL_CONTEXT_PROFILE_MASK, (int)SDL_GLprofile.SDL_GL_CONTEXT_PROFILE_ES);
-        
-        window = SDL_CreateWindow(
-            title, 
-            size.X, size.Y, 
-            SDL_WindowFlags.SDL_WINDOW_RESIZABLE | SDL_WindowFlags.SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WindowFlags.SDL_WINDOW_OPENGL);
-        if (window == null)
-            throw new Exception("Failed to create window");
-        
-        // This hides the navigation bar on Android
-        SDL_SetWindowFullscreen(window, SDL_bool.SDL_TRUE);
-        
-        context = SDL_GL_CreateContext(window);
-        if (context == null)
-            throw new Exception("Failed to create OpenGL context");
-    }
+    private string title = string.Empty;
 
     public void MakeContextCurrent()
     {
-        WaitUntilSurfaceReady();
+        if (!Egl.MakeCurrent(display, surface, surface, context))
+            throw new Exception("Failed to make EGL context current");
+    }
+    
+    public void Present(int framebuffer, Vector4 clearColor, Vector2i size, Vector2i offset)
+    {
+        MakeContextCurrent();
         
-        SDL_GL_MakeCurrent(window, context);
+        var dstSize = FramebufferSize;
+        
+        GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, framebuffer);
+        GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);
+        
+        // Clear the default framebuffer
+        GL.ClearColor(clearColor.X, clearColor.Y, clearColor.Z, clearColor.W);
+        GL.Viewport(0, 0, dstSize.X, dstSize.Y);
+        GL.Clear(ClearBufferMask.ColorBufferBit);
+        
+        // Blit the framebuffer to the default framebuffer
+        GL.BlitFramebuffer(
+            offset.X, offset.Y, size.X, size.Y,
+            offset.X, offset.Y, size.X, size.Y,
+            ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Nearest);
+        
+        Egl.SwapBuffers(display, surface);
     }
 
-    public void SetSwapInterval(int interval)
+    public void PollEvents()
     {
-        WaitUntilSurfaceReady();
-        
-        SDL_GL_MakeCurrent(window, context);
-        SDL_GL_SetSwapInterval(interval);
-    }
-
-    public void RequestAnimationFrame(AnimationFrameCallback callback)
-    {
-        WaitUntilSurfaceReady();
-        
-        SDL_GL_MakeCurrent(window, context);
-        
-        PollEvents();
-        var time = SDL_GetTicks() / 1000.0f;
-        if (callback(time, 0))
-            SDL_GL_SwapWindow(window);
+        // Not needed on Android
     }
 
     public void Close()
@@ -92,35 +74,9 @@ public unsafe class AndroidWindow : IWindow, IDisposable
     
     public void Dispose()
     {
-        SDL_GL_DestroyContext(context);
-        SDL_DestroyWindow(window);
-    }
-    
-    private void PollEvents()
-    {
-        SDL_PumpEvents();
-
-        int eventsRead;
-        do
-        {
-            eventsRead = SDL_PeepEvents(events, SDL_EventAction.SDL_GETEVENT, SDL_EventType.SDL_EVENT_FIRST, SDL_EventType.SDL_EVENT_LAST);
-            for (var i = 0; i < eventsRead; i++)
-            {
-                var ev = events[i];
-                switch (ev.type)
-                {
-                    case (uint) SDL_EventType.SDL_EVENT_QUIT:
-                        ShouldClose = true;
-                        break;
-                }
-            }
-        } while (eventsRead == EventsPerPeep);
-    }
-    
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void WaitUntilSurfaceReady()
-    {
-        while (!PasActivity.SurfaceReady)
-            Thread.Yield();
+        Egl.MakeCurrent(display, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+        Egl.DestroySurface(display, surface);
+        Egl.DestroyContext(display, context);
+        Egl.Terminate(display);
     }
 }

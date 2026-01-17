@@ -1,12 +1,15 @@
+using System.Numerics;
+using System.Runtime.InteropServices;
 using Ico.Reader;
-using OpenTK.Mathematics;
+using OpenTK.Graphics.OpenGL;
 using OpenTK.Windowing.GraphicsLibraryFramework;
-using ParallelAnimationSystem.Windowing;
+using ParallelAnimationSystem.Mathematics;
+using ParallelAnimationSystem.Windowing.OpenGL;
 using ReFuel.Stb;
 
 namespace ParallelAnimationSystem.Desktop;
 
-public unsafe class DesktopWindow : IWindow, IDisposable
+public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
 {
     public string Title
     {
@@ -27,9 +30,9 @@ public unsafe class DesktopWindow : IWindow, IDisposable
 
     private readonly Window* window;
 
-    public DesktopWindow(string title, Vector2i size, GLContextSettings glContextSettings, DesktopWindowSettings windowSettings)
+    public DesktopWindow(string title, DesktopWindowSettings settings, OpenGLSettings glSettings)
     {
-        if (glContextSettings.ES)
+        if (glSettings.IsES)
         {
             GLFW.WindowHint(WindowHintClientApi.ClientApi, ClientApi.OpenGlEsApi);
         }
@@ -38,16 +41,19 @@ public unsafe class DesktopWindow : IWindow, IDisposable
             GLFW.WindowHint(WindowHintClientApi.ClientApi, ClientApi.OpenGlApi);
             GLFW.WindowHint(WindowHintOpenGlProfile.OpenGlProfile, OpenGlProfile.Core);
         }
-            
-        GLFW.WindowHint(WindowHintInt.ContextVersionMajor, glContextSettings.Version.Major);
-        GLFW.WindowHint(WindowHintInt.ContextVersionMinor, glContextSettings.Version.Minor);
+
+        if (settings.UseEgl) 
+        {
+            GLFW.WindowHint(WindowHintContextApi.ContextCreationApi, ContextApi.EglContextApi);
+        }
         
-        GLFW.WindowHint(WindowHintBool.TransparentFramebuffer, windowSettings.Transparent);
-        GLFW.WindowHint(WindowHintBool.Decorated, !windowSettings.Borderless);
-        GLFW.WindowHint(WindowHintBool.Resizable, windowSettings.Resizable);
-        GLFW.WindowHint(WindowHintBool.Floating, windowSettings.Floating);
+        GLFW.WindowHint(WindowHintInt.ContextVersionMajor, glSettings.MajorVersion);
+        GLFW.WindowHint(WindowHintInt.ContextVersionMinor, glSettings.MinorVersion);
         
-        window = GLFW.CreateWindow(size.X, size.Y, title, null, null);
+        window = GLFW.CreateWindow(1366, 768, title, null, null);
+        
+        GLFW.MakeContextCurrent(window);
+        GLFW.SwapInterval(settings.VSync ? 1 : 0);
         
         // Load window icon
         using var iconStream = typeof(DesktopWindow).Assembly.GetManifestResourceStream("ParallelAnimationSystem.Desktop.icon.ico");
@@ -94,18 +100,36 @@ public unsafe class DesktopWindow : IWindow, IDisposable
 
     public void SetSwapInterval(int interval)
     {
-        GLFW.MakeContextCurrent(window);
+        MakeContextCurrent();
         GLFW.SwapInterval(interval);
     }
 
-    public void RequestAnimationFrame(AnimationFrameCallback callback)
+    public void PollEvents()
     {
         GLFW.PollEvents();
+    }
+    
+    public void Present(int framebuffer, Vector4 clearColor, Vector2i size, Vector2i offset)
+    {
+        MakeContextCurrent();
+
+        var dstSize = FramebufferSize;
         
-        GLFW.MakeContextCurrent(window);
-        var time = GLFW.GetTime();
-        if (callback(time, 0))
-            GLFW.SwapBuffers(window);
+        GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, framebuffer);
+        GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);
+        
+        // Clear the default framebuffer
+        GL.ClearColor(clearColor.X, clearColor.Y, clearColor.Z, clearColor.W);
+        GL.Viewport(0, 0, dstSize.X, dstSize.Y);
+        GL.Clear(ClearBufferMask.ColorBufferBit);
+        
+        // Blit the framebuffer to the default framebuffer
+        GL.BlitFramebuffer(
+            offset.X, offset.Y, size.X, size.Y,
+            offset.X, offset.Y, size.X, size.Y,
+            ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Nearest);
+        
+        GLFW.SwapBuffers(window);
     }
 
     public void Close()
@@ -117,4 +141,7 @@ public unsafe class DesktopWindow : IWindow, IDisposable
     {
         GLFW.DestroyWindow(window);
     }
+    
+    [DllImport("Dwmapi.dll")]
+    static extern int DwmFlush();
 }

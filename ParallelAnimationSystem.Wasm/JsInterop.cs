@@ -1,28 +1,80 @@
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Core;
+using ParallelAnimationSystem.Mathematics;
+using ParallelAnimationSystem.Rendering;
+using ParallelAnimationSystem.Rendering.OpenGLES;
 
 namespace ParallelAnimationSystem.Wasm;
 
 public static class JsInterop
 {
-    private static App? app;
+    private static WasmApp? app;
     
     [UnmanagedCallersOnly(EntryPoint = "initialize")]
     public static unsafe void Initialize(
         long seed, 
-        float backgroundOpacity,
         bool enablePostProcessing, 
         bool enableTextRendering,
         byte* beatmapDataPtr,
         int beatmapFormat)
     {
+        if (app is not null)
+            throw new InvalidOperationException("App already initialized");
+        
         var beatmapData = Marshal.PtrToStringUTF8((IntPtr) beatmapDataPtr);
         if (beatmapData is null)
-            throw new InvalidOperationException("Beatmap data is null");
+            throw new NullReferenceException("Beatmap data is null");
+
+        var appSettings = new AppSettings
+        {
+            WorkerCount = -1,
+            Seed = unchecked((ulong) seed),
+            AspectRatio = null,
+            EnablePostProcessing = enablePostProcessing,
+            EnableTextRendering = enableTextRendering,
+        };
+
+        var services = new ServiceCollection();
         
-        var appSettings = new WasmAppSettings(unchecked((ulong) seed), backgroundOpacity, enablePostProcessing, enableTextRendering);
-        var startup = new WasmStartup(appSettings, beatmapData, (BeatmapFormat) beatmapFormat);
-        app = startup.InitializeApp();
+        services.AddSingleton(new MediaContext
+        {
+            BeatmapData = beatmapData,
+            BeatmapFormat = (BeatmapFormat) beatmapFormat
+        });
+        
+        services.AddLogging(builder =>
+        {
+            builder.SetMinimumLevel(LogLevel.Information);
+            builder.AddProvider(new WasmLoggerProvider());
+        });
+        
+        services.AddPAS(builder =>
+        {
+            builder.UseAppSettings(appSettings);
+            builder.UseWindowManager<WasmWindowManager>();
+            builder.UseMediaProvider<WasmMediaProvider>();
+            builder.UseOpenGLESRenderer();
+            
+            // Provide our own font files for WASM
+            builder.AddResourceSource(new EmbeddedResourceSource(typeof(WasmApp).Assembly));
+        });
+
+        var sp = services.BuildServiceProvider();
+        var appCore = sp.InitializeAppCore();
+        var renderer = sp.InitializeRenderer();
+        
+        var renderingFactory = sp.GetRequiredService<IRenderingFactory>();
+        var drawList = renderingFactory.CreateDrawList();
+
+        app = new WasmApp
+        {
+            ServiceProvider = sp,
+            AppCore = appCore,
+            Renderer = renderer,
+            DrawList = drawList
+        };
     }
 
     [UnmanagedCallersOnly(EntryPoint = "processFrame")]
@@ -31,9 +83,13 @@ public static class JsInterop
         if (app is null)
             throw new InvalidOperationException("App not initialized");
         
-        var (_, renderer, beatmapRunner) = app;
-        beatmapRunner.ProcessFrame(time);
-        renderer.ProcessFrame();
+        var appCore = app.AppCore;
+        var renderer = app.Renderer;
+        var drawList = app.DrawList;
+
+        drawList.Clear();
+        appCore.ProcessFrame(time, drawList);
+        renderer.ProcessFrame(drawList);
     }
 
     [UnmanagedCallersOnly(EntryPoint = "dispose")]
