@@ -602,6 +602,9 @@ public class Renderer : IRenderer, IDisposable
         if (size == currentFboSize)
             return;
         
+        if (size.X * size.Y == 0)
+            return;
+        
         // Delete old FBO data
         GL.DeleteRenderbuffer(fboColorBufferHandle);
         GL.DeleteRenderbuffer(fboDepthBufferHandle);
