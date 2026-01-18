@@ -532,11 +532,13 @@ public class Renderer : IRenderer, IDisposable
         {
             var atlas = incomingFont.Atlas;
             
+            GL.PixelStorei(PixelStoreParameter.UnpackAlignment, 1);
+            
             // Create texture
             var atlasHandle = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2d, atlasHandle);
-            GL.TexStorage2D(TextureTarget.Texture2d, 1, SizedInternalFormat.Rgb32f, atlas.Width, atlas.Height);
-            GL.TexSubImage2D(TextureTarget.Texture2d, 0, 0, 0, atlas.Width, atlas.Height, PixelFormat.Rgb, PixelType.Float, atlas.Data);
+            GL.TexStorage2D(TextureTarget.Texture2d, 1, SizedInternalFormat.Rgb16f, atlas.Width, atlas.Height);
+            GL.TexSubImage2D(TextureTarget.Texture2d, 0, 0, 0, atlas.Width, atlas.Height, PixelFormat.Rgb, PixelType.HalfFloat, atlas.Data);
             
             fontInfos.EnsureCount(incomingFont.FontId + 1);
             fontInfos[incomingFont.FontId] = new FontInfo(atlasHandle);

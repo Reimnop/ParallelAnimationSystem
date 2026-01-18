@@ -580,10 +580,12 @@ public class Renderer : IRenderer, IDisposable
             
             var atlas = font.Atlas;
             
+            GL.PixelStorei(PixelStoreParameter.UnpackAlignment, 1);
+            
             // Create texture
             var atlasHandle = GL.CreateTexture(TextureTarget.Texture2d);
-            GL.TextureStorage2D(atlasHandle, 1, SizedInternalFormat.Rgb32f, atlas.Width, atlas.Height);
-            GL.TextureSubImage2D(atlasHandle, 0, 0, 0, atlas.Width, atlas.Height, PixelFormat.Rgb, PixelType.Float, atlas.Data);
+            GL.TextureStorage2D(atlasHandle, 1, SizedInternalFormat.Rgb16f, atlas.Width, atlas.Height);
+            GL.TextureSubImage2D(atlasHandle, 0, 0, 0, atlas.Width, atlas.Height, PixelFormat.Rgb, PixelType.HalfFloat, atlas.Data);
             
             // Put it in our font info list
             fontInfos.EnsureCount(font.FontId + 1);

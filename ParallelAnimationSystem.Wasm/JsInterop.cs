@@ -56,9 +56,6 @@ public static class JsInterop
             builder.UseWindowManager<WasmWindowManager>();
             builder.UseMediaProvider<WasmMediaProvider>();
             builder.UseOpenGLESRenderer();
-            
-            // Provide our own font files for WASM
-            builder.AddResourceSource(new EmbeddedResourceSource(typeof(WasmApp).Assembly));
         });
 
         var sp = services.BuildServiceProvider();
