@@ -4,8 +4,8 @@ precision highp float;
 
 layout(location = 0) out highp vec4 oFragColor;
 
-uniform sampler2D uTexture1;
-uniform sampler2D uTexture2;
+uniform sampler2D uSourceSampler;
+uniform sampler2D uBloomSampler;
 
 uniform highp float uIntensity;
 
@@ -13,13 +13,12 @@ in highp vec2 vUv;
 
 void main() {
     // Fetch colors
-    vec4 color1 = texture(uTexture1, vUv);
-    vec4 color2 = texture(uTexture2, vUv);
+    vec3 srcColor = texture(uSourceSampler, vUv).rgb;
+    vec3 bloomColor = texture(uBloomSampler, vUv).rgb;
     
     // Mix
-    vec4 color = color1 + color2 * uIntensity;
-    color.a = 1.0;
+    vec3 color = srcColor + bloomColor * uIntensity;
     
     // Store result
-    oFragColor = color;
+    oFragColor = vec4(color, 1.0);
 }

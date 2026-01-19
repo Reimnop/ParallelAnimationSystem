@@ -6,17 +6,19 @@ namespace ParallelAnimationSystem.Rendering.OpenGLES.PostProcessing;
 
 public class Bloom : IDisposable
 {
+    private record struct Mip(int Handle, Vector2i Size);
+    
     private readonly int prefilterProgram, downsampleProgram, upsampleProgram, combineProgram;
-    private readonly int prefilterThresholdUniformLocation;
-    private readonly int downsampleSizeUniformLocation;
-    private readonly int upsampleSizeUniformLocation, upsampleDiffusionUniformLocation, upsampleLowMipUniformLocation, upsampleHighMipUniformLocation;
-    private readonly int combineIntensityUniformLocation, combineTexture1UniformLocation, combineTexture2UniformLocation;
+    private readonly int
+        prefilterThresholdUniformLocation,
+        prefilterCurveUniformLocation,
+        upsampleSampleScaleUniformLocation,
+        combineIntensityUniformLocation;
     
     private readonly int textureSampler;
     private readonly int framebuffer;
-    
-    private readonly List<int> downsamplingMipChain = [];
-    private readonly List<int> upsamplingMipChain = [];
+
+    private readonly List<Mip> mipChain = [];
     private Vector2i currentSize = -Vector2i.One;
 
     public Bloom(ResourceLoader loader, int vertexShader)
@@ -27,17 +29,17 @@ public class Bloom : IDisposable
         combineProgram = LoaderUtil.LoadPPProgram(loader, "BloomCombine", vertexShader);
         
         prefilterThresholdUniformLocation = GL.GetUniformLocation(prefilterProgram, "uThreshold");
-        
-        downsampleSizeUniformLocation = GL.GetUniformLocation(downsampleProgram, "uSize");
-        
-        upsampleSizeUniformLocation = GL.GetUniformLocation(upsampleProgram, "uSize");
-        upsampleDiffusionUniformLocation = GL.GetUniformLocation(upsampleProgram, "uDiffusion");
-        upsampleLowMipUniformLocation = GL.GetUniformLocation(upsampleProgram, "uLowMip");
-        upsampleHighMipUniformLocation = GL.GetUniformLocation(upsampleProgram, "uHighMip");
-        
+        prefilterCurveUniformLocation = GL.GetUniformLocation(prefilterProgram, "uCurve");
+        upsampleSampleScaleUniformLocation = GL.GetUniformLocation(upsampleProgram, "uSampleScale");
         combineIntensityUniformLocation = GL.GetUniformLocation(combineProgram, "uIntensity");
-        combineTexture1UniformLocation = GL.GetUniformLocation(combineProgram, "uTexture1");
-        combineTexture2UniformLocation = GL.GetUniformLocation(combineProgram, "uTexture2");
+        
+        var combineSourceSamplerUniformLocation = GL.GetUniformLocation(combineProgram, "uSourceSampler");
+        var combineBloomSamplerUniformLocation = GL.GetUniformLocation(combineProgram, "uBloomSampler");
+        
+        // Set sampler uniform binding
+        GL.UseProgram(combineProgram);
+        GL.Uniform1i(combineSourceSamplerUniformLocation, 0);
+        GL.Uniform1i(combineBloomSamplerUniformLocation, 1);
         
         textureSampler = GL.GenSampler();
         GL.SamplerParameteri(textureSampler, SamplerParameterI.TextureMinFilter, (int)TextureMinFilter.Linear);
@@ -53,15 +55,26 @@ public class Bloom : IDisposable
         if (intensity == 0.0f)
             return false;
         
-        // diffusion = MathHelper.Lerp(0.05f, 0.95f, diffusion);
-        diffusion = MathUtil.Lerp(0.5f, 0.95f, diffusion);
+        intensity = MathF.Pow(2.0f, intensity / 10.0f) - 1.0f;
+        
+        // Determine iteration count
+        var s = MathF.Max(size.X, size.Y);
+        var logs = MathF.Log2(s) + MathF.Min(diffusion, 10f) - 10f; // Use 10 as base
+        var logsInt = MathF.Floor(logs);
+        var iterations = (int) Math.Clamp(logsInt, 1, 16); // Limit to 16 levels
         
         // Update mip chain if size has changed
         if (size != currentSize)
         {
-            UpdateTextures(size);
             currentSize = size;
+            UpdateMipChain(size, iterations);
         }
+        
+        if (mipChain.Count == 0)
+            return false;
+        
+        // Get mip 0
+        var mip0 = mipChain[0];
         
         // Bind samplers
         GL.BindSampler(0, textureSampler);
@@ -69,13 +82,27 @@ public class Bloom : IDisposable
         
         // Prefilter to mip 0
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, framebuffer);
-        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, downsamplingMipChain[0], 0);
+        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, mip0.Handle, 0); // Bind output texture
         GL.Viewport(0, 0, size.X, size.Y);
+        
+        // Turn off blending
+        GL.Disable(EnableCap.Blend);
         
         GL.UseProgram(prefilterProgram);
         
-        GL.Uniform1f(prefilterThresholdUniformLocation, 0.95f);
+        // Set knee and threshold uniforms
+        var threshold = 0.95f; // TODO: expose as parameter
+        var softKnee = 0.5f;
         
+        var knee = threshold * softKnee + 1e-5f;
+        var curve0 = threshold - knee;
+        var curve1 = knee * 2.0f;
+        var curve2 = 0.25f / knee;
+        
+        GL.Uniform1f(prefilterThresholdUniformLocation, threshold);
+        GL.Uniform3f(prefilterCurveUniformLocation, curve0, curve1, curve2);
+        
+        // Bind input texture
         GL.ActiveTexture(TextureUnit.Texture0);
         GL.BindTexture(TextureTarget.Texture2d, inputTexture);
         
@@ -84,48 +111,49 @@ public class Bloom : IDisposable
         // Downsample
         GL.UseProgram(downsampleProgram);
         
-        for (var i = 1; i < downsamplingMipChain.Count; i++)
+        for (var i = 1; i < mipChain.Count; i++)
         {
-            var mipSize = new Vector2i(size.X >> i, size.Y >> i);
+            var sourceMip = mipChain[i - 1];
+            var targetMip = mipChain[i];
             
-            // Blur downsample[i - 1] to downsample[i]
-            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, downsamplingMipChain[i], 0);
-            GL.Viewport(0, 0, mipSize.X, mipSize.Y);
-            
-            GL.Uniform2i(downsampleSizeUniformLocation, mipSize.X, mipSize.Y);
+            // Downsample pass (mip[i - 1] -> mip[i])
+            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, targetMip.Handle, 0);
+            GL.Viewport(0, 0, targetMip.Size.X, targetMip.Size.Y);
             
             GL.ActiveTexture(TextureUnit.Texture0);
-            GL.BindTexture(TextureTarget.Texture2d, downsamplingMipChain[i - 1]);
+            GL.BindTexture(TextureTarget.Texture2d, sourceMip.Handle);
             
             GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
         }
+        
+        // Enable additive blending for upsample pass
+        GL.Enable(EnableCap.Blend);
+        GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.One);
         
         // Upsample
         GL.UseProgram(upsampleProgram);
         
-        for (var i = 0; i < upsamplingMipChain.Count; i++)
+        // Set sample scale uniform
+        var sampleScale = 0.5f + (logs - logsInt);
+        GL.Uniform1f(upsampleSampleScaleUniformLocation, sampleScale);
+        
+        for (var i = mipChain.Count - 2; i >= 0; i--)
         {
-            var lowMip = i == 0 ? downsamplingMipChain[^1] : upsamplingMipChain[i - 1];
-            var highMip = downsamplingMipChain[^(i + 2)];
-            var outputMip = upsamplingMipChain[i];
-            var outputSize = new Vector2i(size.X >> (upsamplingMipChain.Count - i - 1), size.Y >> (upsamplingMipChain.Count - i - 1));
+            var sourceMip = mipChain[i + 1];
+            var targetMip = mipChain[i];
             
-            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, outputMip, 0);
-            GL.Viewport(0, 0, outputSize.X, outputSize.Y);
-            
-            GL.Uniform2i(upsampleSizeUniformLocation, outputSize.X, outputSize.Y);
-            GL.Uniform1f(upsampleDiffusionUniformLocation, diffusion);
-            GL.Uniform1i(upsampleLowMipUniformLocation, 0);
-            GL.Uniform1i(upsampleHighMipUniformLocation, 1);
+            // Upsample pass (mip[i + 1] -> mip[i])
+            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, targetMip.Handle, 0);
+            GL.Viewport(0, 0, targetMip.Size.X, targetMip.Size.Y);
             
             GL.ActiveTexture(TextureUnit.Texture0);
-            GL.BindTexture(TextureTarget.Texture2d, lowMip);
-            
-            GL.ActiveTexture(TextureUnit.Texture1);
-            GL.BindTexture(TextureTarget.Texture2d, highMip);
+            GL.BindTexture(TextureTarget.Texture2d, sourceMip.Handle);
             
             GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
         }
+        
+        // Disable blending
+        GL.Disable(EnableCap.Blend);
         
         // Combine
         GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, outputTexture, 0);
@@ -134,65 +162,35 @@ public class Bloom : IDisposable
         GL.UseProgram(combineProgram);
         
         GL.Uniform1f(combineIntensityUniformLocation, intensity);
-        GL.Uniform1i(combineTexture1UniformLocation, 0);
-        GL.Uniform1i(combineTexture2UniformLocation, 1);
         
         GL.ActiveTexture(TextureUnit.Texture0);
         GL.BindTexture(TextureTarget.Texture2d, inputTexture);
         
         GL.ActiveTexture(TextureUnit.Texture1);
-        GL.BindTexture(TextureTarget.Texture2d, upsamplingMipChain[^1]);
+        GL.BindTexture(TextureTarget.Texture2d, mip0.Handle);
         
         GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
         
         return true;
     }
 
-    private void UpdateTextures(Vector2i size)
+    private void UpdateMipChain(Vector2i size, int levels)
     {
         // Delete old mip chain
-        foreach (var mip in downsamplingMipChain)
-            GL.DeleteTexture(mip);
+        foreach (var mip in mipChain)
+            GL.DeleteTexture(mip.Handle);
         
-        foreach (var mip in upsamplingMipChain)
-            GL.DeleteTexture(mip);
+        mipChain.Clear();
         
-        downsamplingMipChain.Clear();
-        upsamplingMipChain.Clear();
-        
-        // Create new mip chain
-        var mipLevels = CalculateMipLevels(size);
-        
-        // Initialize downsampling mip chain
-        for (var i = 0; i < mipLevels; i++)
+        // Initialize mip chain
+        for (var i = 0; i < levels; i++)
         {
             var mipSize = new Vector2i(size.X >> i, size.Y >> i);
             var mip = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2d, mip);
             GL.TexStorage2D(TextureTarget.Texture2d, 1, SizedInternalFormat.Rgba16f, mipSize.X, mipSize.Y);
-            downsamplingMipChain.Add(mip);
+            mipChain.Add(new Mip(mip, mipSize));
         }
-        
-        // Initialize upsampling mip chain
-        for (var i = mipLevels - 2; i >= 0; i--)
-        {
-            var mipSize = new Vector2i(size.X >> i, size.Y >> i);
-            var mip = GL.GenTexture();
-            GL.BindTexture(TextureTarget.Texture2d, mip);
-            GL.TexStorage2D(TextureTarget.Texture2d, 1, SizedInternalFormat.Rgba16f, mipSize.X, mipSize.Y);
-            upsamplingMipChain.Add(mip);
-        }
-    }
-    
-    private static int CalculateMipLevels(Vector2i size)
-    {
-        var minDim = Math.Min(size.X, size.Y);
-        return (int) MathF.Floor(MathF.Log(minDim, 2));
-    }
-
-    private static void Swap<T>(ref T a, ref T b)
-    {
-        (a, b) = (b, a);
     }
 
     public void Dispose()
@@ -205,10 +203,7 @@ public class Bloom : IDisposable
         GL.DeleteSampler(textureSampler);
         GL.DeleteFramebuffer(framebuffer);
         
-        foreach (var mip in downsamplingMipChain)
-            GL.DeleteTexture(mip);
-        
-        foreach (var mip in upsamplingMipChain)
-            GL.DeleteTexture(mip);
+        foreach (var mip in mipChain)
+            GL.DeleteTexture(mip.Handle);
     }
 }

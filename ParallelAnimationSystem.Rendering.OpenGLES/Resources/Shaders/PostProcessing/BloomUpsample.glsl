@@ -4,27 +4,24 @@ precision highp float;
 
 layout(location = 0) out highp vec4 oFragColor;
 
-uniform sampler2D uLowMip;
-uniform sampler2D uHighMip;
-
-uniform ivec2 uSize;
-uniform highp float uDiffusion;
+uniform sampler2D uSourceSampler;
+uniform float uSampleScale;
 
 in highp vec2 vUv;
 
-vec3 sampleLowMip(sampler2D mip, vec2 uv, vec2 pxSize) {
+vec3 sample9Tap(sampler2D mip, vec2 uv, vec2 radius) {
     // A B C
     // D E F
     // G H I
-    vec3 a = texture(mip, uv + vec2(-1.0, -1.0) * pxSize).rgb;
-    vec3 b = texture(mip, uv + vec2( 0.0, -1.0) * pxSize).rgb;
-    vec3 c = texture(mip, uv + vec2( 1.0, -1.0) * pxSize).rgb;
-    vec3 d = texture(mip, uv + vec2(-1.0,  0.0) * pxSize).rgb;
-    vec3 e = texture(mip, uv + vec2( 0.0,  0.0) * pxSize).rgb;
-    vec3 f = texture(mip, uv + vec2( 1.0,  0.0) * pxSize).rgb;
-    vec3 g = texture(mip, uv + vec2(-1.0,  1.0) * pxSize).rgb;
-    vec3 h = texture(mip, uv + vec2( 0.0,  1.0) * pxSize).rgb;
-    vec3 i = texture(mip, uv + vec2( 1.0,  1.0) * pxSize).rgb;
+    vec3 a = texture(mip, uv + vec2(-1.0, -1.0) * radius).rgb;
+    vec3 b = texture(mip, uv + vec2( 0.0, -1.0) * radius).rgb;
+    vec3 c = texture(mip, uv + vec2( 1.0, -1.0) * radius).rgb;
+    vec3 d = texture(mip, uv + vec2(-1.0,  0.0) * radius).rgb;
+    vec3 e = texture(mip, uv + vec2( 0.0,  0.0) * radius).rgb;
+    vec3 f = texture(mip, uv + vec2( 1.0,  0.0) * radius).rgb;
+    vec3 g = texture(mip, uv + vec2(-1.0,  1.0) * radius).rgb;
+    vec3 h = texture(mip, uv + vec2( 0.0,  1.0) * radius).rgb;
+    vec3 i = texture(mip, uv + vec2( 1.0,  1.0) * radius).rgb;
 
     vec3 color =
         (a + c + g + i) * 1.0 +
@@ -36,17 +33,14 @@ vec3 sampleLowMip(sampler2D mip, vec2 uv, vec2 pxSize) {
 }
 
 void main() {
-    vec2 pxSize = 1.0 / vec2(uSize);
+    ivec2 size = textureSize(uSourceSampler, 0);
+    vec2 pxSize = 1.0 / vec2(size);
     
-    // Fetch current color
-    vec3 lowMipColor = sampleLowMip(uLowMip, vUv, pxSize * 0.5);
-    
-    // Fetch original color
-    vec3 highMipColor = texture(uHighMip, vUv).rgb;
-    
-    // Mix
-    vec3 color = mix(highMipColor, lowMipColor, uDiffusion);
+    // Sample color
+    vec3 color = sample9Tap(uSourceSampler, vUv, pxSize * uSampleScale);
     
     // Store result
+    // We'll use GL blend to accumulate the result
+    // So just output the sampled color
     oFragColor = vec4(color, 1.0);
 }
