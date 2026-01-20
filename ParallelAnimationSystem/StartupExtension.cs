@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using ParallelAnimationSystem.Core;
+using ParallelAnimationSystem.DebugUI;
 using ParallelAnimationSystem.Rendering;
 
 namespace ParallelAnimationSystem;
@@ -37,6 +38,9 @@ public static class StartupExtension
         // Add resource loader
         services.AddSingleton(_ => new ResourceLoader(resourceSourceFactories));
         
+        // Add ImGui backend
+        services.AddSingleton<ImGuiBackend>();
+        
         // Add migrations
         services.AddTransient<LsMigration>();
         services.AddTransient<VgMigration>();
@@ -47,6 +51,14 @@ public static class StartupExtension
     public static AppCore InitializeAppCore(this IServiceProvider serviceProvider)
         => serviceProvider.GetRequiredService<AppCore>();
 
-    public static IRenderer InitializeRenderer(this IServiceProvider serviceProvider)
-        => serviceProvider.GetRequiredService<IRenderer>();
+    public static IRenderer InitializeRenderer(this IServiceProvider serviceProvider, bool useImGui = false)
+    {
+        if (useImGui)
+        {
+            serviceProvider.GetRequiredService<IImGuiPlatformBackend>();
+            serviceProvider.GetRequiredService<IImGuiRendererBackend>();
+        }
+        
+        return serviceProvider.GetRequiredService<IRenderer>();
+    }
 }

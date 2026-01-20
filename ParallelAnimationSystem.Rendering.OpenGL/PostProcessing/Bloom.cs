@@ -22,10 +22,10 @@ public class Bloom : IDisposable
 
     public Bloom(ResourceLoader loader)
     {
-        prefilterProgram = LoaderUtil.LoadComputeProgram(loader, "BloomPrefilter");
-        downsampleProgram = LoaderUtil.LoadComputeProgram(loader, "BloomDownsample");
-        upsampleProgram = LoaderUtil.LoadComputeProgram(loader, "BloomUpsample");
-        combineProgram = LoaderUtil.LoadComputeProgram(loader, "BloomCombine");
+        prefilterProgram = LoaderUtil.LoadPPProgram(loader, "BloomPrefilter");
+        downsampleProgram = LoaderUtil.LoadPPProgram(loader, "BloomDownsample");
+        upsampleProgram = LoaderUtil.LoadPPProgram(loader, "BloomUpsample");
+        combineProgram = LoaderUtil.LoadPPProgram(loader, "BloomCombine");
         
         prefilterThresholdUniformLocation = GL.GetUniformLocation(prefilterProgram, "uThreshold");
         prefilterCurveUniformLocation = GL.GetUniformLocation(prefilterProgram, "uCurve");

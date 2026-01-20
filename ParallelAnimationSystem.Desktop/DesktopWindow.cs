@@ -11,7 +11,10 @@ namespace ParallelAnimationSystem.Desktop;
 
 public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
 {
-    private const string WindowTitle = "Parallel Animation System";
+    private const string Title = "Parallel Animation System";
+
+    // Called every time events are polled
+    public event EventHandler? EventsPolled; 
     
     public Vector2i FramebufferSize
     {
@@ -23,6 +26,8 @@ public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
     }
     
     public bool ShouldClose => GLFW.WindowShouldClose(window);
+    
+    public Window* Handle => window;
 
     private readonly Window* window;
 
@@ -50,7 +55,7 @@ public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
         GLFW.WindowHint(WindowHintInt.ContextVersionMajor, glSettings.MajorVersion);
         GLFW.WindowHint(WindowHintInt.ContextVersionMinor, glSettings.MinorVersion);
         
-        window = GLFW.CreateWindow(windowSettings.Size.X, windowSettings.Size.Y, WindowTitle, null, null);
+        window = GLFW.CreateWindow(windowSettings.Size.X, windowSettings.Size.Y, Title, null, null);
         
         GLFW.MakeContextCurrent(window);
         GLFW.SwapInterval(windowSettings.VSync ? 1 : 0);
@@ -101,6 +106,8 @@ public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
     public void PollEvents()
     {
         GLFW.PollEvents();
+        
+        EventsPolled?.Invoke(this, EventArgs.Empty);
     }
     
     public void Present(int framebuffer, Vector4 clearColor, Vector2i size, Vector2i offset)

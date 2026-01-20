@@ -43,7 +43,7 @@ public class UberPost : IDisposable
 
     public UberPost(ResourceLoader loader)
     {
-        program = LoaderUtil.LoadComputeProgram(loader, "UberPost");
+        program = LoaderUtil.LoadPPProgram(loader, "UberPost");
         
         // Get uniform locations
         sizeUniformLocation = GL.GetUniformLocation(program, "uSize");

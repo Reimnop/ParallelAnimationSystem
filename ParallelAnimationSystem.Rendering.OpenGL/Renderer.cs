@@ -63,7 +63,11 @@ public class Renderer : IRenderer, IDisposable
     private readonly Buffer<DrawElementsIndirectCommand> multiDrawIndirectBuffer = new();
     private readonly Buffer<MultiDrawItem> multiDrawStorageBuffer = new();
     private readonly Buffer<RenderGlyph> multiDrawGlyphBuffer = new();
+    
+    // Overlay renderers
+    private readonly List<IOverlayRenderer> overlayRenderers = [];
 
+    // Injected dependencies
     private readonly AppSettings appSettings;
     private readonly IncomingResourceQueue incomingResourceQueue;
     private readonly ILogger<Renderer> logger;
@@ -281,6 +285,12 @@ public class Renderer : IRenderer, IDisposable
         // uberPost.Dispose();
         // bloom.Dispose();
     }
+    
+    public void AddOverlayRenderer(IOverlayRenderer overlayRenderer)
+        => overlayRenderers.Add(overlayRenderer);
+    
+    public bool RemoveOverlayRenderer(IOverlayRenderer overlayRenderer) 
+        => overlayRenderers.Remove(overlayRenderer);
 
     public void ProcessFrame(IDrawList drawList)
     {
@@ -383,7 +393,7 @@ public class Renderer : IRenderer, IDisposable
         RenderDrawDataList(opaqueDrawData, camera);
         
         // Transparent pass, enable blending, disable depth write
-        GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+        GL.BlendFuncSeparate(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha, BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha);
         GL.Enable(EnableCap.Blend);
         GL.DepthMask(false);
         
@@ -410,6 +420,10 @@ public class Renderer : IRenderer, IDisposable
         
         // Do post-processing
         var finalTexture = HandlePostProcessing(oglDrawList.PostProcessingData, postProcessTextureHandle1, postProcessTextureHandle2);
+        
+        // Render overlays into final texture
+        foreach (var overlayRenderer in overlayRenderers)
+            overlayRenderer.ProcessFrame(finalTexture, renderSize);
         
         // Bind final texture to post process fbo
         GL.NamedFramebufferTexture(postProcessFboHandle, FramebufferAttachment.ColorAttachment0, finalTexture, 0);

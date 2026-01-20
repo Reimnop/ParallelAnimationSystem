@@ -1,0 +1,3 @@
+﻿namespace ParallelAnimationSystem.DebugUI;
+
+public interface IImGuiPlatformBackend;

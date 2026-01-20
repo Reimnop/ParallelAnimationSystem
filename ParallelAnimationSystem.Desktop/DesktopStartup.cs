@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using ParallelAnimationSystem.DebugUI;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering.OpenGL;
 using ParallelAnimationSystem.Rendering.OpenGLES;
@@ -69,6 +70,9 @@ public static class DesktopStartup
                     break;
             }
         });
+        
+        // Add ImGui platform backend
+        services.AddSingleton<IImGuiPlatformBackend, ImGuiPlatformBackend>();
 
         services.AddTransient<DesktopApp>();
         
