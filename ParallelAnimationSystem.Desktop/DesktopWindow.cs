@@ -11,12 +11,8 @@ namespace ParallelAnimationSystem.Desktop;
 
 public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
 {
-    public string Title
-    {
-        get => GLFW.GetWindowTitle(window);
-        set => GLFW.SetWindowTitle(window, value);
-    }
-
+    private const string WindowTitle = "Parallel Animation System";
+    
     public Vector2i FramebufferSize
     {
         get
@@ -30,8 +26,12 @@ public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
 
     private readonly Window* window;
 
-    public DesktopWindow(string title, DesktopWindowSettings settings, OpenGLSettings glSettings)
+    public DesktopWindow(DesktopWindowSettings windowSettings, OpenGLSettings glSettings)
     {
+        // Initialize GLFW
+        if (!GLFW.Init())
+            throw new Exception("Failed to initialize GLFW");
+        
         if (glSettings.IsES)
         {
             GLFW.WindowHint(WindowHintClientApi.ClientApi, ClientApi.OpenGlEsApi);
@@ -42,7 +42,7 @@ public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
             GLFW.WindowHint(WindowHintOpenGlProfile.OpenGlProfile, OpenGlProfile.Core);
         }
 
-        if (settings.UseEgl) 
+        if (windowSettings.UseEgl) 
         {
             GLFW.WindowHint(WindowHintContextApi.ContextCreationApi, ContextApi.EglContextApi);
         }
@@ -50,10 +50,10 @@ public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
         GLFW.WindowHint(WindowHintInt.ContextVersionMajor, glSettings.MajorVersion);
         GLFW.WindowHint(WindowHintInt.ContextVersionMinor, glSettings.MinorVersion);
         
-        window = GLFW.CreateWindow(settings.Size.X, settings.Size.Y, title, null, null);
+        window = GLFW.CreateWindow(windowSettings.Size.X, windowSettings.Size.Y, WindowTitle, null, null);
         
         GLFW.MakeContextCurrent(window);
-        GLFW.SwapInterval(settings.VSync ? 1 : 0);
+        GLFW.SwapInterval(windowSettings.VSync ? 1 : 0);
         
         // Load window icon
         using var iconStream = typeof(DesktopWindow).Assembly.GetManifestResourceStream("ParallelAnimationSystem.Desktop.icon.ico");
@@ -98,12 +98,6 @@ public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
         GLFW.MakeContextCurrent(window);
     }
 
-    public void SetSwapInterval(int interval)
-    {
-        MakeContextCurrent();
-        GLFW.SwapInterval(interval);
-    }
-
     public void PollEvents()
     {
         GLFW.PollEvents();
@@ -132,6 +126,9 @@ public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
         GLFW.SwapBuffers(window);
     }
 
+    public IntPtr GetProcAddress(string procName)
+        => GLFW.GetProcAddress(procName);
+
     public void Close()
     {
         GLFW.SetWindowShouldClose(window, true);
@@ -140,6 +137,7 @@ public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
     public void Dispose()
     {
         GLFW.DestroyWindow(window);
+        GLFW.Terminate();
     }
     
     [DllImport("Dwmapi.dll")]

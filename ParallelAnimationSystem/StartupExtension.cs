@@ -22,7 +22,7 @@ public static class StartupExtension
         services.AddSingleton<AppCore>();
         
         // Add external services
-        options.WindowManagerDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);
+        options.WindowDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);
         options.MediaProviderDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);
         options.RendererDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);
         options.RenderingFactoryDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);

@@ -53,7 +53,7 @@ public static class JsInterop
         services.AddPAS(builder =>
         {
             builder.UseAppSettings(appSettings);
-            builder.UseWindowManager<WasmWindowManager>();
+            builder.UseWindow<WasmWindow>();
             builder.UseMediaProvider<WasmMediaProvider>();
             builder.UseOpenGLESRenderer();
         });

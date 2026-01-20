@@ -57,7 +57,7 @@ public static class DesktopStartup
         services.AddPAS(builder =>
         {
             builder.UseAppSettings(appSettings);
-            builder.UseWindowManager<DesktopWindowManager>();
+            builder.UseWindow<DesktopWindow>();
             builder.UseMediaProvider<DesktopMediaProvider>();
             switch (backend)
             {

@@ -23,9 +23,7 @@ public class Renderer : IRenderer, IDisposable
     
     private const int MaxFontsCount = 12;
     private const int MsaaSamples = 4;
-
-    public IWindow Window => window;
-
+    
     private readonly IOpenGLWindow window;
     
     // Rendering data
@@ -72,30 +70,22 @@ public class Renderer : IRenderer, IDisposable
 
     public Renderer(
         AppSettings appSettings,
-        IWindowManager windowManager,
+        IWindow window,
         ResourceLoader loader,
         IncomingResourceQueue incomingResourceQueue,
         ILogger<Renderer> logger)
     {
         this.appSettings = appSettings;
+        this.window = (IOpenGLWindow) window;
         this.incomingResourceQueue = incomingResourceQueue;
         this.logger = logger;
-
+        
         logger.LogInformation("Initializing OpenGL renderer");
         
-        // Create window
-        window = (IOpenGLWindow) windowManager.CreateWindow(
-            "Parallel Animation System", 
-            new OpenGLSettings
-            {
-                MajorVersion = 4,
-                MinorVersion = 6,
-                IsES = false
-            });
-        window.MakeContextCurrent();
+        this.window.MakeContextCurrent();
         
         // Load OpenGL bindings
-        GLLoader.LoadBindings(new WMBindingsContext((IOpenGLWindowManager) windowManager));
+        GLLoader.LoadBindings(new BindingsContext(this.window));
         
         logger.LogInformation("Window created");
         
@@ -253,8 +243,43 @@ public class Renderer : IRenderer, IDisposable
     
     public void Dispose()
     {
-        if (Window is IDisposable disposable)
-            disposable.Dispose();
+        // Don't dispose because it will die with the context anyway
+        // TODO: If we ever need to reinit just the renderer without disposing the window, implement this
+        
+        // logger.LogInformation("Disposing OpenGL renderer");
+        //
+        // // Delete OpenGL resources
+        // GL.DeleteFramebuffer(fboHandle);
+        // GL.DeleteRenderbuffer(fboColorBufferHandle);
+        // GL.DeleteRenderbuffer(fboDepthBufferHandle);
+        // GL.DeleteFramebuffer(postProcessFboHandle);
+        // GL.DeleteTexture(postProcessTextureHandle1);
+        // GL.DeleteTexture(postProcessTextureHandle2);
+        //
+        // GL.DeleteBuffer(vertexBufferHandle);
+        // GL.DeleteBuffer(indexBufferHandle);
+        // GL.DeleteVertexArray(vertexArrayHandle);
+        //
+        // GL.DeleteBuffer(multiDrawIndirectBufferHandle);
+        // GL.DeleteBuffer(multiDrawStorageBufferHandle);
+        // GL.DeleteBuffer(multiDrawGlyphBufferHandle);
+        //
+        // GL.DeleteProgram(programHandle);
+        // GL.DeleteSampler(fontAtlasSampler);
+        //
+        // // Delete font atlas textures
+        // foreach (var fontInfoNullable in fontInfos)
+        // {
+        //     if (!fontInfoNullable.HasValue)
+        //         continue;
+        //     
+        //     var fontInfo = fontInfoNullable.Value;
+        //     GL.DeleteTexture(fontInfo.AtlasHandle);
+        // }
+        //
+        // // Dispose post processors
+        // uberPost.Dispose();
+        // bloom.Dispose();
     }
 
     public void ProcessFrame(IDrawList drawList)

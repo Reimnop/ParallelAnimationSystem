@@ -1,5 +1,7 @@
 ﻿using System.Collections.Concurrent;
+using Microsoft.Extensions.DependencyInjection;
 using ParallelAnimationSystem.Rendering;
+using ParallelAnimationSystem.Windowing;
 
 namespace ParallelAnimationSystem.Desktop;
 
@@ -54,7 +56,8 @@ public sealed class DesktopApp
     private void StartRenderThread()
     {
         var renderer = serviceProvider.InitializeRenderer();
-        var window = renderer.Window;
+        
+        var window = serviceProvider.GetRequiredService<IWindow>();
 
         while (!window.ShouldClose)
         {

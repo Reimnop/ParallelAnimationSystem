@@ -23,8 +23,6 @@ public class Renderer : IRenderer, IDisposable
     private record struct MeshInfo(int IndexOffset, int IndexCount);
     private record struct FontInfo(int AtlasHandle);
     
-    public IWindow Window => window;
-
     private readonly IOpenGLWindow window;
     
     // Graphics data
@@ -64,30 +62,23 @@ public class Renderer : IRenderer, IDisposable
     
     public Renderer(
         AppSettings appSettings,
-        IWindowManager windowManager,
+        IWindow window,
         ResourceLoader loader,
         IncomingResourceQueue incomingResourceQueue,
         ILogger<Renderer> logger)
     {
         this.appSettings = appSettings;
+        this.window = (IOpenGLWindow) window;
         this.incomingResourceQueue = incomingResourceQueue;
         this.logger = logger;
         
         logger.LogInformation("Initializing OpenGL ES renderer");
         
         // Create window
-        window = (IOpenGLWindow) windowManager.CreateWindow(
-            "Parallel Animation System",
-            new OpenGLSettings
-            {
-                MajorVersion = 3,
-                MinorVersion = 0,
-                IsES = true,
-            });
-        window.MakeContextCurrent();
+        this.window.MakeContextCurrent();
         
         // Load OpenGL bindings
-        GLLoader.LoadBindings(new WMBindingsContext((IOpenGLWindowManager) windowManager));
+        GLLoader.LoadBindings(new BindingsContext(this.window));
         
         logger.LogInformation("Window created");
         
@@ -100,7 +91,7 @@ public class Renderer : IRenderer, IDisposable
         #region OpenGL Data Initialization
 
         {
-            var initialSize = Window.FramebufferSize;
+            var initialSize = this.window.FramebufferSize;
             
             // Create main program handle
             programHandle = CreateShaderProgram(loader, "Shaders/UnlitVertex.glsl", "Shaders/UnlitFragment.glsl");
@@ -230,6 +221,46 @@ public class Renderer : IRenderer, IDisposable
         }
 
         #endregion
+    }
+    
+    public void Dispose()
+    {
+        // Don't dispose because it will die with the context anyway
+        // TODO: If we ever need to reinit just the renderer without disposing the window, implement this
+        
+        // logger.LogInformation("Disposing OpenGL ES renderer");
+        //
+        // // Delete GL resources
+        // GL.DeleteProgram(programHandle);
+        // GL.DeleteProgram(glyphProgramHandle);
+        //
+        // GL.DeleteBuffer(mainVertexBufferHandle);
+        // GL.DeleteBuffer(mainIndexBufferHandle);
+        // GL.DeleteVertexArray(mainVertexArrayHandle);
+        //
+        // GL.DeleteBuffer(textInstanceBufferHandle);
+        // GL.DeleteVertexArray(textVertexArrayHandle);
+        // GL.DeleteSampler(textAtlasSamplerHandle);
+        //
+        // GL.DeleteRenderbuffer(fboColorBufferHandle);
+        // GL.DeleteRenderbuffer(fboDepthBufferHandle);
+        // GL.DeleteFramebuffer(fboHandle);
+        //
+        // GL.DeleteTexture(postProcessTextureHandle1);
+        // GL.DeleteTexture(postProcessTextureHandle2);
+        // GL.DeleteFramebuffer(postProcessFboHandle);
+        //
+        // foreach (var fontInfoNullable in fontInfos)
+        // {
+        //     if (!fontInfoNullable.HasValue)
+        //         continue;
+        //     
+        //     var fontInfo = fontInfoNullable.Value;
+        //     GL.DeleteTexture(fontInfo.AtlasHandle);
+        // }
+        //
+        // bloom.Dispose();
+        // uberPost.Dispose();
     }
 
     private static int CreateShaderProgram(ResourceLoader loader, string vertexShaderResourceName, string fragmentShaderResourceName)
@@ -649,12 +680,6 @@ public class Renderer : IRenderer, IDisposable
         currentFboSize = size;
         
         logger.LogInformation("OpenGL framebuffer size updated, now at {Width}x{Height}", currentFboSize.X, currentFboSize.Y);
-    }
-
-    public void Dispose()
-    {
-        if (Window is IDisposable disposable)
-            disposable.Dispose();
     }
     
     private static void Swap<T>(ref T a, ref T b)

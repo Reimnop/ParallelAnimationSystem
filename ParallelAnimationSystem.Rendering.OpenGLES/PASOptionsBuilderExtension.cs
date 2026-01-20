@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using ParallelAnimationSystem.Core;
+using ParallelAnimationSystem.Windowing.OpenGL;
 
 namespace ParallelAnimationSystem.Rendering.OpenGLES;
 
@@ -13,6 +14,13 @@ public static class PASOptionsBuilderExtension
             .AddResourceSource(new EmbeddedResourceSource(typeof(PASOptionsBuilderExtension).Assembly));
         
         builder.Services.AddSingleton<IncomingResourceQueue>();
+
+        builder.Services.AddSingleton(new OpenGLSettings
+        {
+            MajorVersion = 3,
+            MinorVersion = 0,
+            IsES = true,
+        });
         
         return builder;
     }

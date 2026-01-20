@@ -8,6 +8,7 @@ using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.OpenGLES;
+using ParallelAnimationSystem.Windowing;
 using Activity = Android.App.Activity;
 using Uri = Android.Net.Uri;
 
@@ -104,7 +105,7 @@ public class PasActivity : Activity
         services.AddPAS(builder =>
         {
             builder.UseAppSettings(appSettings);
-            builder.UseWindowManager<AndroidWindowManager>();
+            builder.UseWindow<AndroidWindow>();
             builder.UseMediaProvider<AndroidMediaProvider>();
             builder.UseOpenGLESRenderer();
         });
@@ -115,6 +116,8 @@ public class PasActivity : Activity
         var appCore = serviceProvider.InitializeAppCore();
         var renderer = serviceProvider.InitializeRenderer();
         
+        var window = serviceProvider.GetRequiredService<IWindow>();
+        
         // Get a draw list
         var renderingFactory = serviceProvider.GetRequiredService<IRenderingFactory>();
         var drawList = renderingFactory.CreateDrawList();
@@ -124,9 +127,9 @@ public class PasActivity : Activity
         audioPlayer.Play();
         
         // Enter main loop
-        while (!renderer.Window.ShouldClose)
+        while (!window.ShouldClose)
         {
-            renderer.Window.PollEvents();
+            window.PollEvents();
             
             // Process a frame
             appCore.ProcessFrame((float) audioPlayer.Position, drawList);

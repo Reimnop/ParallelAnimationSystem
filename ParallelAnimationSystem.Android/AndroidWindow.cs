@@ -1,4 +1,7 @@
+using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.InteropServices;
+using Android.Runtime;
 using OpenTK.Graphics.Egl;
 using OpenTK.Graphics.OpenGLES2;
 using ParallelAnimationSystem.Mathematics;
@@ -6,23 +9,18 @@ using ParallelAnimationSystem.Windowing.OpenGL;
 
 namespace ParallelAnimationSystem.Android;
 
-public class AndroidWindow(IntPtr display, IntPtr context, IntPtr surface) : IOpenGLWindow, IDisposable
+public class AndroidWindow : IOpenGLWindow, IDisposable
 {
-    // Does nothing on Android
-    public string Title
-    {
-        get => title;
-        set => title = value;
-    }
+    private const string LibAndroid = "libandroid.so";
 
     public Vector2i FramebufferSize
     {
         get
         {
-            if (!Egl.QuerySurface(display, surface, Egl.WIDTH, out var width))
+            if (!Egl.QuerySurface(eglDisplay, eglSurface, Egl.WIDTH, out var width))
                 throw new Exception("Failed to query surface width");
             
-            if (!Egl.QuerySurface(display, surface, Egl.HEIGHT, out var height))
+            if (!Egl.QuerySurface(eglDisplay, eglSurface, Egl.HEIGHT, out var height))
                 throw new Exception("Failed to query surface height");
             
             return new Vector2i(width, height);
@@ -31,11 +29,63 @@ public class AndroidWindow(IntPtr display, IntPtr context, IntPtr surface) : IOp
     
     public bool ShouldClose { get; private set; }
 
-    private string title = string.Empty;
+    private readonly IntPtr aNativeWindowPtr;
+    private readonly IntPtr eglDisplay;
+    private readonly IntPtr eglSurface;
+    private readonly IntPtr eglContext;
+
+    public AndroidWindow(OpenGLSettings glSettings, AndroidSurfaceContext surfaceContext)
+    {
+        if (!glSettings.IsES)
+            throw new NotSupportedException("Desktop OpenGL is not supported on Android, use OpenGL ES instead");
+        
+        // Initialize EGL
+        eglDisplay = Egl.GetDisplay(Egl.DEFAULT_DISPLAY);
+        
+        Egl.Initialize(eglDisplay, out _, out _);
+        int[] configAttribs = 
+        [
+            Egl.RENDERABLE_TYPE, glSettings.MajorVersion == 3 ? Egl.OPENGL_ES3_BIT : Egl.OPENGL_ES2_BIT,
+            Egl.SURFACE_TYPE,    Egl.WINDOW_BIT,
+            Egl.RED_SIZE,        8,
+            Egl.GREEN_SIZE,      8,
+            Egl.BLUE_SIZE,       8,
+            Egl.ALPHA_SIZE,      0,
+            Egl.NONE
+        ];
+        
+        var configs = new IntPtr[1];
+        Egl.ChooseConfig(eglDisplay, configAttribs, configs, 1, out _);
+        
+        var config = configs[0];
+        if (config == IntPtr.Zero)
+            throw new Exception("Failed to choose EGL config");
+        
+        int[] contextAttribs = 
+        [
+            Egl.CONTEXT_CLIENT_VERSION, glSettings.MajorVersion,
+            Egl.NONE
+        ];
+        
+        eglContext = Egl.CreateContext(eglDisplay, config, IntPtr.Zero, contextAttribs);
+        if (eglContext == IntPtr.Zero)
+            throw new Exception("Failed to create EGL context");
+        
+        var surface = surfaceContext.SurfaceHolder.Surface;
+        Debug.Assert(surface is not null);
+        
+        aNativeWindowPtr = ANativeWindow_fromSurface(JNIEnv.Handle, surface.Handle);
+        if (aNativeWindowPtr == IntPtr.Zero)
+            throw new Exception("Failed to get ANativeWindow pointer from surface");
+        
+        eglSurface = Egl.CreateWindowSurface(eglSurface, config, aNativeWindowPtr, IntPtr.Zero);
+        if (eglSurface == IntPtr.Zero)
+            throw new Exception("Failed to create EGL window surface");
+    }
 
     public void MakeContextCurrent()
     {
-        if (!Egl.MakeCurrent(display, surface, surface, context))
+        if (!Egl.MakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext))
             throw new Exception("Failed to make EGL context current");
     }
     
@@ -59,8 +109,11 @@ public class AndroidWindow(IntPtr display, IntPtr context, IntPtr surface) : IOp
             offset.X, offset.Y, offset.X + size.X, offset.Y + size.Y,
             ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Nearest);
         
-        Egl.SwapBuffers(display, surface);
+        Egl.SwapBuffers(eglDisplay, eglSurface);
     }
+
+    public IntPtr GetProcAddress(string procName)
+        => Egl.GetProcAddress(procName);
 
     public void PollEvents()
     {
@@ -74,9 +127,17 @@ public class AndroidWindow(IntPtr display, IntPtr context, IntPtr surface) : IOp
     
     public void Dispose()
     {
-        Egl.MakeCurrent(display, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
-        Egl.DestroySurface(display, surface);
-        Egl.DestroyContext(display, context);
-        Egl.Terminate(display);
+        Egl.MakeCurrent(eglDisplay, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+        Egl.DestroySurface(eglDisplay, eglSurface);
+        Egl.DestroyContext(eglDisplay, eglContext);
+        Egl.Terminate(eglDisplay);
+        
+        ANativeWindow_release(aNativeWindowPtr);
     }
+    
+    [DllImport(LibAndroid)]
+    private static extern IntPtr ANativeWindow_fromSurface(IntPtr env, IntPtr surface);
+    
+    [DllImport(LibAndroid)]
+    public static extern void ANativeWindow_release(IntPtr window);
 }

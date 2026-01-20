@@ -68,7 +68,7 @@ public static class FFmpegStartup
         services.AddPAS(builder =>
         {
             builder.UseAppSettings(appSettings);
-            builder.UseWindowManager<FFmpegWindowManager>();
+            builder.UseWindow<FFmpegWindow>();
             builder.UseMediaProvider<FFmpegMediaProvider>();
             switch (backend)
             {

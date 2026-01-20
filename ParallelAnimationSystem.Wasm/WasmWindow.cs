@@ -8,8 +8,6 @@ namespace ParallelAnimationSystem.Wasm;
 
 public class WasmWindow : IOpenGLWindow, IDisposable
 {
-    public string Title { get; set; }
-
     public Vector2i FramebufferSize
     {
         get
@@ -20,19 +18,24 @@ public class WasmWindow : IOpenGLWindow, IDisposable
         }
     }
 
+    // JS controls the lifecycle of the canvas, so we never want to close it from C#
     public bool ShouldClose => false;
 
     private readonly IntPtr display;
     private readonly IntPtr context;
     private readonly IntPtr surface;
     
-    public WasmWindow(IntPtr display, string title, OpenGLSettings glSettings)
+    public WasmWindow(OpenGLSettings glSettings)
     {
-        this.display = display;
-        Title = title;
-        
         if (!glSettings.IsES)
             throw new InvalidOperationException("Only OpenGL ES is supported on WebAssembly");
+        
+        display = Egl.GetDisplay(IntPtr.Zero);
+        if (display == IntPtr.Zero)
+            throw new InvalidOperationException("Failed to get EGL display");
+        
+        if (!Egl.Initialize(display, out _, out _))
+            throw new InvalidOperationException("Failed to initialize EGL");
         
         var config = new[]
         {
@@ -100,6 +103,9 @@ public class WasmWindow : IOpenGLWindow, IDisposable
             ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Nearest);
     }
 
+    public IntPtr GetProcAddress(string procName)
+        => Egl.GetProcAddress(procName);
+
     public void PollEvents()
     {
         // Do nothing
@@ -112,7 +118,9 @@ public class WasmWindow : IOpenGLWindow, IDisposable
 
     public void Dispose()
     {
+        Egl.MakeCurrent(display, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
         Egl.DestroyContext(display, context);
         Egl.DestroySurface(display, surface);
+        Egl.Terminate(display);
     }
 }
