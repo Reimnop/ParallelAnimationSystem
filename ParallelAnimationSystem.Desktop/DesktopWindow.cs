@@ -27,6 +27,8 @@ public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
     
     public bool ShouldClose => GLFW.WindowShouldClose(window);
     
+    public bool IsContextCurrent => GLFW.GetCurrentContext() == window;
+    
     public Window* Handle => window;
 
     private readonly Window* window;

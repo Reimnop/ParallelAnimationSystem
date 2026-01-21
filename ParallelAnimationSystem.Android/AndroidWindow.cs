@@ -29,6 +29,8 @@ public class AndroidWindow : IOpenGLWindow, IDisposable
     
     public bool ShouldClose { get; private set; }
 
+    public bool IsContextCurrent => Egl.GetCurrentContext() == eglContext;
+
     private readonly IntPtr aNativeWindowPtr;
     private readonly IntPtr eglDisplay;
     private readonly IntPtr eglSurface;

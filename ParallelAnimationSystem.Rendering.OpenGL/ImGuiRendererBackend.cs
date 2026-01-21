@@ -10,7 +10,8 @@ namespace ParallelAnimationSystem.Rendering.OpenGL;
 
 public class ImGuiRendererBackend : IImGuiRendererBackend, IOverlayRenderer, IDisposable
 {
-    private readonly ImGuiBackend backend;
+    public IImGuiRendererBackend.RenderFrameCallback? RenderFrame { get; set; }
+    
     private readonly Renderer renderer;
     
     private readonly int vertexArrayHandle, vertexBufferHandle, indexBufferHandle;
@@ -22,11 +23,14 @@ public class ImGuiRendererBackend : IImGuiRendererBackend, IOverlayRenderer, IDi
 
     private readonly int framebuffer;
     
-    public ImGuiRendererBackend(ImGuiBackend backend, ResourceLoader loader, IRenderer renderer)
+    public ImGuiRendererBackend(ImGuiContext context, ResourceLoader loader, IRenderer renderer)
     {
-        this.backend = backend;
         this.renderer = (Renderer) renderer;
         this.renderer.AddOverlayRenderer(this);
+        
+        // Set renderer capabilities
+        var io = context.IO;
+        io.BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;
         
         // Initialize GL resources
         
@@ -62,7 +66,6 @@ public class ImGuiRendererBackend : IImGuiRendererBackend, IOverlayRenderer, IDi
         scaleUniformLocation = GL.GetUniformLocation(program, "uScale");
         
         // Load font texture
-        var io = ImGui.GetIO();
         io.Fonts.GetTexDataAsRGBA32(out IntPtr fontPixels, out var fontWidth, out var fontHeight, out _);
         
         fontTexture = GL.CreateTexture(TextureTarget.Texture2d);
@@ -97,7 +100,10 @@ public class ImGuiRendererBackend : IImGuiRendererBackend, IOverlayRenderer, IDi
     
     public void ProcessFrame(int texture, Vector2i size)
     {
-        var drawDataPtr = backend.RenderFrame();
+        if (RenderFrame is null)
+            return;
+
+        var drawDataPtr = RenderFrame();
         
         // Bind texture to framebuffer
         GL.NamedFramebufferTexture(framebuffer, FramebufferAttachment.ColorAttachment0, texture, 0);

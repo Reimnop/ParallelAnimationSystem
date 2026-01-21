@@ -1,50 +1,82 @@
 ﻿using ImGuiNET;
-using Microsoft.Extensions.Logging;
 
 namespace ParallelAnimationSystem.DebugUI;
 
 public class ImGuiBackend : IDisposable
 {
-    public ImGuiBackend(ILogger<ImGuiBackend> logger)
+    private readonly ImGuiContext context;
+    private readonly IImGuiPlatformBackend platformBackend;
+    private readonly IImGuiRendererBackend rendererBackend;
+
+    public ImGuiBackend(
+        ImGuiContext context,
+        IImGuiPlatformBackend platformBackend,
+        IImGuiRendererBackend rendererBackend)
     {
-        logger.LogInformation("Creating context");
-        ImGui.CreateContext();
+        this.context = context;
+        this.platformBackend = platformBackend;
+        this.rendererBackend = rendererBackend;
+
+        this.platformBackend.TextInput += OnTextInput;
+        this.platformBackend.Key += OnKey;
+        this.platformBackend.MouseButton += OnMouseButton;
+        this.platformBackend.MousePosition += OnMousePosition;
+        this.platformBackend.MouseWheel += OnMouseWheel;
+        this.platformBackend.UpdateFrame += OnUpdateFrame;
         
-        logger.LogInformation("Initializing IO");
-        var io = ImGui.GetIO();
-        io.Fonts.AddFontDefault();
+        this.rendererBackend.RenderFrame = RenderFrame;
     }
     
     public void Dispose()
     {
-        ImGui.DestroyContext();
-    }
+        platformBackend.TextInput -= OnTextInput;
+        platformBackend.Key -= OnKey;
+        platformBackend.MouseButton -= OnMouseButton;
+        platformBackend.MousePosition -= OnMousePosition;
+        platformBackend.MouseWheel -= OnMouseWheel;
+        platformBackend.UpdateFrame -= OnUpdateFrame;
 
-    public void AddTextInput(char c)
+        rendererBackend.RenderFrame = null;
+    }
+    
+    private void OnTextInput(object? sender, IImGuiPlatformBackend.TextInputEventArgs eventArgs)
     {
-        var io = ImGui.GetIO();
-        io.AddInputCharacter(c);
+        var io = context.IO;
+        io.AddInputCharacter(eventArgs.Codepoint);
     }
 
-    public void AddKeyEvent(ImGuiKey key, bool down)
+    private void OnKey(object? sender, IImGuiPlatformBackend.KeyEventArgs eventArgs)
     {
-        var io = ImGui.GetIO();
-        io.AddKeyEvent(key, down);
+        var io = context.IO;
+        io.AddKeyEvent(eventArgs.Key, eventArgs.Down);
     }
 
-    public void UpdateFrame(ImGuiIOData ioData)
+    private void OnMouseButton(object? sender, IImGuiPlatformBackend.MouseButtonEventArgs eventArgs)
     {
-        var io = ImGui.GetIO();
-        io.DeltaTime = ioData.DeltaTime;
-        io.DisplaySize = ioData.DisplaySize;
-        io.MousePos = ioData.MousePos;
-        for (var i = 0; i < io.MouseDown.Count; i++)
-            io.MouseDown[i] = ioData.MouseDown[i];
-        io.MouseWheel = ioData.MouseWheel;
-        io.MouseWheelH = ioData.MouseWheelH;
+        var io = context.IO;
+        io.AddMouseButtonEvent((int) eventArgs.MouseButton, eventArgs.Down);
     }
 
-    public ImDrawDataPtr RenderFrame()
+    private void OnMousePosition(object? sender, IImGuiPlatformBackend.MousePositionEventArgs eventArgs)
+    {
+        var io = context.IO;
+        io.AddMousePosEvent(eventArgs.Position.X, eventArgs.Position.Y);
+    }
+
+    private void OnMouseWheel(object? sender, IImGuiPlatformBackend.MouseWheelEventArgs eventArgs)
+    {
+        var io = context.IO;
+        io.AddMouseWheelEvent(eventArgs.Delta.X, eventArgs.Delta.Y);
+    }
+
+    private void OnUpdateFrame(object? sender, IImGuiPlatformBackend.UpdateFrameEventArgs eventArgs)
+    {
+        var io = context.IO;
+        io.DeltaTime = eventArgs.Delta;
+        io.DisplaySize = eventArgs.DisplaySize;
+    }
+
+    private ImDrawDataPtr RenderFrame()
     {
         ImGui.NewFrame();
         

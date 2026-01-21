@@ -55,6 +55,10 @@ public sealed class DesktopApp
 
     private void StartRenderThread()
     {
+        // Initialize ImGui
+        serviceProvider.InitializeImGui();
+        
+        // Initialize renderer
         var renderer = serviceProvider.InitializeRenderer();
         
         var window = serviceProvider.GetRequiredService<IWindow>();

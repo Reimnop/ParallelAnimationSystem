@@ -1,3 +1,10 @@
-﻿namespace ParallelAnimationSystem.DebugUI;
+﻿using ImGuiNET;
 
-public interface IImGuiRendererBackend;
+namespace ParallelAnimationSystem.DebugUI;
+
+public interface IImGuiRendererBackend
+{
+    public delegate ImDrawDataPtr RenderFrameCallback();
+
+    RenderFrameCallback? RenderFrame { get; set; }
+}

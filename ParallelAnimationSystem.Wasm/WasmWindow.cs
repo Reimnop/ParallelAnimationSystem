@@ -21,6 +21,8 @@ public class WasmWindow : IOpenGLWindow, IDisposable
     // JS controls the lifecycle of the canvas, so we never want to close it from C#
     public bool ShouldClose => false;
 
+    public bool IsContextCurrent => Egl.GetCurrentContext() == context;
+
     private readonly IntPtr display;
     private readonly IntPtr context;
     private readonly IntPtr surface;
@@ -77,7 +79,7 @@ public class WasmWindow : IOpenGLWindow, IDisposable
         if (surface == IntPtr.Zero)
             throw new InvalidOperationException("Failed to create EGL surface");
     }
-    
+
     public void MakeContextCurrent()
     {
         if (!Egl.MakeCurrent(display, surface, surface, context))

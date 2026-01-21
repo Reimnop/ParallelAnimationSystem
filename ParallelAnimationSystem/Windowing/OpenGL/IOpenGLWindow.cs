@@ -5,6 +5,8 @@ namespace ParallelAnimationSystem.Windowing.OpenGL;
 
 public interface IOpenGLWindow : IWindow
 {
+    bool IsContextCurrent { get; }
+
     void MakeContextCurrent();
     void Present(int framebuffer, Vector4 clearColor, Vector2i size, Vector2i offset);
     

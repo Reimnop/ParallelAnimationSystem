@@ -8,28 +8,28 @@ namespace ParallelAnimationSystem.Desktop;
 
 public class ImGuiPlatformBackend : IImGuiPlatformBackend, IDisposable
 {
-    private readonly ImGuiBackend backend;
+    public event EventHandler<IImGuiPlatformBackend.TextInputEventArgs>? TextInput;
+    public event EventHandler<IImGuiPlatformBackend.KeyEventArgs>? Key;
+    public event EventHandler<IImGuiPlatformBackend.MouseButtonEventArgs>? MouseButton;
+    public event EventHandler<IImGuiPlatformBackend.MousePositionEventArgs>? MousePosition;
+    public event EventHandler<IImGuiPlatformBackend.MouseWheelEventArgs>? MouseWheel;
+    public event EventHandler<IImGuiPlatformBackend.UpdateFrameEventArgs>? UpdateFrame;
+    
     private readonly DesktopWindow window;
-    private readonly AppSettings appSettings;
 
     // ReSharper disable PrivateFieldCanBeConvertedToLocalVariable
     private readonly GLFWCallbacks.ScrollCallback scrollCallback;
     private readonly GLFWCallbacks.CharCallback charCallback;
     private readonly GLFWCallbacks.KeyCallback keyCallback;
     private readonly GLFWCallbacks.MouseButtonCallback mouseButtonCallback;
+    private readonly GLFWCallbacks.CursorPosCallback cursorPosCallback;
     // ReSharper restore PrivateFieldCanBeConvertedToLocalVariable
-
-    private readonly ImGuiIOData ioData = new();
-
-    private double scrollOffsetX;
-    private double scrollOffsetY;
+    
     private double previousTime;
     
-    public unsafe ImGuiPlatformBackend(ImGuiBackend backend, IWindow window, AppSettings appSettings)
+    public unsafe ImGuiPlatformBackend(IWindow window)
     {
-        this.backend = backend;
         this.window = (DesktopWindow) window;
-        this.appSettings = appSettings;
         
         this.window.EventsPolled += OnWindowEventsPolled;
 
@@ -37,12 +37,14 @@ public class ImGuiPlatformBackend : IImGuiPlatformBackend, IDisposable
         charCallback = OnCharCallback;
         keyCallback = OnKeyCallback;
         mouseButtonCallback = OnMouseButtonCallback;
+        cursorPosCallback = OnCursorPosCallback;
         
         var windowPtr = this.window.Handle;
         GLFW.SetScrollCallback(windowPtr, scrollCallback);
         GLFW.SetCharCallback(windowPtr, charCallback);
         GLFW.SetKeyCallback(windowPtr, keyCallback);
         GLFW.SetMouseButtonCallback(windowPtr, mouseButtonCallback);
+        GLFW.SetCursorPosCallback(windowPtr, cursorPosCallback);
     }
     
     public unsafe void Dispose()
@@ -52,19 +54,20 @@ public class ImGuiPlatformBackend : IImGuiPlatformBackend, IDisposable
         GLFW.SetCharCallback(windowPtr, null);
         GLFW.SetKeyCallback(windowPtr, null);
         GLFW.SetMouseButtonCallback(windowPtr, null);
+        GLFW.SetCursorPosCallback(windowPtr, null);
         
         window.EventsPolled -= OnWindowEventsPolled;
     }
 
     private unsafe void OnScrollCallback(Window* windowPtr, double offsetX, double offsetY)
     {
-        scrollOffsetX += offsetX;
-        scrollOffsetY += offsetY;
+        MouseWheel?.Invoke(this, new IImGuiPlatformBackend.MouseWheelEventArgs(
+            new Vector2((float) offsetX, (float) offsetY)));
     }
     
     private unsafe void OnCharCallback(Window* windowPtr, uint codepoint)
     {
-        backend.AddTextInput((char) codepoint);
+        TextInput?.Invoke(this, new IImGuiPlatformBackend.TextInputEventArgs((char) codepoint));
     }
     
     private unsafe void OnKeyCallback(Window* windowPtr, Keys key, int scancode, InputAction action, KeyModifiers modifiers)
@@ -72,17 +75,32 @@ public class ImGuiPlatformBackend : IImGuiPlatformBackend, IDisposable
         var imGuiKey = TranslateKey(key);
         if (imGuiKey != ImGuiKey.None)
         {
-            backend.AddKeyEvent(imGuiKey, action == InputAction.Press);
-            backend.AddKeyEvent(ImGuiKey.ModCtrl, modifiers.HasFlag(KeyModifiers.Control));
-            backend.AddKeyEvent(ImGuiKey.ModShift, modifiers.HasFlag(KeyModifiers.Shift));
-            backend.AddKeyEvent(ImGuiKey.ModAlt, modifiers.HasFlag(KeyModifiers.Alt));
-            backend.AddKeyEvent(ImGuiKey.ModSuper, modifiers.HasFlag(KeyModifiers.Super));
+            Key?.Invoke(this, 
+                new IImGuiPlatformBackend.KeyEventArgs(imGuiKey, action == InputAction.Press));
+            Key?.Invoke(this, 
+                new IImGuiPlatformBackend.KeyEventArgs(ImGuiKey.ModCtrl, modifiers.HasFlag(KeyModifiers.Control)));
+            Key?.Invoke(this, 
+                new IImGuiPlatformBackend.KeyEventArgs(ImGuiKey.ModShift,  modifiers.HasFlag(KeyModifiers.Shift)));
+            Key?.Invoke(this,
+                new IImGuiPlatformBackend.KeyEventArgs(ImGuiKey.ModAlt, modifiers.HasFlag(KeyModifiers.Alt)));
+            Key?.Invoke(this,
+                new IImGuiPlatformBackend.KeyEventArgs(ImGuiKey.ModSuper, modifiers.HasFlag(KeyModifiers.Super)));
         }
     }
     
     private unsafe void OnMouseButtonCallback(Window* windowPtr, MouseButton button, InputAction action, KeyModifiers modifiers)
     {
-        ioData.MouseDown[(int) button] = action == InputAction.Press;
+        var imGuiButton = TranslateMouseButton(button);
+        
+        if (imGuiButton.HasValue)
+            MouseButton?.Invoke(this,
+                new IImGuiPlatformBackend.MouseButtonEventArgs(imGuiButton.Value, action == InputAction.Press));
+    }
+
+    private unsafe void OnCursorPosCallback(Window* windowPtr, double x, double y)
+    {
+        MousePosition?.Invoke(this,
+            new IImGuiPlatformBackend.MousePositionEventArgs(new Vector2((float) x, (float) y)));
     }
 
     private unsafe void OnWindowEventsPolled(object? sender, EventArgs e)
@@ -94,38 +112,21 @@ public class ImGuiPlatformBackend : IImGuiPlatformBackend, IDisposable
         var windowPtr = window.Handle;
         
         GLFW.GetFramebufferSize(windowPtr, out var displayWidth, out var displayHeight);
-        
-        var actualWidth = displayWidth;
-        var actualHeight = displayHeight;
-        if (appSettings.AspectRatio.HasValue)
+
+        UpdateFrame?.Invoke(this, new IImGuiPlatformBackend.UpdateFrameEventArgs(
+            (float) deltaTime,
+            new Vector2(displayWidth, displayHeight)));
+    }
+
+    private static ImGuiMouseButton? TranslateMouseButton(MouseButton button)
+    {
+        return button switch
         {
-            var targetAspectRatio = appSettings.AspectRatio.Value;
-            var screenAspectRatio = displayWidth / (float) displayHeight;
-            if (targetAspectRatio < screenAspectRatio)
-            {
-                actualWidth = (int) (displayHeight * targetAspectRatio);
-            }
-            else
-            {
-                actualHeight = (int) (displayWidth / targetAspectRatio);
-            }
-        }
-        
-        var offsetX = (displayWidth - actualWidth) / 2;
-        var offsetY = (displayHeight - actualHeight) / 2;
-        
-        GLFW.GetCursorPos(windowPtr, out var mouseX, out var mouseY);
-        
-        ioData.DeltaTime = (float) deltaTime;
-        ioData.DisplaySize = new Vector2(actualWidth, actualHeight);
-        ioData.MousePos = new Vector2((float) mouseX - offsetX, (float) mouseY - offsetY);
-        ioData.MouseWheel = (float) scrollOffsetY;
-        ioData.MouseWheelH = (float) scrollOffsetX;
-        
-        scrollOffsetX = 0;
-        scrollOffsetY = 0;
-        
-        backend.UpdateFrame(ioData);
+            OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Left => ImGuiMouseButton.Left,
+            OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Middle => ImGuiMouseButton.Middle,
+            OpenTK.Windowing.GraphicsLibraryFramework.MouseButton.Right => ImGuiMouseButton.Right,
+            _ => null,
+        };
     }
 
     private static ImGuiKey TranslateKey(Keys key)

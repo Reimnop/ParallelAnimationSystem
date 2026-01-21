@@ -21,6 +21,8 @@ public unsafe class FFmpegWindow : IOpenGLWindow, IDisposable
     }
     
     public bool ShouldClose => GLFW.WindowShouldClose(window);
+    
+    public bool IsContextCurrent => GLFW.GetCurrentContext() == window;
 
     public FrameData? CurrentFrame { get; private set; }
 

@@ -38,7 +38,8 @@ public static class StartupExtension
         // Add resource loader
         services.AddSingleton(_ => new ResourceLoader(resourceSourceFactories));
         
-        // Add ImGui backend
+        // Add ImGui
+        services.AddSingleton<ImGuiContext>();
         services.AddSingleton<ImGuiBackend>();
         
         // Add migrations
@@ -51,14 +52,9 @@ public static class StartupExtension
     public static AppCore InitializeAppCore(this IServiceProvider serviceProvider)
         => serviceProvider.GetRequiredService<AppCore>();
 
-    public static IRenderer InitializeRenderer(this IServiceProvider serviceProvider, bool useImGui = false)
-    {
-        if (useImGui)
-        {
-            serviceProvider.GetRequiredService<IImGuiPlatformBackend>();
-            serviceProvider.GetRequiredService<IImGuiRendererBackend>();
-        }
-        
-        return serviceProvider.GetRequiredService<IRenderer>();
-    }
+    public static IRenderer InitializeRenderer(this IServiceProvider serviceProvider)
+        => serviceProvider.GetRequiredService<IRenderer>();
+    
+    public static ImGuiBackend InitializeImGui(this IServiceProvider serviceProvider)
+        => serviceProvider.GetRequiredService<ImGuiBackend>();
 }
