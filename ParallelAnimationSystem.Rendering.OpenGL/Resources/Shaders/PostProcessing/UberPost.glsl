@@ -7,8 +7,6 @@ const float PI = 3.14159265359;
 layout(rgba16f, binding = 0) uniform image2D uImageOutput;
 uniform sampler2D uTexture;
 
-uniform ivec2 uSize;
-
 uniform float uTime;
 
 uniform float uHueShiftAngle;
@@ -195,13 +193,14 @@ vec3 sampleTexture(sampler2D tex, vec2 uv) {
 
 void main() {
     ivec2 coords = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size = imageSize(uImageOutput);
     
     // Skip if out of bounds
-    if (coords.x >= uSize.x || coords.y >= uSize.y)
+    if (coords.x >= size.x || coords.y >= size.y)
         return;
     
     // Get texture coordinates
-    vec2 uv = vec2(coords.x + 0.5, coords.y + 0.5) / vec2(uSize);
+    vec2 uv = vec2(coords.x + 0.5, coords.y + 0.5) / vec2(size);
     
     // Apply lens distortion
     vec2 uvDistorted = distortLens(uv);
@@ -224,7 +223,7 @@ void main() {
     
     // Apply vignette
     if (uVignetteIntensity != 0.0) {
-        color = applyVignette(color, uvDistorted, uVignetteCenter, float(uSize.x) / float(uSize.y), uVignetteIntensity, uVignetteRounded, uVignetteRoundness, uVignetteSmoothness, uVignetteColor);
+        color = applyVignette(color, uvDistorted, uVignetteCenter, float(size.x) / float(size.y), uVignetteIntensity, uVignetteRounded, uVignetteRoundness, uVignetteSmoothness, uVignetteColor);
     }
     
     // Hue shift

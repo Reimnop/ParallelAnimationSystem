@@ -4,7 +4,6 @@ namespace ParallelAnimationSystem.Rendering.OpenGL;
 
 public interface IOverlayRenderer
 {
-    // texture is an OpenGL texture handle, in RGBA16F format
-    // Draw into the texture of given size
-    void ProcessFrame(int texture, Vector2i size);
+    // Return a texture handle, or 0 to indicate no overlay
+    int ProcessFrame(Vector2i size);
 }

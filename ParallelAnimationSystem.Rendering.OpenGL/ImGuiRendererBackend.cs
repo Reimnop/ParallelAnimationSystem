@@ -5,6 +5,7 @@ using OpenTK.Graphics.OpenGL;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.DebugUI;
 using ParallelAnimationSystem.Mathematics;
+using Buffer = OpenTK.Graphics.OpenGL.Buffer;
 
 namespace ParallelAnimationSystem.Rendering.OpenGL;
 
@@ -21,7 +22,9 @@ public class ImGuiRendererBackend : IImGuiRendererBackend, IOverlayRenderer, IDi
     private readonly int scaleUniformLocation;
     private readonly int fontTexture, fontSampler;
 
+    private Vector2i currentSize;
     private readonly int framebuffer;
+    private int texture;
     
     public ImGuiRendererBackend(ImGuiContext context, ResourceLoader loader, IRenderer renderer)
     {
@@ -83,6 +86,8 @@ public class ImGuiRendererBackend : IImGuiRendererBackend, IOverlayRenderer, IDi
         
         // Create framebuffer
         framebuffer = GL.CreateFramebuffer();
+        
+        // We'll initialize the texture later
     }
     
     public void Dispose()
@@ -96,17 +101,33 @@ public class ImGuiRendererBackend : IImGuiRendererBackend, IOverlayRenderer, IDi
         // GL.DeleteTexture(fontTexture);
         // GL.DeleteSampler(fontSampler);
         // GL.DeleteFramebuffer(framebuffer);
+        // if (texture != 0)
+        //     GL.DeleteTexture(texture);
     }
     
-    public void ProcessFrame(int texture, Vector2i size)
+    public int ProcessFrame(Vector2i size)
     {
         if (RenderFrame is null)
-            return;
+            return 0;
 
         var drawDataPtr = RenderFrame();
         
-        // Bind texture to framebuffer
-        GL.NamedFramebufferTexture(framebuffer, FramebufferAttachment.ColorAttachment0, texture, 0);
+        // Update texture
+        if (currentSize != size)
+        {
+            currentSize = size;
+            
+            if (texture != 0)
+                GL.DeleteTexture(texture);
+            
+            texture = GL.CreateTexture(TextureTarget.Texture2d);
+            GL.TextureStorage2D(texture, 1, SizedInternalFormat.Rgba16f, size.X, size.Y);
+            GL.NamedFramebufferTexture(framebuffer, FramebufferAttachment.ColorAttachment0, texture, 0);
+        }
+        
+        // Clear texture
+        var clearColor = new Vector4(0f, 0f, 0f, 0f);
+        GL.ClearNamedFramebufferf(framebuffer, Buffer.Color, 0, in clearColor.X);
 
         // Bind framebuffer
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, framebuffer);
@@ -182,5 +203,7 @@ public class ImGuiRendererBackend : IImGuiRendererBackend, IOverlayRenderer, IDi
         
         // Disable scissor test
         GL.Disable(EnableCap.ScissorTest);
+        
+        return texture;
     }
 }

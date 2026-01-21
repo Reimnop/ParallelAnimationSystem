@@ -11,8 +11,6 @@ public class UberPost : IDisposable
 {
     private readonly int program;
     
-    private readonly int sizeUniformLocation;
-    
     private readonly int timeUniformLocation;
     
     private readonly int hueShiftAngleUniformLocation;
@@ -43,11 +41,9 @@ public class UberPost : IDisposable
 
     public UberPost(ResourceLoader loader)
     {
-        program = LoaderUtil.LoadPPProgram(loader, "UberPost");
+        program = LoaderUtil.LoadComputeProgram(loader, "PostProcessing/UberPost");
         
         // Get uniform locations
-        sizeUniformLocation = GL.GetUniformLocation(program, "uSize");
-        
         timeUniformLocation = GL.GetUniformLocation(program, "uTime");
         
         hueShiftAngleUniformLocation = GL.GetUniformLocation(program, "uHueShiftAngle");
@@ -106,8 +102,6 @@ public class UberPost : IDisposable
         GL.BindImageTexture(0, outputTexture, 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f);
         GL.BindTextureUnit(0, inputTexture);
         GL.BindSampler(0, sampler);
-        
-        GL.Uniform2i(sizeUniformLocation, size.X, size.Y);
         
         GL.Uniform1f(timeUniformLocation, time);
         

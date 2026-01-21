@@ -55,9 +55,9 @@ public static class LoaderUtil
         return program;
     }
     
-    public static int LoadPPProgram(ResourceLoader loader, string shaderName)
+    public static int LoadComputeProgram(ResourceLoader loader, string shaderName)
     {
-        var shaderSource = loader.ReadResourceString($"Shaders/PostProcessing/{shaderName}.glsl");
+        var shaderSource = loader.ReadResourceString($"Shaders/{shaderName}.glsl");
         if (shaderSource is null)
             throw new InvalidOperationException($"Could not load shader source for '{shaderName}'");
         
