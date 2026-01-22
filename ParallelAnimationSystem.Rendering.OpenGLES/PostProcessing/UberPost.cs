@@ -40,9 +40,11 @@ public class UberPost : IDisposable
     
     private readonly int framebuffer;
 
+    private readonly int vaoHandle;
+
     public UberPost(ResourceLoader loader, int vertexShader)
     {
-        program = LoaderUtil.LoadPPProgram(loader, "UberPost", vertexShader);
+        program = LoaderUtil.LoadPostProcessingProgram(loader, "UberPost", vertexShader);
         
         sizeUniformLocation = GL.GetUniformLocation(program, "uSize");
         
@@ -74,6 +76,9 @@ public class UberPost : IDisposable
         
         // Initialize framebuffer
         framebuffer = GL.GenFramebuffer();
+        
+        // Initialize a simple VAO
+        vaoHandle = GL.GenVertexArray();
     }
     
     public bool Process(
@@ -145,6 +150,7 @@ public class UberPost : IDisposable
         GL.Uniform1f(glitchSpeedUniformLocation, glitchSpeed);
         GL.Uniform2f(glitchSizeUniformLocation, 1, glitchSize);
         
+        GL.BindVertexArray(vaoHandle);
         GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
         
         return true;
@@ -154,5 +160,6 @@ public class UberPost : IDisposable
     {
         GL.DeleteProgram(program);
         GL.DeleteFramebuffer(framebuffer);
+        GL.DeleteVertexArray(vaoHandle);
     }
 }

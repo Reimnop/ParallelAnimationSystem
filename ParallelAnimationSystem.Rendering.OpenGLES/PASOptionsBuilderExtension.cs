@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using ParallelAnimationSystem.Core;
+using ParallelAnimationSystem.DebugUI;
 using ParallelAnimationSystem.Windowing.OpenGL;
 
 namespace ParallelAnimationSystem.Rendering.OpenGLES;
@@ -21,6 +22,9 @@ public static class PASOptionsBuilderExtension
             MinorVersion = 0,
             IsES = true,
         });
+        
+        // Add ImGui renderer backend
+        builder.Services.AddSingleton<IImGuiRendererBackend, ImGuiRendererBackend>();
         
         return builder;
     }

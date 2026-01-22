@@ -17,16 +17,17 @@ public class Bloom : IDisposable
     
     private readonly int textureSampler;
     private readonly int framebuffer;
+    private readonly int vaoHandle;
 
     private readonly List<Mip> mipChain = [];
     private Vector2i currentSize = -Vector2i.One;
 
     public Bloom(ResourceLoader loader, int vertexShader)
     {
-        prefilterProgram = LoaderUtil.LoadPPProgram(loader, "BloomPrefilter", vertexShader);
-        downsampleProgram = LoaderUtil.LoadPPProgram(loader, "BloomDownsample", vertexShader);
-        upsampleProgram = LoaderUtil.LoadPPProgram(loader, "BloomUpsample", vertexShader);
-        combineProgram = LoaderUtil.LoadPPProgram(loader, "BloomCombine", vertexShader);
+        prefilterProgram = LoaderUtil.LoadPostProcessingProgram(loader, "BloomPrefilter", vertexShader);
+        downsampleProgram = LoaderUtil.LoadPostProcessingProgram(loader, "BloomDownsample", vertexShader);
+        upsampleProgram = LoaderUtil.LoadPostProcessingProgram(loader, "BloomUpsample", vertexShader);
+        combineProgram = LoaderUtil.LoadPostProcessingProgram(loader, "BloomCombine", vertexShader);
         
         prefilterThresholdUniformLocation = GL.GetUniformLocation(prefilterProgram, "uThreshold");
         prefilterCurveUniformLocation = GL.GetUniformLocation(prefilterProgram, "uCurve");
@@ -48,6 +49,7 @@ public class Bloom : IDisposable
         GL.SamplerParameteri(textureSampler, SamplerParameterI.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
         
         framebuffer = GL.GenFramebuffer();
+        vaoHandle = GL.GenVertexArray();
     }
 
     public bool Process(Vector2i size, float intensity, float diffusion, int inputTexture, int outputTexture)
@@ -75,6 +77,9 @@ public class Bloom : IDisposable
         
         // Get mip 0
         var mip0 = mipChain[0];
+        
+        // Bind vertex array
+        GL.BindVertexArray(vaoHandle);
         
         // Bind samplers
         GL.BindSampler(0, textureSampler);
@@ -202,6 +207,7 @@ public class Bloom : IDisposable
         
         GL.DeleteSampler(textureSampler);
         GL.DeleteFramebuffer(framebuffer);
+        GL.DeleteVertexArray(vaoHandle);
         
         foreach (var mip in mipChain)
             GL.DeleteTexture(mip.Handle);
