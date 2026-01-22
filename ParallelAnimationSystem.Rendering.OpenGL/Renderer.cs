@@ -132,7 +132,6 @@ public class Renderer : IRenderer, IDisposable
 
         #endregion
         
-        
         #region OpenGL Data Initialization
 
         {
@@ -225,11 +224,8 @@ public class Renderer : IRenderer, IDisposable
             GL.SamplerParameteri(overlaySampler, SamplerParameterI.TextureWrapS, (int)TextureWrapMode.ClampToBorder);
             GL.SamplerParameteri(overlaySampler, SamplerParameterI.TextureWrapT, (int)TextureWrapMode.ClampToBorder);
 
-            unsafe
-            {
-                var borderColor = stackalloc float[] { 0f, 0f, 0f, 0f };
-                GL.SamplerParameterfv(overlaySampler, SamplerParameterF.TextureBorderColor, borderColor);
-            }
+            var borderColor = Vector4.Zero;
+            GL.SamplerParameterf(overlaySampler, SamplerParameterF.TextureBorderColor, in borderColor.X);
             
             // Initialize overlay texture
             overlayTexture = GL.CreateTexture(TextureTarget.Texture2d);
