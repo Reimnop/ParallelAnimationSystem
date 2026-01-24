@@ -179,27 +179,26 @@ public class AppCore
         
         if (appSettings.EnablePostProcessing)
         {
-            var bloomData = runner.Bloom;
-            var hue = runner.Hue;
-            var lensDistortionData = runner.LensDistortion;
-            var vignetteData = runner.Vignette;
-            var gradientData = runner.Gradient;
-            var bloomDiffusion = MathUtil.MapRange(bloomData.Diffusion, 5.0f, 30.0f, 1.0f, 10.0f);
-            // var glitchIntensity = runner.Glitch.Intensity;
-            // var glitchSpeed = MathHelper.MapRange(runner.Glitch.Speed, 0.0f, 2.0f, 7.0f, 40.0f);
-            // var glitchSize = new Vector2(MathHelper.MapRange(runner.Glitch.Width, 0.0f, 1.0f, 0.02f, 1.0f), 0.015f);
-
             drawList.PostProcessingData = new PostProcessingData(
                 time,
-                hue,
-                bloomData.Intensity,
-                bloomDiffusion,
-                lensDistortionData.Intensity, 
-                new Vector2(lensDistortionData.Center.X, lensDistortionData.Center.Y),
-                runner.ChromaticAberration,
-                new Vector2(vignetteData.Center.X, vignetteData.Center.Y), vignetteData.Intensity, vignetteData.Rounded, vignetteData.Roundness, vignetteData.Smoothness, vignetteData.Color,
-                gradientData.Color1, gradientData.Color2, gradientData.Intensity, gradientData.Rotation * MathF.PI * 2.0f, gradientData.Mode,
-                0.0f, 0.0f, Vector2.One); // glitchIntensity, glitchSpeed, glitchSize
+                CreateHueShiftData(runner.Hue),
+                CreateBloomData(runner.Bloom.Intensity, runner.Bloom.Diffusion),
+                CreateLensDistortionData(runner.LensDistortion.Intensity, runner.LensDistortion.Center),
+                CreateChromaticAberrationData(runner.ChromaticAberration),
+                CreateVignetteData(
+                    runner.Vignette.Center,
+                    runner.Vignette.Intensity,
+                    runner.Vignette.Rounded,
+                    runner.Vignette.Roundness,
+                    runner.Vignette.Smoothness,
+                    runner.Vignette.Color),
+                CreateGradientData(
+                    runner.Gradient.Color1,
+                    runner.Gradient.Color2,
+                    runner.Gradient.Intensity,
+                    runner.Gradient.Rotation,
+                    runner.Gradient.Mode),
+                CreateGlitchData(runner.Glitch.Intensity, runner.Glitch.Speed, Vector2.Zero));
         }
         else
         {
@@ -283,5 +282,41 @@ public class AppCore
         });
         
         return task;
+    }
+    
+    protected virtual HueShiftPostProcessingData CreateHueShiftData(float hue)
+    {
+        return new HueShiftPostProcessingData(hue);
+    }
+    
+    protected virtual BloomPostProcessingData CreateBloomData(float intensity, float diffusion)
+    {
+        diffusion = MathUtil.MapRange(diffusion, 5.0f, 30.0f, 1.0f, 10.0f);
+        return new BloomPostProcessingData(intensity, diffusion);
+    }
+    
+    protected virtual LensDistortionPostProcessingData CreateLensDistortionData(float intensity, Vector2 center)
+    {
+        return new LensDistortionPostProcessingData(intensity, center);
+    }
+    
+    protected virtual ChromaticAberrationPostProcessingData CreateChromaticAberrationData(float intensity)
+    {
+        return new ChromaticAberrationPostProcessingData(intensity);
+    }
+    
+    protected virtual VignettePostProcessingData CreateVignetteData(Vector2 center, float intensity, bool rounded, float roundness, float smoothness, Vector3 color)
+    {
+        return new VignettePostProcessingData(center, intensity, rounded, roundness, smoothness, color);
+    }
+    
+    protected virtual GradientPostProcessingData CreateGradientData(Vector3 color1, Vector3 color2, float intensity, float rotation, GradientOverlayMode mode)
+    {
+        return new GradientPostProcessingData(color1, color2, intensity, rotation, mode);
+    }
+    
+    protected virtual GlitchPostProcessingData CreateGlitchData(float intensity, float speed, Vector2 size)
+    {
+        return new GlitchPostProcessingData(0.0f, 0.0f, Vector2.One);
     }
 }

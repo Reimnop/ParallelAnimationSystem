@@ -8,19 +8,22 @@ namespace ParallelAnimationSystem;
 public static class StartupExtension
 {
     public static IServiceCollection AddPAS(this IServiceCollection services, Action<PASOptionsBuilder> builder)
+        => services.AddPAS<AppCore>(builder);
+    
+    public static IServiceCollection AddPAS<TAppCore>(this IServiceCollection services, Action<PASOptionsBuilder> builder) where TAppCore : AppCore
     {
         var optionsBuilder = new PASOptionsBuilder(services);
         builder(optionsBuilder);
         var options = optionsBuilder.Build();
-        return services.AddPAS(options);
+        return services.AddPAS<TAppCore>(options);
     }
     
-    public static IServiceCollection AddPAS(this IServiceCollection services, PASOptions options)
+    public static IServiceCollection AddPAS<TAppCore>(this IServiceCollection services, PASOptions options) where TAppCore : AppCore
     {
         services.AddSingleton(options.AppSettings);
         
         // Add beatmap runner
-        services.AddSingleton<AppCore>();
+        services.AddSingleton<AppCore, TAppCore>();
         
         // Add external services
         options.WindowDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);

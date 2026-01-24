@@ -4,6 +4,8 @@ namespace ParallelAnimationSystem.DebugUI;
 
 public class ImGuiBackend : IDisposable
 {
+    private readonly List<IDebugHandler> debugHandlers = [];
+    
     private readonly ImGuiContext context;
     private readonly IImGuiPlatformBackend platformBackend;
     private readonly IImGuiRendererBackend rendererBackend;
@@ -37,6 +39,16 @@ public class ImGuiBackend : IDisposable
         platformBackend.UpdateFrame -= OnUpdateFrame;
 
         rendererBackend.RenderFrame = null;
+    }
+    
+    public void AddDebugHandler(IDebugHandler handler)
+    {
+        debugHandlers.Add(handler);
+    }
+    
+    public bool RemoveDebugHandler(IDebugHandler handler)
+    {
+        return debugHandlers.Remove(handler);
     }
     
     private void OnTextInput(object? sender, IImGuiPlatformBackend.TextInputEventArgs eventArgs)
@@ -74,15 +86,17 @@ public class ImGuiBackend : IDisposable
         var io = context.IO;
         io.DeltaTime = eventArgs.Delta;
         io.DisplaySize = eventArgs.DisplaySize;
+        
+        foreach (var handler in debugHandlers)
+            handler.UpdateFrame(context);
     }
 
     private ImDrawDataPtr RenderFrame()
     {
         ImGui.NewFrame();
         
-        ImGui.ShowDemoWindow();
-        
-        // TODO: Call UI render callbacks
+        foreach (var handler in debugHandlers)
+            handler.RenderFrame(context);
 
         ImGui.Render();
         return ImGui.GetDrawData();

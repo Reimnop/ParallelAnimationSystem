@@ -539,18 +539,18 @@ public class Renderer : IRenderer, IDisposable
         GL.Disable(EnableCap.DepthTest);
         GL.Disable(EnableCap.Blend);
         
-        if (bloom.Process(currentFboSize, data.BloomIntensity, data.BloomDiffusion, texture1, texture2))
+        if (bloom.Process(currentFboSize, data.Bloom.Intensity, data.Bloom.Diffusion, texture1, texture2))
             Swap(ref texture1, ref texture2);
         
         if (uberPost.Process(
                 currentFboSize,
                 data.Time,
-                data.HueShiftAngle,
-                data.LensDistortionIntensity, data.LensDistortionCenter,
-                data.ChromaticAberrationIntensity,
-                data.VignetteCenter, data.VignetteIntensity, data.VignetteRounded, data.VignetteRoundness, data.VignetteSmoothness, data.VignetteColor,
-                data.GradientColor1, data.GradientColor2, data.GradientIntensity, data.GradientRotation, data.GradientMode,
-                data.GlitchIntensity, data.GlitchSpeed, data.GlitchSize,
+                data.HueShift.Angle,
+                data.LensDistortion.Intensity, data.LensDistortion.Center,
+                data.ChromaticAberration.Intensity,
+                data.Vignette.Center, data.Vignette.Intensity, data.Vignette.Rounded, data.Vignette.Roundness, data.Vignette.Smoothness, data.Vignette.Color,
+                data.Gradient.Color1, data.Gradient.Color2, data.Gradient.Intensity, data.Gradient.Rotation, data.Gradient.Mode,
+                data.Glitch.Intensity, data.Glitch.Speed, data.Glitch.Size,
                 texture1, texture2))
             Swap(ref texture1, ref texture2);
         

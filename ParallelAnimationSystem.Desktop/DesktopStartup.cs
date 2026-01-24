@@ -21,7 +21,8 @@ public static class DesktopStartup
         RenderingBackend backend,
         bool lockAspectRatio,
         bool enablePostProcessing,
-        bool enableTextRendering)
+        bool enableTextRendering,
+        bool debugMode)
     {
         var appSettings = new AppSettings
         {
@@ -43,6 +44,11 @@ public static class DesktopStartup
             UseEgl = useEgl,
         });
 
+        services.AddSingleton(new DesktopAppSettings
+        {
+            DebugMode = debugMode,
+        });
+
         services.AddSingleton(new MediaContext
         {
             BeatmapPath = beatmapPath,
@@ -54,8 +60,8 @@ public static class DesktopStartup
             builder.SetMinimumLevel(LogLevel.Information);
             builder.AddConsole();
         });
-        
-        services.AddPAS(builder =>
+
+        Action<PASOptionsBuilder> pasOptionsBuilder = builder =>
         {
             builder.UseAppSettings(appSettings);
             builder.UseWindow<DesktopWindow>();
@@ -69,7 +75,16 @@ public static class DesktopStartup
                     builder.UseOpenGLESRenderer();
                     break;
             }
-        });
+        };
+
+        if (debugMode)
+        {
+            services.AddPAS<DebugAppCore>(pasOptionsBuilder);
+        }
+        else
+        {
+            services.AddPAS(pasOptionsBuilder);
+        }
         
         // Add ImGui platform backend
         services.AddSingleton<IImGuiPlatformBackend, ImGuiPlatformBackend>();

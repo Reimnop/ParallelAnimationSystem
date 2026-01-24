@@ -8,8 +8,6 @@ const float PI = 3.14159265359;
 
 uniform sampler2D uTexture;
 
-uniform highp ivec2 uSize;
-
 uniform highp float uTime;
 
 uniform highp float uHueShiftAngle;
@@ -198,6 +196,7 @@ vec3 sampleTexture(sampler2D tex, vec2 uv) {
 
 void main() {
     vec2 uv = vUv;
+    ivec2 size = textureSize(uTexture, 0);
     
     // Apply lens distortion
     vec2 uvDistorted = distortLens(uv);
@@ -220,7 +219,7 @@ void main() {
 
     // Apply vignette
     if (uVignetteIntensity != 0.0) {
-        color = vignette(color, uvDistorted, uVignetteCenter, float(uSize.x) / float(uSize.y), uVignetteIntensity, uVignetteRounded, uVignetteRoundness, uVignetteSmoothness, uVignetteColor);
+        color = vignette(color, uvDistorted, uVignetteCenter, float(size.x) / float(size.y), uVignetteIntensity, uVignetteRounded, uVignetteRoundness, uVignetteSmoothness, uVignetteColor);
     }
 
     // Hue shift

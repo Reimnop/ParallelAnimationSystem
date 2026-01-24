@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
+using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Windowing;
 
@@ -12,16 +13,22 @@ public sealed class DesktopApp
 
     private readonly IServiceProvider serviceProvider;
     private readonly MediaContext mediaContext;
+    private readonly DesktopAppSettings appSettings;
+    private readonly AudioPlayer audioPlayer;
 
     private bool running = true;
 
-    public DesktopApp(IServiceProvider serviceProvider, MediaContext mediaContext, IRenderingFactory renderingFactory)
+    public DesktopApp(IServiceProvider serviceProvider, MediaContext mediaContext, DesktopAppSettings appSettings, IRenderingFactory renderingFactory)
     {
         this.serviceProvider = serviceProvider;
         this.mediaContext = mediaContext;
+        this.appSettings = appSettings;
 
         for (var i = 0; i < 3; i++)
             drawListPool.Enqueue(renderingFactory.CreateDrawList());
+        
+        // Preload audio player
+        audioPlayer = AudioPlayer.Load(mediaContext.AudioPath);
     }
 
     public void StartApp()
@@ -29,8 +36,7 @@ public sealed class DesktopApp
         // Initialize app core
         var appCore = serviceProvider.InitializeAppCore();
         
-        // Create audio player
-        using var audioPlayer = AudioPlayer.Load(mediaContext.AudioPath);
+        // Play audio
         audioPlayer.Play();
         
         // Start render thread
@@ -51,15 +57,27 @@ public sealed class DesktopApp
             // Enqueue the draw list for rendering
             queuedDrawLists.Enqueue(drawList);
         }
+        
+        // Wait for render thread to finish
+        renderThread.Join();
+        
+        // Stop audio
+        audioPlayer.Stop();
     }
 
     private void StartRenderThread()
     {
-        // Initialize ImGui
-        serviceProvider.InitializeImGui();
-        
         // Initialize renderer
         var renderer = serviceProvider.InitializeRenderer();
+        
+        if (appSettings.DebugMode)
+        {
+            // Initialize ImGui
+            var imGui = serviceProvider.InitializeImGui();
+            imGui.AddDebugHandler(new DebugHandler(
+                (DebugAppCore) serviceProvider.GetRequiredService<AppCore>(),
+                audioPlayer));
+        }
         
         var window = serviceProvider.GetRequiredService<IWindow>();
 

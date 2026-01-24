@@ -3,12 +3,20 @@ using Pamx.Common.Enum;
 
 namespace ParallelAnimationSystem.Data;
 
+public record struct HueShiftPostProcessingData(float Angle);
+public record struct BloomPostProcessingData(float Intensity, float Diffusion);
+public record struct LensDistortionPostProcessingData(float Intensity, Vector2 Center);
+public record struct ChromaticAberrationPostProcessingData(float Intensity);
+public record struct VignettePostProcessingData(Vector2 Center, float Intensity, bool Rounded, float Roundness, float Smoothness, Vector3 Color);
+public record struct GradientPostProcessingData(Vector3 Color1, Vector3 Color2, float Intensity, float Rotation, GradientOverlayMode Mode);
+public record struct GlitchPostProcessingData(float Intensity, float Speed, Vector2 Size);
+
 public record struct PostProcessingData(
     float Time,
-    float HueShiftAngle,
-    float BloomIntensity, float BloomDiffusion,
-    float LensDistortionIntensity, Vector2 LensDistortionCenter,
-    float ChromaticAberrationIntensity,
-    Vector2 VignetteCenter, float VignetteIntensity, bool VignetteRounded, float VignetteRoundness, float VignetteSmoothness, Vector3 VignetteColor,
-    Vector3 GradientColor1, Vector3 GradientColor2, float GradientIntensity, float GradientRotation, GradientOverlayMode GradientMode,
-    float GlitchIntensity, float GlitchSpeed, Vector2 GlitchSize);
+    HueShiftPostProcessingData HueShift,
+    BloomPostProcessingData Bloom,
+    LensDistortionPostProcessingData LensDistortion,
+    ChromaticAberrationPostProcessingData ChromaticAberration,
+    VignettePostProcessingData Vignette,
+    GradientPostProcessingData Gradient,
+    GlitchPostProcessingData Glitch);
