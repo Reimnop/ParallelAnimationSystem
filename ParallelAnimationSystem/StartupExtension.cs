@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.DebugUI;
@@ -10,7 +11,7 @@ public static class StartupExtension
     public static IServiceCollection AddPAS(this IServiceCollection services, Action<PASOptionsBuilder> builder)
         => services.AddPAS<AppCore>(builder);
     
-    public static IServiceCollection AddPAS<TAppCore>(this IServiceCollection services, Action<PASOptionsBuilder> builder) where TAppCore : AppCore
+    public static IServiceCollection AddPAS<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TAppCore>(this IServiceCollection services, Action<PASOptionsBuilder> builder) where TAppCore : AppCore
     {
         var optionsBuilder = new PASOptionsBuilder(services);
         builder(optionsBuilder);
@@ -18,7 +19,7 @@ public static class StartupExtension
         return services.AddPAS<TAppCore>(options);
     }
     
-    public static IServiceCollection AddPAS<TAppCore>(this IServiceCollection services, PASOptions options) where TAppCore : AppCore
+    public static IServiceCollection AddPAS<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TAppCore>(this IServiceCollection services, PASOptions options) where TAppCore : AppCore
     {
         services.AddSingleton(options.AppSettings);
         
