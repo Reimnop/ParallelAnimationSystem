@@ -227,6 +227,9 @@ void main() {
         color = hueShift(color, uHueShiftAngle);
     }
     
+    // Clamp final color
+    color = clamp(color, 0.0, 1.0);
+    
     // Store result
     oFragColor = vec4(color, 1.0);
 }

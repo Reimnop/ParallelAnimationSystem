@@ -19,6 +19,7 @@ public class Bloom : IDisposable
 
     private readonly List<Mip> mipChain = [];
     private Vector2i currentSize = -Vector2i.One;
+    private int currentIterations = 0;
 
     public Bloom(ResourceLoader loader)
     {
@@ -57,13 +58,16 @@ public class Bloom : IDisposable
         // Determine iteration count
         var s = MathF.Max(size.X, size.Y);
         var logs = MathF.Log2(s) + MathF.Min(diffusion, 10f) - 10f; // Use 10 as base
-        var logsInt = MathF.Floor(logs);
-        var iterations = (int) Math.Clamp(logsInt, 1, 16); // Limit to 16 levels
+        var logsInt = (int) MathF.Floor(logs);
+        var iterations = Math.Clamp(logsInt, 1, 16); // Limit to 16 levels
+        var sampleScale = 0.5f + (logs - logsInt);
+        sampleScale *= 2f;
         
         // Update mip chain if size has changed
-        if (size != currentSize)
+        if (size != currentSize || iterations != currentIterations)
         {
             currentSize = size;
+            currentIterations = iterations;
             UpdateMipChain(size, iterations);
         }
         
@@ -124,7 +128,6 @@ public class Bloom : IDisposable
         GL.UseProgram(upsampleProgram);
         
         // Set sample scale uniform
-        var sampleScale = 0.5f + (logs - logsInt);
         GL.Uniform1f(upsampleSampleScaleUniformLocation, sampleScale);
         
         for (var i = mipChain.Count - 2; i >= 0; i--)

@@ -89,14 +89,6 @@ public class UberPost : IDisposable
         float glitchIntensity, float glitchSpeed, Vector2 glitchSize,
         int inputTexture, int outputTexture)
     {
-        if (hueShiftAngle == 0.0f && 
-            lensDistortionIntensity == 0.0f && 
-            chromaticAberrationIntensity == 0.0f && 
-            vignetteIntensity == 0.0f &&
-            gradientIntensity == 0.0f &&
-            glitchIntensity == 0.0f)
-            return false;
-        
         GL.UseProgram(program);
         
         GL.BindImageTexture(0, outputTexture, 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f);

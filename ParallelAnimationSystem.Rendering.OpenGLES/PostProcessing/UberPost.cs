@@ -89,14 +89,6 @@ public class UberPost : IDisposable
         float glitchIntensity, float glitchSpeed, Vector2 glitchSize,
         int inputTexture, int outputTexture)
     {
-        if (hueShiftAngle == 0.0f && 
-            lensDistortionIntensity == 0.0f && 
-            chromaticAberrationIntensity == 0.0f && 
-            vignetteIntensity == 0.0f &&
-            gradientIntensity == 0.0f &&
-            glitchIntensity == 0.0f)
-            return false;
-        
         // Attach output texture to framebuffer
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, framebuffer);
         GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, outputTexture, 0);
