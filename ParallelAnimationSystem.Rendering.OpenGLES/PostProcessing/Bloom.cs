@@ -62,11 +62,10 @@ public class Bloom : IDisposable
         
         // Determine iteration count
         var s = MathF.Max(size.X, size.Y);
-        var logs = MathF.Log2(s) + MathF.Min(diffusion, 10f) - 10f; // Use 10 as base
-        var logsInt = (int) MathF.Floor(logs);
-        var iterations = Math.Clamp(logsInt, 1, 16); // Limit to 16 levels
-        var sampleScale = 0.5f + (logs - logsInt);
-        sampleScale *= 2f;
+        var logS = MathF.Log2(s) + MathF.Min(diffusion, 10f) - 10f; // Use 10 as base
+        var logSFloored = MathF.Floor(logS);
+        var iterations = (int) Math.Clamp(logSFloored, 1, 16); // Limit to 16 levels
+        var sampleScale = 0.5f + (logS - logSFloored);
         
         // Update mip chain if size has changed
         if (size != currentSize || iterations != currentIterations)
