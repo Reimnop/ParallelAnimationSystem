@@ -9,7 +9,9 @@ uniform float uSampleScale;
 
 in highp vec2 vUv;
 
-vec3 sample9Tap(sampler2D mip, vec2 uv, vec2 radius) {
+vec3 sampleTent(sampler2D mip, vec2 uv, vec2 radius) {
+    radius *= 2.0;
+
     // A B C
     // D E F
     // G H I
@@ -27,7 +29,7 @@ vec3 sample9Tap(sampler2D mip, vec2 uv, vec2 radius) {
         (a + c + g + i) * 1.0 +
         (b + d + f + h) * 2.0 +
         e * 4.0;
-    color *= 0.0625;
+    color *= 1.0 / 16.0;
 
     return color;
 }
@@ -37,7 +39,7 @@ void main() {
     vec2 pxSize = 1.0 / vec2(size);
     
     // Sample color
-    vec3 color = sample9Tap(uSourceSampler, vUv, pxSize * uSampleScale);
+    vec3 color = sampleTent(uSourceSampler, vUv, pxSize * uSampleScale);
     
     // Store result
     // We'll use GL blend to accumulate the result

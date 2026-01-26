@@ -6,25 +6,27 @@ layout(rgba16f, binding = 0) uniform image2D uOutputImage;
 
 uniform sampler2D uSourceSampler;
 
-vec3 sample13Tap(sampler2D mip, vec2 uv, vec2 pxSize) {
+vec3 sample13Tap(sampler2D mip, vec2 uv, vec2 radius) {
+    radius *= 0.5;
+    
     // A B C
     //  J K
     // D E F
     //  L M
     // G H I
-    vec3 a = texture(mip, uv + vec2(-1.0, -1.0) * pxSize).rgb;
-    vec3 b = texture(mip, uv + vec2( 0.0, -1.0) * pxSize).rgb;
-    vec3 c = texture(mip, uv + vec2( 1.0, -1.0) * pxSize).rgb;
-    vec3 d = texture(mip, uv + vec2(-1.0,  0.0) * pxSize).rgb;
-    vec3 e = texture(mip, uv + vec2( 0.0,  0.0) * pxSize).rgb;
-    vec3 f = texture(mip, uv + vec2( 1.0,  0.0) * pxSize).rgb;
-    vec3 g = texture(mip, uv + vec2(-1.0,  1.0) * pxSize).rgb;
-    vec3 h = texture(mip, uv + vec2( 0.0,  1.0) * pxSize).rgb;
-    vec3 i = texture(mip, uv + vec2( 1.0,  1.0) * pxSize).rgb;
-    vec3 j = texture(mip, uv + vec2(-0.5, -0.5) * pxSize).rgb;
-    vec3 k = texture(mip, uv + vec2( 0.5, -0.5) * pxSize).rgb;
-    vec3 l = texture(mip, uv + vec2(-0.5,  0.5) * pxSize).rgb;
-    vec3 m = texture(mip, uv + vec2( 0.5,  0.5) * pxSize).rgb;
+    vec3 a = texture(mip, uv + vec2(-2.0, -2.0) * radius).rgb;
+    vec3 b = texture(mip, uv + vec2( 0.0, -2.0) * radius).rgb;
+    vec3 c = texture(mip, uv + vec2( 2.0, -2.0) * radius).rgb;
+    vec3 d = texture(mip, uv + vec2(-2.0,  0.0) * radius).rgb;
+    vec3 e = texture(mip, uv + vec2( 0.0,  0.0) * radius).rgb;
+    vec3 f = texture(mip, uv + vec2( 2.0,  0.0) * radius).rgb;
+    vec3 g = texture(mip, uv + vec2(-2.0,  2.0) * radius).rgb;
+    vec3 h = texture(mip, uv + vec2( 0.0,  2.0) * radius).rgb;
+    vec3 i = texture(mip, uv + vec2( 2.0,  2.0) * radius).rgb;
+    vec3 j = texture(mip, uv + vec2(-1.0, -1.0) * radius).rgb;
+    vec3 k = texture(mip, uv + vec2( 1.0, -1.0) * radius).rgb;
+    vec3 l = texture(mip, uv + vec2(-1.0,  1.0) * radius).rgb;
+    vec3 m = texture(mip, uv + vec2( 1.0,  1.0) * radius).rgb;
 
     vec3 color =
         e * 0.125 +

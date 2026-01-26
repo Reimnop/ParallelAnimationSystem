@@ -7,7 +7,9 @@ layout(rgba16f, binding = 0) uniform image2D uOutputImage;
 uniform sampler2D uSourceSampler;
 uniform float uSampleScale;
 
-vec3 sample9Tap(sampler2D mip, vec2 uv, vec2 radius) {
+vec3 sampleTent(sampler2D mip, vec2 uv, vec2 radius) {
+    radius *= 2.0;
+    
     // A B C
     // D E F
     // G H I
@@ -25,7 +27,7 @@ vec3 sample9Tap(sampler2D mip, vec2 uv, vec2 radius) {
         (a + c + g + i) * 1.0 +
         (b + d + f + h) * 2.0 +
         e * 4.0;
-    color *= 0.0625;
+    color *= 1.0 / 16.0;
     
     return color;
 }
@@ -43,7 +45,7 @@ void main() {
     vec2 pxSize = 1.0 / vec2(size);
     
     // Sample color
-    vec3 srcColor = sample9Tap(uSourceSampler, uv, pxSize * uSampleScale);
+    vec3 srcColor = sampleTent(uSourceSampler, uv, pxSize * uSampleScale);
     
     // Additive blend with current mip level
     vec3 prevColor = imageLoad(uOutputImage, coords).rgb;
