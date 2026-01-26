@@ -26,10 +26,9 @@ vec3 sampleTent(sampler2D mip, vec2 uv, vec2 radius) {
     vec3 i = texture(mip, uv + vec2( 1.0,  1.0) * radius).rgb;
 
     vec3 color =
-        (a + c + g + i) * 1.0 +
-        (b + d + f + h) * 2.0 +
-        e * 4.0;
-    color *= 1.0 / 16.0;
+        (a + c + g + i) * 0.0625 +
+        (b + d + f + h) * 0.125 +
+        e * 0.25;
 
     return color;
 }
