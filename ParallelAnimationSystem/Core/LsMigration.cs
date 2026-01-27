@@ -62,18 +62,6 @@ public class LsMigration(ResourceLoader loader)
         
         var events = beatmap.Events;
         
-        // Migrate bloom keyframes
-        for (var i = 0; i < events.Bloom.Count; i++)
-        {
-            var bloomKeyframe = events.Bloom[i];
-            bloomKeyframe.Value = new BloomData
-            {
-                Intensity = bloomKeyframe.Value.Intensity,
-                Diffusion = 24.0f,
-            };
-            events.Bloom[i] = bloomKeyframe;
-        }
-        
         // Migrate chromatic aberration keyframes
         for (var i = 0; i < events.Chroma.Count; i++)
         {
