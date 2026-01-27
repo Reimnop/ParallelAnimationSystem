@@ -26,6 +26,8 @@ public class AppCore
     private readonly ResourceLoader loader;
     private readonly IRenderingFactory renderingFactory;
     private readonly ILogger<AppCore> logger;
+
+    private readonly BeatmapFormat beatmapFormat;
     
     private readonly ConditionalWeakTable<BeatmapObject, Task<IText?>> textCache = new();
     
@@ -113,13 +115,13 @@ public class AppCore
         var sw = Stopwatch.StartNew();
         
         logger.LogInformation("Loading beatmap");
-        var beatmap = mediaProvider.LoadBeatmap(out var format);
+        var beatmap = mediaProvider.LoadBeatmap(out beatmapFormat);
         
-        logger.LogInformation("Using beatmap format '{LevelFormat}'", format);
+        logger.LogInformation("Using beatmap format '{LevelFormat}'", beatmapFormat);
         
         // Migrate the beatmap to the latest version of the beatmap format
         logger.LogInformation("Migrating beatmap");
-        switch (format) 
+        switch (beatmapFormat) 
         {
             case BeatmapFormat.Lsb:
                 sp.GetRequiredService<LsMigration>().MigrateBeatmap(beatmap);
@@ -182,7 +184,8 @@ public class AppCore
             drawList.PostProcessingData = new PostProcessingData(
                 time,
                 CreateHueShiftData(runner.Hue),
-                CreateBloomData(runner.Bloom.Intensity, runner.Bloom.Diffusion),
+                CreateLegacyBloomData(runner.Bloom.Intensity, isLegacy: beatmapFormat == BeatmapFormat.Lsb),
+                CreateUniversalBloomData(runner.Bloom.Intensity, runner.Bloom.Diffusion, isUniversal: beatmapFormat == BeatmapFormat.Vgd),
                 CreateLensDistortionData(runner.LensDistortion.Intensity, runner.LensDistortion.Center),
                 CreateChromaticAberrationData(runner.ChromaticAberration),
                 CreateVignetteData(
@@ -267,14 +270,14 @@ public class AppCore
                 "NotoMono SDF",
                 beatmapObject.Origin.X switch
                 {
-                    -0.5f => HorizontalAlignment.Left,
-                    0.5f => HorizontalAlignment.Right,
+                    -0.5f => HorizontalAlignment.Right,
+                    0.5f => HorizontalAlignment.Left,
                     _ => HorizontalAlignment.Center,
                 },
                 beatmapObject.Origin.Y switch
                 {
-                    -0.5f => VerticalAlignment.Bottom,
-                    0.5f => VerticalAlignment.Top,
+                    -0.5f => VerticalAlignment.Top,
+                    0.5f => VerticalAlignment.Bottom,
                     _ => VerticalAlignment.Center,
                 });
             var text = renderingFactory.CreateText(richText, fonts);
@@ -289,9 +292,20 @@ public class AppCore
         return new HueShiftPostProcessingData(hue);
     }
     
-    protected virtual BloomPostProcessingData CreateBloomData(float intensity, float diffusion)
+    protected virtual BloomPostProcessingData CreateLegacyBloomData(float intensity, bool isLegacy)
     {
-        diffusion = MathUtil.MapRange(diffusion, 5.0f, 30.0f, 1.0f, 10.0f);
+        if (!isLegacy)
+            return new BloomPostProcessingData(0f, 0f);
+        
+        return new BloomPostProcessingData(intensity, 7f);
+    }
+    
+    protected virtual BloomPostProcessingData CreateUniversalBloomData(float intensity, float diffusion, bool isUniversal)
+    {
+        if (!isUniversal)
+            return new BloomPostProcessingData(0f, 0f);
+        
+        diffusion = MathUtil.MapRange(diffusion, 5f, 30f, 0f, 1f);
         return new BloomPostProcessingData(intensity, diffusion);
     }
     

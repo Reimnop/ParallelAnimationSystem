@@ -10,8 +10,6 @@ uniform float uSampleScale;
 in highp vec2 vUv;
 
 vec3 sampleTent(sampler2D mip, vec2 uv, vec2 radius) {
-    radius *= 2.0;
-
     // A B C
     // D E F
     // G H I

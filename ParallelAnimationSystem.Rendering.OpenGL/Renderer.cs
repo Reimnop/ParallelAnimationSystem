@@ -35,7 +35,8 @@ public class Renderer : IRenderer, IDisposable
     private readonly List<FontInfo?> fontInfos = [];
     
     // Post processors
-    private readonly Bloom bloom;
+    private readonly LegacyBloom legacyBloom;
+    private readonly UniversalBloom universalBloom;
     private readonly UberPost uberPost;
     
     // Graphics data
@@ -238,8 +239,9 @@ public class Renderer : IRenderer, IDisposable
             currentOverlaySize = size;
 
             // Initialize post processors
+            legacyBloom = new LegacyBloom(loader);
+            universalBloom = new UniversalBloom(loader);
             uberPost = new UberPost(loader);
-            bloom = new Bloom(loader);
         }
 
         #endregion
@@ -289,8 +291,9 @@ public class Renderer : IRenderer, IDisposable
         // GL.DeleteFramebuffer(overlayFramebufferHandle);
         //
         // // Dispose post processors
+        // legacyBloom.Dispose();
+        // universalBloom.Dispose();
         // uberPost.Dispose();
-        // bloom.Dispose();
     }
     
     public void AddOverlayRenderer(IOverlayRenderer overlayRenderer)
@@ -614,7 +617,10 @@ public class Renderer : IRenderer, IDisposable
 
     private int HandlePostProcessing(PostProcessingData data, int texture1, int texture2)
     {
-        if (bloom.Process(currentFboSize, data.Bloom.Intensity, data.Bloom.Diffusion, texture1, texture2))
+        if (legacyBloom.Process(currentFboSize, data.LegacyBloom.Intensity, data.LegacyBloom.Diffusion, texture1, texture2))
+            Swap(ref texture1, ref texture2);
+        
+        if (universalBloom.Process(currentFboSize, data.UniversalBloom.Intensity, data.UniversalBloom.Diffusion, texture1, texture2))
             Swap(ref texture1, ref texture2);
         
         if (uberPost.Process(

@@ -6,11 +6,13 @@ namespace ParallelAnimationSystem.Desktop;
 
 public class DebugHandler(DebugAppCore debugAppCore, AudioPlayer audioPlayer) : IDebugHandler
 {
-    private BloomPostProcessingData? bloom;
+    private BloomPostProcessingData? legacyBloom;
+    private BloomPostProcessingData? universalBloom;
     
     public void UpdateFrame(ImGuiContext context)
     {
-        debugAppCore.OverrideBloom = bloom;
+        debugAppCore.OverrideLegacyBloom = legacyBloom;
+        debugAppCore.OverrideUniversalBloom = universalBloom;
     }
 
     public void RenderFrame(ImGuiContext context)
@@ -37,37 +39,59 @@ public class DebugHandler(DebugAppCore debugAppCore, AudioPlayer audioPlayer) : 
             {
                 audioPlayer.Position = position;
             }
-            
-            ImGui.End();
         }
+        ImGui.End();
         
         if (ImGui.Begin("Post Processing"))
         {
-            var overrideBloom = bloom.HasValue;
-            if (ImGui.Checkbox("Override Bloom", ref overrideBloom))
+            var overrideLegacyBloom = legacyBloom.HasValue;
+            if (ImGui.Checkbox("Override Legacy Bloom", ref overrideLegacyBloom))
             {
-                if (overrideBloom)
+                if (overrideLegacyBloom)
                 {
-                    bloom = debugAppCore.OverrideBloom ?? new BloomPostProcessingData(10.0f, 5.0f);
+                    legacyBloom = debugAppCore.OverrideLegacyBloom ?? new BloomPostProcessingData(10.0f, 7.0f);
                 }
                 else
                 {
-                    bloom = null;
+                    legacyBloom = null;
                 }
             }
             
-            if (bloom.HasValue)
+            if (legacyBloom.HasValue)
             {
-                var intensity = bloom.Value.Intensity;
-                ImGui.SliderFloat("Bloom Intensity", ref intensity, 0.0f, 50.0f);
+                var intensity = legacyBloom.Value.Intensity;
+                ImGui.SliderFloat("Legacy Bloom Intensity", ref intensity, 0.0f, 100.0f);
                 
-                var diffusion = bloom.Value.Diffusion;
-                ImGui.SliderFloat("Bloom Diffusion", ref diffusion, 1.0f, 10.0f);
+                var diffusion = legacyBloom.Value.Diffusion;
+                ImGui.SliderFloat("Legacy Bloom Diffusion", ref diffusion, 0.0f, 10.0f);
                 
-                bloom = new BloomPostProcessingData(intensity, diffusion);
+                legacyBloom = new BloomPostProcessingData(intensity, diffusion);
             }
             
-            ImGui.End();
+            var overrideUniversalBloom = universalBloom.HasValue;
+            if (ImGui.Checkbox("Override Universal Bloom", ref overrideUniversalBloom))
+            {
+                if (overrideUniversalBloom)
+                {
+                    universalBloom = debugAppCore.OverrideUniversalBloom ?? new BloomPostProcessingData(10.0f, 0.8f);
+                }
+                else
+                {
+                    universalBloom = null;
+                }
+            }
+            
+            if (universalBloom.HasValue)
+            {
+                var intensity = universalBloom.Value.Intensity;
+                ImGui.SliderFloat("Universal Bloom Intensity", ref intensity, 0.0f, 100.0f);
+                
+                var diffusion = universalBloom.Value.Diffusion;
+                ImGui.SliderFloat("Universal Bloom Diffusion", ref diffusion, 0.0f, 1.0f);
+                
+                universalBloom = new BloomPostProcessingData(intensity, diffusion);
+            }
         }
+        ImGui.End();
     }
 }

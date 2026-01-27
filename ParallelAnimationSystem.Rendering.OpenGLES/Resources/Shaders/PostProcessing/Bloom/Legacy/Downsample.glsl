@@ -1,14 +1,14 @@
-#version 460 core
+#version 300 es
 
-layout(local_size_x = 8, local_size_y = 8) in;
+precision highp float;
 
-layout(rgba16f, binding = 0) uniform image2D uOutputImage;
+layout(location = 0) out highp vec4 oFragColor;
 
 uniform sampler2D uSourceSampler;
 
+in highp vec2 vUv;
+
 vec3 sample13Tap(sampler2D mip, vec2 uv, vec2 radius) {
-    radius *= 0.5;
-    
     // A B C
     //  J K
     // D E F
@@ -33,25 +33,20 @@ vec3 sample13Tap(sampler2D mip, vec2 uv, vec2 radius) {
         (a + c + g + i) * 0.03125 +
         (b + d + f + h) * 0.0625 +
         (j + k + l + m) * 0.125;
-    
+
     return color;
 }
 
 void main() {
-    ivec2 coords = ivec2(gl_GlobalInvocationID.xy);
-    ivec2 size = imageSize(uOutputImage);
-
-    // Skip if out of bounds
-    if (coords.x >= size.x || coords.y >= size.y)
-        return;
+    // Get size
+    ivec2 size = textureSize(uSourceSampler, 0);
     
-    // Calculate UV and px size
-    vec2 uv = vec2(coords.x + 0.5, coords.y + 0.5) / vec2(size);
+    // Calculate px size
     vec2 pxSize = 1.0 / vec2(size);
     
     // Sample color
-    vec3 color = sample13Tap(uSourceSampler, uv, pxSize);
+    vec3 color = sample13Tap(uSourceSampler, vUv, pxSize);
     
-    // Store the result
-    imageStore(uOutputImage, coords, vec4(color, 1.0));
+    // Store result
+    oFragColor = vec4(color, 1.0);
 }

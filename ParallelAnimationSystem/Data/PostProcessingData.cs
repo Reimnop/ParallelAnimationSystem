@@ -14,7 +14,8 @@ public record struct GlitchPostProcessingData(float Intensity, float Speed, Vect
 public record struct PostProcessingData(
     float Time,
     HueShiftPostProcessingData HueShift,
-    BloomPostProcessingData Bloom,
+    BloomPostProcessingData LegacyBloom,
+    BloomPostProcessingData UniversalBloom,
     LensDistortionPostProcessingData LensDistortion,
     ChromaticAberrationPostProcessingData ChromaticAberration,
     VignettePostProcessingData Vignette,

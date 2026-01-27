@@ -8,31 +8,67 @@ namespace ParallelAnimationSystem.Desktop;
 public class DebugAppCore(IServiceProvider sp, AppSettings appSettings, ResourceLoader loader, IMediaProvider mediaProvider, IRenderingFactory renderingFactory, ILogger<AppCore> logger)
     : AppCore(sp, appSettings, loader, mediaProvider, renderingFactory, logger)
 {
-    public BloomPostProcessingData? OverrideBloom
+    public BloomPostProcessingData? OverrideLegacyBloom
     {
         get
         {
-            using (bloomPostProcessingDataLock.EnterScope())
+            using (legacyBloomPostProcessingDataLock.EnterScope())
             {
-                return bloomPostProcessingData;
+                return legacyBloomPostProcessingData;
             }
         }
         set
         {
-            using (bloomPostProcessingDataLock.EnterScope())
+            using (legacyBloomPostProcessingDataLock.EnterScope())
             {
-                bloomPostProcessingData = value;
+                legacyBloomPostProcessingData = value;
+            }
+        }
+    }
+
+    public BloomPostProcessingData? OverrideUniversalBloom
+    {
+        get 
+        {
+            using (universalBloomPostProcessingDataLock.EnterScope())
+            {
+                return universalBloomPostProcessingData;
+            }
+        }
+        set
+        {
+            using (universalBloomPostProcessingDataLock.EnterScope())
+            {
+                universalBloomPostProcessingData = value;
             }
         }
     }
     
-    private readonly Lock bloomPostProcessingDataLock = new();
-    private BloomPostProcessingData? bloomPostProcessingData;
+    private readonly Lock legacyBloomPostProcessingDataLock = new();
+    private BloomPostProcessingData? legacyBloomPostProcessingData;
     
-    protected override BloomPostProcessingData CreateBloomData(float intensity, float diffusion)
+    private readonly Lock universalBloomPostProcessingDataLock = new();
+    private BloomPostProcessingData? universalBloomPostProcessingData;
+    
+    protected override BloomPostProcessingData CreateLegacyBloomData(float intensity, bool isLegacy)
     {
-        if (OverrideBloom.HasValue)
-            return OverrideBloom.Value;
-        return base.CreateBloomData(intensity, diffusion);
+        using (legacyBloomPostProcessingDataLock.EnterScope())
+        {
+            if (OverrideLegacyBloom.HasValue)
+                return OverrideLegacyBloom.Value;
+        }
+        
+        return base.CreateLegacyBloomData(intensity, isLegacy);
+    }
+    
+    protected override BloomPostProcessingData CreateUniversalBloomData(float intensity, float diffusion, bool isUniversal)
+    {
+        using (universalBloomPostProcessingDataLock.EnterScope())
+        {
+            if (OverrideUniversalBloom.HasValue)
+                return OverrideUniversalBloom.Value;
+        }
+        
+        return base.CreateUniversalBloomData(intensity, diffusion, isUniversal);
     }
 }

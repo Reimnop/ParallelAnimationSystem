@@ -59,7 +59,8 @@ public class Renderer : IRenderer, IDisposable
     private readonly int emptyVao;
     
     // Post-processing
-    private readonly Bloom bloom;
+    private readonly LegacyBloom legacyBloom;
+    private readonly UniversalBloom universalBloom;
     private readonly UberPost uberPost;
     
     // Temporary draw data lists
@@ -264,8 +265,9 @@ public class Renderer : IRenderer, IDisposable
                 throw new InvalidOperationException($"Failed to compile vertex shader: {infoLog}");
             }
 
+            legacyBloom = new LegacyBloom(loader, vertexShader);
+            universalBloom = new UniversalBloom(loader, vertexShader);
             uberPost = new UberPost(loader, vertexShader);
-            bloom = new Bloom(loader, vertexShader);
 
             // Clean up
             GL.DeleteShader(vertexShader);
@@ -317,7 +319,8 @@ public class Renderer : IRenderer, IDisposable
         //
         // GL.DeleteVertexArray(emptyVao);
         //
-        // bloom.Dispose();
+        // legacyBloom.Dispose();
+        // universalBloom.Dispose();
         // uberPost.Dispose();
     }
 
@@ -539,7 +542,10 @@ public class Renderer : IRenderer, IDisposable
         GL.Disable(EnableCap.DepthTest);
         GL.Disable(EnableCap.Blend);
         
-        if (bloom.Process(currentFboSize, data.Bloom.Intensity, data.Bloom.Diffusion, texture1, texture2))
+        if (legacyBloom.Process(currentFboSize, data.LegacyBloom.Intensity, data.LegacyBloom.Diffusion, texture1, texture2))
+            Swap(ref texture1, ref texture2);
+        
+        if (universalBloom.Process(currentFboSize, data.UniversalBloom.Intensity, data.UniversalBloom.Diffusion, texture1, texture2))
             Swap(ref texture1, ref texture2);
         
         if (uberPost.Process(
