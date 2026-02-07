@@ -2,7 +2,7 @@ namespace ParallelAnimationSystem.Util;
 
 public static class ListExtension
 {
-    public static int BinarySearchKey<T, TKey>(this List<T> list, TKey key, Func<T, TKey> keySelector, IComparer<TKey> comparer)
+    public static int BinarySearchKey<T, TKey>(this IReadOnlyList<T> list, TKey key, Func<T, TKey> keySelector, IComparer<TKey> comparer)
     {
         var min = 0;
         var max = list.Count - 1;

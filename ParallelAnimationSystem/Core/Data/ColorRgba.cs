@@ -15,10 +15,10 @@ public struct ColorRgba(float r, float g, float b, float a) : IEquatable<ColorRg
     
     public static ColorRgba Lerp(ColorRgba a, ColorRgba b, float t) 
         => new(
-            MathUtil.Lerp(a.R, b.R, t),
-            MathUtil.Lerp(a.G, b.G, t),
-            MathUtil.Lerp(a.B, b.B, t),
-            MathUtil.Lerp(a.A, b.A, t));
+            float.Lerp(a.R, b.R, t),
+            float.Lerp(a.G, b.G, t),
+            float.Lerp(a.B, b.B, t),
+            float.Lerp(a.A, b.A, t));
     
     public static bool operator ==(ColorRgba left, ColorRgba right)
         => left.Equals(right);

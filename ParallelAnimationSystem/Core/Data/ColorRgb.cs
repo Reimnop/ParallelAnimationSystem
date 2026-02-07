@@ -14,9 +14,9 @@ public struct ColorRgb(float r, float g, float b) : IEquatable<ColorRgb>
     
     public static ColorRgb Lerp(ColorRgb a, ColorRgb b, float t) 
         => new(
-            MathUtil.Lerp(a.R, b.R, t),
-            MathUtil.Lerp(a.G, b.G, t),
-            MathUtil.Lerp(a.B, b.B, t));
+            float.Lerp(a.R, b.R, t),
+            float.Lerp(a.G, b.G, t),
+            float.Lerp(a.B, b.B, t));
     
     public static bool operator ==(ColorRgb left, ColorRgb right)
         => left.Equals(right);

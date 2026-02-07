@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <LangVersion>13</LangVersion>
+    <LangVersion>14</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,6 +24,18 @@
     <ProjectReference Include="../TmpEmulation/TmpIO/TmpIO.csproj" />
     <ProjectReference Include="../TmpEmulation/TmpParser/TmpParser.csproj" />
     <ProjectReference Include="../ParallelAnimationSystem.Mathematics/ParallelAnimationSystem.Mathematics.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Remove="Core\Animation\BeatmapObjectColorKeyframe.cs" />
+    <Compile Remove="Core\Animation\SequenceKeyframe.cs" />
+    <Compile Remove="Core\Beatmap\BeatmapObject.cs" />
+    <Compile Remove="Core\Beatmap\BeatmapObjectsContainer.cs" />
+    <Compile Remove="Core\Beatmap\IndexedCollection.cs" />
+    <Compile Remove="Core\Beatmap\Prefab.cs" />
+    <Compile Remove="Core\Animation\IKeyframe.cs" />
+    <Compile Remove="Core\Data\PerFrameBeatmapObjectData.cs" />
+    <Compile Remove="Core\AnimationRunner.cs" />
   </ItemGroup>
 
 </Project>
