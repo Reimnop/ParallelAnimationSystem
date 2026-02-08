@@ -2,5 +2,5 @@
 
 public class ThemeColorStateContext
 {
-    public ThemeColorState Value { get; set; } = default;
+    public ThemeColorState Value { get; set; }
 }

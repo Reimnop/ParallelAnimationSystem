@@ -28,7 +28,7 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
     private readonly ThemeColorStateContext currentThemeColorStateContext = new();
     private float currentTime;
     
-    public ReadOnlySpan<ObjectDrawItem> ComputeDrawItems(ThemeColorState themeColorState, float time)
+    public ReadOnlySpan<ObjectDrawItem> ComputeDrawItems(float time, ThemeColorState themeColorState)
     {
         currentThemeColorStateContext.Value = themeColorState;
         currentTime = time;

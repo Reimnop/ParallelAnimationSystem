@@ -1,17 +1,13 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using Microsoft.Extensions.DependencyInjection;
-using Pamx.Common;
 using Pamx.Common.Enum;
-using ParallelAnimationSystem.Core.Beatmap;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering.Data;
 using ParallelAnimationSystem.Text;
-using TmpParser;
 
 namespace ParallelAnimationSystem.Core;
 
@@ -19,7 +15,6 @@ public class AppCore
 {
     private readonly List<List<IMesh>> meshes = [];
     
-    private readonly AnimationRunner runner;
     private readonly FontCollection fonts;
 
     private readonly AppSettings appSettings;
@@ -28,8 +23,6 @@ public class AppCore
     private readonly ILogger<AppCore> logger;
 
     private readonly BeatmapFormat beatmapFormat;
-    
-    private readonly ConditionalWeakTable<BeatmapObject, Task<IText?>> textCache = new();
     
     public AppCore(
         IServiceProvider sp,
@@ -133,15 +126,12 @@ public class AppCore
         
         logger.LogInformation("Using seed '{Seed}'", appSettings.Seed);
         
-        // Create animation runner
         logger.LogInformation("Importing beatmap");
-        var beatmapImporter = new BeatmapImporter(appSettings.Seed, logger);
-        runner = beatmapImporter.CreateRunner(beatmap, out var statistics);
         
         sw.Stop();
         
         // Print statistics
-        logger.LogInformation("Beatmap loaded in {ElapsedMilliseconds}ms, {Statistics}", sw.ElapsedMilliseconds, statistics);
+        logger.LogInformation("Beatmap loaded in {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
     }
 
     private IFont LoadFont(string path)
@@ -173,35 +163,35 @@ public class AppCore
         // Start queuing draw commands
         drawList.Clear();
         
-        drawList.ClearColor = new ColorRgba(backgroundColor.R, backgroundColor.G, backgroundColor.B, 1.0f);
-        drawList.CameraData = new CameraData(
-            runner.CameraPosition + shakeVector,
-            runner.CameraScale,
-            runner.CameraRotation);
+        // drawList.ClearColor = new ColorRgba(backgroundColor.R, backgroundColor.G, backgroundColor.B, 1.0f);
+        // drawList.CameraData = new CameraData(
+        //     runner.CameraPosition + shakeVector,
+        //     runner.CameraScale,
+        //     runner.CameraRotation);
         
         if (appSettings.EnablePostProcessing)
         {
-            drawList.PostProcessingData = new PostProcessingData(
-                time,
-                CreateHueShiftData(runner.Hue),
-                CreateLegacyBloomData(runner.Bloom.Intensity, isLegacy: beatmapFormat == BeatmapFormat.Lsb),
-                CreateUniversalBloomData(runner.Bloom.Intensity, runner.Bloom.Diffusion, isUniversal: beatmapFormat == BeatmapFormat.Vgd),
-                CreateLensDistortionData(runner.LensDistortion.Intensity, runner.LensDistortion.Center),
-                CreateChromaticAberrationData(runner.ChromaticAberration),
-                CreateVignetteData(
-                    runner.Vignette.Center,
-                    runner.Vignette.Intensity,
-                    runner.Vignette.Rounded,
-                    runner.Vignette.Roundness,
-                    runner.Vignette.Smoothness,
-                    runner.Vignette.Color),
-                CreateGradientData(
-                    runner.Gradient.Color1,
-                    runner.Gradient.Color2,
-                    runner.Gradient.Intensity,
-                    runner.Gradient.Rotation,
-                    runner.Gradient.Mode),
-                CreateGlitchData(runner.Glitch.Intensity, runner.Glitch.Speed, Vector2.Zero));
+            // drawList.PostProcessingData = new PostProcessingData(
+            //     time,
+            //     CreateHueShiftData(runner.Hue),
+            //     CreateLegacyBloomData(runner.Bloom.Intensity, isLegacy: beatmapFormat == BeatmapFormat.Lsb),
+            //     CreateUniversalBloomData(runner.Bloom.Intensity, runner.Bloom.Diffusion, isUniversal: beatmapFormat == BeatmapFormat.Vgd),
+            //     CreateLensDistortionData(runner.LensDistortion.Intensity, runner.LensDistortion.Center),
+            //     CreateChromaticAberrationData(runner.ChromaticAberration),
+            //     CreateVignetteData(
+            //         runner.Vignette.Center,
+            //         runner.Vignette.Intensity,
+            //         runner.Vignette.Rounded,
+            //         runner.Vignette.Roundness,
+            //         runner.Vignette.Smoothness,
+            //         runner.Vignette.Color),
+            //     CreateGradientData(
+            //         runner.Gradient.Color1,
+            //         runner.Gradient.Color2,
+            //         runner.Gradient.Intensity,
+            //         runner.Gradient.Rotation,
+            //         runner.Gradient.Mode),
+            //     CreateGlitchData(runner.Glitch.Intensity, runner.Glitch.Speed, Vector2.Zero));
         }
         else
         {
@@ -244,47 +234,9 @@ public class AppCore
             }
             else if (appSettings.EnableTextRendering)
             {
-                // Create text
-                var textTask = textCache.GetValue(beatmapObject, CreateTextAsync);
-
-                // Draw text if ready
-                if (textTask is { IsCompletedSuccessfully: true, Result: not null })
-                {
-                    var color1 = beatmapObjectColor.Color1;
-                    var color1Rgba = new ColorRgba(color1.R, color1.G, color1.B, beatmapObjectColor.Opacity);
-                    drawList.AddText(textTask.Result, transform, color1Rgba);
-                }
+                // TODO: do text rendering
             }
         }
-    }
-
-    private Task<IText?> CreateTextAsync(BeatmapObject beatmapObject)
-    {
-        var task = Task.Run(() =>
-        {
-            if (beatmapObject.Text is null)
-                return null;
-
-            var richText = new RichText(
-                beatmapObject.Text,
-                "NotoMono SDF",
-                beatmapObject.Origin.X switch
-                {
-                    -0.5f => HorizontalAlignment.Right,
-                    0.5f => HorizontalAlignment.Left,
-                    _ => HorizontalAlignment.Center,
-                },
-                beatmapObject.Origin.Y switch
-                {
-                    -0.5f => VerticalAlignment.Top,
-                    0.5f => VerticalAlignment.Bottom,
-                    _ => VerticalAlignment.Center,
-                });
-            var text = renderingFactory.CreateText(richText, fonts);
-            return text;
-        });
-        
-        return task;
     }
     
     protected virtual HueShiftPostProcessingData CreateHueShiftData(float hue)

@@ -7,33 +7,47 @@ public class ObjectSourceManager(PlaybackObjectContainer playbackObjects) : IDis
     private readonly MainObjectSource mainObjectSource = new(playbackObjects);
 
     private BeatmapData? attachedBeatmapData;
+    
+    public void Dispose()
+    {
+        if (attachedBeatmapData is not null)
+        {
+            // detach events
+            attachedBeatmapData.Objects.Inserted -= OnBeatmapObjectInserted;
+            attachedBeatmapData.Objects.Removed -= OnBeatmapObjectRemoved;
+        }
+        
+        mainObjectSource.Dispose();
+    }
 
     public void AttachBeatmapData(BeatmapData beatmapData)
     {
         if (attachedBeatmapData is not null)
             throw new InvalidOperationException($"A {nameof(BeatmapData)} is already attached");
         
+        attachedBeatmapData = beatmapData;
+        
         // add existing objects
         foreach (var beatmapObject in beatmapData.Objects.Values)
             mainObjectSource.InsertBeatmapObject(beatmapObject);
         
         // attach events
-        beatmapData.ObjectInserted += OnBeatmapObjectInserted;
-        beatmapData.ObjectRemoved += OnBeatmapObjectRemoved;
+        beatmapData.Objects.Inserted += OnBeatmapObjectInserted;
+        beatmapData.Objects.Removed += OnBeatmapObjectRemoved;
     }
 
     public void DetachBeatmapData()
     {
         if (attachedBeatmapData is null)
-            throw new InvalidOperationException($"No {nameof(BeatmapData)} is attached");
+            return;
         
         // remove existing objects
         foreach (var beatmapObject in attachedBeatmapData.Objects.Values)
             mainObjectSource.RemoveBeatmapObject(beatmapObject);
         
         // detach events
-        attachedBeatmapData.ObjectInserted -= OnBeatmapObjectInserted;
-        attachedBeatmapData.ObjectRemoved -= OnBeatmapObjectRemoved;
+        attachedBeatmapData.Objects.Inserted -= OnBeatmapObjectInserted;
+        attachedBeatmapData.Objects.Removed -= OnBeatmapObjectRemoved;
         
         attachedBeatmapData = null;
     }
@@ -46,17 +60,5 @@ public class ObjectSourceManager(PlaybackObjectContainer playbackObjects) : IDis
     private void OnBeatmapObjectRemoved(object? sender, BeatmapObject e)
     {
         mainObjectSource.RemoveBeatmapObject(e);
-    }
-
-    public void Dispose()
-    {
-        if (attachedBeatmapData is not null)
-        {
-            // detach events
-            attachedBeatmapData.ObjectInserted -= OnBeatmapObjectInserted;
-            attachedBeatmapData.ObjectRemoved -= OnBeatmapObjectRemoved;
-        }
-        
-        mainObjectSource.Dispose();
     }
 }

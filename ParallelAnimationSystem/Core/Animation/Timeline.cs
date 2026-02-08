@@ -54,13 +54,13 @@ public class Timeline : IDisposable
         playbackObjects.PlaybackObjectRemoved -= OnPlaybackObjectRemoved;
     }
 
-    private void OnPlaybackObjectInserted(object? sender, IndexedTreeEntry<PlaybackObject> entry)
+    private void OnPlaybackObjectInserted(object? sender, IndexedCollectionEntry<PlaybackObject> entry)
         => AttachPlaybackObject(entry);
 
-    private void OnPlaybackObjectRemoved(object? sender, IndexedTreeEntry<PlaybackObject> entry)
+    private void OnPlaybackObjectRemoved(object? sender, IndexedCollectionEntry<PlaybackObject> entry)
         => DetachPlaybackObject(entry);
 
-    private void AttachPlaybackObject(IndexedTreeEntry<PlaybackObject> entry)
+    private void AttachPlaybackObject(IndexedCollectionEntry<PlaybackObject> entry)
     {
         if (entry.Item.IsVisible)
             InsertObjectForPlayback(entry.Index);
@@ -68,7 +68,7 @@ public class Timeline : IDisposable
         entry.Item.PropertyChanged += OnPlaybackObjectPropertyChanged;
     }
     
-    private void DetachPlaybackObject(IndexedTreeEntry<PlaybackObject> entry)
+    private void DetachPlaybackObject(IndexedCollectionEntry<PlaybackObject> entry)
     {
         if (entry.Item.IsVisible)
             RemoveObjectFromPlayback(entry.Index);
@@ -154,8 +154,8 @@ public class Timeline : IDisposable
         
             // re-insert updated events
             objectEvents.AddRange(objectsPendingForEventUpdate
-                .Select<int, IndexedTreeEntry<PlaybackObject>?>(x => playbackObjects.TryGetItem(x, out var item) 
-                    ? new IndexedTreeEntry<PlaybackObject>(item, x)
+                .Select<int, IndexedCollectionEntry<PlaybackObject>?>(x => playbackObjects.TryGetItem(x, out var item) 
+                    ? new IndexedCollectionEntry<PlaybackObject>(item, x)
                     : null)
                 .SelectMany(x => x.HasValue
                     ? GetObjectEvents(x.Value)
@@ -177,7 +177,7 @@ public class Timeline : IDisposable
         }
     }
 
-    private static IEnumerable<ObjectEvent> GetObjectEvents(IndexedTreeEntry<PlaybackObject> entry)
+    private static IEnumerable<ObjectEvent> GetObjectEvents(IndexedCollectionEntry<PlaybackObject> entry)
     {
         yield return new ObjectEvent
         {

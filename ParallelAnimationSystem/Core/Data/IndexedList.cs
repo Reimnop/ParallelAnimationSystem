@@ -4,14 +4,12 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ParallelAnimationSystem.Core.Data;
 
-public class IndexedTree<T> : IIndexedCollection<T> where T : IIdentifiable
+public class IndexedList<T> : IIndexedCollection<T> where T : IIdentifiable
 {
     public int Count { get; private set; }
 
     private readonly List<T?> items = [];
     private readonly List<bool> exists = [];
-    private readonly List<int> parentByIndex = [];
-    private readonly List<List<int>> childrenByIndex = [];
     
     private readonly Dictionary<Identifier, int> indexById = [];
 
@@ -25,8 +23,6 @@ public class IndexedTree<T> : IIndexedCollection<T> where T : IIdentifiable
         index = items.Count;
         items.Add(default);
         exists.Add(false);
-        parentByIndex.Add(-1);
-        childrenByIndex.Add([]);
         indexById[id] = index;
         return index;
     }
@@ -67,27 +63,6 @@ public class IndexedTree<T> : IIndexedCollection<T> where T : IIdentifiable
     
     public bool Remove(int index)
         => Remove(index, out _);
-    
-    public bool TryGetParentIndex(int childIndex, out int parentIndex)
-    {
-        parentIndex = -1;
-        if (childIndex < 0 || childIndex >= items.Count)
-            return false;
-        var parent = parentByIndex[childIndex];
-        if (parent < 0)
-            return false;
-        parentIndex = parent;
-        return true;
-    }
-    
-    public bool TryGetChildrenIndices(int parentIndex, [MaybeNullWhen(false)] out IReadOnlyList<int> childrenIndices)
-    {
-        childrenIndices = null;
-        if (parentIndex < 0 || parentIndex >= items.Count)
-            return false;
-        childrenIndices = childrenByIndex[parentIndex];
-        return true;
-    }
 
     public bool TryGetItem(int index, [MaybeNullWhen(false)] out T item)
     {
@@ -98,37 +73,6 @@ public class IndexedTree<T> : IIndexedCollection<T> where T : IIdentifiable
             return false;
         item = items[index];
         Debug.Assert(item is not null);
-        return true;
-    }
-
-    public bool SetParent(int childIndex, int? parentIndex)
-    {
-        if (childIndex < 0 || childIndex >= items.Count) 
-            return false;
-        
-        // detach parent from child
-        var oldChildParent = parentByIndex[childIndex];
-        if (oldChildParent >= 0)
-        {
-            childrenByIndex[oldChildParent].Remove(childIndex);
-            parentByIndex[childIndex] = -1;
-        }
-        
-        // if we're setting it to null, we're done here
-        if (!parentIndex.HasValue)
-            return true;
-        
-        var parentIndexValue = parentIndex.Value;
-        
-        // check if indices are valid
-        if (parentIndexValue < 0 || parentIndexValue >= items.Count)
-            return false;
-        
-        // set new parent
-        parentByIndex[childIndex] = parentIndexValue;
-        
-        // add child to parent's children list
-        childrenByIndex[parentIndexValue].Add(childIndex);
         return true;
     }
     
@@ -156,3 +100,4 @@ public class IndexedTree<T> : IIndexedCollection<T> where T : IIdentifiable
         return GetEnumerator();
     }
 }
+

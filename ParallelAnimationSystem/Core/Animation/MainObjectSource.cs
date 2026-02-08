@@ -67,7 +67,14 @@ public class MainObjectSource(PlaybackObjectContainer playbackObjects) : IDispos
         playbackObject.ColorSequence.LoadKeyframes(ResolveColorKeyframes(beatmapObject.ColorKeyframes));
         
         // insert into container
-        playbackObjects.Insert(playbackObject);
+        var index = playbackObjects.Insert(playbackObject);
+        
+        // set parent
+        if (beatmapObject.ParentId is not null)
+        {
+            var parentIndex = playbackObjects.GetIndexForId(beatmapObject.ParentId);
+            playbackObjects.SetParent(index, parentIndex);
+        }
         
         // attach events
         beatmapObject.PropertyChanged += OnBeatmapObjectPropertyChanged;
@@ -104,11 +111,22 @@ public class MainObjectSource(PlaybackObjectContainer playbackObjects) : IDispos
         if (sender is not BeatmapObject beatmapObject)
             return;
         
-        if (!TryGetPlaybackObject(beatmapObject, out var playbackObject))
+        if (!TryGetPlaybackObject(beatmapObject, out var playbackObject, out var index))
             return;
 
         switch (e.PropertyName)
         {
+            case nameof(BeatmapObject.ParentId):
+                if (beatmapObject.ParentId is not null)
+                {
+                    var parentIndex = playbackObjects.GetIndexForId(beatmapObject.ParentId);
+                    playbackObjects.SetParent(index, parentIndex);
+                }
+                else
+                {
+                    playbackObjects.SetParent(index, null);
+                }
+                break;
             case nameof(BeatmapObject.StartTime):
                 playbackObject.StartTime = beatmapObject.StartTime;
                 playbackObject.EndTime = CalculateEndTime(beatmapObject);
@@ -149,7 +167,7 @@ public class MainObjectSource(PlaybackObjectContainer playbackObjects) : IDispos
         if (sender is not BeatmapObject beatmapObject)
             return;
         
-        if (!TryGetPlaybackObject(beatmapObject, out var playbackObject))
+        if (!TryGetPlaybackObject(beatmapObject, out var playbackObject, out _))
             return;
         
         playbackObject.PositionSequence.LoadKeyframes(KeyframeHelper.ResolveRandomizableVector2Keyframes(
@@ -164,7 +182,7 @@ public class MainObjectSource(PlaybackObjectContainer playbackObjects) : IDispos
         if (sender is not BeatmapObject beatmapObject)
             return;
         
-        if (!TryGetPlaybackObject(beatmapObject, out var playbackObject))
+        if (!TryGetPlaybackObject(beatmapObject, out var playbackObject, out _))
             return;
         
         playbackObject.ScaleSequence.LoadKeyframes(KeyframeHelper.ResolveRandomizableVector2Keyframes(
@@ -179,7 +197,7 @@ public class MainObjectSource(PlaybackObjectContainer playbackObjects) : IDispos
         if (sender is not BeatmapObject beatmapObject)
             return;
         
-        if (!TryGetPlaybackObject(beatmapObject, out var playbackObject))
+        if (!TryGetPlaybackObject(beatmapObject, out var playbackObject, out _))
             return;
         
         playbackObject.RotationSequence.LoadKeyframes(KeyframeHelper.ResolveRotationKeyframes(
@@ -194,7 +212,7 @@ public class MainObjectSource(PlaybackObjectContainer playbackObjects) : IDispos
         if (sender is not BeatmapObject beatmapObject)
             return;
         
-        if (!TryGetPlaybackObject(beatmapObject, out var playbackObject))
+        if (!TryGetPlaybackObject(beatmapObject, out var playbackObject, out _))
             return;
         
         playbackObject.ColorSequence.LoadKeyframes(ResolveColorKeyframes(e));
@@ -203,10 +221,10 @@ public class MainObjectSource(PlaybackObjectContainer playbackObjects) : IDispos
         playbackObject.EndTime = CalculateEndTime(beatmapObject);
     }
     
-    private bool TryGetPlaybackObject(BeatmapObject beatmapObject, [MaybeNullWhen(false)] out PlaybackObject playbackObject)
+    private bool TryGetPlaybackObject(BeatmapObject beatmapObject, [MaybeNullWhen(false)] out PlaybackObject playbackObject, out int index)
     {
         var id = (Identifier)beatmapObject.Id;
-        var index = playbackObjects.GetIndexForId(id);
+        index = playbackObjects.GetIndexForId(id);
         return playbackObjects.TryGetItem(index, out playbackObject);
     }
 

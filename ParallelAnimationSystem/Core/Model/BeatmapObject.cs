@@ -6,7 +6,7 @@ using ParallelAnimationSystem.Core.Data;
 
 namespace ParallelAnimationSystem.Core.Model;
 
-public class BeatmapObject : INotifyPropertyChanged
+public class BeatmapObject : IStringIdentifiable, INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler? PropertyChanged;
     public event EventHandler<KeyframeList<Vector2Keyframe>>? PositionKeyframesChanged;
@@ -15,6 +15,12 @@ public class BeatmapObject : INotifyPropertyChanged
     public event EventHandler<KeyframeList<BeatmapObjectColorKeyframe>>? ColorKeyframesChanged;
 
     public string Id { get; }
+
+    public string Name
+    {
+        get;
+        set => SetField(ref field, value);
+    } = string.Empty;
 
     public string? ParentId
     {
@@ -102,10 +108,10 @@ public class BeatmapObject : INotifyPropertyChanged
     {
         Id = id;
         
-        PositionKeyframes.ListChanged += (_, _) => PositionKeyframesChanged?.Invoke(this, PositionKeyframes);
-        ScaleKeyframes.ListChanged += (_, _) => ScaleKeyframesChanged?.Invoke(this, ScaleKeyframes);
-        RotationKeyframes.ListChanged += (_, _) => RotationKeyframesChanged?.Invoke(this, RotationKeyframes);
-        ColorKeyframes.ListChanged += (_, _) => ColorKeyframesChanged?.Invoke(this, ColorKeyframes);
+        PositionKeyframes.ListChanged += (_, e) => PositionKeyframesChanged?.Invoke(this, e);
+        ScaleKeyframes.ListChanged += (_, e) => ScaleKeyframesChanged?.Invoke(this, e);
+        RotationKeyframes.ListChanged += (_, e) => RotationKeyframesChanged?.Invoke(this, e);
+        ColorKeyframes.ListChanged += (_, e) => ColorKeyframesChanged?.Invoke(this, e);
     }
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
