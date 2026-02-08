@@ -1,7 +1,7 @@
 using System.Numerics;
 using Pamx.Common.Enum;
 
-namespace ParallelAnimationSystem.Data;
+namespace ParallelAnimationSystem.Rendering.Data;
 
 public record struct HueShiftPostProcessingData(float Angle);
 public record struct BloomPostProcessingData(float Intensity, float Diffusion);

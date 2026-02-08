@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Core.Model;
+using ParallelAnimationSystem.Rendering.Data;
 using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core.Animation;
@@ -44,6 +45,11 @@ public class MainObjectSource(PlaybackObjectContainer playbackObjects) : IDispos
             StartTime = beatmapObject.StartTime,
             EndTime = CalculateEndTime(beatmapObject),
             IsVisible = beatmapObject.Type != BeatmapObjectType.Empty,
+            ParentType = beatmapObject.ParentType,
+            ParentOffset = beatmapObject.ParentOffset,
+            RenderMode = (RenderMode)beatmapObject.RenderType,
+            Origin = beatmapObject.Origin,
+            RenderDepth = beatmapObject.RenderDepth,
             Shape = beatmapObject.Shape,
             Text = beatmapObject.Text
         };
@@ -113,6 +119,21 @@ public class MainObjectSource(PlaybackObjectContainer playbackObjects) : IDispos
                 break;
             case nameof(BeatmapObject.Type):
                 playbackObject.IsVisible = beatmapObject.Type != BeatmapObjectType.Empty;
+                break;
+            case nameof(BeatmapObject.ParentType):
+                playbackObject.ParentType = beatmapObject.ParentType;
+                break;
+            case nameof(BeatmapObject.ParentOffset):
+                playbackObject.ParentOffset = beatmapObject.ParentOffset;
+                break;
+            case nameof(BeatmapObject.RenderType):
+                playbackObject.RenderMode = (RenderMode)beatmapObject.RenderType;
+                break;
+            case nameof(BeatmapObject.Origin):
+                playbackObject.Origin = beatmapObject.Origin;
+                break;
+            case nameof(BeatmapObject.RenderDepth):
+                playbackObject.RenderDepth = beatmapObject.RenderDepth;
                 break;
             case nameof(BeatmapObject.Shape):
                 playbackObject.Shape = beatmapObject.Shape;

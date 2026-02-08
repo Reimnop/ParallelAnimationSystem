@@ -3,7 +3,6 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core.Data;
-using ParallelAnimationSystem.Data;
 
 namespace ParallelAnimationSystem.Core.Model;
 
@@ -28,6 +27,12 @@ public class BeatmapObject : INotifyPropertyChanged
         get;
         set => SetField(ref field, value);
     }
+    
+    public ParentType ParentType
+    {
+        get;
+        set => SetField(ref field, value);
+    }
 
     public ParentOffset ParentOffset
     {
@@ -35,7 +40,7 @@ public class BeatmapObject : INotifyPropertyChanged
         set => SetField(ref field, value);
     }
 
-    public RenderMode RenderMode
+    public RenderType RenderType
     {
         get;
         set => SetField(ref field, value);

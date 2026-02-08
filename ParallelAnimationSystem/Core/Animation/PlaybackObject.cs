@@ -3,6 +3,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core.Data;
+using ParallelAnimationSystem.Rendering.Data;
 
 namespace ParallelAnimationSystem.Core.Animation;
 
@@ -29,6 +30,37 @@ public class PlaybackObject(Identifier id) : IIdentifiable, INotifyPropertyChang
         get;
         set => SetField(ref field, value);
     }
+    
+    public ParentType ParentType 
+    {
+        get;
+        set => SetField(ref field, value);
+    }
+    
+    public ParentOffset ParentOffset
+    {
+        get;
+        set => SetField(ref field, value);
+    }
+
+    public RenderMode RenderMode
+    {
+        get;
+        set => SetField(ref field, value);
+    }
+
+    public Vector2 Origin
+    {
+        get;
+        set => SetField(ref field, value);
+    }
+
+    public float RenderDepth
+    {
+        get;
+        set => SetField(ref field, value);
+    }
+
     
     public ObjectShape Shape 
     {

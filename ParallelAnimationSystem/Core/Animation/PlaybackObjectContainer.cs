@@ -5,13 +5,13 @@ namespace ParallelAnimationSystem.Core.Animation;
 
 public class PlaybackObjectContainer : IndexedTree<PlaybackObject>
 {
-    public event EventHandler<PlaybackObject>? PlaybackObjectInserted;
-    public event EventHandler<PlaybackObject>? PlaybackObjectRemoved;
+    public event EventHandler<IndexedTreeEntry<PlaybackObject>>? PlaybackObjectInserted;
+    public event EventHandler<IndexedTreeEntry<PlaybackObject>>? PlaybackObjectRemoved;
     
     public override int Insert(PlaybackObject item)
     {
         var index = base.Insert(item);
-        PlaybackObjectInserted?.Invoke(this, item);
+        PlaybackObjectInserted?.Invoke(this, new IndexedTreeEntry<PlaybackObject>(item, index));
         return index;
     }
 
@@ -19,7 +19,7 @@ public class PlaybackObjectContainer : IndexedTree<PlaybackObject>
     {
         if (!base.Remove(index, out item))
             return false;
-        PlaybackObjectRemoved?.Invoke(this, item);
+        PlaybackObjectRemoved?.Invoke(this, new IndexedTreeEntry<PlaybackObject>(item, index));
         return true;
     }
 }

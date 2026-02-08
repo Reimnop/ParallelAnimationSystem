@@ -1,6 +1,6 @@
 ﻿using ImGuiNET;
-using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.DebugUI;
+using ParallelAnimationSystem.Rendering.Data;
 
 namespace ParallelAnimationSystem.Desktop;
 

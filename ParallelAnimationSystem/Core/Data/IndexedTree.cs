@@ -4,7 +4,19 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ParallelAnimationSystem.Core.Data;
 
-public class IndexedTree<T> : IReadOnlyCollection<T> where T : IIdentifiable
+public struct IndexedTreeEntry<T>(T Item, int Index) where T : IIdentifiable
+{
+    public T Item => Item;
+    public int Index => Index;
+    
+    public void Deconstruct(out T item, out int index)
+    {
+        item = Item;
+        index = Index;
+    }
+}
+
+public class IndexedTree<T> : IReadOnlyCollection<IndexedTreeEntry<T>> where T : IIdentifiable
 {
     public int Count { get; private set; }
 
@@ -139,7 +151,7 @@ public class IndexedTree<T> : IReadOnlyCollection<T> where T : IIdentifiable
         return exists[index];
     }
 
-    public IEnumerator<T> GetEnumerator()
+    public IEnumerator<IndexedTreeEntry<T>> GetEnumerator()
     {
         for (var i = 0; i < items.Count; i++)
         {
@@ -147,7 +159,7 @@ public class IndexedTree<T> : IReadOnlyCollection<T> where T : IIdentifiable
                 continue;
             var item = items[i];
             Debug.Assert(item is not null);
-            yield return item;
+            yield return new IndexedTreeEntry<T>(item, i);
         }
     }
 

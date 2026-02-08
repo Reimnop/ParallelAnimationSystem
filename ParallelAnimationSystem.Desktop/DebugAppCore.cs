@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Core;
-using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering;
+using ParallelAnimationSystem.Rendering.Data;
 
 namespace ParallelAnimationSystem.Desktop;
 

@@ -3,7 +3,6 @@ using System.Numerics;
 using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Mathematics;
-using ParallelAnimationSystem.Data;
 
 namespace ParallelAnimationSystem.Rendering.OpenGL.PostProcessing;
 

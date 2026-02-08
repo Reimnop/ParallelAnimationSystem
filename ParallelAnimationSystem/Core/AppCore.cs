@@ -7,9 +7,9 @@ using Pamx.Common;
 using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core.Beatmap;
 using ParallelAnimationSystem.Core.Data;
-using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Mathematics;
+using ParallelAnimationSystem.Rendering.Data;
 using ParallelAnimationSystem.Text;
 using TmpParser;
 

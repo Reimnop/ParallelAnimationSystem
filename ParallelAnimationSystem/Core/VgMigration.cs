@@ -5,7 +5,6 @@ using Pamx.Common.Data;
 using Pamx.Common.Enum;
 using Pamx.Common.Implementation;
 using Pamx.Vg;
-using ParallelAnimationSystem.Data;
 
 namespace ParallelAnimationSystem.Core;
 

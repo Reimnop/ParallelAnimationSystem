@@ -4,7 +4,6 @@ using Pamx.Common;
 using Pamx.Ls;
 using Pamx.Vg;
 using ParallelAnimationSystem.Core;
-using ParallelAnimationSystem.Data;
 
 namespace ParallelAnimationSystem.Android;
 

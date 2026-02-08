@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using ParallelAnimationSystem.Core.Data;
 
 namespace ParallelAnimationSystem.Core.Animation;
 
@@ -14,10 +15,10 @@ public class Timeline : IDisposable
     {
         public required float Time { get; init; }
         public required ObjectEventType Type { get; init; }
-        public required PlaybackObject Object { get; init; }
+        public required int ObjectIndex { get; init; }
     }
 
-    private readonly HashSet<PlaybackObject> aliveObjects = [];
+    private readonly HashSet<int> aliveObjects = [];
 
     private readonly List<ObjectEvent> objectEvents = [];
     private int currentEventIndex;
@@ -26,17 +27,17 @@ public class Timeline : IDisposable
     
     private readonly PlaybackObjectContainer playbackObjects;
 
-    private readonly HashSet<PlaybackObject> objectsPendingForEventUpdate = [];
-    private readonly HashSet<PlaybackObject> objectsPendingForInsertion = [];
-    private readonly HashSet<PlaybackObject> objectsPendingForRemoval = [];
+    private readonly HashSet<int> objectsPendingForEventUpdate = [];
+    private readonly HashSet<int> objectsPendingForInsertion = [];
+    private readonly HashSet<int> objectsPendingForRemoval = [];
     
     public Timeline(PlaybackObjectContainer playbackObjects)
     {
         this.playbackObjects = playbackObjects;
         
         // insert all existing playback objects
-        foreach (var playbackObject in playbackObjects)
-            OnPlaybackObjectInserted(null, playbackObject);
+        foreach (var entry in playbackObjects)
+            AttachPlaybackObject(entry);
 
         // attach events
         this.playbackObjects.PlaybackObjectInserted += OnPlaybackObjectInserted;
@@ -46,66 +47,74 @@ public class Timeline : IDisposable
     public void Dispose()
     {
         // detach events
-        foreach (var playbackObject in playbackObjects)
+        foreach (var (playbackObject, _) in playbackObjects)
             playbackObject.PropertyChanged -= OnPlaybackObjectPropertyChanged;
         
         playbackObjects.PlaybackObjectInserted -= OnPlaybackObjectInserted;
         playbackObjects.PlaybackObjectRemoved -= OnPlaybackObjectRemoved;
     }
 
-    private void OnPlaybackObjectInserted(object? sender, PlaybackObject e)
-    {
-        if (e.IsVisible)
-            InsertObjectForPlayback(e);
-        
-        e.PropertyChanged += OnPlaybackObjectPropertyChanged;
-    }
+    private void OnPlaybackObjectInserted(object? sender, IndexedTreeEntry<PlaybackObject> entry)
+        => AttachPlaybackObject(entry);
 
-    private void OnPlaybackObjectRemoved(object? sender, PlaybackObject e)
+    private void OnPlaybackObjectRemoved(object? sender, IndexedTreeEntry<PlaybackObject> entry)
+        => DetachPlaybackObject(entry);
+
+    private void AttachPlaybackObject(IndexedTreeEntry<PlaybackObject> entry)
     {
-        if (e.IsVisible)
-            RemoveObjectFromPlayback(e);
+        if (entry.Item.IsVisible)
+            InsertObjectForPlayback(entry.Index);
         
-        e.PropertyChanged -= OnPlaybackObjectPropertyChanged;
+        entry.Item.PropertyChanged += OnPlaybackObjectPropertyChanged;
+    }
+    
+    private void DetachPlaybackObject(IndexedTreeEntry<PlaybackObject> entry)
+    {
+        if (entry.Item.IsVisible)
+            RemoveObjectFromPlayback(entry.Index);
+        
+        entry.Item.PropertyChanged -= OnPlaybackObjectPropertyChanged;
     }
 
     private void OnPlaybackObjectPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (sender is not PlaybackObject playbackObject)
             return;
+
+        var index = playbackObjects.GetIndexForId(playbackObject.Id);
         
         switch (e.PropertyName)
         {
             case nameof(PlaybackObject.StartTime):
             case nameof(PlaybackObject.EndTime):
-                objectsPendingForEventUpdate.Add(playbackObject);
+                objectsPendingForEventUpdate.Add(index);
                 break;
             case nameof(PlaybackObject.IsVisible):
                 if (playbackObject.IsVisible)
-                    InsertObjectForPlayback(playbackObject);
+                    InsertObjectForPlayback(index);
                 else
-                    RemoveObjectFromPlayback(playbackObject);
+                    RemoveObjectFromPlayback(index);
                 break;
         }
     }
     
-    private void InsertObjectForPlayback(PlaybackObject playbackObject)
+    private void InsertObjectForPlayback(int index)
     {
-        if (objectsPendingForRemoval.Remove(playbackObject))
+        if (objectsPendingForRemoval.Remove(index))
             return;
         
-        objectsPendingForInsertion.Add(playbackObject);
+        objectsPendingForInsertion.Add(index);
     }
     
-    private void RemoveObjectFromPlayback(PlaybackObject playbackObject)
+    private void RemoveObjectFromPlayback(int index)
     {
-        if (objectsPendingForInsertion.Remove(playbackObject))
+        if (objectsPendingForInsertion.Remove(index))
             return;
         
-        objectsPendingForRemoval.Add(playbackObject);
+        objectsPendingForRemoval.Add(index);
     }
 
-    public IReadOnlyCollection<PlaybackObject> ComputeAliveObjects(float time)
+    public IReadOnlyCollection<int> ComputeAliveObjects(float time)
     {
         UpdateObjectEvents();
         UpdateAliveObjects(time);
@@ -127,7 +136,7 @@ public class Timeline : IDisposable
         if (objectsPendingForRemoval.Count > 0)
         {
             // remove all events
-            objectEvents.RemoveAll(x => objectsPendingForRemoval.Contains(x.Object));
+            objectEvents.RemoveAll(x => objectsPendingForRemoval.Contains(x.ObjectIndex));
 
             // remove from aliveObjects
             foreach (var playbackObject in objectsPendingForRemoval)
@@ -141,10 +150,16 @@ public class Timeline : IDisposable
         if (objectsPendingForEventUpdate.Count > 0)
         {
             // remove current events
-            objectEvents.RemoveAll(x => objectsPendingForEventUpdate.Contains(x.Object));
+            objectEvents.RemoveAll(x => objectsPendingForEventUpdate.Contains(x.ObjectIndex));
         
             // re-insert updated events
-            objectEvents.AddRange(objectsPendingForEventUpdate.SelectMany(GetObjectEvents));
+            objectEvents.AddRange(objectsPendingForEventUpdate
+                .Select<int, IndexedTreeEntry<PlaybackObject>?>(x => playbackObjects.TryGetItem(x, out var item) 
+                    ? new IndexedTreeEntry<PlaybackObject>(item, x)
+                    : null)
+                .SelectMany(x => x.HasValue
+                    ? GetObjectEvents(x.Value)
+                    : []));
             objectEvents.Sort((a, b) => a.Time.CompareTo(b.Time));
         
             // clear pending set
@@ -162,20 +177,20 @@ public class Timeline : IDisposable
         }
     }
 
-    private static IEnumerable<ObjectEvent> GetObjectEvents(PlaybackObject playbackObject)
+    private static IEnumerable<ObjectEvent> GetObjectEvents(IndexedTreeEntry<PlaybackObject> entry)
     {
         yield return new ObjectEvent
         {
-            Time = playbackObject.StartTime,
+            Time = entry.Item.StartTime,
             Type = ObjectEventType.Spawn,
-            Object = playbackObject
+            ObjectIndex = entry.Index
         };
         
         yield return new ObjectEvent
         {
-            Time = playbackObject.EndTime,
+            Time = entry.Item.EndTime,
             Type = ObjectEventType.Kill,
-            Object = playbackObject
+            ObjectIndex = entry.Index
         };
     }
 
@@ -196,10 +211,10 @@ public class Timeline : IDisposable
                 switch (objectEvent.Type)
                 {
                     case ObjectEventType.Spawn:
-                        aliveObjects.Add(objectEvent.Object);
+                        aliveObjects.Add(objectEvent.ObjectIndex);
                         break;
                     case ObjectEventType.Kill:
-                        aliveObjects.Remove(objectEvent.Object);
+                        aliveObjects.Remove(objectEvent.ObjectIndex);
                         break;
                 }
 
@@ -215,10 +230,10 @@ public class Timeline : IDisposable
                 switch (objectEvent.Type)
                 {
                     case ObjectEventType.Spawn:
-                        aliveObjects.Remove(objectEvent.Object);
+                        aliveObjects.Remove(objectEvent.ObjectIndex);
                         break;
                     case ObjectEventType.Kill:
-                        aliveObjects.Add(objectEvent.Object);
+                        aliveObjects.Add(objectEvent.ObjectIndex);
                         break;
                 }
                 
