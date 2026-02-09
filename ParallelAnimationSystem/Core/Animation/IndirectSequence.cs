@@ -2,9 +2,8 @@
 
 public class IndirectSequence<TIn, TOut, TContext>(
     IndirectSequence<TIn, TOut, TContext>.Resolver resolver,
-    Interpolator<TOut> interpolator)
-    where TIn : struct
-    where TOut : struct
+    Interpolator<TOut> interpolator,
+    Func<TContext, TOut> defaultValueProvider)
 {
     public delegate TOut Resolver(TIn value, TContext context);
 
@@ -20,7 +19,7 @@ public class IndirectSequence<TIn, TOut, TContext>(
     public TOut ComputeValueAt(float time, TContext context)
     {
         if (keyframes.Count == 0)
-            return resolver(default, context);
+            return defaultValueProvider(context);
         
         if (time < keyframes[0].Time)
             return resolver(keyframes[0].Value, context);

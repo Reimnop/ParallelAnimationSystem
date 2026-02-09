@@ -74,12 +74,13 @@ public class PlaybackObject(Identifier id) : IIdentifiable, INotifyPropertyChang
         set => SetField(ref field, value);
     }
 
-    public Sequence<Vector2> PositionSequence { get; } = new(Vector2.Lerp);
-    public Sequence<Vector2> ScaleSequence { get; } = new(Vector2.Lerp);
-    public Sequence<float> RotationSequence { get; } = new(float.Lerp);
+    public Sequence<Vector2> PositionSequence { get; } = new(Vector2.Lerp, () => Vector2.Zero);
+    public Sequence<Vector2> ScaleSequence { get; } = new(Vector2.Lerp , () => Vector2.One);
+    public Sequence<float> RotationSequence { get; } = new(float.Lerp, () => 0f);
 
-    public IndirectSequence<BeatmapObjectIndexedColor, BeatmapObjectColor, ThemeColorStateContext> ColorSequence { get; }
-        = new(BeatmapObjectColor.Resolve, BeatmapObjectColor.Lerp);
+    public IndirectSequence<BeatmapObjectIndexedColor, BeatmapObjectColor, ThemeColorState> ColorSequence { get; }
+        = new(BeatmapObjectColor.Resolve, BeatmapObjectColor.Lerp, 
+            _ => new BeatmapObjectColor(new ColorRgb(), new ColorRgb(), 1f));
 
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {

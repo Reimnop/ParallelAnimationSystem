@@ -2,8 +2,11 @@ using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using System.Numerics;
 using Microsoft.Extensions.DependencyInjection;
+using Pamx.Common;
 using Pamx.Common.Enum;
+using ParallelAnimationSystem.Core.Animation;
 using ParallelAnimationSystem.Core.Data;
+using ParallelAnimationSystem.Core.Model;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering.Data;
@@ -19,6 +22,10 @@ public class AppCore
 
     private readonly AppSettings appSettings;
     private readonly ResourceLoader loader;
+    private readonly PlaybackObjectContainer playbackObjects;
+    private readonly ObjectSourceManager objectSourceManager;
+    private readonly AnimationPipeline animationPipeline;
+    private readonly ThemeManager themeManager;
     private readonly IRenderingFactory renderingFactory;
     private readonly ILogger<AppCore> logger;
 
@@ -29,11 +36,19 @@ public class AppCore
         AppSettings appSettings,
         ResourceLoader loader,
         IMediaProvider mediaProvider,
+        PlaybackObjectContainer playbackObjects,
+        ObjectSourceManager objectSourceManager,
+        AnimationPipeline animationPipeline,
+        ThemeManager themeManager,
         IRenderingFactory renderingFactory,
         ILogger<AppCore> logger)
     {
         this.appSettings = appSettings;
         this.loader = loader;
+        this.playbackObjects = playbackObjects;
+        this.objectSourceManager = objectSourceManager;
+        this.animationPipeline = animationPipeline;
+        this.themeManager = themeManager;
         this.renderingFactory = renderingFactory;
         this.logger = logger;
 
@@ -126,7 +141,19 @@ public class AppCore
         
         logger.LogInformation("Using seed '{Seed}'", appSettings.Seed);
         
-        logger.LogInformation("Importing beatmap");
+        // Load beatmap
+        var beatmapData = new BeatmapData(); // pretend we're loading it
+        beatmapData.Objects.Insert(new BeatmapObject("fsdjkgdjkfg")
+        {
+            StartTime = 0f,
+            AutoKillType = AutoKillType.NoAutoKill,
+            Shape = ObjectShape.SquareSolid,
+            Type = BeatmapObjectType.Hit,
+        });
+        // TODO: actually load the beatmap data from the beatmap
+        
+        objectSourceManager.AttachBeatmapData(beatmapData);
+        themeManager.AttachBeatmapData(beatmapData);
         
         sw.Stop();
         
@@ -144,21 +171,22 @@ public class AppCore
     
     public void ProcessFrame(float time, IDrawList drawList)
     {
-        // Update runner
-        runner.ProcessFrame(time, appSettings.WorkerCount);
+        // Update stuff
+        var tcs = themeManager.ComputeThemeAt(time);
+        var drawItems = animationPipeline.ComputeDrawItems(time, tcs);
         
         // Calculate shake vector
-        const float shakeMagic1 = 123.97f;
-        const float shakeMagic2 = 423.42f;
-        const float shakeFrequency = 10.0f;
+        // const float shakeMagic1 = 123.97f;
+        // const float shakeMagic2 = 423.42f;
+        // const float shakeFrequency = 10.0f;
         
-        var shake = runner.Shake;
-        var shakeVector = new Vector2(
-            MathF.Sin(time * MathF.PI * shakeFrequency + shakeMagic1) + MathF.Sin(time * shakeFrequency * 2.0f - shakeMagic1),
-            MathF.Sin(time * MathF.PI * shakeFrequency - shakeMagic2) + MathF.Sin(time * shakeFrequency * 2.0f + shakeMagic2));
-        shakeVector *= shake * 0.5f;
-        
-        var backgroundColor = runner.BackgroundColor;
+        // var shake = runner.Shake;
+        // var shakeVector = new Vector2(
+        //     MathF.Sin(time * MathF.PI * shakeFrequency + shakeMagic1) + MathF.Sin(time * shakeFrequency * 2.0f - shakeMagic1),
+        //     MathF.Sin(time * MathF.PI * shakeFrequency - shakeMagic2) + MathF.Sin(time * shakeFrequency * 2.0f + shakeMagic2));
+        // shakeVector *= shake * 0.5f;
+        //
+        // var backgroundColor = runner.BackgroundColor;
         
         // Start queuing draw commands
         drawList.Clear();
@@ -199,17 +227,16 @@ public class AppCore
         }
 
         // Draw all alive game objects
-        foreach (var perFrameObjectData in runner.PerFrameData)
+        foreach (var drawItem in drawItems)
         {
-            var transform = perFrameObjectData.Transform;
-            var beatmapObjectColor = perFrameObjectData.Color;
+            var transform = drawItem.Transform;
 
-            var beatmapObject = perFrameObjectData.BeatmapObject;
-            Debug.Assert(beatmapObject is not null);
+            if (!playbackObjects.TryGetItem(drawItem.ObjectIndex, out var playbackObject))
+                continue;
             
-            if (beatmapObject.Shape != ObjectShape.Text)
+            if (playbackObject.Shape != ObjectShape.Text)
             {
-                beatmapObject.Shape.ToSeparate(out var shapeIndex, out var shapeOptionIndex);
+                playbackObject.Shape.ToSeparate(out var shapeIndex, out var shapeOptionIndex);
                 
                 if (shapeIndex >= 0 && shapeIndex < meshes.Count)
                 {
@@ -218,15 +245,15 @@ public class AppCore
                     if (shapeOptionIndex >= 0 && shapeOptionIndex < meshOptionList.Count)
                     {
                         var mesh = meshOptionList[shapeOptionIndex];
-                        var renderMode = beatmapObject.RenderMode;
+                        var renderMode = playbackObject.RenderMode;
+
+                        var color1 = drawItem.Color1;
+                        var color2 = drawItem.Color2;
                         
-                        var color1 = beatmapObjectColor.Color1;
-                        var color2 = beatmapObjectColor.Color2;
-                        
-                        var color1Rgba = new ColorRgba(color1.R, color1.G, color1.B, beatmapObjectColor.Opacity);
+                        var color1Rgba = new ColorRgba(color1.R, color1.G, color1.B, drawItem.Opacity);
                         var color2Rgba = color1 == color2 
                             ? new ColorRgba(color2.R, color2.G, color2.B, 0.0f)
-                            : new ColorRgba(color2.R, color2.G, color2.B, beatmapObjectColor.Opacity);
+                            : new ColorRgba(color2.R, color2.G, color2.B, drawItem.Opacity);
             
                         drawList.AddMesh(mesh, transform, color1Rgba, color2Rgba, renderMode);
                     }

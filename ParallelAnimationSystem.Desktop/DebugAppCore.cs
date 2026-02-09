@@ -1,12 +1,33 @@
 ﻿using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Core;
+using ParallelAnimationSystem.Core.Animation;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.Data;
 
 namespace ParallelAnimationSystem.Desktop;
 
-public class DebugAppCore(IServiceProvider sp, AppSettings appSettings, ResourceLoader loader, IMediaProvider mediaProvider, IRenderingFactory renderingFactory, ILogger<AppCore> logger)
-    : AppCore(sp, appSettings, loader, mediaProvider, renderingFactory, logger)
+public class DebugAppCore(
+    IServiceProvider sp,
+    AppSettings appSettings,
+    ResourceLoader loader,
+    IMediaProvider mediaProvider,
+    PlaybackObjectContainer playbackObjects,
+    ObjectSourceManager objectSourceManager,
+    AnimationPipeline animationPipeline,
+    ThemeManager themeManager,
+    IRenderingFactory renderingFactory,
+    ILogger<AppCore> logger)
+    : AppCore(
+        sp,
+        appSettings,
+        loader,
+        mediaProvider,
+        playbackObjects,
+        objectSourceManager,
+        animationPipeline,
+        themeManager,
+        renderingFactory,
+        logger)
 {
     public BloomPostProcessingData? OverrideLegacyBloom
     {

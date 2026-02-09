@@ -1,6 +1,6 @@
 namespace ParallelAnimationSystem.Core.Animation;
 
-public class Sequence<T>(Interpolator<T> interpolator) where T : struct
+public class Sequence<T>(Interpolator<T> interpolator, Func<T> defaultValueProvider)
 {
     private readonly List<Keyframe<T>> keyframes = [];
 
@@ -14,7 +14,7 @@ public class Sequence<T>(Interpolator<T> interpolator) where T : struct
     public T ComputeValueAt(float time)
     {
         if (keyframes.Count == 0)
-            return default;
+            return defaultValueProvider();
         
         if (time < keyframes[0].Time)
             return keyframes[0].Value;

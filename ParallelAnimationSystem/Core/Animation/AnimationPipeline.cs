@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Diagnostics;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core.Data;
@@ -25,13 +26,15 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
     private const int InitialCacheCapacity = 1000;
     
     private ObjectDrawItem[] drawItemCache = new ObjectDrawItem[InitialCacheCapacity];
-    private readonly ThemeColorStateContext currentThemeColorStateContext = new();
+    
     private float currentTime;
+    private ThemeColorState? currentThemeColorState;
     
     public ReadOnlySpan<ObjectDrawItem> ComputeDrawItems(float time, ThemeColorState themeColorState)
     {
-        currentThemeColorStateContext.Value = themeColorState;
+        
         currentTime = time;
+        currentThemeColorState = themeColorState;
         
         var aliveObjects = timeline.ComputeAliveObjects(time);
         EnsureCacheCapacity(aliveObjects.Count);
@@ -64,7 +67,8 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
             ? TextScaleMatrix 
             : Matrix3x2.Identity;
 
-        var color = playbackObject.ColorSequence.ComputeValueAt(currentTime, currentThemeColorStateContext);
+        Debug.Assert(currentThemeColorState is not null);
+        var color = playbackObject.ColorSequence.ComputeValueAt(currentTime, currentThemeColorState);
         
         drawItemCache[cacheIndex].Transform = originMatrix * textScale * transform;
         drawItemCache[cacheIndex].Color1 = color.Color1;

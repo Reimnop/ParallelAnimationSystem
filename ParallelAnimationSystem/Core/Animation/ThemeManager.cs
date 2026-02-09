@@ -1,10 +1,13 @@
 ﻿using System.ComponentModel;
+using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Core.Model;
 
 namespace ParallelAnimationSystem.Core.Animation;
 
 public class ThemeManager(PlaybackThemeContainer playbackThemes) : IDisposable
 {
+    private readonly ThemeSequence themeSequence = new(playbackThemes);
+    
     private BeatmapData? attachedBeatmapData;
     
     public void Dispose()
@@ -37,11 +40,17 @@ public class ThemeManager(PlaybackThemeContainer playbackThemes) : IDisposable
         // attach events
         beatmapData.Themes.Inserted += OnBeatmapThemeInserted;
         beatmapData.Themes.Removed += OnBeatmapThemeRemoved;
+        
+        // load theme keyframes
+        themeSequence.LoadKeyframes(ResolveThemeKeyframes(beatmapData.Events.Theme));
+        
+        // attach events
+        beatmapData.Events.ThemeKeyframesChanged += OnEventsThemeKeyframesChanged;
     }
 
     public void DetachBeatmapData()
     {
-        if (attachedBeatmapData == null)
+        if (attachedBeatmapData is null)
             return;
         
         foreach (var theme in attachedBeatmapData.Themes.Values)
@@ -61,7 +70,21 @@ public class ThemeManager(PlaybackThemeContainer playbackThemes) : IDisposable
         attachedBeatmapData.Themes.Inserted -= OnBeatmapThemeInserted;
         attachedBeatmapData.Themes.Removed -= OnBeatmapThemeRemoved;
         
+        // unload theme keyframes
+        themeSequence.LoadKeyframes([]);
+        
+        // detach events
+        attachedBeatmapData.Events.ThemeKeyframesChanged -= OnEventsThemeKeyframesChanged;
+        
         attachedBeatmapData = null;
+    }
+    
+    public ThemeColorState ComputeThemeAt(float time)
+        => themeSequence.ComputeValueAt(time);
+
+    private void OnEventsThemeKeyframesChanged(object? sender, KeyframeList<EventKeyframe<string>> e)
+    {
+        themeSequence.LoadKeyframes(ResolveThemeKeyframes(e));
     }
 
     private void OnBeatmapThemePropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -156,6 +179,16 @@ public class ThemeManager(PlaybackThemeContainer playbackThemes) : IDisposable
         e.EffectColorUpdated -= OnBeatmapThemeEffectColorUpdated;
         e.ParallaxObjectColorUpdated -= OnBeatmapThemeParallaxObjectColorUpdated;
     }
+
+    private IEnumerable<Keyframe<int>> ResolveThemeKeyframes(KeyframeList<EventKeyframe<string>> themeEventKeyframes)
+    {
+        foreach (var eventKeyframe in themeEventKeyframes)
+        {
+            var themeId = eventKeyframe.Value;
+            var index = playbackThemes.GetIndexForId(themeId);
+            yield return new Keyframe<int>(eventKeyframe.Time, eventKeyframe.Ease, index);
+        }
+    } 
 
     private static PlaybackTheme CreatePlaybackTheme(BeatmapTheme theme)
     {
