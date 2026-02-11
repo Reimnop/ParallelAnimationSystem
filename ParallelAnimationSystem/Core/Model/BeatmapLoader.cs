@@ -73,14 +73,30 @@ public static class BeatmapLoader
     private static void LoadThemeKeyframes(IBeatmap beatmap, KeyframeList<EventKeyframe<string>> eventsTheme)
     {
         foreach (var themeKeyframe in beatmap.Events.Theme)
-            eventsTheme.Add(new EventKeyframe<string>(themeKeyframe.Time, themeKeyframe.Ease, ((IIdentifiable<string>)themeKeyframe.Value).Id));
+        {
+            string themeId;
+            if (themeKeyframe.Value is IIdentifiable<string> stringIdentifiable)
+                themeId = stringIdentifiable.Id;
+            else if (themeKeyframe.Value is IIdentifiable<int> intIdentifiable)
+                themeId = intIdentifiable.Id.ToString();
+            else
+                throw new InvalidOperationException("Theme does not have a valid identifier");
+            
+            eventsTheme.Add(new EventKeyframe<string>(themeKeyframe.Time, themeKeyframe.Ease, themeId));
+        }
     }
 
     private static void LoadThemes(IBeatmap beatmap, IdContainer<BeatmapTheme> beatmapThemes)
     {
         foreach (var theme in beatmap.Themes)
         {
-            var id = ((IIdentifiable<string>)theme).Id;
+            string id;
+            if (theme is IIdentifiable<string> stringIdentifiable)
+                id = stringIdentifiable.Id;
+            else if (theme is IIdentifiable<int> intIdentifiable)
+                id = intIdentifiable.Id.ToString();
+            else
+                throw new InvalidOperationException("Theme does not have a valid identifier");
 
             var bmTheme = new BeatmapTheme(id)
             {
@@ -90,16 +106,16 @@ public static class BeatmapLoader
                 GuiAccentColor = new ColorRgb(theme.GuiAccent.R, theme.GuiAccent.G, theme.GuiAccent.B),
             };
             
-            for (var i = 0; i < 4; i++)
+            for (var i = 0; i < Math.Min(4, theme.Player.Count); i++)
                 bmTheme.PlayerColors[i] = new ColorRgb(theme.Player[i].R, theme.Player[i].G, theme.Player[i].B);
             
-            for (var i = 0; i < 9; i++)
+            for (var i = 0; i < Math.Min(9, theme.Object.Count); i++)
                 bmTheme.ObjectColors[i] = new ColorRgb(theme.Object[i].R, theme.Object[i].G, theme.Object[i].B);
             
-            for (var i = 0; i < 9; i++)
+            for (var i = 0; i < Math.Min(9, theme.Effect.Count); i++)
                 bmTheme.EffectColors[i] = new ColorRgb(theme.Effect[i].R, theme.Effect[i].G, theme.Effect[i].B);
             
-            for (var i = 0; i < 9; i++)
+            for (var i = 0; i < Math.Min(9, theme.ParallaxObject.Count); i++)
                 bmTheme.ParallaxObjectColors[i] = new ColorRgb(theme.ParallaxObject[i].R, theme.ParallaxObject[i].G, theme.ParallaxObject[i].B);
             
             beatmapThemes.Insert(bmTheme);

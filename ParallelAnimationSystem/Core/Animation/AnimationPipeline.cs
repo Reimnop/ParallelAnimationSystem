@@ -9,14 +9,28 @@ namespace ParallelAnimationSystem.Core.Animation;
 
 public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playbackObjects)
 {
-    private readonly struct ObjectDrawItemComparer : IComparer<ObjectDrawItem>
+    private class ObjectDrawItemComparer(PlaybackObjectContainer playbackObjects) : IComparer<ObjectDrawItem>
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int Compare(ObjectDrawItem x, ObjectDrawItem y)
         {
             var renderDepthComparison = y.RenderDepth.CompareTo(x.RenderDepth);
-            if (renderDepthComparison != 0) return renderDepthComparison;
-            return y.ParentDepth.CompareTo(x.ParentDepth);
+            if (renderDepthComparison != 0) 
+                return renderDepthComparison;
+            
+            var parentDepthComparison = y.ParentDepth.CompareTo(x.ParentDepth);
+            if (parentDepthComparison != 0) 
+                return parentDepthComparison;
+            
+            if (!playbackObjects.TryGetItem(x.ObjectIndex, out var xObj) ||
+                !playbackObjects.TryGetItem(y.ObjectIndex, out var yObj))
+                return 0;
+            
+            var startTimeComparison = xObj.StartTime.CompareTo(yObj.StartTime);
+            if (startTimeComparison != 0)
+                return startTimeComparison;
+            
+            return xObj.Id.Value.CompareTo(yObj.Id.Value);
         }
     }
     
@@ -30,6 +44,8 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
     private float currentTime;
     private ThemeColorState? currentThemeColorState;
     
+    private readonly ObjectDrawItemComparer drawItemComparer = new(playbackObjects);
+    
     public ReadOnlySpan<ObjectDrawItem> ComputeDrawItems(float time, ThemeColorState themeColorState)
     {
         currentTime = time;
@@ -41,7 +57,7 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
         Parallel.ForEach(aliveObjects, ProcessPlaybackObject);
 
         var drawItems = drawItemCache.AsSpan(0, aliveObjects.Count);
-        drawItems.Sort(new ObjectDrawItemComparer());
+        drawItems.Sort(drawItemComparer);
         
         return drawItems;
     }

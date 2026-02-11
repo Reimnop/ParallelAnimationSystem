@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
 using ParallelAnimationSystem.Core.Model;
+using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core.Animation;
@@ -35,8 +36,8 @@ public class ObjectSourceManager(PlaybackObjectContainer playbackObjects) : IDis
             {
                 StartTime = instance.StartTime,
                 Position = instance.Position,
-                Rotation = instance.Rotation,
                 Scale = instance.Scale,
+                Rotation = MathUtil.DegreesToRadians(instance.Rotation),
             };
             prefabInstanceObjectSources.Add(id, prefabInstanceObjectSource);
             
@@ -88,8 +89,8 @@ public class ObjectSourceManager(PlaybackObjectContainer playbackObjects) : IDis
         {
             StartTime = e.StartTime,
             Position = e.Position,
-            Rotation = e.Rotation,
             Scale = e.Scale,
+            Rotation = MathUtil.DegreesToRadians(e.Rotation),
         };
         prefabInstanceObjectSources.Add(e.Id, prefabInstanceObjectSource);
         
@@ -162,11 +163,11 @@ public class ObjectSourceManager(PlaybackObjectContainer playbackObjects) : IDis
             case nameof(BeatmapPrefabInstance.Position):
                 prefabInstanceObjectSource.Position = instance.Position;
                 break;
-            case nameof(BeatmapPrefabInstance.Rotation):
-                prefabInstanceObjectSource.Rotation = instance.Rotation;
-                break;
             case nameof(BeatmapPrefabInstance.Scale):
                 prefabInstanceObjectSource.Scale = instance.Scale;
+                break;
+            case nameof(BeatmapPrefabInstance.Rotation):
+                prefabInstanceObjectSource.Rotation = MathUtil.DegreesToRadians(instance.Rotation);
                 break;
             case nameof(BeatmapPrefabInstance.PrefabId):
                 // detach old prefab

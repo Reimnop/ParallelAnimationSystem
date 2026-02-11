@@ -118,6 +118,7 @@ public class PrefabInstanceObjectSource(Identifier instanceId, PlaybackObjectCon
             throw new InvalidOperationException($"A {nameof(BeatmapPrefab)} is already attached");
         
         attachedPrefab = beatmapPrefab;
+        offset = attachedPrefab.Offset;
         
         // insert existing objects
         foreach (var beatmapObject in beatmapPrefab.Objects.Values)
