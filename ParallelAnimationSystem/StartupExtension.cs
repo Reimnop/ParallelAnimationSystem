@@ -53,6 +53,8 @@ public static class StartupExtension
 
             services.AddSingleton<ThemeManager>();
             services.AddSingleton<PlaybackThemeContainer>();
+
+            services.AddSingleton<EventManager>();
         
             // Add ImGui
             services.AddSingleton<ImGuiContext>();

@@ -69,16 +69,6 @@ public sealed class DesktopApp
     {
         // Initialize renderer
         var renderer = serviceProvider.InitializeRenderer();
-        
-        if (appSettings.DebugMode)
-        {
-            // Initialize ImGui
-            var imGui = serviceProvider.InitializeImGui();
-            imGui.AddDebugHandler(new DebugHandler(
-                (DebugAppCore) serviceProvider.GetRequiredService<AppCore>(),
-                audioPlayer));
-        }
-        
         var window = serviceProvider.GetRequiredService<IWindow>();
 
         while (!window.ShouldClose)

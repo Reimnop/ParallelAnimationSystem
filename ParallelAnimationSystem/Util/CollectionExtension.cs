@@ -1,7 +1,18 @@
 namespace ParallelAnimationSystem.Util;
 
-public static class ListExtension
+public static class CollectionExtension
 {
+    public static TValue GetOrInsert<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, Func<TValue> factory) where TKey : notnull
+    {
+        if (dictionary.TryGetValue(key, out var value))
+            return value;
+        
+        value = factory();
+        dictionary.Add(key, value);
+
+        return value;
+    }
+    
     public static int BinarySearchKey<T, TKey>(this IReadOnlyList<T> list, TKey key, Func<T, TKey> keySelector, IComparer<TKey> comparer)
     {
         var min = 0;

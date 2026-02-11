@@ -77,14 +77,7 @@ public static class DesktopStartup
             }
         };
 
-        if (debugMode)
-        {
-            services.AddPAS<DebugAppCore>(pasOptionsBuilder);
-        }
-        else
-        {
-            services.AddPAS(pasOptionsBuilder);
-        }
+        services.AddPAS(pasOptionsBuilder);
         
         // Add ImGui platform backend
         services.AddSingleton<IImGuiPlatformBackend, ImGuiPlatformBackend>();

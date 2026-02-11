@@ -63,14 +63,14 @@ public class BeatmapObject : IStringIdentifiable, INotifyPropertyChanged
         get;
         set => SetField(ref field, value);
     }
-
-    public AutoKillType AutoKillType
+    
+    public float StartTime
     {
         get;
         set => SetField(ref field, value);
     }
 
-    public float StartTime
+    public AutoKillType AutoKillType
     {
         get;
         set => SetField(ref field, value);

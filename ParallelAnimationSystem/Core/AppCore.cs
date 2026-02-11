@@ -25,6 +25,7 @@ public class AppCore
     private readonly PlaybackObjectContainer playbackObjects;
     private readonly ObjectSourceManager objectSourceManager;
     private readonly AnimationPipeline animationPipeline;
+    private readonly EventManager eventManager;
     private readonly ThemeManager themeManager;
     private readonly IRenderingFactory renderingFactory;
     private readonly ILogger<AppCore> logger;
@@ -39,6 +40,7 @@ public class AppCore
         PlaybackObjectContainer playbackObjects,
         ObjectSourceManager objectSourceManager,
         AnimationPipeline animationPipeline,
+        EventManager eventManager,
         ThemeManager themeManager,
         IRenderingFactory renderingFactory,
         ILogger<AppCore> logger)
@@ -48,6 +50,7 @@ public class AppCore
         this.playbackObjects = playbackObjects;
         this.objectSourceManager = objectSourceManager;
         this.animationPipeline = animationPipeline;
+        this.eventManager = eventManager;
         this.themeManager = themeManager;
         this.renderingFactory = renderingFactory;
         this.logger = logger;
@@ -142,17 +145,10 @@ public class AppCore
         logger.LogInformation("Using seed '{Seed}'", appSettings.Seed);
         
         // Load beatmap
-        var beatmapData = new BeatmapData(); // pretend we're loading it
-        beatmapData.Objects.Insert(new BeatmapObject("fsdjkgdjkfg")
-        {
-            StartTime = 0f,
-            AutoKillType = AutoKillType.NoAutoKill,
-            Shape = ObjectShape.SquareSolid,
-            Type = BeatmapObjectType.Hit,
-        });
-        // TODO: actually load the beatmap data from the beatmap
+        var beatmapData = BeatmapLoader.Load(beatmap);
         
         objectSourceManager.AttachBeatmapData(beatmapData);
+        eventManager.AttachBeatmapData(beatmapData);
         themeManager.AttachBeatmapData(beatmapData);
         
         sw.Stop();
@@ -173,6 +169,7 @@ public class AppCore
     {
         // Update stuff
         var tcs = themeManager.ComputeThemeAt(time);
+        var eventState = eventManager.ComputeEventAt(time, tcs);
         var drawItems = animationPipeline.ComputeDrawItems(time, tcs);
         
         // Calculate shake vector
@@ -196,6 +193,12 @@ public class AppCore
         //     runner.CameraPosition + shakeVector,
         //     runner.CameraScale,
         //     runner.CameraRotation);
+
+        drawList.ClearColor = new ColorRgba(tcs.Background.R, tcs.Background.G, tcs.Background.B, 1.0f);
+        drawList.CameraData = new CameraData(
+            eventState.CameraPosition,
+            eventState.CameraScale,
+            eventState.CameraRotation);
         
         if (appSettings.EnablePostProcessing)
         {

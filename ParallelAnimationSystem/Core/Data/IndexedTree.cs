@@ -11,7 +11,7 @@ public class IndexedTree<T> : IIndexedCollection<T> where T : IIdentifiable
     private readonly List<T?> items = [];
     private readonly List<bool> exists = [];
     private readonly List<int> parentByIndex = [];
-    private readonly List<List<int>> childrenByIndex = [];
+    private readonly List<HashSet<int>> childrenByIndex = [];
     
     private readonly Dictionary<Identifier, int> indexById = [];
 
@@ -80,7 +80,7 @@ public class IndexedTree<T> : IIndexedCollection<T> where T : IIdentifiable
         return true;
     }
     
-    public bool TryGetChildrenIndices(int parentIndex, [MaybeNullWhen(false)] out IReadOnlyList<int> childrenIndices)
+    public bool TryGetChildrenIndices(int parentIndex, [MaybeNullWhen(false)] out IReadOnlySet<int> childrenIndices)
     {
         childrenIndices = null;
         if (parentIndex < 0 || parentIndex >= items.Count)

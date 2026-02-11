@@ -14,9 +14,9 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int Compare(ObjectDrawItem x, ObjectDrawItem y)
         {
-            var renderDepthComparison = x.RenderDepth.CompareTo(y.RenderDepth);
+            var renderDepthComparison = y.RenderDepth.CompareTo(x.RenderDepth);
             if (renderDepthComparison != 0) return renderDepthComparison;
-            return x.ParentDepth.CompareTo(y.ParentDepth);
+            return y.ParentDepth.CompareTo(x.ParentDepth);
         }
     }
     
@@ -32,7 +32,6 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
     
     public ReadOnlySpan<ObjectDrawItem> ComputeDrawItems(float time, ThemeColorState themeColorState)
     {
-        
         currentTime = time;
         currentThemeColorState = themeColorState;
         
@@ -68,7 +67,7 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
             : Matrix3x2.Identity;
 
         Debug.Assert(currentThemeColorState is not null);
-        var color = playbackObject.ColorSequence.ComputeValueAt(currentTime, currentThemeColorState);
+        var color = playbackObject.ColorSequence.ComputeValueAt(currentTime - playbackObject.StartTime, currentThemeColorState);
         
         drawItemCache[cacheIndex].Transform = originMatrix * textScale * transform;
         drawItemCache[cacheIndex].Color1 = color.Color1;
@@ -148,16 +147,15 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
                     break;
                 }
             }
+            
+            parentType = playbackObject.ParentType;
+            parentOffset = playbackObject.ParentOffset;
 
-            if (!playbackObjects.TryGetParentIndex(playbackObjectIndex, out var parent)) 
+            if (!playbackObjects.TryGetParentIndex(playbackObjectIndex, out playbackObjectIndex)) 
                 break;
             
-            if (!playbackObjects.TryGetItem(parent, out var parentPlaybackObject))
+            if (!playbackObjects.TryGetItem(playbackObjectIndex, out playbackObject))
                 break;
-
-            parentType = parentPlaybackObject.ParentType;
-            parentOffset = parentPlaybackObject.ParentOffset;
-            playbackObject = parentPlaybackObject;
         }
 
         return matrix;
