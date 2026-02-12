@@ -17,6 +17,25 @@ public class Timeline : IDisposable
         public required ObjectEventType Type { get; init; }
         public required int ObjectIndex { get; init; }
     }
+    
+    private class ObjectEventComparer : IComparer<ObjectEvent>
+    {
+        public int Compare(ObjectEvent? x, ObjectEvent? y)
+        {
+            if (x is null && y is null)
+                return 0;
+            if (x is null)
+                return -1;
+            if (y is null)
+                return 1;
+            
+            var timeComparison = x.Time.CompareTo(y.Time);
+            if (timeComparison != 0)
+                return timeComparison;
+            
+            return x.Type.CompareTo(y.Type); // spawn before kill
+        }
+    }
 
     private readonly HashSet<int> aliveObjects = [];
 
@@ -30,6 +49,8 @@ public class Timeline : IDisposable
     private readonly HashSet<int> objectsPendingForEventUpdate = [];
     private readonly HashSet<int> objectsPendingForInsertion = [];
     private readonly HashSet<int> objectsPendingForRemoval = [];
+    
+    private readonly ObjectEventComparer objectEventComparer = new();
     
     public Timeline(PlaybackObjectContainer playbackObjects)
     {
@@ -160,7 +181,7 @@ public class Timeline : IDisposable
                 .SelectMany(x => x.HasValue
                     ? GetObjectEvents(x.Value)
                     : []));
-            objectEvents.Sort((a, b) => a.Time.CompareTo(b.Time));
+            objectEvents.Sort(objectEventComparer);
         
             // clear pending set
             objectsPendingForEventUpdate.Clear();
