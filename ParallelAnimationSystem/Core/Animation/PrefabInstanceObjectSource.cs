@@ -349,12 +349,12 @@ public class PrefabInstanceObjectSource(Identifier instanceId, PlaybackObjectCon
         }
 
         // if we don't, create new intermediate parent
-        var internalId = GetInternalObjectId(parentId);
-        playbackObject = new PlaybackObject(internalId)
+        playbackObject = new PlaybackObject(GetInternalObjectId(parentId))
         {
             StartTime = 0f,
-            EndTime = float.MaxValue,
-            ParentType = ParentType.All
+            EndTime = float.PositiveInfinity,
+            ParentType = ParentType.All,
+            IsVisible = false,
         };
         
         playbackObject.PositionSequence.LoadKeyframes([ new Keyframe<Vector2>(0f, Ease.Linear, Position) ]);
@@ -363,7 +363,7 @@ public class PrefabInstanceObjectSource(Identifier instanceId, PlaybackObjectCon
         
         index = playbackObjects.Insert(playbackObject);
         
-        // parent this intermediate parent to the parent ID
+        // parent this intermediate parent to the external parent
         if (parentId != string.Empty)
         {
             // since we're getting the EXTERNAl parent, we don't use GetInternalObjectId here

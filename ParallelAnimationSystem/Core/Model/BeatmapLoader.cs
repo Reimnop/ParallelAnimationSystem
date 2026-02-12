@@ -60,18 +60,25 @@ public static class BeatmapLoader
 
     private static void LoadEvents(IBeatmap beatmap, BeatmapEventList events)
     {
+        var cameraPositionKeyframes = new List<EventKeyframe<Vector2>>();
         foreach (var positionKeyframe in beatmap.Events.Movement)
-            events.CameraPosition.Add(new EventKeyframe<Vector2>(positionKeyframe.Time, positionKeyframe.Ease, positionKeyframe.Value));
+            cameraPositionKeyframes.Add(new EventKeyframe<Vector2>(positionKeyframe.Time, positionKeyframe.Ease, positionKeyframe.Value));
+        events.CameraPosition.Replace(cameraPositionKeyframes);
         
+        var cameraScaleKeyframes = new List<EventKeyframe<float>>();
         foreach (var scaleKeyframe in beatmap.Events.Zoom)
-            events.CameraScale.Add(new EventKeyframe<float>(scaleKeyframe.Time, scaleKeyframe.Ease, scaleKeyframe.Value));
+            cameraScaleKeyframes.Add(new EventKeyframe<float>(scaleKeyframe.Time, scaleKeyframe.Ease, scaleKeyframe.Value));
+        events.CameraScale.Replace(cameraScaleKeyframes);
         
+        var cameraRotationKeyframes = new List<EventKeyframe<float>>();
         foreach (var rotationKeyframe in beatmap.Events.Rotation)
-            events.CameraRotation.Add(new EventKeyframe<float>(rotationKeyframe.Time, rotationKeyframe.Ease, rotationKeyframe.Value));
+            cameraRotationKeyframes.Add(new EventKeyframe<float>(rotationKeyframe.Time, rotationKeyframe.Ease, rotationKeyframe.Value));
+        events.CameraRotation.Replace(cameraRotationKeyframes);
     }
 
     private static void LoadThemeKeyframes(IBeatmap beatmap, KeyframeList<EventKeyframe<string>> eventsTheme)
     {
+        var themeKeyframes = new List<EventKeyframe<string>>();
         foreach (var themeKeyframe in beatmap.Events.Theme)
         {
             string themeId;
@@ -82,8 +89,9 @@ public static class BeatmapLoader
             else
                 throw new InvalidOperationException("Theme does not have a valid identifier");
             
-            eventsTheme.Add(new EventKeyframe<string>(themeKeyframe.Time, themeKeyframe.Ease, themeId));
+            themeKeyframes.Add(new EventKeyframe<string>(themeKeyframe.Time, themeKeyframe.Ease, themeId));
         }
+        eventsTheme.Replace(themeKeyframes);
     }
 
     private static void LoadThemes(IBeatmap beatmap, IdContainer<BeatmapTheme> beatmapThemes)
@@ -158,17 +166,25 @@ public static class BeatmapLoader
             Text = obj.Text
         };
         
+        var positionKeyframes = new List<Vector2Keyframe>();
         foreach (var positionKeyframe in obj.PositionEvents)
-            bmObj.PositionKeyframes.Add(CreateVector2Keyframe(positionKeyframe));
+            positionKeyframes.Add(CreateVector2Keyframe(positionKeyframe));
+        bmObj.PositionKeyframes.Replace(positionKeyframes);
 
+        var scaleKeyframes = new List<Vector2Keyframe>();
         foreach (var scaleKeyframe in obj.ScaleEvents)
-            bmObj.ScaleKeyframes.Add(CreateVector2Keyframe(scaleKeyframe));
+            scaleKeyframes.Add(CreateVector2Keyframe(scaleKeyframe));
+        bmObj.ScaleKeyframes.Replace(scaleKeyframes);
         
+        var rotationKeyframes = new List<RotationKeyframe>();
         foreach (var rotationKeyframe in obj.RotationEvents)
-            bmObj.RotationKeyframes.Add(CreateRotationKeyframe(rotationKeyframe));
+            rotationKeyframes.Add(CreateRotationKeyframe(rotationKeyframe));
+        bmObj.RotationKeyframes.Replace(rotationKeyframes);
         
+        var colorKeyframes = new List<BeatmapObjectColorKeyframe>();
         foreach (var colorKeyframe in obj.ColorEvents)
-            bmObj.ColorKeyframes.Add(CreateColorKeyframe(colorKeyframe));
+            colorKeyframes.Add(CreateColorKeyframe(colorKeyframe));
+        bmObj.ColorKeyframes.Replace(colorKeyframes);
         
         return bmObj;
     }

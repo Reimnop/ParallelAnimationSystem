@@ -30,16 +30,17 @@ public class ObjectSourceManager(PlaybackObjectContainer playbackObjects) : IDis
         mainObjectSource.AttachBeatmapData(attachedBeatmapData);
         
         // initialize prefab instance object sources
-        foreach (var (id, instance) in beatmapData.PrefabInstances)
+        foreach (var (_, instance) in beatmapData.PrefabInstances)
         {
-            var prefabInstanceObjectSource = new PrefabInstanceObjectSource(id, playbackObjects)
+            var prefabInstanceObjectSource = new PrefabInstanceObjectSource(instance.Id, playbackObjects)
             {
                 StartTime = instance.StartTime,
                 Position = instance.Position,
                 Scale = instance.Scale,
                 Rotation = MathUtil.DegreesToRadians(instance.Rotation),
             };
-            prefabInstanceObjectSources.Add(id, prefabInstanceObjectSource);
+            
+            prefabInstanceObjectSources.Add(instance.Id, prefabInstanceObjectSource);
             
             var prefabId = instance.PrefabId;
             if (prefabId is not null && beatmapData.Prefabs.TryGetValue(prefabId, out var prefab))
@@ -49,7 +50,7 @@ public class ObjectSourceManager(PlaybackObjectContainer playbackObjects) : IDis
             if (prefabId is not null)
             {
                 var idSet = instanceIdsByPrefabId.GetOrInsert(prefabId, () => []);
-                idSet.Add(id);
+                idSet.Add(instance.Id);
             }
             
             instance.PropertyChanged += OnPrefabInstancePropertyChanged;
@@ -75,6 +76,9 @@ public class ObjectSourceManager(PlaybackObjectContainer playbackObjects) : IDis
         prefabInstanceObjectSources.Clear();
         
         // detach events
+        foreach (var (_, instance) in attachedBeatmapData.PrefabInstances)
+            instance.PropertyChanged -= OnPrefabInstancePropertyChanged;
+        
         attachedBeatmapData.PrefabInstances.Inserted -= OnPrefabInstanceInserted;
         attachedBeatmapData.PrefabInstances.Removed -= OnPrefabInstanceRemoved;
         attachedBeatmapData.Prefabs.Inserted -= OnPrefabInserted;
