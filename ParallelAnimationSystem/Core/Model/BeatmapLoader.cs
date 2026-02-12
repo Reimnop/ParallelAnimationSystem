@@ -60,20 +60,99 @@ public static class BeatmapLoader
 
     private static void LoadEvents(IBeatmap beatmap, BeatmapEventList events)
     {
-        var cameraPositionKeyframes = new List<EventKeyframe<Vector2>>();
-        foreach (var positionKeyframe in beatmap.Events.Movement)
-            cameraPositionKeyframes.Add(new EventKeyframe<Vector2>(positionKeyframe.Time, positionKeyframe.Ease, positionKeyframe.Value));
+        var cameraPositionKeyframes = beatmap.Events.Movement
+            .Select(positionKeyframe 
+                => new EventKeyframe<Vector2>(positionKeyframe.Time, positionKeyframe.Ease, positionKeyframe.Value));
         events.CameraPosition.Replace(cameraPositionKeyframes);
-        
-        var cameraScaleKeyframes = new List<EventKeyframe<float>>();
-        foreach (var scaleKeyframe in beatmap.Events.Zoom)
-            cameraScaleKeyframes.Add(new EventKeyframe<float>(scaleKeyframe.Time, scaleKeyframe.Ease, scaleKeyframe.Value));
+
+        var cameraScaleKeyframes = beatmap.Events.Zoom
+            .Select(scaleKeyframe
+                => new EventKeyframe<float>(scaleKeyframe.Time, scaleKeyframe.Ease, scaleKeyframe.Value));
         events.CameraScale.Replace(cameraScaleKeyframes);
-        
-        var cameraRotationKeyframes = new List<EventKeyframe<float>>();
-        foreach (var rotationKeyframe in beatmap.Events.Rotation)
-            cameraRotationKeyframes.Add(new EventKeyframe<float>(rotationKeyframe.Time, rotationKeyframe.Ease, rotationKeyframe.Value));
+
+        var cameraRotationKeyframes = beatmap.Events.Rotation
+            .Select(rotationKeyframe
+                => new EventKeyframe<float>(rotationKeyframe.Time, rotationKeyframe.Ease, rotationKeyframe.Value));
         events.CameraRotation.Replace(cameraRotationKeyframes);
+
+        var cameraShakeKeyframes = beatmap.Events.Shake
+            .Select(shakeKeyframe => new EventKeyframe<float>(shakeKeyframe.Time, shakeKeyframe.Ease, shakeKeyframe.Value));
+        events.CameraShake.Replace(cameraShakeKeyframes);
+
+        var chromaKeyframes = beatmap.Events.Chroma
+            .Select(chromaKeyframe
+                => new EventKeyframe<float>(chromaKeyframe.Time, chromaKeyframe.Ease, chromaKeyframe.Value));
+        events.Chroma.Replace(chromaKeyframes);
+
+        var bloomKeyframes = beatmap.Events.Bloom
+            .Select(bloomKeyframe
+                => new EventKeyframe<BloomData>(bloomKeyframe.Time, bloomKeyframe.Ease, new BloomData
+                {
+                    Intensity = bloomKeyframe.Value.Intensity,
+                    Diffusion = bloomKeyframe.Value.Diffusion,
+                    Color = bloomKeyframe.Value.Color
+                }));
+        events.Bloom.Replace(bloomKeyframes);
+
+        var vignetteKeyframes = beatmap.Events.Vignette
+            .Select(vignetteKeyframe 
+                => new EventKeyframe<VignetteData>(vignetteKeyframe.Time, vignetteKeyframe.Ease, new VignetteData
+                {
+                    Intensity = vignetteKeyframe.Value.Intensity,
+                    Smoothness = vignetteKeyframe.Value.Smoothness,
+                    Rounded = vignetteKeyframe.Value.Rounded,
+                    Roundness = vignetteKeyframe.Value.Roundness,
+                    Color = vignetteKeyframe.Value.Color,
+                    Center = vignetteKeyframe.Value.Center
+                }));
+        events.Vignette.Replace(vignetteKeyframes);
+        
+        var lensDistortionKeyframes = beatmap.Events.LensDistortion
+            .Select(lensDistortionKeyframe 
+                => new EventKeyframe<LensDistortionData>(lensDistortionKeyframe.Time, lensDistortionKeyframe.Ease, new LensDistortionData
+                {
+                    Intensity = lensDistortionKeyframe.Value.Intensity,
+                    Center = lensDistortionKeyframe.Value.Center
+                }));
+        events.LensDistortion.Replace(lensDistortionKeyframes);
+        
+        var grainKeyframes = beatmap.Events.Grain
+            .Select(grainKeyframe 
+                => new EventKeyframe<GrainData>(grainKeyframe.Time, grainKeyframe.Ease, new GrainData
+                {
+                    Intensity = grainKeyframe.Value.Intensity,
+                    Size = grainKeyframe.Value.Size,
+                    Mix = grainKeyframe.Value.Mix,
+                    Colored = grainKeyframe.Value.Colored
+                }));
+        events.Grain.Replace(grainKeyframes);
+        
+        var gradientKeyframes = beatmap.Events.Gradient
+            .Select(gradientKeyframe 
+                => new EventKeyframe<GradientData>(gradientKeyframe.Time, gradientKeyframe.Ease, new GradientData
+                {
+                    Intensity = gradientKeyframe.Value.Intensity,
+                    Rotation = gradientKeyframe.Value.Rotation,
+                    ColorA = gradientKeyframe.Value.ColorA,
+                    ColorB = gradientKeyframe.Value.ColorB,
+                    Mode = gradientKeyframe.Value.Mode
+                }));
+        events.Gradient.Replace(gradientKeyframes);
+        
+        var glitchKeyframes = beatmap.Events.Glitch
+            .Select(glitchKeyframe 
+                => new EventKeyframe<GlitchData>(glitchKeyframe.Time, glitchKeyframe.Ease, new GlitchData
+                {
+                    Intensity = glitchKeyframe.Value.Intensity,
+                    Speed = glitchKeyframe.Value.Speed,
+                    Width = glitchKeyframe.Value.Width
+                }));
+        events.Glitch.Replace(glitchKeyframes);
+        
+        var hueKeyframes = beatmap.Events.Hue
+            .Select(hueKeyframe 
+                => new EventKeyframe<float>(hueKeyframe.Time, hueKeyframe.Ease, hueKeyframe.Value));
+        events.Hue.Replace(hueKeyframes);
     }
 
     private static void LoadThemeKeyframes(IBeatmap beatmap, KeyframeList<EventKeyframe<string>> eventsTheme)
@@ -165,25 +244,17 @@ public static class BeatmapLoader
             Shape = obj.Shape,
             Text = obj.Text
         };
-        
-        var positionKeyframes = new List<Vector2Keyframe>();
-        foreach (var positionKeyframe in obj.PositionEvents)
-            positionKeyframes.Add(CreateVector2Keyframe(positionKeyframe));
+
+        var positionKeyframes = obj.PositionEvents.Select(CreateVector2Keyframe);
         bmObj.PositionKeyframes.Replace(positionKeyframes);
 
-        var scaleKeyframes = new List<Vector2Keyframe>();
-        foreach (var scaleKeyframe in obj.ScaleEvents)
-            scaleKeyframes.Add(CreateVector2Keyframe(scaleKeyframe));
+        var scaleKeyframes = obj.ScaleEvents.Select(CreateVector2Keyframe);
         bmObj.ScaleKeyframes.Replace(scaleKeyframes);
-        
-        var rotationKeyframes = new List<RotationKeyframe>();
-        foreach (var rotationKeyframe in obj.RotationEvents)
-            rotationKeyframes.Add(CreateRotationKeyframe(rotationKeyframe));
+
+        var rotationKeyframes = obj.RotationEvents.Select(CreateRotationKeyframe);
         bmObj.RotationKeyframes.Replace(rotationKeyframes);
-        
-        var colorKeyframes = new List<BeatmapObjectColorKeyframe>();
-        foreach (var colorKeyframe in obj.ColorEvents)
-            colorKeyframes.Add(CreateColorKeyframe(colorKeyframe));
+
+        var colorKeyframes = obj.ColorEvents.Select(CreateColorKeyframe);
         bmObj.ColorKeyframes.Replace(colorKeyframes);
         
         return bmObj;
