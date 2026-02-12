@@ -138,6 +138,10 @@ public class MainObjectSource(PlaybackObjectContainer playbackObjects) : IDispos
             var parentIndex = playbackObjects.GetIndexForId(beatmapObject.ParentId);
             playbackObjects.SetParent(index, parentIndex);
         }
+        else
+        {
+            playbackObjects.SetParent(index, null);
+        }
         
         // attach events
         beatmapObject.PropertyChanged += OnBeatmapObjectPropertyChanged;
