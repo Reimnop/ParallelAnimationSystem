@@ -267,14 +267,14 @@ public class AppCore
                             "NotoMono SDF",
                             playbackObject.Origin.X switch
                             {
-                                -0.5f => HorizontalAlignment.Left,
-                                0.5f => HorizontalAlignment.Right,
+                                -0.5f => HorizontalAlignment.Right,
+                                0.5f => HorizontalAlignment.Left,
                                 _ => HorizontalAlignment.Center,
                             },
                             playbackObject.Origin.Y switch
                             {
-                                -0.5f => VerticalAlignment.Bottom,
-                                0.5f => VerticalAlignment.Top,
+                                -0.5f => VerticalAlignment.Top,
+                                0.5f => VerticalAlignment.Bottom,
                                 _ => VerticalAlignment.Center,
                             });
                     
