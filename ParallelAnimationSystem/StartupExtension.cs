@@ -58,6 +58,8 @@ public static class StartupExtension
 
             services.AddSingleton<RandomSeedService>();
             services.AddSingleton<TextRenderingService>();
+            services.AddSingleton<MeshService>();
+            services.AddSingleton<BeatmapService>();
         
             // Add ImGui
             services.AddSingleton<ImGuiContext>();

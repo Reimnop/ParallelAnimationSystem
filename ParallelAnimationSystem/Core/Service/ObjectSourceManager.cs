@@ -17,6 +17,9 @@ public class ObjectSourceManager(TextRenderingService textRenderingService, Play
     public void Dispose()
     {
         mainObjectSource.Dispose();
+        
+        foreach (var prefabInstanceObjectSource in prefabInstanceObjectSources.Values)
+            prefabInstanceObjectSource.Dispose();
     }
 
     public void AttachBeatmapData(BeatmapData beatmapData)

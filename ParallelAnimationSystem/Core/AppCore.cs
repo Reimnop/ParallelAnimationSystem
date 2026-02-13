@@ -1,12 +1,8 @@
-using System.Diagnostics;
-using Microsoft.Extensions.Logging;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using Microsoft.Extensions.DependencyInjection;
 using Pamx.Common;
 using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core.Data;
-using ParallelAnimationSystem.Core.Model;
 using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Mathematics;
@@ -15,141 +11,18 @@ using ParallelAnimationSystem.Text;
 
 namespace ParallelAnimationSystem.Core;
 
-public class AppCore
+public class AppCore(
+    AppSettings appSettings,
+    PlaybackObjectContainer playbackObjects,
+    MeshService meshService,
+    BeatmapService beatmapService,
+    IRenderingFactory renderingFactory)
 {
-    private readonly List<List<IMesh>> meshes = [];
-
-    private readonly AppSettings appSettings;
-    private readonly ResourceLoader loader;
-    private readonly PlaybackObjectContainer playbackObjects;
-    private readonly ObjectSourceManager objectSourceManager;
-    private readonly AnimationPipeline animationPipeline;
-    private readonly EventManager eventManager;
-    private readonly ThemeManager themeManager;
-    private readonly IRenderingFactory renderingFactory;
-    private readonly ILogger<AppCore> logger;
-
-    private readonly BeatmapFormat beatmapFormat;
-    
     private readonly ConditionalWeakTable<ShapedRichText, IText> loadedTexts = [];
-    
-    public AppCore(
-        IServiceProvider sp,
-        AppSettings appSettings,
-        ResourceLoader loader,
-        IMediaProvider mediaProvider,
-        PlaybackObjectContainer playbackObjects,
-        ObjectSourceManager objectSourceManager,
-        AnimationPipeline animationPipeline,
-        EventManager eventManager,
-        ThemeManager themeManager,
-        IRenderingFactory renderingFactory,
-        ILogger<AppCore> logger)
-    {
-        this.appSettings = appSettings;
-        this.loader = loader;
-        this.playbackObjects = playbackObjects;
-        this.objectSourceManager = objectSourceManager;
-        this.animationPipeline = animationPipeline;
-        this.eventManager = eventManager;
-        this.themeManager = themeManager;
-        this.renderingFactory = renderingFactory;
-        this.logger = logger;
 
-        #region Mesh Loading
-
-        {
-            meshes.Add([
-                renderingFactory.CreateMesh(PaAssets.SquareFilledVertices, PaAssets.SquareFilledIndices),
-                renderingFactory.CreateMesh(PaAssets.SquareOutlineVertices, PaAssets.SquareOutlineIndices),
-                renderingFactory.CreateMesh(PaAssets.SquareOutlineThinVertices, PaAssets.SquareOutlineThinIndices),
-            ]);
-
-            meshes.Add([
-                renderingFactory.CreateMesh(PaAssets.CircleFilledVertices, PaAssets.CircleFilledIndices),
-                renderingFactory.CreateMesh(PaAssets.CircleOutlineVertices, PaAssets.CircleOutlineIndices),
-                renderingFactory.CreateMesh(PaAssets.CircleHalfVertices, PaAssets.CircleHalfIndices),
-                renderingFactory.CreateMesh(PaAssets.CircleHalfOutlineVertices, PaAssets.CircleHalfOutlineIndices),
-                renderingFactory.CreateMesh(PaAssets.CircleOutlineThinVertices, PaAssets.CircleOutlineThinIndices),
-                renderingFactory.CreateMesh(PaAssets.CircleQuarterVertices, PaAssets.CircleQuarterIndices),
-                renderingFactory.CreateMesh(PaAssets.CircleQuarterOutlineVertices, PaAssets.CircleQuarterOutlineIndices),
-                renderingFactory.CreateMesh(PaAssets.CircleHalfQuarterVertices, PaAssets.CircleHalfQuarterIndices),
-                renderingFactory.CreateMesh(PaAssets.CircleHalfQuarterOutlineVertices, PaAssets.CircleHalfQuarterOutlineIndices),
-            ]);
-
-            meshes.Add([
-                renderingFactory.CreateMesh(PaAssets.TriangleFilledVertices, PaAssets.TriangleFilledIndices),
-                renderingFactory.CreateMesh(PaAssets.TriangleOutlineVertices, PaAssets.TriangleOutlineIndices),
-                renderingFactory.CreateMesh(PaAssets.TriangleRightFilledVertices, PaAssets.TriangleRightFilledIndices),
-                renderingFactory.CreateMesh(PaAssets.TriangleRightOutlineVertices, PaAssets.TriangleRightOutlineIndices),
-            ]);
-
-            meshes.Add([
-                renderingFactory.CreateMesh(PaAssets.ArrowVertices, PaAssets.ArrowIndices),
-                renderingFactory.CreateMesh(PaAssets.ArrowHeadVertices, PaAssets.ArrowHeadIndices),
-            ]);
-
-            meshes.Add([]);
-
-            meshes.Add([
-                renderingFactory.CreateMesh(PaAssets.HexagonFilledVertices, PaAssets.HexagonFilledIndices),
-                renderingFactory.CreateMesh(PaAssets.HexagonOutlineVertices, PaAssets.HexagonOutlineIndices),
-                renderingFactory.CreateMesh(PaAssets.HexagonOutlineThinVertices, PaAssets.HexagonOutlineThinIndices),
-                renderingFactory.CreateMesh(PaAssets.HexagonHalfVertices, PaAssets.HexagonHalfIndices),
-                renderingFactory.CreateMesh(PaAssets.HexagonHalfOutlineVertices, PaAssets.HexagonHalfOutlineIndices),
-                renderingFactory.CreateMesh(PaAssets.HexagonHalfOutlineThinVertices, PaAssets.HexagonHalfOutlineThinIndices),
-            ]);
-        }
-
-        #endregion
-
-        #region Font Loading
-
-        {
-            
-        }
-
-        #endregion
-        
-        // Load beatmap
-        var sw = Stopwatch.StartNew();
-        
-        logger.LogInformation("Loading beatmap");
-        var beatmap = mediaProvider.LoadBeatmap(out beatmapFormat);
-        
-        logger.LogInformation("Using beatmap format '{LevelFormat}'", beatmapFormat);
-        
-        // Migrate the beatmap to the latest version of the beatmap format
-        logger.LogInformation("Migrating beatmap");
-        switch (beatmapFormat) 
-        {
-            case BeatmapFormat.Lsb:
-                sp.GetRequiredService<LsMigration>().MigrateBeatmap(beatmap);
-                break;
-            case BeatmapFormat.Vgd:
-                sp.GetRequiredService<VgMigration>().MigrateBeatmap(beatmap);
-                break;
-        }
-        
-        // Load beatmap
-        var beatmapData = BeatmapLoader.Load(beatmap);
-        
-        objectSourceManager.AttachBeatmapData(beatmapData);
-        eventManager.AttachBeatmapData(beatmapData);
-        themeManager.AttachBeatmapData(beatmapData);
-        
-        sw.Stop();
-        
-        // Print statistics
-        logger.LogInformation("Beatmap loaded in {ElapsedMilliseconds}ms ({ObjectCount} objects)", sw.ElapsedMilliseconds, playbackObjects.Count);
-    }
-    
     public void ProcessFrame(float time, IDrawList drawList)
     {
-        // Update stuff
-        var tcs = themeManager.ComputeThemeAt(time);
-        var eventState = eventManager.ComputeEventAt(time, tcs);
-        var drawItems = animationPipeline.ComputeDrawItems(time, tcs);
+        beatmapService.ProcessBeatmap(time, out var themeColorState, out var eventState, out var drawItems);
         
         // Calculate shake vector
         const float shakeMagic1 = 123.97f;
@@ -165,7 +38,7 @@ public class AppCore
         // Start queuing draw commands
         drawList.Clear();
 
-        drawList.ClearColor = new ColorRgba(tcs.Background.R, tcs.Background.G, tcs.Background.B, 1.0f);
+        drawList.ClearColor = new ColorRgba(themeColorState.Background);
         drawList.CameraData = new CameraData(
             eventState.CameraPosition + shakeVector,
             eventState.CameraScale,
@@ -176,8 +49,8 @@ public class AppCore
             drawList.PostProcessingData = new PostProcessingData(
                 Time: time, 
                 ChromaticAberration: CreateChromaticAberrationData(eventState.Chroma), 
-                LegacyBloom: CreateLegacyBloomData(eventState.Bloom.Intensity, beatmapFormat == BeatmapFormat.Lsb), 
-                UniversalBloom: CreateUniversalBloomData(eventState.Bloom.Intensity, eventState.Bloom.Diffusion, beatmapFormat == BeatmapFormat.Vgd), 
+                LegacyBloom: CreateLegacyBloomData(eventState.Bloom.Intensity, beatmapService.BeatmapFormat == BeatmapFormat.Lsb), 
+                UniversalBloom: CreateUniversalBloomData(eventState.Bloom.Intensity, eventState.Bloom.Diffusion, beatmapService.BeatmapFormat == BeatmapFormat.Vgd), 
                 Vignette: CreateVignetteData(
                     eventState.Vignette.Center,
                     eventState.Vignette.Intensity,
@@ -211,26 +84,20 @@ public class AppCore
             if (playbackObject.Shape != ObjectShape.Text)
             {
                 playbackObject.Shape.ToSeparate(out var shapeIndex, out var shapeOptionIndex);
-                
-                if (shapeIndex >= 0 && shapeIndex < meshes.Count)
+
+                if (meshService.TryGetMeshForShape(shapeIndex, shapeOptionIndex, out var mesh))
                 {
-                    var meshOptionList = meshes[shapeIndex];
+                    var renderMode = playbackObject.RenderMode;
 
-                    if (shapeOptionIndex >= 0 && shapeOptionIndex < meshOptionList.Count)
-                    {
-                        var mesh = meshOptionList[shapeOptionIndex];
-                        var renderMode = playbackObject.RenderMode;
-
-                        var color1 = drawItem.Color1;
-                        var color2 = drawItem.Color2;
+                    var color1 = drawItem.Color1;
+                    var color2 = drawItem.Color2;
                         
-                        var color1Rgba = new ColorRgba(color1, drawItem.Opacity);
-                        var color2Rgba = color1 == color2 
-                            ? new ColorRgba(color2, 0.0f)
-                            : new ColorRgba(color2, drawItem.Opacity);
+                    var color1Rgba = new ColorRgba(color1, drawItem.Opacity);
+                    var color2Rgba = color1 == color2 
+                        ? new ColorRgba(color2, 0.0f)
+                        : new ColorRgba(color2, drawItem.Opacity);
             
-                        drawList.AddMesh(mesh, transform, color1Rgba, color2Rgba, renderMode);
-                    }
+                    drawList.AddMesh(mesh, transform, color1Rgba, color2Rgba, renderMode);
                 }
             }
             else if (appSettings.EnableTextRendering)

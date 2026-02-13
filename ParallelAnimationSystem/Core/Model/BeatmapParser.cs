@@ -6,21 +6,21 @@ using ParallelAnimationSystem.Core.Data;
 
 namespace ParallelAnimationSystem.Core.Model;
 
-public static class BeatmapLoader
+public static class BeatmapParser
 {
-    public static BeatmapData Load(IBeatmap beatmap)
+    public static BeatmapData Parse(IBeatmap beatmap)
     {
         var beatmapData = new BeatmapData();
-        LoadObjects(beatmap, beatmapData.Objects);
-        LoadPrefabInstances(beatmap, beatmapData.PrefabInstances);
-        LoadPrefabs(beatmap, beatmapData.Prefabs);
-        LoadEvents(beatmap, beatmapData.Events);
-        LoadThemes(beatmap, beatmapData.Themes);
-        LoadThemeKeyframes(beatmap, beatmapData.Events.Theme);
+        ParseObjects(beatmap, beatmapData.Objects);
+        ParsePrefabInstances(beatmap, beatmapData.PrefabInstances);
+        ParsePrefabs(beatmap, beatmapData.Prefabs);
+        ParseEvents(beatmap, beatmapData.Events);
+        ParseThemes(beatmap, beatmapData.Themes);
+        ParseThemeKeyframes(beatmap, beatmapData.Events.Theme);
         return beatmapData;
     }
 
-    private static void LoadPrefabInstances(IBeatmap beatmap, IdContainer<BeatmapPrefabInstance> beatmapDataPrefabInstances)
+    private static void ParsePrefabInstances(IBeatmap beatmap, IdContainer<BeatmapPrefabInstance> beatmapDataPrefabInstances)
     {
         foreach (var prefabObject in beatmap.PrefabObjects)
         {
@@ -39,7 +39,7 @@ public static class BeatmapLoader
         }
     }
 
-    private static void LoadPrefabs(IBeatmap beatmap, IdContainer<BeatmapPrefab> beatmapDataPrefabs)
+    private static void ParsePrefabs(IBeatmap beatmap, IdContainer<BeatmapPrefab> beatmapDataPrefabs)
     {
         foreach (var prefab in beatmap.Prefabs)
         {
@@ -58,7 +58,7 @@ public static class BeatmapLoader
         }
     }
 
-    private static void LoadEvents(IBeatmap beatmap, BeatmapEventList events)
+    private static void ParseEvents(IBeatmap beatmap, BeatmapEventList events)
     {
         var cameraPositionKeyframes = beatmap.Events.Movement
             .Select(positionKeyframe 
@@ -155,7 +155,7 @@ public static class BeatmapLoader
         events.Hue.Replace(hueKeyframes);
     }
 
-    private static void LoadThemeKeyframes(IBeatmap beatmap, KeyframeList<EventKeyframe<string>> eventsTheme)
+    private static void ParseThemeKeyframes(IBeatmap beatmap, KeyframeList<EventKeyframe<string>> eventsTheme)
     {
         var themeKeyframes = new List<EventKeyframe<string>>();
         foreach (var themeKeyframe in beatmap.Events.Theme)
@@ -173,7 +173,7 @@ public static class BeatmapLoader
         eventsTheme.Replace(themeKeyframes);
     }
 
-    private static void LoadThemes(IBeatmap beatmap, IdContainer<BeatmapTheme> beatmapThemes)
+    private static void ParseThemes(IBeatmap beatmap, IdContainer<BeatmapTheme> beatmapThemes)
     {
         foreach (var theme in beatmap.Themes)
         {
@@ -209,7 +209,7 @@ public static class BeatmapLoader
         }
     }
 
-    private static void LoadObjects(IBeatmap beatmap, IdContainer<BeatmapObject> beatmapObjects)
+    private static void ParseObjects(IBeatmap beatmap, IdContainer<BeatmapObject> beatmapObjects)
     {
         foreach (var obj in beatmap.Objects)
             beatmapObjects.Insert(CreateBeatmapObject(obj));
