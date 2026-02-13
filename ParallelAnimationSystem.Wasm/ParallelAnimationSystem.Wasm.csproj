@@ -13,6 +13,7 @@
     <SelfContained>true</SelfContained>
     <MSBuildEnableWorkloadResolver>false</MSBuildEnableWorkloadResolver>
     <WasmEnableSIMD>true</WasmEnableSIMD>
+    <DebugType>none</DebugType>
     
     <EmccFlags>-sEXPORT_ES6 -sMODULARIZE -sMIN_WEBGL_VERSION=2 -lGL -sEXPORTED_RUNTIME_METHODS='["stringToNewUTF8"]' -sEXPORTED_FUNCTIONS='["_malloc","_free","_initialize","_processFrame","_dispose"]' --emit-tsd ParallelAnimationSystem.Wasm.d.ts</EmccFlags>
   </PropertyGroup>
