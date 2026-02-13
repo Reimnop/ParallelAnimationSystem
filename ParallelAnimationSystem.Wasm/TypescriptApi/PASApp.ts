@@ -1,8 +1,8 @@
 import { PASWasmModule } from "./PASModule";
 
 export class PASApp {
-  private module: PASWasmModule;
-  private ptr: number;
+  private readonly module: PASWasmModule;
+  private readonly ptr: number;
 
   public constructor(module: PASWasmModule, ptr: number) {
     this.module = module;

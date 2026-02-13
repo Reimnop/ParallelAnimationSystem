@@ -7,7 +7,7 @@ export type PASWasmModule = MainModule & {
 };
 
 export class PASModule {
-  private instance: PASWasmModule;
+  private readonly instance: PASWasmModule;
   
   public constructor(instance: PASWasmModule, canvas: HTMLCanvasElement) {
     this.instance = instance;
