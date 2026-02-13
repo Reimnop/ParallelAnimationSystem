@@ -13,8 +13,7 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <PublishTrimmed>true</PublishTrimmed>
     
-    <!-- CoreCLR explodes on Android -->
-    <UseMonoRuntime>true</UseMonoRuntime>
+    <UseMonoRuntime>false</UseMonoRuntime>
   </PropertyGroup>
   
   <ItemGroup>
