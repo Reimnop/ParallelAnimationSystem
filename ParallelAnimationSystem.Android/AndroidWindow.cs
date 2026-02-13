@@ -80,7 +80,7 @@ public class AndroidWindow : IOpenGLWindow, IDisposable
         if (aNativeWindowPtr == IntPtr.Zero)
             throw new Exception("Failed to get ANativeWindow pointer from surface");
         
-        eglSurface = Egl.CreateWindowSurface(eglSurface, config, aNativeWindowPtr, IntPtr.Zero);
+        eglSurface = Egl.CreateWindowSurface(eglDisplay, config, aNativeWindowPtr, IntPtr.Zero);
         if (eglSurface == IntPtr.Zero)
             throw new Exception("Failed to create EGL window surface");
     }
