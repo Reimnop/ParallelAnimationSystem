@@ -82,7 +82,10 @@ public static class InteropMain
     [UnmanagedCallersOnly(EntryPoint = "main_getAppPointer")]
     public static IntPtr GetAppPointer()
     {
-        return (IntPtr) GCHandle.Alloc(app);
+        if (app is null)
+            return IntPtr.Zero;
+        
+        return (IntPtr)GCHandle.Alloc(app);
     }
 
     [UnmanagedCallersOnly(EntryPoint = "main_releaseAppPointer")]

@@ -49,5 +49,10 @@
   <ItemGroup>
     <None Include="exports.txt" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Remove="TypescriptApi/**/*" />
+    <None Include="TypescriptApi/**/*" />
+  </ItemGroup>
 
 </Project>
