@@ -1,6 +1,7 @@
 ﻿import { MainModule } from "./ParallelAnimationSystem.Wasm";
 import { PASApp } from "./PASApp";
 import { PASBeatmapFormat } from "./PASBeatmapFormat";
+import {NativeObject} from "./NativeObject";
 
 export type PASWasmModule = MainModule & {
   canvas?: HTMLCanvasElement;
@@ -31,8 +32,13 @@ export class PASModule {
 
   getApp(): PASApp | null {
     const ptr = this.instance._main_getAppPointer();
-    if (ptr === 0)
+    if (ptr === 0) {
       return null;
-    return new PASApp(this.instance, ptr);
+    }
+    return new PASApp(ptr, this.instance);
+  }
+  
+  release(obj: NativeObject) {
+    this.instance._interop_releasePointer(obj.ptr);
   }
 }

@@ -84,14 +84,7 @@ public static class InteropMain
     {
         if (app is null)
             return IntPtr.Zero;
-        
-        return (IntPtr)GCHandle.Alloc(app);
-    }
 
-    [UnmanagedCallersOnly(EntryPoint = "main_releaseAppPointer")]
-    public static void ReleaseAppPointer(IntPtr appPointer)
-    {
-        var handle = GCHandle.FromIntPtr(appPointer);
-        handle.Free();
+        return InteropHelper.ObjectToIntPtr(app);
     }
 }

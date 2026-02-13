@@ -5,11 +5,12 @@ declare namespace RuntimeExports {
 interface WasmModule {
     _free(_0: number): void;
     _malloc(_0: number): number;
-    _main_releaseAppPointer(_0: number): void;
     _main_getAppPointer(): number;
     _main_shutdown(): void;
     _main_start(_0: BigInt, _1: number, _2: number, _3: number, _4: number): void;
+    _interop_releasePointer(_0: number): void;
     _app_processFrame(_0: number, _1: number): void;
+    _app_getBeatmapDataPointer(_0: number): number;
 }
 
 export type MainModule = WasmModule & typeof RuntimeExports;
