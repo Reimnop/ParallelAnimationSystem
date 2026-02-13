@@ -1,3 +1,3 @@
 export interface NativeObject {
-    ptr: number; // ptr to native object
+  ptr: number; // ptr to native object
 }
