@@ -11,6 +11,7 @@ using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering.Data;
 using ParallelAnimationSystem.Text;
+using TmpParser;
 
 namespace ParallelAnimationSystem.Core;
 
@@ -31,6 +32,8 @@ public class AppCore
     private readonly ILogger<AppCore> logger;
 
     private readonly BeatmapFormat beatmapFormat;
+    
+    private readonly Dictionary<string, IText> loadedTexts = [];
     
     public AppCore(
         IServiceProvider sp,
@@ -254,7 +257,35 @@ public class AppCore
             }
             else if (appSettings.EnableTextRendering)
             {
-                // TODO: do text rendering
+                // TODO: make this more efficient by pre-shaping texts
+                if (playbackObject.Text is not null)
+                {
+                    if (!loadedTexts.TryGetValue(playbackObject.Text, out var text))
+                    {
+                        var richText = new RichText(
+                            playbackObject.Text,
+                            "NotoMono SDF",
+                            playbackObject.Origin.X switch
+                            {
+                                -0.5f => HorizontalAlignment.Left,
+                                0.5f => HorizontalAlignment.Right,
+                                _ => HorizontalAlignment.Center,
+                            },
+                            playbackObject.Origin.Y switch
+                            {
+                                -0.5f => VerticalAlignment.Bottom,
+                                0.5f => VerticalAlignment.Top,
+                                _ => VerticalAlignment.Center,
+                            });
+                    
+                        text = renderingFactory.CreateText(richText, fonts);
+                        loadedTexts[playbackObject.Text] = text;
+                    }
+                    
+                    var color1 = drawItem.Color1;
+                    var color1Rgba = new ColorRgba(color1.R, color1.G, color1.B, drawItem.Opacity);
+                    drawList.AddText(text, transform, color1Rgba);
+                }
             }
         }
     }
