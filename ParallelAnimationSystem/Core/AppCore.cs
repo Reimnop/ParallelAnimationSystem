@@ -173,56 +173,48 @@ public class AppCore
         var drawItems = animationPipeline.ComputeDrawItems(time, tcs);
         
         // Calculate shake vector
-        // const float shakeMagic1 = 123.97f;
-        // const float shakeMagic2 = 423.42f;
-        // const float shakeFrequency = 10.0f;
+        const float shakeMagic1 = 123.97f;
+        const float shakeMagic2 = 423.42f;
+        const float shakeFrequency = 10.0f;
         
-        // var shake = runner.Shake;
-        // var shakeVector = new Vector2(
-        //     MathF.Sin(time * MathF.PI * shakeFrequency + shakeMagic1) + MathF.Sin(time * shakeFrequency * 2.0f - shakeMagic1),
-        //     MathF.Sin(time * MathF.PI * shakeFrequency - shakeMagic2) + MathF.Sin(time * shakeFrequency * 2.0f + shakeMagic2));
-        // shakeVector *= shake * 0.5f;
-        //
-        // var backgroundColor = runner.BackgroundColor;
+        var shake = eventState.CameraShake;
+        var shakeVector = new Vector2(
+            MathF.Sin(time * MathF.PI * shakeFrequency + shakeMagic1) + MathF.Sin(time * shakeFrequency * 2.0f - shakeMagic1),
+            MathF.Sin(time * MathF.PI * shakeFrequency - shakeMagic2) + MathF.Sin(time * shakeFrequency * 2.0f + shakeMagic2));
+        shakeVector *= shake * 0.5f;
         
         // Start queuing draw commands
         drawList.Clear();
-        
-        // drawList.ClearColor = new ColorRgba(backgroundColor.R, backgroundColor.G, backgroundColor.B, 1.0f);
-        // drawList.CameraData = new CameraData(
-        //     runner.CameraPosition + shakeVector,
-        //     runner.CameraScale,
-        //     runner.CameraRotation);
 
         drawList.ClearColor = new ColorRgba(tcs.Background.R, tcs.Background.G, tcs.Background.B, 1.0f);
         drawList.CameraData = new CameraData(
-            eventState.CameraPosition,
+            eventState.CameraPosition + shakeVector,
             eventState.CameraScale,
             eventState.CameraRotation);
         
         if (appSettings.EnablePostProcessing)
         {
-            // drawList.PostProcessingData = new PostProcessingData(
-            //     time,
-            //     CreateHueShiftData(runner.Hue),
-            //     CreateLegacyBloomData(runner.Bloom.Intensity, isLegacy: beatmapFormat == BeatmapFormat.Lsb),
-            //     CreateUniversalBloomData(runner.Bloom.Intensity, runner.Bloom.Diffusion, isUniversal: beatmapFormat == BeatmapFormat.Vgd),
-            //     CreateLensDistortionData(runner.LensDistortion.Intensity, runner.LensDistortion.Center),
-            //     CreateChromaticAberrationData(runner.ChromaticAberration),
-            //     CreateVignetteData(
-            //         runner.Vignette.Center,
-            //         runner.Vignette.Intensity,
-            //         runner.Vignette.Rounded,
-            //         runner.Vignette.Roundness,
-            //         runner.Vignette.Smoothness,
-            //         runner.Vignette.Color),
-            //     CreateGradientData(
-            //         runner.Gradient.Color1,
-            //         runner.Gradient.Color2,
-            //         runner.Gradient.Intensity,
-            //         runner.Gradient.Rotation,
-            //         runner.Gradient.Mode),
-            //     CreateGlitchData(runner.Glitch.Intensity, runner.Glitch.Speed, Vector2.Zero));
+            drawList.PostProcessingData = new PostProcessingData(
+                Time: time, 
+                ChromaticAberration: CreateChromaticAberrationData(eventState.Chroma), 
+                LegacyBloom: CreateLegacyBloomData(eventState.Bloom.Intensity, beatmapFormat == BeatmapFormat.Lsb), 
+                UniversalBloom: CreateUniversalBloomData(eventState.Bloom.Intensity, eventState.Bloom.Diffusion, beatmapFormat == BeatmapFormat.Vgd), 
+                Vignette: CreateVignetteData(
+                    eventState.Vignette.Center,
+                    eventState.Vignette.Intensity,
+                    eventState.Vignette.Rounded,
+                    eventState.Vignette.Roundness,
+                    eventState.Vignette.Smoothness,
+                    eventState.Vignette.Color), 
+                Gradient: CreateGradientData(
+                    eventState.Gradient.Color1,
+                    eventState.Gradient.Color2,
+                    eventState.Gradient.Intensity,
+                    eventState.Gradient.Rotation,
+                    eventState.Gradient.Mode), 
+                HueShift: CreateHueShiftData(eventState.Hue), 
+                LensDistortion: CreateLensDistortionData(eventState.LensDistortion.Intensity, eventState.LensDistortion.Center), 
+                Glitch: CreateGlitchData(eventState.Glitch.Intensity, eventState.Glitch.Speed, eventState.Glitch.Width));
         }
         else
         {
@@ -269,49 +261,49 @@ public class AppCore
         }
     }
     
-    protected virtual HueShiftPostProcessingData CreateHueShiftData(float hue)
+    private static HueShiftPostProcessingData CreateHueShiftData(float hue)
     {
         return new HueShiftPostProcessingData(hue);
     }
     
-    protected virtual BloomPostProcessingData CreateLegacyBloomData(float intensity, bool isLegacy)
+    private static BloomPostProcessingData CreateLegacyBloomData(float intensity, bool enabled)
     {
-        if (!isLegacy)
+        if (!enabled)
             return new BloomPostProcessingData(0f, 0f);
         
         return new BloomPostProcessingData(intensity, 7f);
     }
     
-    protected virtual BloomPostProcessingData CreateUniversalBloomData(float intensity, float diffusion, bool isUniversal)
+    private static BloomPostProcessingData CreateUniversalBloomData(float intensity, float diffusion, bool enabled)
     {
-        if (!isUniversal)
+        if (!enabled)
             return new BloomPostProcessingData(0f, 0f);
         
         diffusion = MathUtil.MapRange(diffusion, 5f, 30f, 0f, 1f);
         return new BloomPostProcessingData(intensity, diffusion);
     }
     
-    protected virtual LensDistortionPostProcessingData CreateLensDistortionData(float intensity, Vector2 center)
+    private static LensDistortionPostProcessingData CreateLensDistortionData(float intensity, Vector2 center)
     {
         return new LensDistortionPostProcessingData(intensity, center);
     }
     
-    protected virtual ChromaticAberrationPostProcessingData CreateChromaticAberrationData(float intensity)
+    private static ChromaticAberrationPostProcessingData CreateChromaticAberrationData(float intensity)
     {
         return new ChromaticAberrationPostProcessingData(intensity);
     }
     
-    protected virtual VignettePostProcessingData CreateVignetteData(Vector2 center, float intensity, bool rounded, float roundness, float smoothness, Vector3 color)
+    private static VignettePostProcessingData CreateVignetteData(Vector2 center, float intensity, bool rounded, float roundness, float smoothness, Vector3 color)
     {
         return new VignettePostProcessingData(center, intensity, rounded, roundness, smoothness, color);
     }
     
-    protected virtual GradientPostProcessingData CreateGradientData(Vector3 color1, Vector3 color2, float intensity, float rotation, GradientOverlayMode mode)
+    private static GradientPostProcessingData CreateGradientData(Vector3 color1, Vector3 color2, float intensity, float rotation, GradientOverlayMode mode)
     {
         return new GradientPostProcessingData(color1, color2, intensity, rotation, mode);
     }
     
-    protected virtual GlitchPostProcessingData CreateGlitchData(float intensity, float speed, Vector2 size)
+    private static GlitchPostProcessingData CreateGlitchData(float intensity, float speed, float width)
     {
         return new GlitchPostProcessingData(0.0f, 0.0f, Vector2.One);
     }
