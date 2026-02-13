@@ -1,4 +1,4 @@
-﻿import { PASWasmModule } from "./PASModule";
+import { PASWasmModule } from "./PASModule";
 import { NativeObject } from "./NativeObject";
 
 export class PASBeatmapData implements NativeObject {

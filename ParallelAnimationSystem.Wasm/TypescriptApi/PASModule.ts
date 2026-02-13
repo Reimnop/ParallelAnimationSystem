@@ -1,4 +1,4 @@
-﻿import { MainModule } from "./ParallelAnimationSystem.Wasm";
+import { MainModule } from "./ParallelAnimationSystem.Wasm";
 import { PASApp } from "./PASApp";
 import { PASBeatmapFormat } from "./PASBeatmapFormat";
 import {NativeObject} from "./NativeObject";
@@ -17,13 +17,16 @@ export class PASModule {
 
   start(seed: BigInt, enablePostProcessing: boolean, enableTextRendering: boolean, beatmapData: string, beatmapFormat: PASBeatmapFormat): void {
     const beatmapDataPtr = this.instance.stringToNewUTF8(beatmapData) as number;
-    this.instance._main_start(
-      seed,
-      enablePostProcessing ? 1 : 0,
-      enableTextRendering ? 1 : 0,
-      beatmapDataPtr,
-      beatmapFormat);
-    this.instance._free(beatmapDataPtr);
+    try {
+      this.instance._main_start(
+          seed,
+          enablePostProcessing ? 1 : 0,
+          enableTextRendering ? 1 : 0,
+          beatmapDataPtr,
+          beatmapFormat);
+    } finally {
+      this.instance._free(beatmapDataPtr);
+    }
   }
 
   shutdown(): void {
