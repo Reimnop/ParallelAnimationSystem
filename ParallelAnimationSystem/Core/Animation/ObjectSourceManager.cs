@@ -6,9 +6,9 @@ using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core.Animation;
 
-public class ObjectSourceManager(PlaybackObjectContainer playbackObjects) : IDisposable
+public class ObjectSourceManager(PlaybackObjectContainer playbackObjects, RandomSeedProvider seedProvider) : IDisposable
 {
-    private readonly MainObjectSource mainObjectSource = new(playbackObjects);
+    private readonly MainObjectSource mainObjectSource = new(playbackObjects, seedProvider);
     private readonly Dictionary<string, PrefabInstanceObjectSource> prefabInstanceObjectSources = [];
     private readonly Dictionary<string, HashSet<string>> instanceIdsByPrefabId = [];
 
@@ -32,7 +32,7 @@ public class ObjectSourceManager(PlaybackObjectContainer playbackObjects) : IDis
         // initialize prefab instance object sources
         foreach (var (_, instance) in beatmapData.PrefabInstances)
         {
-            var prefabInstanceObjectSource = new PrefabInstanceObjectSource(instance.Id, playbackObjects)
+            var prefabInstanceObjectSource = new PrefabInstanceObjectSource(instance.Id, playbackObjects, seedProvider)
             {
                 StartTime = instance.StartTime,
                 Position = instance.Position,
@@ -89,7 +89,7 @@ public class ObjectSourceManager(PlaybackObjectContainer playbackObjects) : IDis
 
     private void OnPrefabInstanceInserted(object? sender, BeatmapPrefabInstance e)
     {
-        var prefabInstanceObjectSource = new PrefabInstanceObjectSource(e.Id, playbackObjects)
+        var prefabInstanceObjectSource = new PrefabInstanceObjectSource(e.Id, playbackObjects, seedProvider)
         {
             StartTime = e.StartTime,
             Position = e.Position,

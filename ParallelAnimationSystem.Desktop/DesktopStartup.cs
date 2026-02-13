@@ -4,6 +4,7 @@ using ParallelAnimationSystem.DebugUI;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering.OpenGL;
 using ParallelAnimationSystem.Rendering.OpenGLES;
+using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Desktop;
 
@@ -17,7 +18,7 @@ public static class DesktopStartup
         bool vsync,
         bool useEgl,
         int workerCount,
-        long seed,
+        ulong? seed,
         RenderingBackend backend,
         bool lockAspectRatio,
         bool enablePostProcessing,
@@ -27,9 +28,7 @@ public static class DesktopStartup
         var appSettings = new AppSettings
         {
             WorkerCount = workerCount,
-            Seed = seed < 0
-                ? (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds()
-                : (ulong) seed,
+            Seed = seed ?? NumberUtil.SplitMix64((ulong) DateTimeOffset.Now.ToUnixTimeSeconds()),
             AspectRatio = lockAspectRatio ? 16.0f / 9.0f : null,
             EnablePostProcessing = enablePostProcessing,
             EnableTextRendering = enableTextRendering,

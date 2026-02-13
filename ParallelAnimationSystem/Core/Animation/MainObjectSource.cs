@@ -7,13 +7,24 @@ using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core.Animation;
 
-public class MainObjectSource(PlaybackObjectContainer playbackObjects) : IDisposable
+public class MainObjectSource : IDisposable
 {
     private const ulong PositionKey = 0;
     private const ulong ScaleKey = 1;
     private const ulong RotationKey = 2;
 
     private BeatmapData? attachedBeatmapData;
+
+    private readonly PlaybackObjectContainer playbackObjects;
+    private readonly RandomSeedProvider seedProvider;
+
+    public MainObjectSource(PlaybackObjectContainer playbackObjects, RandomSeedProvider seedProvider)
+    {
+        this.playbackObjects = playbackObjects;
+        this.seedProvider = seedProvider;
+        
+        this.seedProvider.SeedChanged += OnSeedChanged;
+    }
     
     public void Dispose()
     {
@@ -39,8 +50,36 @@ public class MainObjectSource(PlaybackObjectContainer playbackObjects) : IDispos
         // detach events
         attachedBeatmapData.Objects.Inserted -= OnBeatmapObjectInserted;
         attachedBeatmapData.Objects.Removed -= OnBeatmapObjectRemoved;
+        
+        seedProvider.SeedChanged -= OnSeedChanged;
     }
     
+    private void OnSeedChanged(object? sender, ulong e)
+    {
+        if (attachedBeatmapData is null)
+            return;
+        
+        // update all playback objects' sequences
+        foreach (var (id, beatmapObject) in attachedBeatmapData.Objects)
+        {
+            var playbackObjectId = (Identifier)id;
+            var playbackObjectIndex = playbackObjects.GetIndexForId(playbackObjectId);
+            if (!playbackObjects.TryGetItem(playbackObjectIndex, out var playbackObject))
+                continue;
+            
+            var seed = NumberUtil.Mix(e, playbackObject.Id);
+            
+            playbackObject.PositionSequence.LoadKeyframes(KeyframeHelper.ResolveRandomizableVector2Keyframes(
+                beatmapObject.PositionKeyframes, NumberUtil.Mix(seed, PositionKey)));
+            
+            playbackObject.ScaleSequence.LoadKeyframes(KeyframeHelper.ResolveRandomizableVector2Keyframes(
+                beatmapObject.ScaleKeyframes, NumberUtil.Mix(seed, ScaleKey)));
+            
+            playbackObject.RotationSequence.LoadKeyframes(KeyframeHelper.ResolveRotationKeyframes(
+                beatmapObject.RotationKeyframes, NumberUtil.Mix(seed, RotationKey)));
+        }
+    }
+
     public void AttachBeatmapData(BeatmapData beatmapData)
     {
         if (attachedBeatmapData is not null)
@@ -118,14 +157,15 @@ public class MainObjectSource(PlaybackObjectContainer playbackObjects) : IDispos
         };
         
         // populate sequences
+        var seed = NumberUtil.Mix(seedProvider.Seed, playbackObject.Id);
         playbackObject.PositionSequence.LoadKeyframes(KeyframeHelper.ResolveRandomizableVector2Keyframes(
-            beatmapObject.PositionKeyframes, NumberUtil.Mix(playbackObject.Id, PositionKey)));
+            beatmapObject.PositionKeyframes, NumberUtil.Mix(seed, PositionKey)));
         
         playbackObject.ScaleSequence.LoadKeyframes(KeyframeHelper.ResolveRandomizableVector2Keyframes(
-            beatmapObject.ScaleKeyframes, NumberUtil.Mix(playbackObject.Id, ScaleKey)));
+            beatmapObject.ScaleKeyframes, NumberUtil.Mix(seed, ScaleKey)));
         
         playbackObject.RotationSequence.LoadKeyframes(KeyframeHelper.ResolveRotationKeyframes(
-            beatmapObject.RotationKeyframes, NumberUtil.Mix(playbackObject.Id, RotationKey)));
+            beatmapObject.RotationKeyframes, NumberUtil.Mix(seed, RotationKey)));
         
         playbackObject.ColorSequence.LoadKeyframes(PlaybackObjectHelper.ResolveColorKeyframes(beatmapObject.ColorKeyframes));
         
@@ -237,8 +277,9 @@ public class MainObjectSource(PlaybackObjectContainer playbackObjects) : IDispos
         if (!TryGetPlaybackObject(beatmapObject, out var playbackObject, out _))
             return;
         
-        playbackObject.PositionSequence.LoadKeyframes(KeyframeHelper.ResolveRandomizableVector2Keyframes(
-            e, NumberUtil.Mix(playbackObject.Id, PositionKey)));
+        var seed = NumberUtil.Mix(seedProvider.Seed, playbackObject.Id);
+        playbackObject.PositionSequence.LoadKeyframes(
+            KeyframeHelper.ResolveRandomizableVector2Keyframes(e, NumberUtil.Mix(seed, PositionKey)));
         
         // recalculate end time
         playbackObject.EndTime = PlaybackObjectHelper.CalculateEndTime(
@@ -256,8 +297,9 @@ public class MainObjectSource(PlaybackObjectContainer playbackObjects) : IDispos
         if (!TryGetPlaybackObject(beatmapObject, out var playbackObject, out _))
             return;
         
-        playbackObject.ScaleSequence.LoadKeyframes(KeyframeHelper.ResolveRandomizableVector2Keyframes(
-            e, NumberUtil.Mix(playbackObject.Id, ScaleKey)));
+        var seed = NumberUtil.Mix(seedProvider.Seed, playbackObject.Id);
+        playbackObject.ScaleSequence.LoadKeyframes(
+            KeyframeHelper.ResolveRandomizableVector2Keyframes(e, NumberUtil.Mix(seed, ScaleKey)));
         
         // recalculate end time
         playbackObject.EndTime = PlaybackObjectHelper.CalculateEndTime(
@@ -275,8 +317,9 @@ public class MainObjectSource(PlaybackObjectContainer playbackObjects) : IDispos
         if (!TryGetPlaybackObject(beatmapObject, out var playbackObject, out _))
             return;
         
-        playbackObject.RotationSequence.LoadKeyframes(KeyframeHelper.ResolveRotationKeyframes(
-            e, NumberUtil.Mix(playbackObject.Id, RotationKey)));
+        var seed = NumberUtil.Mix(seedProvider.Seed, playbackObject.Id);
+        playbackObject.RotationSequence.LoadKeyframes(
+            KeyframeHelper.ResolveRotationKeyframes(e, NumberUtil.Mix(seed, RotationKey)));
         
         // recalculate end time
         playbackObject.EndTime = PlaybackObjectHelper.CalculateEndTime(

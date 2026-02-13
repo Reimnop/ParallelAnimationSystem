@@ -8,6 +8,7 @@ using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.OpenGLES;
+using ParallelAnimationSystem.Util;
 using ParallelAnimationSystem.Windowing;
 using Activity = Android.App.Activity;
 using Uri = Android.Net.Uri;
@@ -48,7 +49,7 @@ public class PasActivity : Activity
         var appSettings = new AppSettings
         {
             WorkerCount = 6,
-            Seed = (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds(),
+            Seed = NumberUtil.SplitMix64((ulong) DateTimeOffset.Now.ToUnixTimeSeconds()),
             AspectRatio = lockAspectRatio ? 16.0f / 9.0f : null,
             EnablePostProcessing = enablePostProcessing,
             EnableTextRendering = enableTextRendering,

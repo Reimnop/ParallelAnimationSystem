@@ -142,8 +142,6 @@ public class AppCore
                 break;
         }
         
-        logger.LogInformation("Using seed '{Seed}'", appSettings.Seed);
-        
         // Load beatmap
         var beatmapData = BeatmapLoader.Load(beatmap);
         
