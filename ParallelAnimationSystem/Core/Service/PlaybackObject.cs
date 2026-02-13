@@ -6,7 +6,7 @@ using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Rendering.Data;
 using ParallelAnimationSystem.Text;
 
-namespace ParallelAnimationSystem.Core.Animation;
+namespace ParallelAnimationSystem.Core.Service;
 
 public class PlaybackObject(Identifier id) : IIdentifiable, INotifyPropertyChanged
 {

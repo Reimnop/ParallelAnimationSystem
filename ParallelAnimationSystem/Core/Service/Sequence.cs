@@ -1,4 +1,4 @@
-namespace ParallelAnimationSystem.Core.Animation;
+namespace ParallelAnimationSystem.Core.Service;
 
 public class Sequence<T>(Interpolator<T> interpolator, Func<T> defaultValueProvider)
 {

@@ -1,6 +1,6 @@
 using Pamx.Common.Enum;
 
-namespace ParallelAnimationSystem.Core.Animation;
+namespace ParallelAnimationSystem.Core.Service;
 
 public delegate float EaseFunction(float t);
 

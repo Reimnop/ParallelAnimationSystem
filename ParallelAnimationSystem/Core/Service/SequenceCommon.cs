@@ -1,7 +1,7 @@
 ﻿using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Util;
 
-namespace ParallelAnimationSystem.Core.Animation;
+namespace ParallelAnimationSystem.Core.Service;
 
 public static class SequenceCommon
 {

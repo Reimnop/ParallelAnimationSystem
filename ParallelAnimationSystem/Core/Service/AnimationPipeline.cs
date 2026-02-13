@@ -5,7 +5,7 @@ using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Mathematics;
 
-namespace ParallelAnimationSystem.Core.Animation;
+namespace ParallelAnimationSystem.Core.Service;
 
 public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playbackObjects)
 {

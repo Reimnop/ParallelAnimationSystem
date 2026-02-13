@@ -1,6 +1,6 @@
 ﻿using ParallelAnimationSystem.Core.Data;
 
-namespace ParallelAnimationSystem.Core.Animation;
+namespace ParallelAnimationSystem.Core.Service;
 
 // catering to THEMES *specifically* because they're
 // such a needy little bitch...

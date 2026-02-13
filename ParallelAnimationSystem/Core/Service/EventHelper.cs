@@ -3,7 +3,7 @@ using Pamx.Common.Data;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Mathematics;
 
-namespace ParallelAnimationSystem.Core.Animation;
+namespace ParallelAnimationSystem.Core.Service;
 
 public static class EventHelper
 {

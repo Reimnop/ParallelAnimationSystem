@@ -2,7 +2,7 @@
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Core.Model;
 
-namespace ParallelAnimationSystem.Core.Animation;
+namespace ParallelAnimationSystem.Core.Service;
 
 public class ThemeManager(PlaybackThemeContainer playbackThemes) : IDisposable
 {

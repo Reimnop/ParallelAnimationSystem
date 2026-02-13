@@ -1,4 +1,4 @@
-﻿namespace ParallelAnimationSystem.Core.Animation;
+﻿namespace ParallelAnimationSystem.Core.Service;
 
 public class IndirectSequence<TIn, TOut, TContext>(
     IndirectSequence<TIn, TOut, TContext>.Resolver resolver,

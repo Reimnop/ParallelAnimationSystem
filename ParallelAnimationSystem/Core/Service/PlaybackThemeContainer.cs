@@ -1,6 +1,6 @@
 ﻿using ParallelAnimationSystem.Core.Data;
 
-namespace ParallelAnimationSystem.Core.Animation;
+namespace ParallelAnimationSystem.Core.Service;
 
 public class PlaybackThemeContainer : IndexedList<PlaybackTheme>
 {

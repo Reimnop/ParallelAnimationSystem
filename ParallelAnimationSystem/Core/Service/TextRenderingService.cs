@@ -3,7 +3,7 @@ using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Text;
 using TmpParser;
 
-namespace ParallelAnimationSystem.Core.Animation;
+namespace ParallelAnimationSystem.Core.Service;
 
 public class TextRenderingService
 {

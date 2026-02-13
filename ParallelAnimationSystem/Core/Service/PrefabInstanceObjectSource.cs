@@ -8,7 +8,7 @@ using ParallelAnimationSystem.Core.Model;
 using ParallelAnimationSystem.Rendering.Data;
 using ParallelAnimationSystem.Util;
 
-namespace ParallelAnimationSystem.Core.Animation;
+namespace ParallelAnimationSystem.Core.Service;
 
 // do NOT touch parent handling
 // you'll regret it

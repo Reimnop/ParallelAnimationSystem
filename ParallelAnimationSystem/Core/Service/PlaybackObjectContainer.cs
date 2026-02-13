@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using ParallelAnimationSystem.Core.Data;
 
-namespace ParallelAnimationSystem.Core.Animation;
+namespace ParallelAnimationSystem.Core.Service;
 
 public class PlaybackObjectContainer : IndexedTree<PlaybackObject>
 {

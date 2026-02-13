@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using ParallelAnimationSystem.Core;
-using ParallelAnimationSystem.Core.Animation;
+using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.DebugUI;
 using ParallelAnimationSystem.Rendering;
 
@@ -45,7 +45,7 @@ public static class StartupExtension
             // Add resource loader
             services.AddSingleton(_ => new ResourceLoader(resourceSourceFactories));
         
-            // Add animation stuff
+            // Add main services
             services.AddSingleton<AnimationPipeline>();
             services.AddSingleton<Timeline>();
             services.AddSingleton<ObjectSourceManager>();

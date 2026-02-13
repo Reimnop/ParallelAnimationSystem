@@ -4,7 +4,7 @@ using ParallelAnimationSystem.Core.Model;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Util;
 
-namespace ParallelAnimationSystem.Core.Animation;
+namespace ParallelAnimationSystem.Core.Service;
 
 public class ObjectSourceManager(TextRenderingService textRenderingService, PlaybackObjectContainer playbackObjects, RandomSeedService seedService) : IDisposable
 {
