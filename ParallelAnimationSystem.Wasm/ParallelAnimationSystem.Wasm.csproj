@@ -15,7 +15,15 @@
     <WasmEnableSIMD>true</WasmEnableSIMD>
     <DebugType>none</DebugType>
     
-    <EmccFlags>-sEXPORT_ES6 -sMODULARIZE -sMIN_WEBGL_VERSION=2 -lGL -sEXPORTED_RUNTIME_METHODS='["stringToNewUTF8"]' -sEXPORTED_FUNCTIONS='["_malloc","_free","_initialize","_processFrame","_dispose"]' --emit-tsd ParallelAnimationSystem.Wasm.d.ts</EmccFlags>
+    <EmccFlags>
+      -sEXPORT_ES6
+      -sMODULARIZE
+      -sMIN_WEBGL_VERSION=2
+      -lGL
+      -sEXPORTED_RUNTIME_METHODS='["stringToNewUTF8"]'
+      -sEXPORTED_FUNCTIONS=@exports.txt
+      --emit-tsd ParallelAnimationSystem.Wasm.d.ts
+    </EmccFlags>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,6 +44,10 @@
   
   <ItemGroup>
     <EmbeddedResource Include="Resources/**/*" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Include="exports.txt" />
   </ItemGroup>
 
 </Project>

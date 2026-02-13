@@ -1,0 +1,7 @@
+_malloc
+_free
+_main_start
+_main_shutdown
+_main_getAppPointer
+_main_releaseAppPointer
+_app_processFrame

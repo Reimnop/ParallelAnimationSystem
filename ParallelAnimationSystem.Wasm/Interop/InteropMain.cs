@@ -5,22 +5,22 @@ using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.OpenGLES;
 
-namespace ParallelAnimationSystem.Wasm;
+namespace ParallelAnimationSystem.Wasm.Interop;
 
-public static class JsInterop
+public static class InteropMain
 {
     private static WasmApp? app;
     
-    [UnmanagedCallersOnly(EntryPoint = "initialize")]
-    public static unsafe void Initialize(
-        long seed, 
+    [UnmanagedCallersOnly(EntryPoint = "main_start")]
+    public static unsafe void Start(
+        ulong seed, 
         bool enablePostProcessing, 
         bool enableTextRendering,
         byte* beatmapDataPtr,
         int beatmapFormat)
     {
         if (app is not null)
-            throw new InvalidOperationException("App already initialized");
+            throw new InvalidOperationException("App already started, call shutdown first");
         
         var beatmapData = Marshal.PtrToStringUTF8((IntPtr) beatmapDataPtr);
         if (beatmapData is null)
@@ -28,7 +28,7 @@ public static class JsInterop
 
         var appSettings = new AppSettings
         {
-            Seed = unchecked((ulong) seed),
+            Seed = seed,
             AspectRatio = null,
             EnablePostProcessing = enablePostProcessing,
             EnableTextRendering = enableTextRendering,
@@ -72,25 +72,23 @@ public static class JsInterop
         };
     }
 
-    [UnmanagedCallersOnly(EntryPoint = "processFrame")]
-    public static void ProcessFrame(float time)
-    {
-        if (app is null)
-            throw new InvalidOperationException("App not initialized");
-        
-        var appCore = app.AppCore;
-        var renderer = app.Renderer;
-        var drawList = app.DrawList;
-
-        drawList.Clear();
-        appCore.ProcessFrame(time, drawList);
-        renderer.ProcessFrame(drawList);
-    }
-
-    [UnmanagedCallersOnly(EntryPoint = "dispose")]
-    public static void Dispose()
+    [UnmanagedCallersOnly(EntryPoint = "main_shutdown")]
+    public static void Shutdown()
     {
         app?.Dispose();
         app = null;
+    }
+    
+    [UnmanagedCallersOnly(EntryPoint = "main_getAppPointer")]
+    public static IntPtr GetAppPointer()
+    {
+        return (IntPtr) GCHandle.Alloc(app);
+    }
+
+    [UnmanagedCallersOnly(EntryPoint = "main_releaseAppPointer")]
+    public static void ReleaseAppPointer(IntPtr appPointer)
+    {
+        var handle = GCHandle.FromIntPtr(appPointer);
+        handle.Free();
     }
 }
