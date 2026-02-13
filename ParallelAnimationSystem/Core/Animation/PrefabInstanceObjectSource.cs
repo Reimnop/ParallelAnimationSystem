@@ -84,16 +84,18 @@ public class PrefabInstanceObjectSource : IDisposable
     private BeatmapPrefab? attachedPrefab;
     
     private readonly Identifier instanceId;
+    private readonly TextRenderingService textRenderingService;
     private readonly PlaybackObjectContainer playbackObjects;
-    private readonly RandomSeedProvider seedProvider;
+    private readonly RandomSeedService seedService;
 
-    public PrefabInstanceObjectSource(Identifier instanceId, PlaybackObjectContainer playbackObjects, RandomSeedProvider seedProvider)
+    public PrefabInstanceObjectSource(Identifier instanceId, TextRenderingService textRenderingService, PlaybackObjectContainer playbackObjects, RandomSeedService seedService)
     {
         this.instanceId = instanceId;
+        this.textRenderingService = textRenderingService;
         this.playbackObjects = playbackObjects;
-        this.seedProvider = seedProvider;
+        this.seedService = seedService;
 
-        this.seedProvider.SeedChanged += OnSeedChanged;
+        this.seedService.SeedChanged += OnSeedChanged;
     }
     
     public void Dispose()
@@ -127,7 +129,7 @@ public class PrefabInstanceObjectSource : IDisposable
         attachedPrefab.Objects.Inserted -= OnBeatmapObjectInserted;
         attachedPrefab.Objects.Removed -= OnBeatmapObjectRemoved;
         attachedPrefab.PropertyChanged -= OnPrefabPropertyChanged;
-        seedProvider.SeedChanged -= OnSeedChanged;
+        seedService.SeedChanged -= OnSeedChanged;
     }
 
     private void OnSeedChanged(object? sender, ulong e)
@@ -261,11 +263,13 @@ public class PrefabInstanceObjectSource : IDisposable
             Origin = beatmapObject.Origin,
             RenderDepth = beatmapObject.RenderDepth,
             Shape = beatmapObject.Shape,
-            Text = beatmapObject.Text
+            Text = beatmapObject.Text is not null 
+                ? textRenderingService.ShapeText(beatmapObject.Text, beatmapObject.Origin)
+                : null
         };
 
         // populate sequences
-        var seed = NumberUtil.Mix(seedProvider.Seed, playbackObject.Id);
+        var seed = NumberUtil.Mix(seedService.Seed, playbackObject.Id);
         playbackObject.PositionSequence.LoadKeyframes(KeyframeHelper.ResolveRandomizableVector2Keyframes(
             beatmapObject.PositionKeyframes, NumberUtil.Mix(seed, PositionKey)));
 
@@ -545,6 +549,9 @@ public class PrefabInstanceObjectSource : IDisposable
                 break;
             case nameof(BeatmapObject.Origin):
                 playbackObject.Origin = beatmapObject.Origin;
+                playbackObject.Text = beatmapObject.Text is not null 
+                    ? textRenderingService.ShapeText(beatmapObject.Text, beatmapObject.Origin)
+                    : null;
                 break;
             case nameof(BeatmapObject.RenderDepth):
                 playbackObject.RenderDepth = beatmapObject.RenderDepth;
@@ -553,7 +560,9 @@ public class PrefabInstanceObjectSource : IDisposable
                 playbackObject.Shape = beatmapObject.Shape;
                 break;
             case nameof(BeatmapObject.Text):
-                playbackObject.Text = beatmapObject.Text;
+                playbackObject.Text = beatmapObject.Text is not null 
+                    ? textRenderingService.ShapeText(beatmapObject.Text, beatmapObject.Origin)
+                    : null;
                 break;
         }
     }
@@ -566,7 +575,7 @@ public class PrefabInstanceObjectSource : IDisposable
         if (!TryGetPlaybackObject(beatmapObject, out var playbackObject, out _))
             return;
         
-        var seed = NumberUtil.Mix(seedProvider.Seed, playbackObject.Id);
+        var seed = NumberUtil.Mix(seedService.Seed, playbackObject.Id);
         playbackObject.PositionSequence.LoadKeyframes(
             KeyframeHelper.ResolveRandomizableVector2Keyframes(e, NumberUtil.Mix(seed, PositionKey)));
         
@@ -586,7 +595,7 @@ public class PrefabInstanceObjectSource : IDisposable
         if (!TryGetPlaybackObject(beatmapObject, out var playbackObject, out _))
             return;
         
-        var seed = NumberUtil.Mix(seedProvider.Seed, playbackObject.Id);
+        var seed = NumberUtil.Mix(seedService.Seed, playbackObject.Id);
         playbackObject.ScaleSequence.LoadKeyframes(
             KeyframeHelper.ResolveRandomizableVector2Keyframes(e, NumberUtil.Mix(seed, ScaleKey)));
         
@@ -606,7 +615,7 @@ public class PrefabInstanceObjectSource : IDisposable
         if (!TryGetPlaybackObject(beatmapObject, out var playbackObject, out _))
             return;
         
-        var seed = NumberUtil.Mix(seedProvider.Seed, playbackObject.Id);
+        var seed = NumberUtil.Mix(seedService.Seed, playbackObject.Id);
         playbackObject.RotationSequence.LoadKeyframes(
             KeyframeHelper.ResolveRotationKeyframes(e, NumberUtil.Mix(seed, RotationKey)));
         

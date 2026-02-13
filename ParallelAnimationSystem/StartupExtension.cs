@@ -56,7 +56,8 @@ public static class StartupExtension
 
             services.AddSingleton<EventManager>();
 
-            services.AddSingleton<RandomSeedProvider>();
+            services.AddSingleton<RandomSeedService>();
+            services.AddSingleton<TextRenderingService>();
         
             // Add ImGui
             services.AddSingleton<ImGuiContext>();

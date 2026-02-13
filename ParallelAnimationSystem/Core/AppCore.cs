@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.DependencyInjection;
 using Pamx.Common;
 using Pamx.Common.Enum;
@@ -11,15 +12,12 @@ using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering.Data;
 using ParallelAnimationSystem.Text;
-using TmpParser;
 
 namespace ParallelAnimationSystem.Core;
 
 public class AppCore
 {
     private readonly List<List<IMesh>> meshes = [];
-    
-    private readonly TextShaper textShaper;
 
     private readonly AppSettings appSettings;
     private readonly ResourceLoader loader;
@@ -33,7 +31,7 @@ public class AppCore
 
     private readonly BeatmapFormat beatmapFormat;
     
-    private readonly Dictionary<string, IText> loadedTexts = [];
+    private readonly ConditionalWeakTable<ShapedRichText, IText> loadedTexts = [];
     
     public AppCore(
         IServiceProvider sp,
@@ -108,20 +106,7 @@ public class AppCore
         #region Font Loading
 
         {
-            var inconsolata = LoadFont("Fonts/Inconsolata.tmpe");
-            var arialuni = LoadFont("Fonts/Arialuni.tmpe");
-            var seguisym = LoadFont("Fonts/Seguisym.tmpe");
-            var code2000 = LoadFont("Fonts/Code2000.tmpe");
-            var inconsolataStack = new FontStack("Inconsolata SDF", 16.0f, [inconsolata, arialuni, seguisym, code2000]);
-        
-            var liberationSans = LoadFont("Fonts/LiberationSans.tmpe");
-            var liberationSansStack = new FontStack("LiberationSans SDF", 16.0f, [liberationSans, arialuni, seguisym, code2000]);
-        
-            var notoMono = LoadFont("Fonts/NotoMono.tmpe");
-            var notoMonoStack = new FontStack("NotoMono SDF", 16.0f, [notoMono, arialuni, seguisym, code2000]);
             
-            var fonts = new FontCollection([inconsolataStack, liberationSansStack, notoMonoStack]);
-            textShaper = new TextShaper(fonts);
         }
 
         #endregion
@@ -156,15 +141,7 @@ public class AppCore
         sw.Stop();
         
         // Print statistics
-        logger.LogInformation("Beatmap loaded in {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
-    }
-
-    private IFont LoadFont(string path)
-    {
-        using var stream = loader.OpenResource(path);
-        if (stream is null)
-            throw new InvalidOperationException($"Could not load font data at '{path}'");
-        return renderingFactory.CreateFont(stream);
+        logger.LogInformation("Beatmap loaded in {ElapsedMilliseconds}ms ({ObjectCount} objects)", sw.ElapsedMilliseconds, playbackObjects.Count);
     }
     
     public void ProcessFrame(float time, IDrawList drawList)
@@ -247,10 +224,10 @@ public class AppCore
                         var color1 = drawItem.Color1;
                         var color2 = drawItem.Color2;
                         
-                        var color1Rgba = new ColorRgba(color1.R, color1.G, color1.B, drawItem.Opacity);
+                        var color1Rgba = new ColorRgba(color1, drawItem.Opacity);
                         var color2Rgba = color1 == color2 
-                            ? new ColorRgba(color2.R, color2.G, color2.B, 0.0f)
-                            : new ColorRgba(color2.R, color2.G, color2.B, drawItem.Opacity);
+                            ? new ColorRgba(color2, 0.0f)
+                            : new ColorRgba(color2, drawItem.Opacity);
             
                         drawList.AddMesh(mesh, transform, color1Rgba, color2Rgba, renderMode);
                     }
@@ -258,33 +235,16 @@ public class AppCore
             }
             else if (appSettings.EnableTextRendering)
             {
-                // TODO: make this more efficient by pre-shaping texts
                 if (playbackObject.Text is not null)
                 {
                     if (!loadedTexts.TryGetValue(playbackObject.Text, out var text))
                     {
-                        var richText = textShaper.ShapeText(
-                            playbackObject.Text,
-                            "NotoMono SDF",
-                            playbackObject.Origin.X switch
-                            {
-                                -0.5f => HorizontalAlignment.Right,
-                                0.5f => HorizontalAlignment.Left,
-                                _ => HorizontalAlignment.Center,
-                            },
-                            playbackObject.Origin.Y switch
-                            {
-                                -0.5f => VerticalAlignment.Top,
-                                0.5f => VerticalAlignment.Bottom,
-                                _ => VerticalAlignment.Center,
-                            });
-                    
-                        text = renderingFactory.CreateText(richText);
-                        loadedTexts[playbackObject.Text] = text;
+                        text = renderingFactory.CreateText(playbackObject.Text);
+                        loadedTexts.Add(playbackObject.Text, text);
                     }
                     
                     var color1 = drawItem.Color1;
-                    var color1Rgba = new ColorRgba(color1.R, color1.G, color1.B, drawItem.Opacity);
+                    var color1Rgba = new ColorRgba(color1, drawItem.Opacity);
                     drawList.AddText(text, transform, color1Rgba);
                 }
             }

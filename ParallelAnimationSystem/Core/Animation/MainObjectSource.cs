@@ -15,15 +15,17 @@ public class MainObjectSource : IDisposable
 
     private BeatmapData? attachedBeatmapData;
 
+    private readonly TextRenderingService textRenderingService;
     private readonly PlaybackObjectContainer playbackObjects;
-    private readonly RandomSeedProvider seedProvider;
+    private readonly RandomSeedService seedService;
 
-    public MainObjectSource(PlaybackObjectContainer playbackObjects, RandomSeedProvider seedProvider)
+    public MainObjectSource(TextRenderingService textRenderingService, PlaybackObjectContainer playbackObjects, RandomSeedService seedService)
     {
+        this.textRenderingService = textRenderingService;
         this.playbackObjects = playbackObjects;
-        this.seedProvider = seedProvider;
+        this.seedService = seedService;
         
-        this.seedProvider.SeedChanged += OnSeedChanged;
+        this.seedService.SeedChanged += OnSeedChanged;
     }
     
     public void Dispose()
@@ -51,7 +53,7 @@ public class MainObjectSource : IDisposable
         attachedBeatmapData.Objects.Inserted -= OnBeatmapObjectInserted;
         attachedBeatmapData.Objects.Removed -= OnBeatmapObjectRemoved;
         
-        seedProvider.SeedChanged -= OnSeedChanged;
+        seedService.SeedChanged -= OnSeedChanged;
     }
     
     private void OnSeedChanged(object? sender, ulong e)
@@ -153,11 +155,13 @@ public class MainObjectSource : IDisposable
             Origin = beatmapObject.Origin,
             RenderDepth = beatmapObject.RenderDepth,
             Shape = beatmapObject.Shape,
-            Text = beatmapObject.Text
+            Text = beatmapObject.Text is not null 
+                ? textRenderingService.ShapeText(beatmapObject.Text, beatmapObject.Origin) 
+                : null
         };
         
         // populate sequences
-        var seed = NumberUtil.Mix(seedProvider.Seed, playbackObject.Id);
+        var seed = NumberUtil.Mix(seedService.Seed, playbackObject.Id);
         playbackObject.PositionSequence.LoadKeyframes(KeyframeHelper.ResolveRandomizableVector2Keyframes(
             beatmapObject.PositionKeyframes, NumberUtil.Mix(seed, PositionKey)));
         
@@ -256,6 +260,9 @@ public class MainObjectSource : IDisposable
                 break;
             case nameof(BeatmapObject.Origin):
                 playbackObject.Origin = beatmapObject.Origin;
+                playbackObject.Text = beatmapObject.Text is not null 
+                    ? textRenderingService.ShapeText(beatmapObject.Text, beatmapObject.Origin)
+                    : null;
                 break;
             case nameof(BeatmapObject.RenderDepth):
                 playbackObject.RenderDepth = beatmapObject.RenderDepth;
@@ -264,7 +271,9 @@ public class MainObjectSource : IDisposable
                 playbackObject.Shape = beatmapObject.Shape;
                 break;
             case nameof(BeatmapObject.Text):
-                playbackObject.Text = beatmapObject.Text;
+                playbackObject.Text = beatmapObject.Text is not null 
+                    ? textRenderingService.ShapeText(beatmapObject.Text, beatmapObject.Origin)
+                    : null;
                 break;
         }
     }
@@ -277,7 +286,7 @@ public class MainObjectSource : IDisposable
         if (!TryGetPlaybackObject(beatmapObject, out var playbackObject, out _))
             return;
         
-        var seed = NumberUtil.Mix(seedProvider.Seed, playbackObject.Id);
+        var seed = NumberUtil.Mix(seedService.Seed, playbackObject.Id);
         playbackObject.PositionSequence.LoadKeyframes(
             KeyframeHelper.ResolveRandomizableVector2Keyframes(e, NumberUtil.Mix(seed, PositionKey)));
         
@@ -297,7 +306,7 @@ public class MainObjectSource : IDisposable
         if (!TryGetPlaybackObject(beatmapObject, out var playbackObject, out _))
             return;
         
-        var seed = NumberUtil.Mix(seedProvider.Seed, playbackObject.Id);
+        var seed = NumberUtil.Mix(seedService.Seed, playbackObject.Id);
         playbackObject.ScaleSequence.LoadKeyframes(
             KeyframeHelper.ResolveRandomizableVector2Keyframes(e, NumberUtil.Mix(seed, ScaleKey)));
         
@@ -317,7 +326,7 @@ public class MainObjectSource : IDisposable
         if (!TryGetPlaybackObject(beatmapObject, out var playbackObject, out _))
             return;
         
-        var seed = NumberUtil.Mix(seedProvider.Seed, playbackObject.Id);
+        var seed = NumberUtil.Mix(seedService.Seed, playbackObject.Id);
         playbackObject.RotationSequence.LoadKeyframes(
             KeyframeHelper.ResolveRotationKeyframes(e, NumberUtil.Mix(seed, RotationKey)));
         

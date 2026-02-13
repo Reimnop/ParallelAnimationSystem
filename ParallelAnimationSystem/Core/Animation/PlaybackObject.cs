@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Rendering.Data;
+using ParallelAnimationSystem.Text;
 
 namespace ParallelAnimationSystem.Core.Animation;
 
@@ -60,7 +61,6 @@ public class PlaybackObject(Identifier id) : IIdentifiable, INotifyPropertyChang
         get;
         set => SetField(ref field, value);
     }
-
     
     public ObjectShape Shape 
     {
@@ -68,7 +68,7 @@ public class PlaybackObject(Identifier id) : IIdentifiable, INotifyPropertyChang
         set => SetField(ref field, value);
     }
     
-    public string? Text 
+    public ShapedRichText? Text 
     {
         get;
         set => SetField(ref field, value);

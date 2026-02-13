@@ -2,7 +2,7 @@
 
 namespace ParallelAnimationSystem.Core.Animation;
 
-public class RandomSeedProvider
+public class RandomSeedService
 {
     public event EventHandler<ulong>? SeedChanged;
     
@@ -19,7 +19,7 @@ public class RandomSeedProvider
         }
     }
 
-    public RandomSeedProvider(AppSettings appSettings, ILogger<RandomSeedProvider> logger)
+    public RandomSeedService(AppSettings appSettings, ILogger<RandomSeedService> logger)
     {
         // initialize the seed from app settings
         Seed = appSettings.Seed;
