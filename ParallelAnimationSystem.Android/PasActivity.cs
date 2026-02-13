@@ -48,7 +48,6 @@ public class PasActivity : Activity
 
         var appSettings = new AppSettings
         {
-            WorkerCount = 6,
             Seed = NumberUtil.SplitMix64((ulong) DateTimeOffset.Now.ToUnixTimeSeconds()),
             AspectRatio = lockAspectRatio ? 16.0f / 9.0f : null,
             EnablePostProcessing = enablePostProcessing,

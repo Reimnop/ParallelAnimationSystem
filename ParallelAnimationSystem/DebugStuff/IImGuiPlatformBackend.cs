@@ -1,7 +1,7 @@
 ﻿using System.Numerics;
 using ImGuiNET;
 
-namespace ParallelAnimationSystem.DebugUI;
+namespace ParallelAnimationSystem.DebugStuff;
 
 public interface IImGuiPlatformBackend
 {

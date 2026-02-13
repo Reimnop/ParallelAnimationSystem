@@ -2,8 +2,11 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Service;
-using ParallelAnimationSystem.DebugUI;
 using ParallelAnimationSystem.Rendering;
+
+#if DEBUG
+using ParallelAnimationSystem.DebugStuff;
+#endif
 
 namespace ParallelAnimationSystem;
 
@@ -61,9 +64,11 @@ public static class StartupExtension
             services.AddSingleton<MeshService>();
             services.AddSingleton<BeatmapService>();
         
+#if DEBUG
             // Add ImGui
             services.AddSingleton<ImGuiContext>();
             services.AddSingleton<ImGuiBackend>();
+#endif
         
             // Add migrations
             services.AddTransient<LsMigration>();
@@ -81,7 +86,9 @@ public static class StartupExtension
         public IRenderer InitializeRenderer()
             => serviceProvider.GetRequiredService<IRenderer>();
 
+#if DEBUG
         public ImGuiBackend InitializeImGui()
             => serviceProvider.GetRequiredService<ImGuiBackend>();
+#endif
     }
 }

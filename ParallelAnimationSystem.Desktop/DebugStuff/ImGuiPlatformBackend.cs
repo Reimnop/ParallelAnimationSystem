@@ -1,10 +1,10 @@
 ﻿using System.Numerics;
 using ImGuiNET;
 using OpenTK.Windowing.GraphicsLibraryFramework;
-using ParallelAnimationSystem.DebugUI;
+using ParallelAnimationSystem.DebugStuff;
 using ParallelAnimationSystem.Windowing;
 
-namespace ParallelAnimationSystem.Desktop;
+namespace ParallelAnimationSystem.Desktop.DebugStuff;
 
 public class ImGuiPlatformBackend : IImGuiPlatformBackend, IDisposable
 {

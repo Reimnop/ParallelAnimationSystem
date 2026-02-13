@@ -77,12 +77,6 @@ var textRenderingOption = new Option<bool>(
     getDefaultValue: () => true
 );
 
-var debugModeOption = new Option<bool>(
-    aliases: ["--debug"],
-    description: "Enable debug mode",
-    getDefaultValue: () => false
-);
-
 var rootCommand = new RootCommand("Parallel Animation System");
 rootCommand.AddOption(beatmapOption);
 rootCommand.AddOption(audioOption);
@@ -96,7 +90,6 @@ rootCommand.AddOption(backendOption);
 rootCommand.AddOption(lockAspectOption);
 rootCommand.AddOption(postProcessingOption);
 rootCommand.AddOption(textRenderingOption);
-rootCommand.AddOption(debugModeOption);
 
 rootCommand.SetHandler(context =>
 {
@@ -112,7 +105,6 @@ rootCommand.SetHandler(context =>
     var lockAspectRatio = context.ParseResult.GetValueForOption(lockAspectOption);
     var enablePostProcessing = context.ParseResult.GetValueForOption(postProcessingOption);
     var enableTextRendering = context.ParseResult.GetValueForOption(textRenderingOption);
-    var debugMode = context.ParseResult.GetValueForOption(debugModeOption);
     
     DesktopStartup.ConsumeOptions(
         beatmapPath,
@@ -121,14 +113,11 @@ rootCommand.SetHandler(context =>
         height,
         vsync,
         useEgl,
-        workerCount,
         seed,
         backend,
         lockAspectRatio,
         enablePostProcessing,
-        enableTextRendering,
-        debugMode
-    );
+        enableTextRendering);
 });
 
 return rootCommand.Invoke(args);

@@ -29,7 +29,6 @@ public static class JsInterop
 
         var appSettings = new AppSettings
         {
-            WorkerCount = -1,
             Seed = unchecked((ulong) seed),
             AspectRatio = null,
             EnablePostProcessing = enablePostProcessing,

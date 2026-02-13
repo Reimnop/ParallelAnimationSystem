@@ -27,7 +27,6 @@ public static class FFmpegStartup
     {
         var appSettings = new AppSettings
         {
-            WorkerCount = -1,
             Seed = seed ?? NumberUtil.SplitMix64((ulong) DateTimeOffset.Now.ToUnixTimeSeconds()),
             AspectRatio = null,
             EnablePostProcessing = enablePostProcessing,

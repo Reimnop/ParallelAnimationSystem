@@ -12,17 +12,13 @@ public sealed class DesktopApp
     private readonly ConcurrentQueue<IDrawList> queuedDrawLists = [];
 
     private readonly IServiceProvider serviceProvider;
-    private readonly MediaContext mediaContext;
-    private readonly DesktopAppSettings appSettings;
     private readonly AudioPlayer audioPlayer;
 
     private bool running = true;
 
-    public DesktopApp(IServiceProvider serviceProvider, MediaContext mediaContext, DesktopAppSettings appSettings, IRenderingFactory renderingFactory)
+    public DesktopApp(IServiceProvider serviceProvider, MediaContext mediaContext, IRenderingFactory renderingFactory)
     {
         this.serviceProvider = serviceProvider;
-        this.mediaContext = mediaContext;
-        this.appSettings = appSettings;
 
         for (var i = 0; i < 3; i++)
             drawListPool.Enqueue(renderingFactory.CreateDrawList());

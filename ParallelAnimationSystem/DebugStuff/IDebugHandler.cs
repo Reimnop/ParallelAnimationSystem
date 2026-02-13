@@ -1,4 +1,4 @@
-﻿namespace ParallelAnimationSystem.DebugUI;
+﻿namespace ParallelAnimationSystem.DebugStuff;
 
 public interface IDebugHandler
 {

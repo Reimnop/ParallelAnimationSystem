@@ -1,10 +1,14 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using ParallelAnimationSystem.DebugUI;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering.OpenGL;
 using ParallelAnimationSystem.Rendering.OpenGLES;
 using ParallelAnimationSystem.Util;
+
+#if DEBUG
+using ParallelAnimationSystem.DebugStuff;
+using ParallelAnimationSystem.Desktop.DebugStuff;
+#endif
 
 namespace ParallelAnimationSystem.Desktop;
 
@@ -17,17 +21,14 @@ public static class DesktopStartup
         int height,
         bool vsync,
         bool useEgl,
-        int workerCount,
         ulong? seed,
         RenderingBackend backend,
         bool lockAspectRatio,
         bool enablePostProcessing,
-        bool enableTextRendering,
-        bool debugMode)
+        bool enableTextRendering)
     {
         var appSettings = new AppSettings
         {
-            WorkerCount = workerCount,
             Seed = seed ?? NumberUtil.SplitMix64((ulong) DateTimeOffset.Now.ToUnixTimeSeconds()),
             AspectRatio = lockAspectRatio ? 16.0f / 9.0f : null,
             EnablePostProcessing = enablePostProcessing,
@@ -43,11 +44,6 @@ public static class DesktopStartup
             UseEgl = useEgl,
         });
 
-        services.AddSingleton(new DesktopAppSettings
-        {
-            DebugMode = debugMode,
-        });
-
         services.AddSingleton(new MediaContext
         {
             BeatmapPath = beatmapPath,
@@ -59,8 +55,8 @@ public static class DesktopStartup
             builder.SetMinimumLevel(LogLevel.Information);
             builder.AddConsole();
         });
-
-        Action<PASOptionsBuilder> pasOptionsBuilder = builder =>
+        
+        services.AddPAS(builder =>
         {
             builder.UseAppSettings(appSettings);
             builder.UseWindow<DesktopWindow>();
@@ -74,12 +70,12 @@ public static class DesktopStartup
                     builder.UseOpenGLESRenderer();
                     break;
             }
-        };
-
-        services.AddPAS(pasOptionsBuilder);
+        });
         
+#if DEBUG
         // Add ImGui platform backend
         services.AddSingleton<IImGuiPlatformBackend, ImGuiPlatformBackend>();
+#endif
 
         services.AddTransient<DesktopApp>();
         

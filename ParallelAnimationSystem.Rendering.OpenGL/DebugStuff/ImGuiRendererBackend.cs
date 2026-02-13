@@ -1,13 +1,13 @@
 ﻿using System.Numerics;
 using System.Runtime.CompilerServices;
 using ImGuiNET;
-using OpenTK.Graphics.OpenGLES2;
+using OpenTK.Graphics.OpenGL;
 using ParallelAnimationSystem.Core;
-using ParallelAnimationSystem.DebugUI;
+using ParallelAnimationSystem.DebugStuff;
 using ParallelAnimationSystem.Mathematics;
 using Buffer = OpenTK.Graphics.OpenGL.Buffer;
 
-namespace ParallelAnimationSystem.Rendering.OpenGLES;
+namespace ParallelAnimationSystem.Rendering.OpenGL.DebugStuff;
 
 public class ImGuiRendererBackend : IImGuiRendererBackend, IOverlayRenderer, IDisposable
 {
@@ -38,25 +38,30 @@ public class ImGuiRendererBackend : IImGuiRendererBackend, IOverlayRenderer, IDi
         // Initialize GL resources
         
         // Initialize buffers
-        indexBufferHandle = GL.GenBuffer();
-        GL.BindBuffer(BufferTarget.ElementArrayBuffer, indexBufferHandle);
-        GL.BufferData(BufferTarget.ElementArrayBuffer, indexBufferSize, IntPtr.Zero, BufferUsage.DynamicDraw);
+        vertexBufferHandle = GL.CreateBuffer();
+        GL.NamedBufferData(vertexBufferHandle, vertexBufferSize, IntPtr.Zero, VertexBufferObjectUsage.DynamicDraw);
         
-        vertexBufferHandle = GL.GenBuffer();
-        GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferHandle);
-        GL.BufferData(BufferTarget.ArrayBuffer, vertexBufferSize, IntPtr.Zero, BufferUsage.DynamicDraw);
+        indexBufferHandle = GL.CreateBuffer();
+        GL.NamedBufferData(indexBufferHandle, indexBufferSize, IntPtr.Zero, VertexBufferObjectUsage.DynamicDraw);
         
-        vertexArrayHandle = GL.GenVertexArray();
-        GL.BindVertexArray(vertexArrayHandle);
+        vertexArrayHandle = GL.CreateVertexArray();
         
-        GL.EnableVertexAttribArray(0);
-        GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, Unsafe.SizeOf<ImDrawVert>(), 0);
+        GL.EnableVertexArrayAttrib(vertexArrayHandle, 0);
+        GL.VertexArrayVertexBuffer(vertexArrayHandle, 0, vertexBufferHandle, IntPtr.Zero, Unsafe.SizeOf<ImDrawVert>());
+        GL.VertexArrayAttribFormat(vertexArrayHandle, 0, 2, VertexAttribType.Float, false, 0);
+        GL.VertexArrayAttribBinding(vertexArrayHandle, 0, 0);
         
-        GL.EnableVertexAttribArray(1);
-        GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, Unsafe.SizeOf<ImDrawVert>(), 8);
+        GL.EnableVertexArrayAttrib(vertexArrayHandle, 1);
+        GL.VertexArrayVertexBuffer(vertexArrayHandle, 1, vertexBufferHandle, IntPtr.Zero, Unsafe.SizeOf<ImDrawVert>());
+        GL.VertexArrayAttribFormat(vertexArrayHandle, 1, 2, VertexAttribType.Float, false, 8);
+        GL.VertexArrayAttribBinding(vertexArrayHandle, 1, 1);
         
-        GL.EnableVertexAttribArray(2);
-        GL.VertexAttribPointer(2, 4, VertexAttribPointerType.UnsignedByte, true, Unsafe.SizeOf<ImDrawVert>(), 16);
+        GL.EnableVertexArrayAttrib(vertexArrayHandle, 2);
+        GL.VertexArrayVertexBuffer(vertexArrayHandle, 2, vertexBufferHandle, IntPtr.Zero, Unsafe.SizeOf<ImDrawVert>());
+        GL.VertexArrayAttribFormat(vertexArrayHandle, 2, 4, VertexAttribType.UnsignedByte, true, 16);
+        GL.VertexArrayAttribBinding(vertexArrayHandle, 2, 2);
+        
+        GL.VertexArrayElementBuffer(vertexArrayHandle, indexBufferHandle);
         
         // Load and compile shaders
         program = LoaderUtil.LoadShaderProgram(loader, "ImGuiVertex", "ImGuiFragment");
@@ -66,12 +71,11 @@ public class ImGuiRendererBackend : IImGuiRendererBackend, IOverlayRenderer, IDi
         // Load font texture
         io.Fonts.GetTexDataAsRGBA32(out IntPtr fontPixels, out var fontWidth, out var fontHeight, out _);
         
-        fontTexture = GL.GenTexture();
-        GL.BindTexture(TextureTarget.Texture2d, fontTexture);
-        GL.TexStorage2D(TextureTarget.Texture2d, 1, SizedInternalFormat.Rgba8, fontWidth, fontHeight);
-        GL.TexSubImage2D(TextureTarget.Texture2d, 0, 0, 0, fontWidth, fontHeight, PixelFormat.Rgba, PixelType.UnsignedByte, fontPixels);
+        fontTexture = GL.CreateTexture(TextureTarget.Texture2d);
+        GL.TextureStorage2D(fontTexture, 1, SizedInternalFormat.Rgba8, fontWidth, fontHeight);
+        GL.TextureSubImage2D(fontTexture, 0, 0, 0, fontWidth, fontHeight, PixelFormat.Rgba, PixelType.UnsignedByte, fontPixels);
         
-        fontSampler = GL.GenSampler();
+        fontSampler = GL.CreateSampler();
         GL.SamplerParameteri(fontSampler, SamplerParameterI.TextureMinFilter, (int) TextureMinFilter.Linear);
         GL.SamplerParameteri(fontSampler, SamplerParameterI.TextureMagFilter, (int) TextureMagFilter.Linear);
         GL.SamplerParameteri(fontSampler, SamplerParameterI.TextureWrapS, (int) TextureWrapMode.ClampToEdge);
@@ -81,7 +85,7 @@ public class ImGuiRendererBackend : IImGuiRendererBackend, IOverlayRenderer, IDi
         io.Fonts.SetTexID(fontTexture);
         
         // Create framebuffer
-        framebuffer = GL.GenFramebuffer();
+        framebuffer = GL.CreateFramebuffer();
         
         // We'll initialize the texture later
     }
@@ -116,21 +120,18 @@ public class ImGuiRendererBackend : IImGuiRendererBackend, IOverlayRenderer, IDi
             if (texture != 0)
                 GL.DeleteTexture(texture);
             
-            texture = GL.GenTexture();
-            GL.BindTexture(TextureTarget.Texture2d, texture);
-            GL.TexStorage2D(TextureTarget.Texture2d, 1, SizedInternalFormat.Rgba16f, size.X, size.Y);
-            
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, framebuffer);
-            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, texture, 0);
+            texture = GL.CreateTexture(TextureTarget.Texture2d);
+            GL.TextureStorage2D(texture, 1, SizedInternalFormat.Rgba16f, size.X, size.Y);
+            GL.NamedFramebufferTexture(framebuffer, FramebufferAttachment.ColorAttachment0, texture, 0);
         }
         
+        // Clear texture
+        var clearColor = new Vector4(0f, 0f, 0f, 0f);
+        GL.ClearNamedFramebufferf(framebuffer, Buffer.Color, 0, in clearColor.X);
+
         // Bind framebuffer
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, framebuffer);
         GL.Viewport(0, 0, size.X, size.Y);
-        
-        // Clear
-        GL.ClearColor(0f, 0f, 0f, 0f);
-        GL.Clear(ClearBufferMask.ColorBufferBit);
         
         // Disable depth testing
         GL.Disable(EnableCap.DepthTest);
@@ -142,9 +143,8 @@ public class ImGuiRendererBackend : IImGuiRendererBackend, IOverlayRenderer, IDi
         // Enable scissor test
         GL.Enable(EnableCap.ScissorTest);
         
-        // Bind shader program, vertex array, index buffer and sampler
+        // Bind shader program, vertex array and sampler
         GL.BindVertexArray(vertexArrayHandle);
-        GL.BindBuffer(BufferTarget.ElementArrayBuffer, indexBufferHandle);
         GL.BindSampler(0, fontSampler);
         
         GL.UseProgram(program);
@@ -160,28 +160,22 @@ public class ImGuiRendererBackend : IImGuiRendererBackend, IOverlayRenderer, IDi
             if (vtxBufferSizeNeeded > vertexBufferSize)
             {
                 vertexBufferSize = vtxBufferSizeNeeded;
-                GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferHandle);
-                GL.BufferData(BufferTarget.ArrayBuffer, vtxBufferSizeNeeded, drawList.VtxBuffer.Data, BufferUsage.DynamicDraw);
+                GL.NamedBufferData(vertexBufferHandle, vtxBufferSizeNeeded, drawList.VtxBuffer.Data, VertexBufferObjectUsage.DynamicDraw);
             }
             else
             {
-                GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferHandle);
-                GL.BufferSubData(BufferTarget.ArrayBuffer, IntPtr.Zero, vtxBufferSizeNeeded, drawList.VtxBuffer.Data);
+                GL.NamedBufferSubData(vertexBufferHandle, IntPtr.Zero, vtxBufferSizeNeeded, drawList.VtxBuffer.Data);
             }
             
             var idxBufferSizeNeeded = drawList.IdxBuffer.Size * Unsafe.SizeOf<ushort>();
-            
-            // We don't use GL.BindBuffer here because we already bound it above and it doesn't change
             if (idxBufferSizeNeeded > indexBufferSize)
             {
                 indexBufferSize = idxBufferSizeNeeded;
-                // GL.BindBuffer(BufferTarget.ElementArrayBuffer, indexBufferHandle);
-                GL.BufferData(BufferTarget.ElementArrayBuffer, idxBufferSizeNeeded, drawList.IdxBuffer.Data, BufferUsage.DynamicDraw);
+                GL.NamedBufferData(indexBufferHandle, idxBufferSizeNeeded, drawList.IdxBuffer.Data, VertexBufferObjectUsage.DynamicDraw);
             }
             else
             {
-                // GL.BindBuffer(BufferTarget.ElementArrayBuffer, indexBufferHandle);
-                GL.BufferSubData(BufferTarget.ElementArrayBuffer, IntPtr.Zero, idxBufferSizeNeeded, drawList.IdxBuffer.Data);
+                GL.NamedBufferSubData(indexBufferHandle, IntPtr.Zero, idxBufferSizeNeeded, drawList.IdxBuffer.Data);
             }
             
             // Execute draw commands
@@ -196,8 +190,7 @@ public class ImGuiRendererBackend : IImGuiRendererBackend, IOverlayRenderer, IDi
                     (int) (clipRect.Z - clipRect.X),
                     (int) (clipRect.W - clipRect.Y));
                 
-                GL.ActiveTexture(TextureUnit.Texture0);
-                GL.BindTexture(TextureTarget.Texture2d, (int) cmd.TextureId);
+                GL.BindTextureUnit(0, (int) cmd.TextureId);
                 
                 GL.DrawElementsBaseVertex(
                     PrimitiveType.Triangles,

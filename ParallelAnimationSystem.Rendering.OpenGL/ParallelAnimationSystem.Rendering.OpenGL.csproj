@@ -15,6 +15,10 @@
     <ProjectReference Include="../ParallelAnimationSystem/ParallelAnimationSystem.csproj" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(Configuration)' != 'Debug'">
+    <Compile Remove="DebugStuff/**/*" />
+  </ItemGroup>
+
   <ItemGroup>
     <EmbeddedResource Include="Resources/**/*" />
   </ItemGroup>

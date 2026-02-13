@@ -1,6 +1,6 @@
 ﻿using ImGuiNET;
 
-namespace ParallelAnimationSystem.DebugUI;
+namespace ParallelAnimationSystem.DebugStuff;
 
 public interface IImGuiRendererBackend
 {
