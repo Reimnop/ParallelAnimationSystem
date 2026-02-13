@@ -2,6 +2,7 @@ using OpenTK.Graphics.OpenGL;
 using System.Numerics;
 using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core;
+using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Mathematics;
 
 namespace ParallelAnimationSystem.Rendering.OpenGL.PostProcessing;
@@ -83,8 +84,8 @@ public class UberPost : IDisposable
         float hueShiftAngle,
         float lensDistortionIntensity, Vector2 lensDistortionCenter,
         float chromaticAberrationIntensity,
-        Vector2 vignetteCenter, float vignetteIntensity, bool vignetteRounded, float vignetteRoundness, float vignetteSmoothness, Vector3 vignetteColor,
-        Vector3 gradientColor1, Vector3 gradientColor2, float gradientIntensity, float gradientRotation, GradientOverlayMode gradientMode,
+        Vector2 vignetteCenter, float vignetteIntensity, bool vignetteRounded, float vignetteRoundness, float vignetteSmoothness, ColorRgb vignetteColor,
+        ColorRgb gradientColor1, ColorRgb gradientColor2, float gradientIntensity, float gradientRotation, GradientOverlayMode gradientMode,
         float glitchIntensity, float glitchSpeed, Vector2 glitchSize,
         int inputTexture, int outputTexture)
     {
@@ -108,10 +109,10 @@ public class UberPost : IDisposable
         GL.Uniform1f(vignetteRoundedUniformLocation, vignetteRounded ? 1.0f : 0.0f);
         GL.Uniform1f(vignetteRoundnessUniformLocation, (1.0f - vignetteRoundness) * 6.0f + vignetteRoundness);
         GL.Uniform1f(vignetteSmoothnessUniformLocation, vignetteSmoothness * 5.0f);
-        GL.Uniform3f(vignetteColorUniformLocation, 1, vignetteColor);
+        GL.Uniform3f(vignetteColorUniformLocation, vignetteColor.R, vignetteColor.G, vignetteColor.B);
         
-        GL.Uniform3f(gradientColor1UniformLocation, 1, gradientColor1);
-        GL.Uniform3f(gradientColor2UniformLocation, 1, gradientColor2);
+        GL.Uniform3f(gradientColor1UniformLocation, gradientColor1.R, gradientColor1.G, gradientColor1.B);
+        GL.Uniform3f(gradientColor2UniformLocation, gradientColor2.R, gradientColor2.G, gradientColor2.B);
         GL.Uniform1f(gradientIntensityUniformLocation, gradientIntensity);
 
         unsafe

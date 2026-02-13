@@ -1,15 +1,29 @@
 using System.Numerics;
-using ParallelAnimationSystem.Mathematics;
+using System.Runtime.InteropServices;
 
 namespace ParallelAnimationSystem.Core.Data;
 
-public struct ColorRgba(float r, float g, float b, float a) : IEquatable<ColorRgba>
+[StructLayout(LayoutKind.Sequential, Pack = 4)]
+public struct ColorRgba(float r, float g, float b, float a)
+    : IEquatable<ColorRgba>
 {
-    public float R => r;
-    public float G => g;
-    public float B => b;
-    public float A => a;
+    public float R = r;
+    public float G = g;
+    public float B = b;
+    public float A = a;
     
+    public ColorRgba(byte r, byte g, byte b, float a) : this(r / 255f, g / 255f, b / 255f, a)
+    {
+    }
+    
+    public ColorRgba(float value, float a = 1f) : this(value, value, value, a)
+    {
+    }
+    
+    public ColorRgba(ColorRgb rgb, float a = 1f) : this(rgb.R, rgb.G, rgb.B, a)
+    {
+    }
+
     public static ColorRgba operator*(ColorRgba color, float scalar) 
         => new(color.R * scalar, color.G * scalar, color.B * scalar, color.A * scalar);
     

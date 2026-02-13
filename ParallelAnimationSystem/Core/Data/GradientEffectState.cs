@@ -6,8 +6,8 @@ namespace ParallelAnimationSystem.Core.Data;
 
 public struct GradientEffectState()
 {
-    public Vector3 Color1 { get; set; } = Vector3.Zero;
-    public Vector3 Color2 { get; set; } = Vector3.Zero;
+    public ColorRgb Color1 { get; set; } = default;
+    public ColorRgb Color2 { get; set; } = default;
     public float Intensity { get; set; } = 1.0f;
     public float Rotation { get; set; } = 0.0f;
     public GradientOverlayMode Mode { get; set; } = GradientOverlayMode.Linear;
@@ -15,8 +15,8 @@ public struct GradientEffectState()
     public static GradientEffectState Lerp(GradientEffectState a, GradientEffectState b, float t)
         => new()
         {
-            Color1 = Vector3.Lerp(a.Color1, b.Color1, t),
-            Color2 = Vector3.Lerp(a.Color2, b.Color2, t),
+            Color1 = ColorRgb.Lerp(a.Color1, b.Color1, t),
+            Color2 = ColorRgb.Lerp(a.Color2, b.Color2, t),
             Intensity = float.Lerp(a.Intensity, b.Intensity, t),
             Rotation = float.Lerp(a.Rotation, b.Rotation, t),
             Mode = b.Mode // zero order hold, can't lerp enums

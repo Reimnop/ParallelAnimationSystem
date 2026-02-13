@@ -42,7 +42,7 @@ public static class EventHelper
         {
             Intensity = bloomData.Intensity,
             Diffusion = bloomData.Diffusion,
-            Color = tcs.Effect[colorIndex].ToVector()
+            Color = tcs.Effect[colorIndex]
         };
     }
     
@@ -52,8 +52,8 @@ public static class EventHelper
             Intensity = vignetteData.Intensity,
             Smoothness = vignetteData.Smoothness,
             Color = vignetteData.Color.HasValue 
-                ? tcs.Effect[Math.Clamp(vignetteData.Color.Value, 0, tcs.Effect.Length - 1)].ToVector()
-                : Vector3.Zero,
+                ? tcs.Effect[Math.Clamp(vignetteData.Color.Value, 0, tcs.Effect.Length - 1)]
+                : default,
             Rounded = vignetteData.Rounded,
             Roundness = vignetteData.Roundness ?? 1f,
             Center = vignetteData.Center
@@ -65,8 +65,8 @@ public static class EventHelper
         var colorBIndex = Math.Clamp(gradientData.ColorB, 0, tcs.Effect.Length - 1);
         return new GradientEffectState
         {
-            Color1 = tcs.Effect[colorAIndex].ToVector(),
-            Color2 = tcs.Effect[colorBIndex].ToVector(),
+            Color1 = tcs.Effect[colorAIndex],
+            Color2 = tcs.Effect[colorBIndex],
             Intensity = gradientData.Intensity,
             Rotation = gradientData.Rotation,
             Mode = gradientData.Mode

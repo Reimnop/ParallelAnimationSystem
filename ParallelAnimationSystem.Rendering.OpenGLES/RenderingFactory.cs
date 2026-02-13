@@ -24,15 +24,20 @@ public class RenderingFactory(IncomingResourceQueue queue) : IRenderingFactory
         return font;
     }
     
-    public IText CreateText(RichText text, FontCollection fonts)
+    public IText CreateText(ShapedRichText richText)
     {
-        var textShaper = new TextShaper<RenderGlyph>(
-            (min, max, minUV, maxUV, color, boldItalic, fontIndex) 
-                => new RenderGlyph(min, max, minUV, maxUV, color, boldItalic, fontIndex),
-            fonts);
+        var renderGlyphs = richText.Glyphs.Select(x => new RenderGlyph
+        {
+            Min = x.Min,
+            Max = x.Max,
+            MinUV = x.MinUV,
+            MaxUV = x.MaxUV,
+            Color = x.Color,
+            BoldItalic = x.BoldItalic,
+            FontIndex = x.FontId
+        });
         
-        var shapedText = textShaper.ShapeText(text);
-        return new Text(shapedText.ToArray());
+        return new Text(renderGlyphs.ToArray());
     }
 
     public IDrawList CreateDrawList()

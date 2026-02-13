@@ -1,18 +1,23 @@
 using System.Numerics;
-using ParallelAnimationSystem.Mathematics;
+using System.Runtime.InteropServices;
 
 namespace ParallelAnimationSystem.Core.Data;
 
+[StructLayout(LayoutKind.Sequential, Pack = 4)]
 public struct ColorRgb(float r, float g, float b) : IEquatable<ColorRgb>
 {
-    public float R => r;
-    public float G => g;
-    public float B => b;
+    public float R = r;
+    public float G = g;
+    public float B = b;
 
     public ColorRgb(byte r, byte g, byte b) : this(r / 255f, g / 255f, b / 255f)
     {
     }
-    
+
+    public ColorRgb(float value) : this(value, value, value)
+    {
+    }
+
     public static ColorRgb operator*(ColorRgb color, float scalar) 
         => new(color.R * scalar, color.G * scalar, color.B * scalar);
     

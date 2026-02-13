@@ -19,7 +19,7 @@ public class AppCore
 {
     private readonly List<List<IMesh>> meshes = [];
     
-    private readonly FontCollection fonts;
+    private readonly TextShaper textShaper;
 
     private readonly AppSettings appSettings;
     private readonly ResourceLoader loader;
@@ -120,7 +120,8 @@ public class AppCore
             var notoMono = LoadFont("Fonts/NotoMono.tmpe");
             var notoMonoStack = new FontStack("NotoMono SDF", 16.0f, [notoMono, arialuni, seguisym, code2000]);
             
-            fonts = new FontCollection([inconsolataStack, liberationSansStack, notoMonoStack]);
+            var fonts = new FontCollection([inconsolataStack, liberationSansStack, notoMonoStack]);
+            textShaper = new TextShaper(fonts);
         }
 
         #endregion
@@ -262,7 +263,7 @@ public class AppCore
                 {
                     if (!loadedTexts.TryGetValue(playbackObject.Text, out var text))
                     {
-                        var richText = new RichText(
+                        var richText = textShaper.ShapeText(
                             playbackObject.Text,
                             "NotoMono SDF",
                             playbackObject.Origin.X switch
@@ -278,7 +279,7 @@ public class AppCore
                                 _ => VerticalAlignment.Center,
                             });
                     
-                        text = renderingFactory.CreateText(richText, fonts);
+                        text = renderingFactory.CreateText(richText);
                         loadedTexts[playbackObject.Text] = text;
                     }
                     
@@ -322,12 +323,12 @@ public class AppCore
         return new ChromaticAberrationPostProcessingData(intensity);
     }
     
-    private static VignettePostProcessingData CreateVignetteData(Vector2 center, float intensity, bool rounded, float roundness, float smoothness, Vector3 color)
+    private static VignettePostProcessingData CreateVignetteData(Vector2 center, float intensity, bool rounded, float roundness, float smoothness, ColorRgb color)
     {
         return new VignettePostProcessingData(center, intensity, rounded, roundness, smoothness, color);
     }
     
-    private static GradientPostProcessingData CreateGradientData(Vector3 color1, Vector3 color2, float intensity, float rotation, GradientOverlayMode mode)
+    private static GradientPostProcessingData CreateGradientData(ColorRgb color1, ColorRgb color2, float intensity, float rotation, GradientOverlayMode mode)
     {
         return new GradientPostProcessingData(color1, color2, intensity, rotation, mode);
     }

@@ -1,5 +1,6 @@
 using System.Numerics;
 using Pamx.Common.Enum;
+using ParallelAnimationSystem.Core.Data;
 
 namespace ParallelAnimationSystem.Rendering.Data;
 
@@ -7,8 +8,8 @@ public record struct HueShiftPostProcessingData(float Angle);
 public record struct BloomPostProcessingData(float Intensity, float Diffusion);
 public record struct LensDistortionPostProcessingData(float Intensity, Vector2 Center);
 public record struct ChromaticAberrationPostProcessingData(float Intensity);
-public record struct VignettePostProcessingData(Vector2 Center, float Intensity, bool Rounded, float Roundness, float Smoothness, Vector3 Color);
-public record struct GradientPostProcessingData(Vector3 Color1, Vector3 Color2, float Intensity, float Rotation, GradientOverlayMode Mode);
+public record struct VignettePostProcessingData(Vector2 Center, float Intensity, bool Rounded, float Roundness, float Smoothness, ColorRgb Color);
+public record struct GradientPostProcessingData(ColorRgb Color1, ColorRgb Color2, float Intensity, float Rotation, GradientOverlayMode Mode);
 public record struct GlitchPostProcessingData(float Intensity, float Speed, Vector2 Size);
 
 public record struct PostProcessingData(
