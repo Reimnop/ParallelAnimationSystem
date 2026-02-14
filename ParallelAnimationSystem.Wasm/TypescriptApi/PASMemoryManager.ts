@@ -17,7 +17,12 @@ export class PASMemoryManager {
   }
   
   public release(obj: PASNativeObject) {
+    if (obj.ptr === 0) {
+      return;
+    }
+    
     this.wasm._interop_releasePointer(obj.ptr);
     this.finalizationRegistry.unregister(obj);
+    obj.ptr = 0; // prevent double release
   }
 }
