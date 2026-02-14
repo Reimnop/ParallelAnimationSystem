@@ -13,7 +13,7 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <PublishTrimmed>true</PublishTrimmed>
     
-    <UseMonoRuntime>true</UseMonoRuntime>
+    <UseMonoRuntime>false</UseMonoRuntime>
   </PropertyGroup>
   
   <ItemGroup>
