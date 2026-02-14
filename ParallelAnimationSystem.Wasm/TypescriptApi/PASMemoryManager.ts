@@ -2,18 +2,19 @@ import { PASNativeObject } from "./PASNativeObject";
 import { PASWasmModule } from "./PASModule";
 
 export class PASMemoryManager {
-  private readonly finalizationRegistry: FinalizationRegistry<number>;
+  private readonly finalizationRegistry: FinalizationRegistry<{ wasm: PASWasmModule, ptr: number }>;
   private readonly wasm: PASWasmModule;
   
   public constructor(wasm: PASWasmModule) {
     this.wasm = wasm;
-    this.finalizationRegistry = new FinalizationRegistry((ptr) => {
-      this.wasm._interop_releasePointer(ptr);
+    this.finalizationRegistry = new FinalizationRegistry(({ wasm, ptr }) => {
+      wasm._interop_releasePointer(ptr);
     });
   }
   
   public register(obj: PASNativeObject) {
-    this.finalizationRegistry.register(obj, obj.ptr);
+    const ptr = obj.ptr;
+    this.finalizationRegistry.register(obj, { wasm: this.wasm, ptr }, obj);
   }
   
   public release(obj: PASNativeObject) {
