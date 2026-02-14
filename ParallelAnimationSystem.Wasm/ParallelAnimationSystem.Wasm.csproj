@@ -20,7 +20,7 @@
       -sMODULARIZE
       -sMIN_WEBGL_VERSION=2
       -lGL
-      -sEXPORTED_RUNTIME_METHODS='["stringToNewUTF8"]'
+      -sEXPORTED_RUNTIME_METHODS='["HEAPU8","stringToNewUTF8"]'
       -sEXPORTED_FUNCTIONS=@exports.txt
       --emit-tsd ParallelAnimationSystem.Wasm.d.ts
     </EmccFlags>
