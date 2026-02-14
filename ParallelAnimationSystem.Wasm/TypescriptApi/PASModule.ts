@@ -1,47 +1,46 @@
 import { MainModule } from "./ParallelAnimationSystem.Wasm";
 import { PASApp } from "./PASApp";
 import { PASBeatmapFormat } from "./PASBeatmapFormat";
-import {NativeObject} from "./NativeObject";
+import { PASMemoryManager } from "./PASMemoryManager";
 
 export type PASWasmModule = MainModule & {
   canvas?: HTMLCanvasElement;
 };
 
 export class PASModule {
-  private readonly instance: PASWasmModule;
+  wasm: PASWasmModule;
+  memoryManager: PASMemoryManager;
   
-  public constructor(instance: PASWasmModule, canvas: HTMLCanvasElement) {
-    this.instance = instance;
-    this.instance.canvas = canvas;
+  public constructor(wasm: PASWasmModule, canvas: HTMLCanvasElement) {
+    this.wasm = wasm;
+    this.memoryManager = new PASMemoryManager(this.wasm);
+    
+    this.wasm.canvas = canvas;
   }
 
   start(seed: BigInt, enablePostProcessing: boolean, enableTextRendering: boolean, beatmapData: string, beatmapFormat: PASBeatmapFormat): void {
-    const beatmapDataPtr = this.instance.stringToNewUTF8(beatmapData) as number;
+    const beatmapDataPtr = this.wasm.stringToNewUTF8(beatmapData) as number;
     try {
-      this.instance._main_start(
+      this.wasm._main_start(
           seed,
           enablePostProcessing ? 1 : 0,
           enableTextRendering ? 1 : 0,
           beatmapDataPtr,
           beatmapFormat);
     } finally {
-      this.instance._free(beatmapDataPtr);
+      this.wasm._free(beatmapDataPtr);
     }
   }
 
   shutdown(): void {
-    this.instance._main_shutdown();
+    this.wasm._main_shutdown();
   }
 
   getApp(): PASApp | null {
-    const ptr = this.instance._main_getAppPointer();
+    const ptr = this.wasm._main_getAppPointer();
     if (ptr === 0) {
       return null;
     }
-    return new PASApp(ptr, this.instance);
-  }
-  
-  release(obj: NativeObject) {
-    this.instance._interop_releasePointer(obj.ptr);
+    return new PASApp(ptr, this);
   }
 }

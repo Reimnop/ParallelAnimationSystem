@@ -1,23 +1,29 @@
-import { PASWasmModule } from "./PASModule";
-import { NativeObject } from "./NativeObject";
+import { PASModule, PASWasmModule } from "./PASModule";
+import { PASNativeObject } from "./PASNativeObject";
 import { PASBeatmapData } from "./PASBeatmapData";
 
-export class PASApp implements NativeObject {
+export class PASApp implements PASNativeObject {
   ptr: number;
   
-  private readonly module: PASWasmModule;
+  private readonly module: PASModule;
 
-  public constructor(ptr: number, module: PASWasmModule) {
+  public constructor(ptr: number, module: PASModule) {
     this.ptr = ptr;
     this.module = module;
+    
+    this.module.memoryManager.register(this);
+  }
+
+  release(): void {
+    this.module.memoryManager.release(this);
   }
 
   getBeatmapData(): PASBeatmapData {
-    const ptr = this.module._app_getBeatmapDataPointer(this.ptr);
+    const ptr = this.module.wasm._app_getBeatmapDataPointer(this.ptr);
     return new PASBeatmapData(ptr, this.module);
   }
 
   processFrame(time: number): void {
-    this.module._app_processFrame(this.ptr, time);
+    this.module.wasm._app_processFrame(this.ptr, time);
   }
 }
