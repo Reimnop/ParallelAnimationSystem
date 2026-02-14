@@ -1,5 +1,5 @@
 import { PASModule } from "./PASModule";
-import { PASNativeObject } from "./PASNativeObject";
+import type { PASNativeObject } from "./PASNativeObject";
 
 export class PASBeatmapData implements PASNativeObject {
   ptr: number;

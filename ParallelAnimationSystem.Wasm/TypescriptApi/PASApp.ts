@@ -1,5 +1,5 @@
-import { PASModule, PASWasmModule } from "./PASModule";
-import { PASNativeObject } from "./PASNativeObject";
+import { PASModule } from "./PASModule";
+import type { PASNativeObject } from "./PASNativeObject";
 import { PASBeatmapData } from "./PASBeatmapData";
 
 export class PASApp implements PASNativeObject {

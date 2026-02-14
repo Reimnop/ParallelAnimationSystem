@@ -1,4 +1,4 @@
-import { MainModule } from "./ParallelAnimationSystem.Wasm";
+import type { MainModule } from "./ParallelAnimationSystem.Wasm";
 import { PASApp } from "./PASApp";
 import { PASBeatmapFormat } from "./PASBeatmapFormat";
 import { PASMemoryManager } from "./PASMemoryManager";

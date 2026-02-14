@@ -1,5 +1,5 @@
-import { PASNativeObject } from "./PASNativeObject";
-import { PASWasmModule } from "./PASModule";
+import type { PASNativeObject } from "./PASNativeObject";
+import type { PASWasmModule } from "./PASModule";
 
 export class PASMemoryManager {
   private readonly finalizationRegistry: FinalizationRegistry<{ wasm: PASWasmModule, ptr: number }>;

@@ -1,6 +1,7 @@
 // TypeScript bindings for emscripten-generated code.  Automatically generated at compile time.
 declare namespace RuntimeExports {
-  function stringToNewUTF8(str: any): any;
+    let HEAPU8: any;
+    function stringToNewUTF8(str: any): any;
 }
 interface WasmModule {
   _free(_0: number): void;
