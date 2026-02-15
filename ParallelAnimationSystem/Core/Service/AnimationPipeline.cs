@@ -110,6 +110,9 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
         {
             parentDepth++;
 
+            if (playbackObject.Type == PlaybackObjectType.PrefabIntermediate)
+                parentType = ParentType.All;
+
             switch (parentType)
             {
                 case ParentType.Position:

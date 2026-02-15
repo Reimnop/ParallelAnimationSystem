@@ -26,7 +26,7 @@ public class PlaybackObject(Identifier id) : IIdentifiable, INotifyPropertyChang
         set => SetField(ref field, value);
     }
 
-    public bool IsVisible
+    public PlaybackObjectType Type
     {
         get;
         set => SetField(ref field, value);

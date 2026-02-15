@@ -83,7 +83,7 @@ public class Timeline : IDisposable
 
     private void AttachPlaybackObject(IndexedCollectionEntry<PlaybackObject> entry)
     {
-        if (entry.Item.IsVisible)
+        if (entry.Item.Type == PlaybackObjectType.Visible)
             InsertObjectForPlayback(entry.Index);
         
         entry.Item.PropertyChanged += OnPlaybackObjectPropertyChanged;
@@ -91,7 +91,7 @@ public class Timeline : IDisposable
     
     private void DetachPlaybackObject(IndexedCollectionEntry<PlaybackObject> entry)
     {
-        if (entry.Item.IsVisible)
+        if (entry.Item.Type != PlaybackObjectType.Visible)
             RemoveObjectFromPlayback(entry.Index);
         
         entry.Item.PropertyChanged -= OnPlaybackObjectPropertyChanged;
@@ -110,8 +110,8 @@ public class Timeline : IDisposable
             case nameof(PlaybackObject.EndTime):
                 objectsPendingForEventUpdate.Add(index);
                 break;
-            case nameof(PlaybackObject.IsVisible):
-                if (playbackObject.IsVisible)
+            case nameof(PlaybackObject.Type):
+                if (playbackObject.Type == PlaybackObjectType.Visible)
                     InsertObjectForPlayback(index);
                 else
                     RemoveObjectFromPlayback(index);

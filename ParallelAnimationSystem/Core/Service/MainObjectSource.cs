@@ -148,7 +148,7 @@ public class MainObjectSource : IDisposable
                 beatmapObject.Duration,
                 beatmapObject.AutoKillType,
                 beatmapObject.AutoKillOffset),
-            IsVisible = beatmapObject.Type != BeatmapObjectType.Empty,
+            Type = beatmapObject.Type == BeatmapObjectType.Empty ? PlaybackObjectType.Invisible : PlaybackObjectType.Visible,
             ParentType = beatmapObject.ParentType,
             ParentOffset = beatmapObject.ParentOffset,
             RenderMode = (RenderMode)beatmapObject.RenderType,
@@ -247,7 +247,7 @@ public class MainObjectSource : IDisposable
                     beatmapObject.AutoKillOffset);
                 break;
             case nameof(BeatmapObject.Type):
-                playbackObject.IsVisible = beatmapObject.Type != BeatmapObjectType.Empty;
+                playbackObject.Type = beatmapObject.Type == BeatmapObjectType.Empty ? PlaybackObjectType.Invisible : PlaybackObjectType.Visible;
                 break;
             case nameof(BeatmapObject.ParentType):
                 playbackObject.ParentType = beatmapObject.ParentType;
