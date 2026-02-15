@@ -14,17 +14,16 @@
     <MSBuildEnableWorkloadResolver>false</MSBuildEnableWorkloadResolver>
     <WasmEnableSIMD>true</WasmEnableSIMD>
     <DebugType>none</DebugType>
-    
-    <EmccFlags>
-      -sEXPORT_ES6
-      -sMODULARIZE
-      -sMIN_WEBGL_VERSION=2
-      -lGL
-      -sEXPORTED_RUNTIME_METHODS='["HEAPU8","stringToNewUTF8"]'
-      -sEXPORTED_FUNCTIONS=@exports.txt
-      --emit-tsd ParallelAnimationSystem.Wasm.d.ts
-    </EmccFlags>
   </PropertyGroup>
+
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'browser-wasm'">
+    <LinkerArg Include="-sMODULARIZE
+    -sEXPORT_ES6
+    -sMIN_WEBGL_VERSION=2
+    -lGL
+    -sEXPORTED_RUNTIME_METHODS=@runtime_exports.txt
+    --emit-tsd ParallelAnimationSystem.Wasm.d.ts" />
+  </ItemGroup>
 
   <ItemGroup>
     <DirectPInvoke Include="libEGL" />
@@ -47,12 +46,9 @@
   </ItemGroup>
   
   <ItemGroup>
-    <None Include="exports.txt" />
-  </ItemGroup>
-  
-  <ItemGroup>
     <Compile Remove="ts/**/*" />
     <None Include="ts/**/*" />
+    <None Include="runtime_exports.txt" />
     <None Include="build-wasm.sh" />
     <None Include="build-wasm.ps1" />
   </ItemGroup>

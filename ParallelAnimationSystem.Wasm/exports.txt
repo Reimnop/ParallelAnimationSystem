@@ -1,8 +1,0 @@
-_malloc
-_free
-_interop_releasePointer
-_main_start
-_main_shutdown
-_main_getAppPointer
-_app_getBeatmapDataPointer
-_app_processFrame

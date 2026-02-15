@@ -257,14 +257,14 @@ var runtimeInitialized = false;
 
 function updateMemoryViews() {
   var b = wasmMemory.buffer;
-  HEAP8 = new Int8Array(b);
-  HEAP16 = new Int16Array(b);
+  Module['HEAP8'] = HEAP8 = new Int8Array(b);
+  Module['HEAP16'] = HEAP16 = new Int16Array(b);
   Module['HEAPU8'] = HEAPU8 = new Uint8Array(b);
-  HEAPU16 = new Uint16Array(b);
-  HEAP32 = new Int32Array(b);
-  HEAPU32 = new Uint32Array(b);
-  HEAPF32 = new Float32Array(b);
-  HEAPF64 = new Float64Array(b);
+  Module['HEAPU16'] = HEAPU16 = new Uint16Array(b);
+  Module['HEAP32'] = HEAP32 = new Int32Array(b);
+  Module['HEAPU32'] = HEAPU32 = new Uint32Array(b);
+  Module['HEAPF32'] = HEAPF32 = new Float32Array(b);
+  Module['HEAPF64'] = HEAPF64 = new Float64Array(b);
   HEAP64 = new BigInt64Array(b);
   HEAPU64 = new BigUint64Array(b);
 }
@@ -7172,11 +7172,12 @@ function RhpInitializeStackTraceIpMap(pEntries,count) { const POINTER_SIZE = 4; 
 function RhpGetBiasedWasmFunctionIndexForFunctionPointer(fptr) { const func = wasmTable.get(fptr); let wasmFuncIndex = parseInt(func.name) + 2; if (isNaN(wasmFuncIndex)) wasmFuncIndex = 0; return wasmFuncIndex; }
 
 // Imports from the Wasm binary.
-var _free,
-  _malloc,
+var _malloc,
   _main_getAppPointer,
   _main_shutdown,
   _main_start,
+  _interop_free,
+  _interop_alloc,
   _interop_releasePointer,
   _app_processFrame,
   _app_getBeatmapDataPointer,
@@ -7191,11 +7192,12 @@ var _free,
 
 
 function assignWasmExports(wasmExports) {
-  _free = Module['_free'] = wasmExports['free'];
-  _malloc = Module['_malloc'] = wasmExports['malloc'];
+  _malloc = wasmExports['malloc'];
   _main_getAppPointer = Module['_main_getAppPointer'] = wasmExports['main_getAppPointer'];
   _main_shutdown = Module['_main_shutdown'] = wasmExports['main_shutdown'];
   _main_start = Module['_main_start'] = wasmExports['main_start'];
+  _interop_free = Module['_interop_free'] = wasmExports['interop_free'];
+  _interop_alloc = Module['_interop_alloc'] = wasmExports['interop_alloc'];
   _interop_releasePointer = Module['_interop_releasePointer'] = wasmExports['interop_releasePointer'];
   _app_processFrame = Module['_app_processFrame'] = wasmExports['app_processFrame'];
   _app_getBeatmapDataPointer = Module['_app_getBeatmapDataPointer'] = wasmExports['app_getBeatmapDataPointer'];

@@ -25,4 +25,16 @@ public class InteropHelper
         var handle = GCHandle.FromIntPtr(ptr);
         handle.Free();
     }
+    
+    [UnmanagedCallersOnly(EntryPoint = "interop_alloc")]
+    public static unsafe void* Alloc(UIntPtr size)
+    {        
+        return NativeMemory.Alloc(size);
+    }
+    
+    [UnmanagedCallersOnly(EntryPoint = "interop_free")]
+    public static unsafe void Free(void* ptr)
+    {
+        NativeMemory.Free(ptr);
+    }
 }

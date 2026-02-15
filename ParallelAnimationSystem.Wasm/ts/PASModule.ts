@@ -28,7 +28,7 @@ export class PASModule {
           beatmapDataPtr,
           beatmapFormat);
     } finally {
-      this.wasm._free(beatmapDataPtr);
+      this.wasm._interop_free(beatmapDataPtr);
     }
   }
 
