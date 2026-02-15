@@ -1,7 +1,6 @@
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-dotnet restore
 dotnet publish -c Release
 
 Remove-Item -Recurse -Force ./ts/mod -ErrorAction SilentlyContinue

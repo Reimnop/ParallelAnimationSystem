@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-dotnet restore
 dotnet publish -c Release
 
 rm -rf ./ts/mod

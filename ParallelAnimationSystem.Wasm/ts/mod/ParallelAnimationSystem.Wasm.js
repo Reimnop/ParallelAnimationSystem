@@ -7123,6 +7123,8 @@ async function createWasm() {
 
 
 
+
+
   FS.createPreloadedFile = FS_createPreloadedFile;
   FS.preloadFile = FS_preloadFile;
   FS.staticInit();;
@@ -7160,6 +7162,8 @@ if (Module['wasmBinary']) wasmBinary = Module['wasmBinary'];
 }
 
 // Begin runtime exports
+  Module['UTF8ToString'] = UTF8ToString;
+  Module['lengthBytesUTF8'] = lengthBytesUTF8;
   Module['stringToNewUTF8'] = stringToNewUTF8;
   // End runtime exports
   // Begin JS library exports
@@ -7176,9 +7180,23 @@ var _malloc,
   _main_getAppPointer,
   _main_shutdown,
   _main_start,
+  _idContainer_iterator_dispose,
+  _idContainer_iterator_getCurrent_value,
+  _idContainer_iterator_getCurrent_key,
+  _idContainer_iterator_moveNext,
+  _idContainer_getIterator,
+  _idContainer_remove,
+  _idContainer_insert,
+  _idContainer_getById,
+  _idContainer_getCount,
   _interop_free,
   _interop_alloc,
   _interop_releasePointer,
+  _beatmapObject_setName,
+  _beatmapObject_getName,
+  _beatmapObject_getId,
+  _beatmapObject_new,
+  _beatmapData_getObjects,
   _app_processFrame,
   _app_getBeatmapDataPointer,
   _emscripten_builtin_memalign,
@@ -7196,9 +7214,23 @@ function assignWasmExports(wasmExports) {
   _main_getAppPointer = Module['_main_getAppPointer'] = wasmExports['main_getAppPointer'];
   _main_shutdown = Module['_main_shutdown'] = wasmExports['main_shutdown'];
   _main_start = Module['_main_start'] = wasmExports['main_start'];
+  _idContainer_iterator_dispose = Module['_idContainer_iterator_dispose'] = wasmExports['idContainer_iterator_dispose'];
+  _idContainer_iterator_getCurrent_value = Module['_idContainer_iterator_getCurrent_value'] = wasmExports['idContainer_iterator_getCurrent_value'];
+  _idContainer_iterator_getCurrent_key = Module['_idContainer_iterator_getCurrent_key'] = wasmExports['idContainer_iterator_getCurrent_key'];
+  _idContainer_iterator_moveNext = Module['_idContainer_iterator_moveNext'] = wasmExports['idContainer_iterator_moveNext'];
+  _idContainer_getIterator = Module['_idContainer_getIterator'] = wasmExports['idContainer_getIterator'];
+  _idContainer_remove = Module['_idContainer_remove'] = wasmExports['idContainer_remove'];
+  _idContainer_insert = Module['_idContainer_insert'] = wasmExports['idContainer_insert'];
+  _idContainer_getById = Module['_idContainer_getById'] = wasmExports['idContainer_getById'];
+  _idContainer_getCount = Module['_idContainer_getCount'] = wasmExports['idContainer_getCount'];
   _interop_free = Module['_interop_free'] = wasmExports['interop_free'];
   _interop_alloc = Module['_interop_alloc'] = wasmExports['interop_alloc'];
   _interop_releasePointer = Module['_interop_releasePointer'] = wasmExports['interop_releasePointer'];
+  _beatmapObject_setName = Module['_beatmapObject_setName'] = wasmExports['beatmapObject_setName'];
+  _beatmapObject_getName = Module['_beatmapObject_getName'] = wasmExports['beatmapObject_getName'];
+  _beatmapObject_getId = Module['_beatmapObject_getId'] = wasmExports['beatmapObject_getId'];
+  _beatmapObject_new = Module['_beatmapObject_new'] = wasmExports['beatmapObject_new'];
+  _beatmapData_getObjects = Module['_beatmapData_getObjects'] = wasmExports['beatmapData_getObjects'];
   _app_processFrame = Module['_app_processFrame'] = wasmExports['app_processFrame'];
   _app_getBeatmapDataPointer = Module['_app_getBeatmapDataPointer'] = wasmExports['app_getBeatmapDataPointer'];
   _emscripten_builtin_memalign = wasmExports['emscripten_builtin_memalign'];
