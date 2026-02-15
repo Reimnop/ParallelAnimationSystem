@@ -51,8 +51,10 @@
   </ItemGroup>
   
   <ItemGroup>
-    <Compile Remove="TypescriptApi/**/*" />
-    <None Include="TypescriptApi/**/*" />
+    <Compile Remove="ts/**/*" />
+    <None Include="ts/**/*" />
+    <None Include="build-wasm.sh" />
+    <None Include="build-wasm.ps1" />
   </ItemGroup>
 
 </Project>
