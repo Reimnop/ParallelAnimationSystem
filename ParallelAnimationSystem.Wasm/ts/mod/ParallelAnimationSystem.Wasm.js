@@ -7192,6 +7192,30 @@ var _malloc,
   _interop_free,
   _interop_alloc,
   _interop_releasePointer,
+  _beatmapObject_setText,
+  _beatmapObject_getText,
+  _beatmapObject_setShape,
+  _beatmapObject_getShape,
+  _beatmapObject_setAutoKillOffset,
+  _beatmapObject_getAutoKillOffset,
+  _beatmapObject_setAutoKillType,
+  _beatmapObject_getAutoKillType,
+  _beatmapObject_setStartTime,
+  _beatmapObject_getStartTime,
+  _beatmapObject_setRenderDepth,
+  _beatmapObject_getRenderDepth,
+  _beatmapObject_setOrigin,
+  _beatmapObject_getOrigin,
+  _beatmapObject_setRenderType,
+  _beatmapObject_getRenderType,
+  _beatmapObject_setParentOffset,
+  _beatmapObject_getParentOffset,
+  _beatmapObject_setParentType,
+  _beatmapObject_getParentType,
+  _beatmapObject_setType,
+  _beatmapObject_getType,
+  _beatmapObject_setParentId,
+  _beatmapObject_getParentId,
   _beatmapObject_setName,
   _beatmapObject_getName,
   _beatmapObject_getId,
@@ -7226,6 +7250,30 @@ function assignWasmExports(wasmExports) {
   _interop_free = Module['_interop_free'] = wasmExports['interop_free'];
   _interop_alloc = Module['_interop_alloc'] = wasmExports['interop_alloc'];
   _interop_releasePointer = Module['_interop_releasePointer'] = wasmExports['interop_releasePointer'];
+  _beatmapObject_setText = Module['_beatmapObject_setText'] = wasmExports['beatmapObject_setText'];
+  _beatmapObject_getText = Module['_beatmapObject_getText'] = wasmExports['beatmapObject_getText'];
+  _beatmapObject_setShape = Module['_beatmapObject_setShape'] = wasmExports['beatmapObject_setShape'];
+  _beatmapObject_getShape = Module['_beatmapObject_getShape'] = wasmExports['beatmapObject_getShape'];
+  _beatmapObject_setAutoKillOffset = Module['_beatmapObject_setAutoKillOffset'] = wasmExports['beatmapObject_setAutoKillOffset'];
+  _beatmapObject_getAutoKillOffset = Module['_beatmapObject_getAutoKillOffset'] = wasmExports['beatmapObject_getAutoKillOffset'];
+  _beatmapObject_setAutoKillType = Module['_beatmapObject_setAutoKillType'] = wasmExports['beatmapObject_setAutoKillType'];
+  _beatmapObject_getAutoKillType = Module['_beatmapObject_getAutoKillType'] = wasmExports['beatmapObject_getAutoKillType'];
+  _beatmapObject_setStartTime = Module['_beatmapObject_setStartTime'] = wasmExports['beatmapObject_setStartTime'];
+  _beatmapObject_getStartTime = Module['_beatmapObject_getStartTime'] = wasmExports['beatmapObject_getStartTime'];
+  _beatmapObject_setRenderDepth = Module['_beatmapObject_setRenderDepth'] = wasmExports['beatmapObject_setRenderDepth'];
+  _beatmapObject_getRenderDepth = Module['_beatmapObject_getRenderDepth'] = wasmExports['beatmapObject_getRenderDepth'];
+  _beatmapObject_setOrigin = Module['_beatmapObject_setOrigin'] = wasmExports['beatmapObject_setOrigin'];
+  _beatmapObject_getOrigin = Module['_beatmapObject_getOrigin'] = wasmExports['beatmapObject_getOrigin'];
+  _beatmapObject_setRenderType = Module['_beatmapObject_setRenderType'] = wasmExports['beatmapObject_setRenderType'];
+  _beatmapObject_getRenderType = Module['_beatmapObject_getRenderType'] = wasmExports['beatmapObject_getRenderType'];
+  _beatmapObject_setParentOffset = Module['_beatmapObject_setParentOffset'] = wasmExports['beatmapObject_setParentOffset'];
+  _beatmapObject_getParentOffset = Module['_beatmapObject_getParentOffset'] = wasmExports['beatmapObject_getParentOffset'];
+  _beatmapObject_setParentType = Module['_beatmapObject_setParentType'] = wasmExports['beatmapObject_setParentType'];
+  _beatmapObject_getParentType = Module['_beatmapObject_getParentType'] = wasmExports['beatmapObject_getParentType'];
+  _beatmapObject_setType = Module['_beatmapObject_setType'] = wasmExports['beatmapObject_setType'];
+  _beatmapObject_getType = Module['_beatmapObject_getType'] = wasmExports['beatmapObject_getType'];
+  _beatmapObject_setParentId = Module['_beatmapObject_setParentId'] = wasmExports['beatmapObject_setParentId'];
+  _beatmapObject_getParentId = Module['_beatmapObject_getParentId'] = wasmExports['beatmapObject_getParentId'];
   _beatmapObject_setName = Module['_beatmapObject_setName'] = wasmExports['beatmapObject_setName'];
   _beatmapObject_getName = Module['_beatmapObject_getName'] = wasmExports['beatmapObject_getName'];
   _beatmapObject_getId = Module['_beatmapObject_getId'] = wasmExports['beatmapObject_getId'];
