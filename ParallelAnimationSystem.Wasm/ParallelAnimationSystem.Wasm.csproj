@@ -51,6 +51,7 @@
     <None Include="runtime_exports.txt" />
     <None Include="build-wasm.sh" />
     <None Include="build-wasm.ps1" />
+    <None Include="tsconfig.json" />
   </ItemGroup>
 
 </Project>
