@@ -122,62 +122,62 @@ public class EventManager
         return state;
     }
 
-    private void OnEventsCameraPositionKeyframesChanged(object? sender, KeyframeList<EventKeyframe<Vector2>> e)
+    private void OnEventsCameraPositionKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<Vector2>> e)
     {
         cameraPositionSequence.LoadKeyframes(EventHelper.ResolveGenericKeyframes(e));
     }
 
-    private void OnEventsCameraRotationKeyframesChanged(object? sender, KeyframeList<EventKeyframe<float>> e)
+    private void OnEventsCameraRotationKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<float>> e)
     {
         cameraRotationSequence.LoadKeyframes(EventHelper.ResolveRotationKeyframes(e));
     }
 
-    private void OnEventsCameraScaleKeyframesChanged(object? sender, KeyframeList<EventKeyframe<float>> e)
+    private void OnEventsCameraScaleKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<float>> e)
     {
         cameraScaleSequence.LoadKeyframes(EventHelper.ResolveGenericKeyframes(e));
     }
     
-    private void OnEventsCameraShakeKeyframesChanged(object? sender, KeyframeList<EventKeyframe<float>> e)
+    private void OnEventsCameraShakeKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<float>> e)
     {
         cameraShakeSequence.LoadKeyframes(EventHelper.ResolveGenericKeyframes(e));
     }
     
-    private void OnEventsChromaKeyframesChanged(object? sender, KeyframeList<EventKeyframe<float>> e)
+    private void OnEventsChromaKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<float>> e)
     {
         chromaSequence.LoadKeyframes(EventHelper.ResolveGenericKeyframes(e));
     }
     
-    private void OnBloomKeyframesChanged(object? sender, KeyframeList<EventKeyframe<BloomData>> e)
+    private void OnBloomKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<BloomData>> e)
     {
         bloomSequence.LoadKeyframes(EventHelper.ResolveGenericKeyframes(e));
     }
     
-    private void OnVignetteKeyframesChanged(object? sender, KeyframeList<EventKeyframe<VignetteData>> e)
+    private void OnVignetteKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<VignetteData>> e)
     {
         vignetteSequence.LoadKeyframes(EventHelper.ResolveGenericKeyframes(e));
     }
     
-    private void OnLensDistortionKeyframesChanged(object? sender, KeyframeList<EventKeyframe<LensDistortionData>> e)
+    private void OnLensDistortionKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<LensDistortionData>> e)
     {
         lensDistortionSequence.LoadKeyframes(EventHelper.ResolveGenericKeyframes(e));
     }
     
-    private void OnGrainKeyframesChanged(object? sender, KeyframeList<EventKeyframe<GrainData>> e)
+    private void OnGrainKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<GrainData>> e)
     {
         grainSequence.LoadKeyframes(EventHelper.ResolveGenericKeyframes(e));
     }
     
-    private void OnGradientKeyframesChanged(object? sender, KeyframeList<EventKeyframe<GradientData>> e)
+    private void OnGradientKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<GradientData>> e)
     {
         gradientSequence.LoadKeyframes(EventHelper.ResolveGenericKeyframes(e));
     }
     
-    private void OnGlitchKeyframesChanged(object? sender, KeyframeList<EventKeyframe<GlitchData>> e)
+    private void OnGlitchKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<GlitchData>> e)
     {
         glitchSequence.LoadKeyframes(EventHelper.ResolveGenericKeyframes(e));
     }
     
-    private void OnHueKeyframesChanged(object? sender, KeyframeList<EventKeyframe<float>> e)
+    private void OnHueKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<float>> e)
     {
         hueSequence.LoadKeyframes(EventHelper.ResolveRotationKeyframes(e));
     }

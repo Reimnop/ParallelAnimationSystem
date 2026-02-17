@@ -1,11 +1,10 @@
-﻿using ParallelAnimationSystem.Core.Data;
-using ParallelAnimationSystem.Util;
+﻿using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core.Service;
 
 public static class SequenceCommon
 {
-    public static void GetKeyframePair<T>(IReadOnlyList<T> keyframes, float time, out T left, out T right) where T : IKeyframe
+    public static void GetKeyframePair<T>(IReadOnlyList<BakedKeyframe<T>> keyframes, float time, out BakedKeyframe<T> left, out BakedKeyframe<T> right)
     {
         var index = keyframes.BinarySearchKey(time, kf => kf.Time, Comparer<float>.Default);
         index = index < 0 ? ~index - 1 : index;

@@ -1,5 +1,6 @@
 ﻿using System.Numerics;
 using Pamx.Common.Enum;
+using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Core.Model;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Util;
@@ -8,11 +9,12 @@ namespace ParallelAnimationSystem.Core.Service;
 
 public static class KeyframeHelper
 {
-    public static IEnumerable<Keyframe<Vector2>> ResolveRandomizableVector2Keyframes(
-        IEnumerable<Vector2Keyframe> keyframes, ulong seed)
+    public static IEnumerable<BakedKeyframe<Vector2>> ResolveObjectVector2Keyframes(
+        IEnumerable<RandomizableKeyframe<Vector2>> keyframes, ulong seed)
     {
         var prng = NumberUtil.CreatePseudoRng(seed);
-        
+
+        var currentValue = Vector2.Zero;
         foreach (var kf in keyframes)
         {
             var resolvedValue = ParseRandomVector2(
@@ -21,16 +23,17 @@ public static class KeyframeHelper
                 kf.RandomValue,
                 kf.RandomInterval,
                 prng);
-            yield return new Keyframe<Vector2>(kf.Time, kf.Ease, resolvedValue);
+            currentValue = kf.IsRelative ? currentValue + resolvedValue : resolvedValue;
+            yield return new BakedKeyframe<Vector2>(kf.Time, kf.Ease, resolvedValue);
         }
     }
     
-    public static IEnumerable<Keyframe<float>> ResolveRotationKeyframes(
-        IEnumerable<RotationKeyframe> keyframes, ulong seed)
+    public static IEnumerable<BakedKeyframe<float>> ResolveObjectRotationKeyframes(
+        IEnumerable<RandomizableKeyframe<float>> keyframes, ulong seed)
     {
         var prng = NumberUtil.CreatePseudoRng(seed);
         
-        var currentRotation = 0f;
+        var currentValue = 0f;
         foreach (var kf in keyframes)
         {
             var resolvedValue = ParseRandomFloat(
@@ -39,8 +42,8 @@ public static class KeyframeHelper
                 kf.RandomValue,
                 kf.RandomInterval,
                 prng);
-            currentRotation = kf.IsRelative ? currentRotation + resolvedValue : resolvedValue;
-            yield return new Keyframe<float>(kf.Time, kf.Ease, MathUtil.DegreesToRadians(currentRotation));
+            currentValue = kf.IsRelative ? currentValue + resolvedValue : resolvedValue;
+            yield return new BakedKeyframe<float>(kf.Time, kf.Ease, MathUtil.DegreesToRadians(currentValue));
         }
     }
     

@@ -2,9 +2,9 @@ namespace ParallelAnimationSystem.Core.Service;
 
 public class Sequence<T>(Interpolator<T> interpolator, Func<T> defaultValueProvider)
 {
-    private readonly List<Keyframe<T>> keyframes = [];
+    private readonly List<BakedKeyframe<T>> keyframes = [];
 
-    public void LoadKeyframes(IEnumerable<Keyframe<T>> keyframes)
+    public void LoadKeyframes(IEnumerable<BakedKeyframe<T>> keyframes)
     {
         this.keyframes.Clear();
         this.keyframes.AddRange(keyframes);

@@ -1,9 +1,9 @@
 ﻿namespace ParallelAnimationSystem.Core.Data;
 
-public class KeyframeList<T>() : SortedList<T>(comparer)
-    where T : struct, IKeyframe
+public class KeyframeList<T>() : SortedList<T>(Comparer)
+    where T : IKeyframe
 {
-    private static readonly KeyframeComparer<T> comparer = new();
+    private static readonly KeyframeComparer<T> Comparer = new();
     
     public event EventHandler<KeyframeList<T>>? ListChanged;
     
@@ -13,15 +13,6 @@ public class KeyframeList<T>() : SortedList<T>(comparer)
     {
         base.Add(item);
         ListChanged?.Invoke(this, this);
-    }
-
-    public override bool Remove(T item)
-    {
-        if (!base.Remove(item))
-            return false;
-        
-        ListChanged?.Invoke(this, this);
-        return true;
     }
     
     public override void RemoveAt(int index)

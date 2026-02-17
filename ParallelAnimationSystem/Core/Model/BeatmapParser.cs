@@ -62,31 +62,31 @@ public static class BeatmapParser
     {
         var cameraPositionKeyframes = beatmap.Events.Movement
             .Select(positionKeyframe 
-                => new EventKeyframe<Vector2>(positionKeyframe.Time, positionKeyframe.Ease, positionKeyframe.Value));
+                => new Data.Keyframe<Vector2>(positionKeyframe.Time, positionKeyframe.Ease, positionKeyframe.Value));
         events.CameraPosition.Replace(cameraPositionKeyframes);
 
         var cameraScaleKeyframes = beatmap.Events.Zoom
             .Select(scaleKeyframe
-                => new EventKeyframe<float>(scaleKeyframe.Time, scaleKeyframe.Ease, scaleKeyframe.Value));
+                => new Data.Keyframe<float>(scaleKeyframe.Time, scaleKeyframe.Ease, scaleKeyframe.Value));
         events.CameraScale.Replace(cameraScaleKeyframes);
 
         var cameraRotationKeyframes = beatmap.Events.Rotation
             .Select(rotationKeyframe
-                => new EventKeyframe<float>(rotationKeyframe.Time, rotationKeyframe.Ease, rotationKeyframe.Value));
+                => new Data.Keyframe<float>(rotationKeyframe.Time, rotationKeyframe.Ease, rotationKeyframe.Value));
         events.CameraRotation.Replace(cameraRotationKeyframes);
 
         var cameraShakeKeyframes = beatmap.Events.Shake
-            .Select(shakeKeyframe => new EventKeyframe<float>(shakeKeyframe.Time, shakeKeyframe.Ease, shakeKeyframe.Value));
+            .Select(shakeKeyframe => new Data.Keyframe<float>(shakeKeyframe.Time, shakeKeyframe.Ease, shakeKeyframe.Value));
         events.CameraShake.Replace(cameraShakeKeyframes);
 
         var chromaKeyframes = beatmap.Events.Chroma
             .Select(chromaKeyframe
-                => new EventKeyframe<float>(chromaKeyframe.Time, chromaKeyframe.Ease, chromaKeyframe.Value));
+                => new Data.Keyframe<float>(chromaKeyframe.Time, chromaKeyframe.Ease, chromaKeyframe.Value));
         events.Chroma.Replace(chromaKeyframes);
 
         var bloomKeyframes = beatmap.Events.Bloom
             .Select(bloomKeyframe
-                => new EventKeyframe<BloomData>(bloomKeyframe.Time, bloomKeyframe.Ease, new BloomData
+                => new Data.Keyframe<BloomData>(bloomKeyframe.Time, bloomKeyframe.Ease, new BloomData
                 {
                     Intensity = bloomKeyframe.Value.Intensity,
                     Diffusion = bloomKeyframe.Value.Diffusion,
@@ -96,7 +96,7 @@ public static class BeatmapParser
 
         var vignetteKeyframes = beatmap.Events.Vignette
             .Select(vignetteKeyframe 
-                => new EventKeyframe<VignetteData>(vignetteKeyframe.Time, vignetteKeyframe.Ease, new VignetteData
+                => new Data.Keyframe<VignetteData>(vignetteKeyframe.Time, vignetteKeyframe.Ease, new VignetteData
                 {
                     Intensity = vignetteKeyframe.Value.Intensity,
                     Smoothness = vignetteKeyframe.Value.Smoothness,
@@ -109,7 +109,7 @@ public static class BeatmapParser
         
         var lensDistortionKeyframes = beatmap.Events.LensDistortion
             .Select(lensDistortionKeyframe 
-                => new EventKeyframe<LensDistortionData>(lensDistortionKeyframe.Time, lensDistortionKeyframe.Ease, new LensDistortionData
+                => new Data.Keyframe<LensDistortionData>(lensDistortionKeyframe.Time, lensDistortionKeyframe.Ease, new LensDistortionData
                 {
                     Intensity = lensDistortionKeyframe.Value.Intensity,
                     Center = lensDistortionKeyframe.Value.Center
@@ -118,7 +118,7 @@ public static class BeatmapParser
         
         var grainKeyframes = beatmap.Events.Grain
             .Select(grainKeyframe 
-                => new EventKeyframe<GrainData>(grainKeyframe.Time, grainKeyframe.Ease, new GrainData
+                => new Data.Keyframe<GrainData>(grainKeyframe.Time, grainKeyframe.Ease, new GrainData
                 {
                     Intensity = grainKeyframe.Value.Intensity,
                     Size = grainKeyframe.Value.Size,
@@ -129,7 +129,7 @@ public static class BeatmapParser
         
         var gradientKeyframes = beatmap.Events.Gradient
             .Select(gradientKeyframe 
-                => new EventKeyframe<GradientData>(gradientKeyframe.Time, gradientKeyframe.Ease, new GradientData
+                => new Data.Keyframe<GradientData>(gradientKeyframe.Time, gradientKeyframe.Ease, new GradientData
                 {
                     Intensity = gradientKeyframe.Value.Intensity,
                     Rotation = gradientKeyframe.Value.Rotation,
@@ -141,7 +141,7 @@ public static class BeatmapParser
         
         var glitchKeyframes = beatmap.Events.Glitch
             .Select(glitchKeyframe 
-                => new EventKeyframe<GlitchData>(glitchKeyframe.Time, glitchKeyframe.Ease, new GlitchData
+                => new Data.Keyframe<GlitchData>(glitchKeyframe.Time, glitchKeyframe.Ease, new GlitchData
                 {
                     Intensity = glitchKeyframe.Value.Intensity,
                     Speed = glitchKeyframe.Value.Speed,
@@ -151,13 +151,13 @@ public static class BeatmapParser
         
         var hueKeyframes = beatmap.Events.Hue
             .Select(hueKeyframe 
-                => new EventKeyframe<float>(hueKeyframe.Time, hueKeyframe.Ease, hueKeyframe.Value));
+                => new Data.Keyframe<float>(hueKeyframe.Time, hueKeyframe.Ease, hueKeyframe.Value));
         events.Hue.Replace(hueKeyframes);
     }
 
-    private static void ParseThemeKeyframes(IBeatmap beatmap, KeyframeList<EventKeyframe<string>> eventsTheme)
+    private static void ParseThemeKeyframes(IBeatmap beatmap, KeyframeList<Data.Keyframe<string>> eventsTheme)
     {
-        var themeKeyframes = new List<EventKeyframe<string>>();
+        var themeKeyframes = new List<Data.Keyframe<string>>();
         foreach (var themeKeyframe in beatmap.Events.Theme)
         {
             string themeId;
@@ -168,7 +168,7 @@ public static class BeatmapParser
             else
                 throw new InvalidOperationException("Theme does not have a valid identifier");
             
-            themeKeyframes.Add(new EventKeyframe<string>(themeKeyframe.Time, themeKeyframe.Ease, themeId));
+            themeKeyframes.Add(new Data.Keyframe<string>(themeKeyframe.Time, themeKeyframe.Ease, themeId));
         }
         eventsTheme.Replace(themeKeyframes);
     }
@@ -260,39 +260,24 @@ public static class BeatmapParser
         return bmObj;
     }
 
-    private static Vector2Keyframe CreateVector2Keyframe(Keyframe<Vector2> keyframe)
-        => new()
-        {
-            Time = keyframe.Time,
-            Ease = keyframe.Ease,
-            Value = keyframe.Value,
-            RandomMode = keyframe.RandomMode,
-            RandomValue = keyframe.RandomValue,
-            RandomInterval = keyframe.RandomInterval
-        };
-    
-    private static RotationKeyframe CreateRotationKeyframe(Keyframe<float> keyframe)
-        => new()
-        {
-            Time = keyframe.Time,
-            Ease = keyframe.Ease,
-            Value = keyframe.Value,
-            RandomMode = keyframe.RandomMode,
-            RandomValue = keyframe.RandomValue,
-            RandomInterval = keyframe.RandomInterval,
-            IsRelative = true
-        };
-    
-    private static BeatmapObjectColorKeyframe CreateColorKeyframe(FixedKeyframe<ThemeColor> keyframe)
-        => new()
-        {
-            Time = keyframe.Time,
-            Ease = keyframe.Ease,
-            Color = new BeatmapObjectIndexedColor
+    private static RandomizableKeyframe<Vector2> CreateVector2Keyframe(Pamx.Common.Data.Keyframe<Vector2> keyframe)
+        => new(
+            keyframe.Time, keyframe.Ease, keyframe.Value, 
+            keyframe.RandomMode, keyframe.RandomValue, keyframe.RandomInterval, 
+            false);
+
+    private static RandomizableKeyframe<float> CreateRotationKeyframe(Pamx.Common.Data.Keyframe<float> keyframe)
+        => new(
+            keyframe.Time, keyframe.Ease, keyframe.Value,
+            keyframe.RandomMode, keyframe.RandomValue, keyframe.RandomInterval,
+            true);
+
+    private static Data.Keyframe<BeatmapObjectIndexedColor> CreateColorKeyframe(FixedKeyframe<ThemeColor> keyframe)
+        => new(
+            keyframe.Time, keyframe.Ease, new BeatmapObjectIndexedColor
             {
                 ColorIndex1 = keyframe.Value.Index,
                 ColorIndex2 = keyframe.Value.EndIndex,
                 Opacity = keyframe.Value.Opacity
-            }
-        };
+            });
 }

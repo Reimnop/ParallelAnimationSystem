@@ -9,10 +9,10 @@ namespace ParallelAnimationSystem.Core.Model;
 public class BeatmapObject : IStringIdentifiable, INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler? PropertyChanged;
-    public event EventHandler<KeyframeList<Vector2Keyframe>>? PositionKeyframesChanged;
-    public event EventHandler<KeyframeList<Vector2Keyframe>>? ScaleKeyframesChanged;
-    public event EventHandler<KeyframeList<RotationKeyframe>>? RotationKeyframesChanged;
-    public event EventHandler<KeyframeList<BeatmapObjectColorKeyframe>>? ColorKeyframesChanged;
+    public event EventHandler<KeyframeList<RandomizableKeyframe<Vector2>>>? PositionKeyframesChanged;
+    public event EventHandler<KeyframeList<RandomizableKeyframe<Vector2>>>? ScaleKeyframesChanged;
+    public event EventHandler<KeyframeList<RandomizableKeyframe<float>>>? RotationKeyframesChanged;
+    public event EventHandler<KeyframeList<Keyframe<BeatmapObjectIndexedColor>>>? ColorKeyframesChanged;
 
     public string Id { get; }
 
@@ -99,10 +99,10 @@ public class BeatmapObject : IStringIdentifiable, INotifyPropertyChanged
             Math.Max(RotationKeyframes.Duration,
                 ColorKeyframes.Duration)));
 
-    public KeyframeList<Vector2Keyframe> PositionKeyframes { get; } = [];
-    public KeyframeList<Vector2Keyframe> ScaleKeyframes { get; } = [];
-    public KeyframeList<RotationKeyframe> RotationKeyframes { get; } = [];
-    public KeyframeList<BeatmapObjectColorKeyframe> ColorKeyframes { get; } = [];
+    public KeyframeList<RandomizableKeyframe<Vector2>> PositionKeyframes { get; } = [];
+    public KeyframeList<RandomizableKeyframe<Vector2>> ScaleKeyframes { get; } = [];
+    public KeyframeList<RandomizableKeyframe<float>> RotationKeyframes { get; } = [];
+    public KeyframeList<Keyframe<BeatmapObjectIndexedColor>> ColorKeyframes { get; } = [];
 
     public BeatmapObject(string id)
     {

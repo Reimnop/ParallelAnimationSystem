@@ -1,7 +1,9 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
 using Pamx.Common.Enum;
+using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Core.Model;
+using ParallelAnimationSystem.Wasm.Interop.Data;
 
 namespace ParallelAnimationSystem.Wasm.Interop;
 
@@ -241,5 +243,37 @@ public static class InteropBeatmapObject
 
         var text = Marshal.PtrToStringUTF8(textPtr);
         beatmapObject.Text = text;
+    }
+
+    [UnmanagedCallersOnly(EntryPoint = "beatmapObject_getPositionKeyframes")]
+    public static IntPtr GetPositionKeyframes(IntPtr ptr)
+    {
+        var beatmapObject = InteropHelper.IntPtrToObject<BeatmapObject>(ptr);
+        var wrapper = new KeyframeListInteropWrapper<RandomizableKeyframe<Vector2>>(beatmapObject.PositionKeyframes);
+        return InteropHelper.ObjectToIntPtr(wrapper);
+    }
+    
+    [UnmanagedCallersOnly(EntryPoint = "beatmapObject_getScaleKeyframes")]
+    public static IntPtr GetScaleKeyframes(IntPtr ptr)
+    {
+        var beatmapObject = InteropHelper.IntPtrToObject<BeatmapObject>(ptr);
+        var wrapper = new KeyframeListInteropWrapper<RandomizableKeyframe<Vector2>>(beatmapObject.ScaleKeyframes);
+        return InteropHelper.ObjectToIntPtr(wrapper);
+    }
+    
+    [UnmanagedCallersOnly(EntryPoint = "beatmapObject_getRotationKeyframes")]
+    public static IntPtr GetRotationKeyframes(IntPtr ptr)
+    {
+        var beatmapObject = InteropHelper.IntPtrToObject<BeatmapObject>(ptr);
+        var wrapper = new KeyframeListInteropWrapper<RandomizableKeyframe<float>>(beatmapObject.RotationKeyframes);
+        return InteropHelper.ObjectToIntPtr(wrapper);
+    }
+    
+    [UnmanagedCallersOnly(EntryPoint = "beatmapObject_getColorKeyframes")]
+    public static IntPtr GetColorKeyframes(IntPtr ptr)
+    {
+        var beatmapObject = InteropHelper.IntPtrToObject<BeatmapObject>(ptr);
+        var wrapper = new KeyframeListInteropWrapper<Keyframe<BeatmapObjectIndexedColor>>(beatmapObject.ColorKeyframes);
+        return InteropHelper.ObjectToIntPtr(wrapper);
     }
 }

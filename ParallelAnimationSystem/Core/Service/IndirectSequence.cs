@@ -7,9 +7,9 @@ public class IndirectSequence<TIn, TOut, TContext>(
 {
     public delegate TOut Resolver(TIn value, TContext context);
 
-    private readonly List<Keyframe<TIn>> keyframes = [];
+    private readonly List<BakedKeyframe<TIn>> keyframes = [];
     
-    public void LoadKeyframes(IEnumerable<Keyframe<TIn>> newKeyframes)
+    public void LoadKeyframes(IEnumerable<BakedKeyframe<TIn>> newKeyframes)
     {
         keyframes.Clear();
         keyframes.AddRange(newKeyframes);

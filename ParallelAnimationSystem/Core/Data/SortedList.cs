@@ -18,15 +18,6 @@ public class SortedList<T>(IComparer<T> comparer) : IReadOnlyList<T>
         items.Insert(index, item);
     }
     
-    public virtual bool Remove(T item)
-    {
-        var index = items.BinarySearch(item, comparer);
-        if (index < 0)
-            return false;
-        items.RemoveAt(index);
-        return true;
-    }
-    
     public virtual void RemoveAt(int index)
         => items.RemoveAt(index);
     

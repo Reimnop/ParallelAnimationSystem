@@ -12,9 +12,9 @@ public class ThemeSequence(PlaybackThemeContainer playbackThemes)
     private readonly ThemeColorState tcs2 = new();
     private readonly ThemeColorState tcsOut = new();
     
-    private readonly List<Keyframe<int>> keyframes = [];
+    private readonly List<BakedKeyframe<int>> keyframes = [];
     
-    public void LoadKeyframes(IEnumerable<Keyframe<int>> newKeyframes)
+    public void LoadKeyframes(IEnumerable<BakedKeyframe<int>> newKeyframes)
     {
         keyframes.Clear();
         keyframes.AddRange(newKeyframes);

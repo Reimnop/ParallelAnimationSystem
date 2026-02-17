@@ -1,6 +1,5 @@
 ﻿using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core.Data;
-using ParallelAnimationSystem.Core.Model;
 
 namespace ParallelAnimationSystem.Core.Service;
 
@@ -17,18 +16,18 @@ public static class PlaybackObjectHelper
             _ => float.PositiveInfinity // no auto kill by default
         };
     
-    public static IEnumerable<Keyframe<BeatmapObjectIndexedColor>> ResolveColorKeyframes(IEnumerable<BeatmapObjectColorKeyframe> keyframes)
+    public static IEnumerable<BakedKeyframe<BeatmapObjectIndexedColor>> ResolveColorKeyframes(IEnumerable<Data.Keyframe<BeatmapObjectIndexedColor>> keyframes)
     {
         foreach (var kf in keyframes)
         {
             var value = new BeatmapObjectIndexedColor
             {
-                ColorIndex1 = kf.Color.ColorIndex1,
-                ColorIndex2 = kf.Color.ColorIndex2,
-                Opacity = kf.Color.Opacity
+                ColorIndex1 = kf.Value.ColorIndex1,
+                ColorIndex2 = kf.Value.ColorIndex2,
+                Opacity = kf.Value.Opacity
             };
             
-            yield return new Keyframe<BeatmapObjectIndexedColor>(kf.Time, kf.Ease, value);
+            yield return new BakedKeyframe<BeatmapObjectIndexedColor>(kf.Time, kf.Ease, value);
         }
     }
 }

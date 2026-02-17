@@ -11,7 +11,7 @@ public static class InteropBeatmapData
     {
         var beatmapData = InteropHelper.IntPtrToObject<BeatmapData>(ptr);
         var objects = beatmapData.Objects;
-        var adapter = new InteropIdContainerAdapter<BeatmapObject>(objects);
+        var adapter = new IdContainerInteropWrapper<BeatmapObject>(objects);
         return InteropHelper.ObjectToIntPtr(adapter);
     }
 }

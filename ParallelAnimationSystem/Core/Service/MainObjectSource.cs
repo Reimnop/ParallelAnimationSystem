@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Core.Model;
 using ParallelAnimationSystem.Rendering.Data;
@@ -71,13 +72,13 @@ public class MainObjectSource : IDisposable
             
             var seed = NumberUtil.Mix(e, playbackObject.Id);
             
-            playbackObject.PositionSequence.LoadKeyframes(KeyframeHelper.ResolveRandomizableVector2Keyframes(
+            playbackObject.PositionSequence.LoadKeyframes(KeyframeHelper.ResolveObjectVector2Keyframes(
                 beatmapObject.PositionKeyframes, NumberUtil.Mix(seed, PositionKey)));
             
-            playbackObject.ScaleSequence.LoadKeyframes(KeyframeHelper.ResolveRandomizableVector2Keyframes(
+            playbackObject.ScaleSequence.LoadKeyframes(KeyframeHelper.ResolveObjectVector2Keyframes(
                 beatmapObject.ScaleKeyframes, NumberUtil.Mix(seed, ScaleKey)));
             
-            playbackObject.RotationSequence.LoadKeyframes(KeyframeHelper.ResolveRotationKeyframes(
+            playbackObject.RotationSequence.LoadKeyframes(KeyframeHelper.ResolveObjectRotationKeyframes(
                 beatmapObject.RotationKeyframes, NumberUtil.Mix(seed, RotationKey)));
         }
     }
@@ -162,13 +163,13 @@ public class MainObjectSource : IDisposable
         
         // populate sequences
         var seed = NumberUtil.Mix(seedService.Seed, playbackObject.Id);
-        playbackObject.PositionSequence.LoadKeyframes(KeyframeHelper.ResolveRandomizableVector2Keyframes(
+        playbackObject.PositionSequence.LoadKeyframes(KeyframeHelper.ResolveObjectVector2Keyframes(
             beatmapObject.PositionKeyframes, NumberUtil.Mix(seed, PositionKey)));
         
-        playbackObject.ScaleSequence.LoadKeyframes(KeyframeHelper.ResolveRandomizableVector2Keyframes(
+        playbackObject.ScaleSequence.LoadKeyframes(KeyframeHelper.ResolveObjectVector2Keyframes(
             beatmapObject.ScaleKeyframes, NumberUtil.Mix(seed, ScaleKey)));
         
-        playbackObject.RotationSequence.LoadKeyframes(KeyframeHelper.ResolveRotationKeyframes(
+        playbackObject.RotationSequence.LoadKeyframes(KeyframeHelper.ResolveObjectRotationKeyframes(
             beatmapObject.RotationKeyframes, NumberUtil.Mix(seed, RotationKey)));
         
         playbackObject.ColorSequence.LoadKeyframes(PlaybackObjectHelper.ResolveColorKeyframes(beatmapObject.ColorKeyframes));
@@ -278,7 +279,7 @@ public class MainObjectSource : IDisposable
         }
     }
 
-    private void OnBeatmapObjectPositionKeyframesChanged(object? sender, KeyframeList<Vector2Keyframe> e)
+    private void OnBeatmapObjectPositionKeyframesChanged(object? sender, KeyframeList<RandomizableKeyframe<Vector2>> e)
     {
         if (sender is not BeatmapObject beatmapObject)
             return;
@@ -288,7 +289,7 @@ public class MainObjectSource : IDisposable
         
         var seed = NumberUtil.Mix(seedService.Seed, playbackObject.Id);
         playbackObject.PositionSequence.LoadKeyframes(
-            KeyframeHelper.ResolveRandomizableVector2Keyframes(e, NumberUtil.Mix(seed, PositionKey)));
+            KeyframeHelper.ResolveObjectVector2Keyframes(e, NumberUtil.Mix(seed, PositionKey)));
         
         // recalculate end time
         playbackObject.EndTime = PlaybackObjectHelper.CalculateEndTime(
@@ -298,7 +299,7 @@ public class MainObjectSource : IDisposable
             beatmapObject.AutoKillOffset);
     }
 
-    private void OnBeatmapObjectScaleKeyframesChanged(object? sender, KeyframeList<Vector2Keyframe> e)
+    private void OnBeatmapObjectScaleKeyframesChanged(object? sender, KeyframeList<RandomizableKeyframe<Vector2>> e)
     {
         if (sender is not BeatmapObject beatmapObject)
             return;
@@ -308,7 +309,7 @@ public class MainObjectSource : IDisposable
         
         var seed = NumberUtil.Mix(seedService.Seed, playbackObject.Id);
         playbackObject.ScaleSequence.LoadKeyframes(
-            KeyframeHelper.ResolveRandomizableVector2Keyframes(e, NumberUtil.Mix(seed, ScaleKey)));
+            KeyframeHelper.ResolveObjectVector2Keyframes(e, NumberUtil.Mix(seed, ScaleKey)));
         
         // recalculate end time
         playbackObject.EndTime = PlaybackObjectHelper.CalculateEndTime(
@@ -318,7 +319,7 @@ public class MainObjectSource : IDisposable
             beatmapObject.AutoKillOffset);
     }
 
-    private void OnBeatmapObjectRotationKeyframesChanged(object? sender, KeyframeList<RotationKeyframe> e)
+    private void OnBeatmapObjectRotationKeyframesChanged(object? sender, KeyframeList<RandomizableKeyframe<float>> e)
     {
         if (sender is not BeatmapObject beatmapObject)
             return;
@@ -328,7 +329,7 @@ public class MainObjectSource : IDisposable
         
         var seed = NumberUtil.Mix(seedService.Seed, playbackObject.Id);
         playbackObject.RotationSequence.LoadKeyframes(
-            KeyframeHelper.ResolveRotationKeyframes(e, NumberUtil.Mix(seed, RotationKey)));
+            KeyframeHelper.ResolveObjectRotationKeyframes(e, NumberUtil.Mix(seed, RotationKey)));
         
         // recalculate end time
         playbackObject.EndTime = PlaybackObjectHelper.CalculateEndTime(
@@ -338,7 +339,7 @@ public class MainObjectSource : IDisposable
             beatmapObject.AutoKillOffset);
     }
 
-    private void OnBeatmapObjectColorKeyframesChanged(object? sender, KeyframeList<BeatmapObjectColorKeyframe> e)
+    private void OnBeatmapObjectColorKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<BeatmapObjectIndexedColor>> e)
     {
         if (sender is not BeatmapObject beatmapObject)
             return;

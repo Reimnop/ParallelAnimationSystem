@@ -82,7 +82,7 @@ public class ThemeManager(PlaybackThemeContainer playbackThemes) : IDisposable
     public ThemeColorState ComputeThemeAt(float time)
         => themeSequence.ComputeValueAt(time);
 
-    private void OnEventsThemeKeyframesChanged(object? sender, KeyframeList<EventKeyframe<string>> e)
+    private void OnEventsThemeKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<string>> e)
     {
         themeSequence.LoadKeyframes(ResolveThemeKeyframes(e));
     }
@@ -180,13 +180,13 @@ public class ThemeManager(PlaybackThemeContainer playbackThemes) : IDisposable
         e.ParallaxObjectColorUpdated -= OnBeatmapThemeParallaxObjectColorUpdated;
     }
 
-    private IEnumerable<Keyframe<int>> ResolveThemeKeyframes(KeyframeList<EventKeyframe<string>> themeEventKeyframes)
+    private IEnumerable<BakedKeyframe<int>> ResolveThemeKeyframes(KeyframeList<Data.Keyframe<string>> themeEventKeyframes)
     {
         foreach (var eventKeyframe in themeEventKeyframes)
         {
             var themeId = eventKeyframe.Value;
             var index = playbackThemes.GetIndexForId(themeId);
-            yield return new Keyframe<int>(eventKeyframe.Time, eventKeyframe.Ease, index);
+            yield return new BakedKeyframe<int>(eventKeyframe.Time, eventKeyframe.Ease, index);
         }
     } 
 

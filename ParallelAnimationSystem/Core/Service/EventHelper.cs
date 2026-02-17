@@ -7,16 +7,16 @@ namespace ParallelAnimationSystem.Core.Service;
 
 public static class EventHelper
 {
-    public static IEnumerable<Keyframe<T>> ResolveGenericKeyframes<T>(KeyframeList<EventKeyframe<T>> eventsCameraPosition)
+    public static IEnumerable<BakedKeyframe<T>> ResolveGenericKeyframes<T>(KeyframeList<Data.Keyframe<T>> eventsCameraPosition)
     {
         foreach (var eventKeyframe in eventsCameraPosition)
-            yield return new Keyframe<T>(eventKeyframe.Time, eventKeyframe.Ease, eventKeyframe.Value);
+            yield return new BakedKeyframe<T>(eventKeyframe.Time, eventKeyframe.Ease, eventKeyframe.Value);
     }
 
-    public static IEnumerable<Keyframe<float>> ResolveRotationKeyframes(KeyframeList<EventKeyframe<float>> events)
+    public static IEnumerable<BakedKeyframe<float>> ResolveRotationKeyframes(KeyframeList<Data.Keyframe<float>> events)
     {
         foreach (var eventKeyframe in events)
-            yield return new Keyframe<float>(eventKeyframe.Time, eventKeyframe.Ease, MathUtil.DegreesToRadians(eventKeyframe.Value));
+            yield return new BakedKeyframe<float>(eventKeyframe.Time, eventKeyframe.Ease, MathUtil.DegreesToRadians(eventKeyframe.Value));
     }
 
     public static LensDistortionData LerpLensDistortionData(LensDistortionData a, LensDistortionData b, float t)
