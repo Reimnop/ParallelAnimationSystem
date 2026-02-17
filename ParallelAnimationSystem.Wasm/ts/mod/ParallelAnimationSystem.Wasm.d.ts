@@ -1,5 +1,6 @@
 // TypeScript bindings for emscripten-generated code.  Automatically generated at compile time.
 declare namespace RuntimeExports {
+    let HEAP_DATA_VIEW: any;
     let HEAP8: any;
     let HEAPU8: any;
     let HEAP16: any;
@@ -7,6 +8,8 @@ declare namespace RuntimeExports {
     let HEAP32: any;
     let HEAPU32: any;
     let HEAPF32: any;
+    let HEAP64: any;
+    let HEAPU64: any;
     let HEAPF64: any;
     function stringToNewUTF8(str: any): any;
     function lengthBytesUTF8(str: any): number;
@@ -26,9 +29,6 @@ declare namespace RuntimeExports {
      * @return {string}
      */
     function UTF8ToString(ptr: number, maxBytesToRead?: number | undefined): string;
-    let HEAP_DATA_VIEW: any;
-    let HEAP64: any;
-    let HEAPU64: any;
 }
 interface WasmModule {
   _randomizableKeyframe_vector2_getIsRelative(_0: number): number;
