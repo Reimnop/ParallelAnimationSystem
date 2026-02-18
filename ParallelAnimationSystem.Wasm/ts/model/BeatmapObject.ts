@@ -1,5 +1,5 @@
 import { NativeObject } from "../NativeObject";
-import { Module } from "../Module";
+import type { Module } from "../Module";
 import type { BeatmapObjectType } from "../data/BeatmapObjectType";
 import type { BeatmapObjectParentType } from "../data/BeatmapObjectParentType";
 import type { BeatmapObjectParentOffset } from "../data/BeatmapObjectParentOffset";
@@ -7,13 +7,22 @@ import type { BeatmapObjectRenderType } from "../data/BeatmapObjectRenderType";
 import type { Vector } from "../data/Vector";
 import type { BeatmapObjectAutoKillType } from "../data/BeatmapObjectAutoKillType";
 import type { BeatmapObjectShape } from "../data/BeatmapObjectShape";
+import { KeyframeList } from "./KeyframeList";
+import type { Keyframe, RandomizableKeyframe } from "../data/Keyframe";
+import {
+  deserializeBeatmapObjectIndexedColorKeyframe,
+  deserializeFloatRandomizableKeyframe,
+  deserializeVector2RandomizableKeyframe, serializeBeatmapObjectIndexedColorKeyframe,
+  serializeFloatRandomizableKeyframe, serializeVector2RandomizableKeyframe
+} from "./KeyframeHelper";
+import { BeatmapObjectIndexedColor } from "../data/BeatmapObjectIndexedColor";
 
 export class BeatmapObject extends NativeObject {
-  static create(id: string, module: Module): BeatmapObject {
+  static create(module: Module, id: string): BeatmapObject {
     const idPtr = module.wasm.stringToNewUTF8(id) as number;
     try {
       const ptr = module.wasm._beatmapObject_new(idPtr);
-      return new BeatmapObject(ptr, module);
+      return new BeatmapObject(module, ptr);
     } finally {
       module.wasm._interop_free(idPtr);
     }
@@ -202,5 +211,37 @@ export class BeatmapObject extends NativeObject {
         this.module.wasm._interop_free(textPtr);
       }
     }
+  }
+  
+  get positionKeyframes(): KeyframeList<Vector<2>, RandomizableKeyframe<Vector<2>>> {
+    const positionKeyframesPtr = this.module.wasm._beatmapObject_getPositionKeyframes(this.ptr);
+    return new KeyframeList(
+      serializeVector2RandomizableKeyframe,
+      deserializeVector2RandomizableKeyframe,
+      this.module, positionKeyframesPtr);
+  }
+
+  get scaleKeyframes(): KeyframeList<Vector<2>, RandomizableKeyframe<Vector<2>>> {
+    const scaleKeyframesPtr = this.module.wasm._beatmapObject_getScaleKeyframes(this.ptr);
+    return new KeyframeList(
+      serializeVector2RandomizableKeyframe,
+      deserializeVector2RandomizableKeyframe,
+      this.module, scaleKeyframesPtr);
+  }
+
+  get rotationKeyframes(): KeyframeList<number, RandomizableKeyframe<number>> {
+    const rotationKeyframesPtr = this.module.wasm._beatmapObject_getRotationKeyframes(this.ptr);
+    return new KeyframeList(
+      serializeFloatRandomizableKeyframe,
+      deserializeFloatRandomizableKeyframe,
+      this.module, rotationKeyframesPtr);
+  }
+
+  get colorKeyframes(): KeyframeList<BeatmapObjectIndexedColor, Keyframe<BeatmapObjectIndexedColor>> {
+    const colorKeyframesPtr = this.module.wasm._beatmapObject_getColorKeyframes(this.ptr);
+    return new KeyframeList(
+      serializeBeatmapObjectIndexedColorKeyframe,
+      deserializeBeatmapObjectIndexedColorKeyframe,
+      this.module, colorKeyframesPtr);
   }
 }

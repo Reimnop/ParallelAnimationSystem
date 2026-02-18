@@ -5,8 +5,8 @@ export class IdContainer<T extends NativeObject> extends NativeObject {
   
   private readonly ctor: NativeObjectConstructor<T>;
   
-  constructor(ctor: NativeObjectConstructor<T>, ptr: number, module: Module) {
-    super(ptr, module);
+  constructor(ctor: NativeObjectConstructor<T>, module: Module, ptr: number) {
+    super(module, ptr);
     this.ctor = ctor;
   }
   
@@ -34,7 +34,7 @@ export class IdContainer<T extends NativeObject> extends NativeObject {
       if (itemPtr === 0) {
         return null;
       }
-      return new this.ctor(itemPtr, this.module);
+      return new this.ctor(this.module, itemPtr);
     } finally {
       this.module.wasm._interop_free(idPtr);
     }
@@ -48,7 +48,7 @@ export class IdContainer<T extends NativeObject> extends NativeObject {
         const itemPtr = this.module.wasm._idContainer_iterator_getCurrent_value(iteratorPtr);
         try {
           const id = this.module.wasm.UTF8ToString(idPtr);
-          const item = new this.ctor(itemPtr, this.module);
+          const item = new this.ctor(this.module, itemPtr);
           yield [id, item];
         } finally {
           this.module.wasm._interop_free(idPtr);
@@ -56,7 +56,7 @@ export class IdContainer<T extends NativeObject> extends NativeObject {
       }
     } finally {
       this.module.wasm._idContainer_iterator_dispose(iteratorPtr);
-      this.module.wasm._interop_free(iteratorPtr);
+      this.module.wasm._interop_releasePointer(iteratorPtr);
     }
   }
 }

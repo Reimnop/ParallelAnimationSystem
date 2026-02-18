@@ -1,14 +1,14 @@
 import { Module } from "./Module";
 
-export type NativeObjectConstructor<T extends NativeObject> = new (ptr: number, module: Module) => T;
+export type NativeObjectConstructor<T extends NativeObject> = new (module: Module, ptr: number) => T;
 
 export abstract class NativeObject {
-  ptr: number;
   module: Module;
+  ptr: number;
   
-  public constructor(ptr: number, module: Module) {
-    this.ptr = ptr;
+  public constructor(module: Module, ptr: number) {
     this.module = module;
+    this.ptr = ptr;
     
     this.module.memoryManager.register(this);
   }

@@ -4,7 +4,7 @@ import { BeatmapData } from "./model/BeatmapData";
 export class App extends NativeObject {
   get beatmapData(): BeatmapData {
     const ptr = this.module.wasm._app_getBeatmapDataPointer(this.ptr);
-    return new BeatmapData(ptr, this.module);
+    return new BeatmapData(this.module, ptr);
   }
 
   processFrame(time: number): void {

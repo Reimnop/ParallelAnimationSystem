@@ -1,6 +1,6 @@
 import type { MainModule } from "./mod/ParallelAnimationSystem.Wasm";
 import { App } from "./App";
-import { BeatmapFormat } from "./BeatmapFormat";
+import type { BeatmapFormat } from "./data/BeatmapFormat";
 import { MemoryManager } from "./MemoryManager";
 
 export type WasmModule = MainModule & {
@@ -23,7 +23,7 @@ export class Module {
     if (ptr === 0) {
       return null;
     }
-    return new App(ptr, this);
+    return new App(this, ptr);
   }
 
   start(seed: BigInt, enablePostProcessing: boolean, enableTextRendering: boolean, beatmapData: string, beatmapFormat: BeatmapFormat): void {
