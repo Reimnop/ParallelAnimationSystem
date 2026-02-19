@@ -1,4 +1,4 @@
-import { Module, WasmModule } from "./Module";
+import { Module, type WasmModule } from "./Module";
 import { InteropHelper } from "./InteropHelper";
 import { MemoryManager } from "./MemoryManager";
 

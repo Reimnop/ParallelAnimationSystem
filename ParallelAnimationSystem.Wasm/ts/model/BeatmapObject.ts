@@ -15,7 +15,7 @@ import {
   deserializeVector2RandomizableKeyframe, serializeBeatmapObjectIndexedColorKeyframe,
   serializeFloatRandomizableKeyframe, serializeVector2RandomizableKeyframe
 } from "./KeyframeHelper";
-import { BeatmapObjectIndexedColor } from "../data/BeatmapObjectIndexedColor";
+import type { BeatmapObjectIndexedColor } from "../data/BeatmapObjectIndexedColor";
 
 export class BeatmapObject extends NativeObject {
   static create(module: Module, id: string): BeatmapObject {

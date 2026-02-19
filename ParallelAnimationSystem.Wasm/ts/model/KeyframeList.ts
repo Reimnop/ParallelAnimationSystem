@@ -58,7 +58,7 @@ export class KeyframeList<T, K extends Keyframe<T>> extends NativeObject {
       try {
         const keyframePtrsPtr = this.wasm.stackAlloc(keyframePtrs.length * ptrSize);
         for (let i = 0; i < keyframePtrs.length; i++) {
-          this.wasm.HEAP_DATA_VIEW.setInt32(keyframePtrsPtr + i * ptrSize, keyframePtrs[i]);
+          this.wasm.HEAP_DATA_VIEW.setInt32(keyframePtrsPtr + i * ptrSize, keyframePtrs[i], true);
         }
         this.wasm._keyframeList_replace(this.ptr, keyframePtrsPtr, keyframes.length);
       } finally {

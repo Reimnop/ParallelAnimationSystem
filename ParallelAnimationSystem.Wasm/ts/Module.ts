@@ -1,4 +1,4 @@
-import { MainModule } from "./mod/ParallelAnimationSystem.Wasm";
+import type { MainModule } from "./mod/ParallelAnimationSystem.Wasm";
 import { App } from "./App";
 import type { BeatmapFormat } from "./data/BeatmapFormat";
 import { MemoryManager } from "./MemoryManager";
