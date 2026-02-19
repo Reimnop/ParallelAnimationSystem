@@ -11,8 +11,11 @@ declare namespace RuntimeExports {
     let HEAP64: any;
     let HEAPU64: any;
     let HEAPF64: any;
-    function stringToNewUTF8(str: any): any;
+    function stackSave(): any;
+    function stackRestore(val: any): any;
+    function stackAlloc(sz: any): any;
     function lengthBytesUTF8(str: any): number;
+    function stringToUTF8(str: any, outPtr: any, maxBytesToWrite: any): any;
     /**
      * Given a pointer 'ptr' to a null-terminated UTF8-encoded string in the
      * emscripten HEAP, returns a copy of that string as a Javascript String object.
@@ -31,6 +34,9 @@ declare namespace RuntimeExports {
     function UTF8ToString(ptr: number, maxBytesToRead?: number | undefined): string;
 }
 interface WasmModule {
+  _string_getBytes(_0: number, _1: number, _2: number): void;
+  _string_getByteCount(_0: number): number;
+  _string_getLength(_0: number): number;
   _randomizableKeyframe_vector2_getIsRelative(_0: number): number;
   _randomizableKeyframe_vector2_getRandomInterval(_0: number): number;
   _randomizableKeyframe_vector2_getRandomValue(_0: number, _1: number): void;

@@ -20,71 +20,71 @@ export class KeyframeList<T, K extends Keyframe<T>> extends NativeObject {
   }
   
   get count(): number {
-    return this.module.wasm._keyframeList_getCount(this.ptr);
+    return this.wasm._keyframeList_getCount(this.ptr);
   }
   
   at(index: number): K {
-    const keyframePtr = this.module.wasm._keyframeList_at(this.ptr, index);
+    const keyframePtr = this.wasm._keyframeList_at(this.ptr, index);
     try {
       return this.deserialize(this.module, keyframePtr);
     } finally {
-      this.module.wasm._interop_releasePointer(keyframePtr);
+      this.wasm._interop_releasePointer(keyframePtr);
     }
   }
   
   add(keyframe: K): void {
     const keyframePtr = this.serialize(this.module, keyframe);
     try {
-      this.module.wasm._keyframeList_add(this.ptr, keyframePtr);
+      this.wasm._keyframeList_add(this.ptr, keyframePtr);
     } finally {
-      this.module.wasm._interop_releasePointer(keyframePtr);
+      this.wasm._interop_releasePointer(keyframePtr);
     }
   }
   
   removeAt(index: number): void {
-    this.module.wasm._keyframeList_removeAt(this.ptr, index);
+    this.wasm._keyframeList_removeAt(this.ptr, index);
   }
   
   replace(keyframes: K[]) {
     if (keyframes.length === 0) {
-      this.module.wasm._keyframeList_replace(this.ptr, 0, 0);
+      this.wasm._keyframeList_replace(this.ptr, 0, 0);
       return;
     }
     
     const keyframePtrs = this.keyframeListToPtrs(keyframes);
     try {
       const ptrSize = 4; // assume 32-bit pointers
-      const keyframePtrsPtr = this.module.wasm._interop_alloc(keyframePtrs.length * ptrSize);
+      const sp = this.wasm.stackSave();
       try {
-        const baseU32Index = keyframePtrsPtr >> 2;
+        const keyframePtrsPtr = this.wasm.stackAlloc(keyframePtrs.length * ptrSize);
         for (let i = 0; i < keyframePtrs.length; i++) {
-          this.module.wasm.HEAPU32[baseU32Index + i] = keyframePtrs[i];
+          this.wasm.HEAP_DATA_VIEW.setInt32(keyframePtrsPtr + i * ptrSize, keyframePtrs[i]);
         }
-        this.module.wasm._keyframeList_replace(this.ptr, keyframePtrsPtr, keyframes.length);
+        this.wasm._keyframeList_replace(this.ptr, keyframePtrsPtr, keyframes.length);
       } finally {
-        this.module.wasm._interop_free(keyframePtrsPtr);
+        this.wasm.stackRestore(sp);
       }
     } finally {
       for (const ptr of keyframePtrs) {
-        this.module.wasm._interop_releasePointer(ptr);
+        this.wasm._interop_releasePointer(ptr);
       }
     }
   }
   
   *[Symbol.iterator](): Iterator<K> {
-    const iteratorPtr = this.module.wasm._keyframeList_getIterator(this.ptr);
+    const iteratorPtr = this.wasm._keyframeList_getIterator(this.ptr);
     try {
-      while (this.module.wasm._keyframeList_iterator_moveNext(iteratorPtr) !== 0) {
-        const keyframePtr = this.module.wasm._keyframeList_iterator_getCurrent(iteratorPtr);
+      while (this.wasm._keyframeList_iterator_moveNext(iteratorPtr) !== 0) {
+        const keyframePtr = this.wasm._keyframeList_iterator_getCurrent(iteratorPtr);
         try {
           yield this.deserialize(this.module, keyframePtr);
         } finally {
-          this.module.wasm._interop_releasePointer(keyframePtr);
+          this.wasm._interop_releasePointer(keyframePtr);
         }
       }
     } finally {
-      this.module.wasm._keyframeList_iterator_dispose(iteratorPtr);
-      this.module.wasm._interop_releasePointer(iteratorPtr);
+      this.wasm._keyframeList_iterator_dispose(iteratorPtr);
+      this.wasm._interop_releasePointer(iteratorPtr);
     }
   }
   
@@ -97,7 +97,7 @@ export class KeyframeList<T, K extends Keyframe<T>> extends NativeObject {
       }
     } catch(e) {
       for (const ptr of result) {
-        this.module.wasm._interop_releasePointer(ptr);
+        this.wasm._interop_releasePointer(ptr);
       }
       throw e;
     }

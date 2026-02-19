@@ -9,14 +9,15 @@ export function serializeBeatmapObjectIndexedColorKeyframe(
   module: Module,
   keyframe: Keyframe<BeatmapObjectIndexedColor>): number {
   const { time, ease, value } = keyframe;
-  const valuePtr = module.wasm._interop_alloc(12); // int, int, float
+  const sp = module.wasm.stackSave();
   try {
-    module.wasm.HEAP32[valuePtr >> 2] = value.colorIndex1;
-    module.wasm.HEAP32[(valuePtr >> 2) + 1] = value.colorIndex2;
-    module.wasm.HEAPF32[(valuePtr >> 2) + 2] = value.opacity;
+    const valuePtr = module.wasm.stackAlloc(12); // int, int, float
+    module.wasm.HEAP_DATA_VIEW.setInt32(valuePtr, value.colorIndex1, true);
+    module.wasm.HEAP_DATA_VIEW.setInt32(valuePtr + 4, value.colorIndex2, true);
+    module.wasm.HEAP_DATA_VIEW.setFloat32(valuePtr + 8, value.opacity, true);
     return module.wasm._keyframe_beatmapObjectIndexedColor_new(time, ease, valuePtr);
   } finally {
-    module.wasm._interop_free(valuePtr);
+    module.wasm.stackRestore(sp);
   }
 }
 
@@ -25,33 +26,38 @@ export function deserializeBeatmapObjectIndexedColorKeyframe(
   ptr: number): Keyframe<BeatmapObjectIndexedColor> {
   const time = module.wasm._keyframe_getTime(ptr);
   const ease = module.wasm._keyframe_getEase(ptr) as Ease;
-  const valuePtr = module.wasm._interop_alloc(12); // int, int, float
+  const sp = module.wasm.stackSave();
   try {
+    const valuePtr = module.wasm.stackAlloc(12); // int, int, float
     module.wasm._keyframe_beatmapObjectIndexedColor_getValue(ptr, valuePtr);
     const value: BeatmapObjectIndexedColor = {
-      colorIndex1: module.wasm.HEAP32[valuePtr >> 2],
-      colorIndex2: module.wasm.HEAP32[(valuePtr >> 2) + 1],
-      opacity: module.wasm.HEAPF32[(valuePtr >> 2) + 2]
+      colorIndex1: module.wasm.HEAP_DATA_VIEW.getInt32(valuePtr, true),
+      colorIndex2: module.wasm.HEAP_DATA_VIEW.getInt32(valuePtr + 4, true),
+      opacity: module.wasm.HEAP_DATA_VIEW.getFloat32(valuePtr + 8, true)
     };
     return { time, ease, value };
   } finally {
-    module.wasm._interop_free(valuePtr);
+    module.wasm.stackRestore(sp);
   }
 }
 
 export function serializeVector2RandomizableKeyframe(module: Module, keyframe: RandomizableKeyframe<Vector<2>>): number {
-  const valuesPtr = module.wasm._interop_alloc(16); // 4 floats
+  const sp = module.wasm.stackSave();
   try {
-    module.wasm.HEAPF32[valuesPtr >> 2] = keyframe.value[0];
-    module.wasm.HEAPF32[(valuesPtr >> 2) + 1] = keyframe.value[1];
-    module.wasm.HEAPF32[(valuesPtr >> 2) + 2] = keyframe.randomValue[0];
-    module.wasm.HEAPF32[(valuesPtr >> 2) + 3] = keyframe.randomValue[1];
+    const valuesPtr = module.wasm.stackAlloc(8); // 2 floats for value
+    module.wasm.HEAP_DATA_VIEW.setFloat32(valuesPtr, keyframe.value[0], true);
+    module.wasm.HEAP_DATA_VIEW.setFloat32(valuesPtr + 4, keyframe.value[1], true);
+    
+    const randomValuesPtr = module.wasm.stackAlloc(8); // 2 floats for randomValue
+    module.wasm.HEAP_DATA_VIEW.setFloat32(randomValuesPtr, keyframe.randomValue[0], true);
+    module.wasm.HEAP_DATA_VIEW.setFloat32(randomValuesPtr + 4, keyframe.randomValue[1], true);
+    
     return module.wasm._randomizableKeyframe_vector2_new(
       keyframe.time, keyframe.ease, valuesPtr,
-      keyframe.randomMode, valuesPtr + 8, keyframe.randomInterval,
+      keyframe.randomMode, randomValuesPtr, keyframe.randomInterval,
       keyframe.isRelative ? 1 : 0);
   } finally {
-    module.wasm._interop_free(valuesPtr);
+    module.wasm.stackRestore(sp);
   }
 }
 
@@ -63,20 +69,23 @@ export function deserializeVector2RandomizableKeyframe(
   const randomMode = module.wasm._randomizableKeyframe_vector2_getRandomMode(ptr) as RandomMode;
   const randomInterval = module.wasm._randomizableKeyframe_vector2_getRandomInterval(ptr);
   const isRelative = module.wasm._randomizableKeyframe_vector2_getIsRelative(ptr) !== 0;
-  const valuesPtr = module.wasm._interop_alloc(16); // 4 floats
+  const sp = module.wasm.stackSave();
   try {
+    const valuesPtr = module.wasm.stackAlloc(8); // 2 floats for value
     module.wasm._randomizableKeyframe_vector2_getValue(ptr, valuesPtr);
-    module.wasm._randomizableKeyframe_vector2_getRandomValue(ptr, valuesPtr + 8);
+    
+    const randomValuesPtr = module.wasm.stackAlloc(8); // 2 floats for randomValue
+    module.wasm._randomizableKeyframe_vector2_getRandomValue(ptr, randomValuesPtr);
     
     const value: Vector<2> = [
-      module.wasm.HEAPF32[valuesPtr >> 2],
-      module.wasm.HEAPF32[(valuesPtr >> 2) + 1]
+      module.wasm.HEAP_DATA_VIEW.getFloat32(valuesPtr, true),
+      module.wasm.HEAP_DATA_VIEW.getFloat32(valuesPtr + 4, true)
     ];
     
     const randomValue: Vector<2> = [
-      module.wasm.HEAPF32[(valuesPtr >> 2) + 2],
-      module.wasm.HEAPF32[(valuesPtr >> 2) + 3]
-    ]
+      module.wasm.HEAP_DATA_VIEW.getFloat32(randomValuesPtr, true),
+      module.wasm.HEAP_DATA_VIEW.getFloat32(randomValuesPtr + 4, true)
+    ];
     
     return {
       time, ease, value,
@@ -84,7 +93,7 @@ export function deserializeVector2RandomizableKeyframe(
       isRelative
     };
   } finally {
-    module.wasm._interop_free(valuesPtr);
+    module.wasm.stackRestore(sp);
   }
 }
 

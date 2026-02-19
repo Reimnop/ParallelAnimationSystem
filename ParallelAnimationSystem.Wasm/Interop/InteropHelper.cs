@@ -20,24 +20,6 @@ public class InteropHelper
         return typedTarget;
     }
     
-    public static unsafe IntPtr StringToIntPtrUTF8(string str)
-    {
-        var utf8ByteCount = Encoding.UTF8.GetByteCount(str);
-        var buffer = NativeMemory.Alloc((UIntPtr)utf8ByteCount + 1);
-        try
-        {
-            var bufferSpan = new Span<byte>(buffer, utf8ByteCount + 1);
-            Encoding.UTF8.GetBytes(str, bufferSpan);
-            bufferSpan[utf8ByteCount] = 0; // null terminator
-            return (IntPtr)buffer;
-        }
-        catch
-        {
-            NativeMemory.Free(buffer);
-            throw;
-        }
-    }
-    
     [UnmanagedCallersOnly(EntryPoint = "interop_releasePointer")]
     public static void ReleasePointer(IntPtr ptr)
     {

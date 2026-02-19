@@ -6,7 +6,7 @@ namespace ParallelAnimationSystem.Wasm.Interop;
 
 public static class InteropKeyframeBeatmapObjectIndexedColor
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     private struct InteropBeatmapObjectIndexedColor
     {
         public int ColorIndex1;

@@ -11,52 +11,54 @@ export class IdContainer<T extends NativeObject> extends NativeObject {
   }
   
   get count(): number {
-    return this.module.wasm._idContainer_getCount(this.ptr);
+    return this.wasm._idContainer_getCount(this.ptr);
   }
   
   insert(item: T): boolean {
-    return this.module.wasm._idContainer_insert(this.ptr, item.ptr) !== 0;
+    return this.wasm._idContainer_insert(this.ptr, item.ptr) !== 0;
   }
   
   remove(id: string): boolean {
-    const idPtr = this.module.wasm.stringToNewUTF8(id) as number;
+    const sp = this.wasm.stackSave();
     try {
-      return this.module.wasm._idContainer_remove(this.ptr, idPtr) !== 0;
+      const idPtr = this.interopHelper.stringToUTF8OnStack(id);
+      return this.wasm._idContainer_remove(this.ptr, idPtr) !== 0;
     } finally {
-      this.module.wasm._interop_free(idPtr);
+      this.wasm.stackRestore(sp);
     }
   }
   
   getById(id: string): T | null {
-    const idPtr = this.module.wasm.stringToNewUTF8(id) as number;
+    const sp = this.wasm.stackSave();
     try {
-      const itemPtr = this.module.wasm._idContainer_getById(this.ptr, idPtr);
+      const idPtr = this.interopHelper.stringToUTF8OnStack(id);
+      const itemPtr = this.wasm._idContainer_getById(this.ptr, idPtr);
       if (itemPtr === 0) {
         return null;
       }
       return new this.ctor(this.module, itemPtr);
     } finally {
-      this.module.wasm._interop_free(idPtr);
+      this.wasm.stackRestore(sp);
     }
   }
   
   *[Symbol.iterator](): Iterator<[string, T]> {
-    const iteratorPtr = this.module.wasm._idContainer_getIterator(this.ptr);
+    const iteratorPtr = this.wasm._idContainer_getIterator(this.ptr);
     try {
-      while (this.module.wasm._idContainer_iterator_moveNext(iteratorPtr) !== 0) {
-        const idPtr = this.module.wasm._idContainer_iterator_getCurrent_key(iteratorPtr);
-        const itemPtr = this.module.wasm._idContainer_iterator_getCurrent_value(iteratorPtr);
+      while (this.wasm._idContainer_iterator_moveNext(iteratorPtr) !== 0) {
+        const id = this.interopHelper.getStringFromObjectNotNull(iteratorPtr, this.wasm._idContainer_iterator_getCurrent_key);
+        const itemPtr = this.wasm._idContainer_iterator_getCurrent_value(iteratorPtr);
         try {
-          const id = this.module.wasm.UTF8ToString(idPtr);
           const item = new this.ctor(this.module, itemPtr);
           yield [id, item];
-        } finally {
-          this.module.wasm._interop_free(idPtr);
+        } catch(e) {
+          this.wasm._interop_releasePointer(itemPtr);
+          throw e;
         }
       }
     } finally {
-      this.module.wasm._idContainer_iterator_dispose(iteratorPtr);
-      this.module.wasm._interop_releasePointer(iteratorPtr);
+      this.wasm._idContainer_iterator_dispose(iteratorPtr);
+      this.wasm._interop_releasePointer(iteratorPtr);
     }
   }
 }

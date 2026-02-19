@@ -9,6 +9,9 @@ HEAPF32
 HEAP64
 HEAPU64
 HEAPF64
-stringToNewUTF8
+stackSave
+stackRestore
+stackAlloc
 lengthBytesUTF8
+stringToUTF8
 UTF8ToString

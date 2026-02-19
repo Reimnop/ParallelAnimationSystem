@@ -24,7 +24,7 @@ public static class InteropBeatmapObject
     {
         var beatmapObject = InteropHelper.IntPtrToObject<BeatmapObject>(ptr);
         var id = beatmapObject.Id;
-        return InteropHelper.StringToIntPtrUTF8(id);
+        return InteropHelper.ObjectToIntPtr(id);
     }
 
     [UnmanagedCallersOnly(EntryPoint = "beatmapObject_getName")]
@@ -32,7 +32,7 @@ public static class InteropBeatmapObject
     {
         var beatmapObject = InteropHelper.IntPtrToObject<BeatmapObject>(ptr);
         var name = beatmapObject.Name;
-        return InteropHelper.StringToIntPtrUTF8(name);
+        return InteropHelper.ObjectToIntPtr(name);
     }
 
     [UnmanagedCallersOnly(EntryPoint = "beatmapObject_setName")]
@@ -52,7 +52,7 @@ public static class InteropBeatmapObject
         var parentId = beatmapObject.ParentId;
         if (parentId is null)
             return IntPtr.Zero;
-        return InteropHelper.StringToIntPtrUTF8(parentId);
+        return InteropHelper.ObjectToIntPtr(parentId);
     }
 
     [UnmanagedCallersOnly(EntryPoint = "beatmapObject_setParentId")]
@@ -228,7 +228,7 @@ public static class InteropBeatmapObject
         var text = beatmapObject.Text;
         if (text is null)
             return IntPtr.Zero;
-        return InteropHelper.StringToIntPtrUTF8(text);
+        return InteropHelper.ObjectToIntPtr(text);
     }
 
     [UnmanagedCallersOnly(EntryPoint = "beatmapObject_setText")]

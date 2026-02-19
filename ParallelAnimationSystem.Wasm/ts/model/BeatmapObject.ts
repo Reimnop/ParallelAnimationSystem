@@ -19,202 +19,162 @@ import { BeatmapObjectIndexedColor } from "../data/BeatmapObjectIndexedColor";
 
 export class BeatmapObject extends NativeObject {
   static create(module: Module, id: string): BeatmapObject {
-    const idPtr = module.wasm.stringToNewUTF8(id) as number;
+    const sp = module.wasm.stackSave();
     try {
+      const idPtr = module.interopHelper.stringToUTF8OnStack(id);
       const ptr = module.wasm._beatmapObject_new(idPtr);
       return new BeatmapObject(module, ptr);
     } finally {
-      module.wasm._interop_free(idPtr);
+      module.wasm.stackRestore(sp);
     }
   }
   
   get id(): string {
-    const idPtr = this.module.wasm._beatmapObject_getId(this.ptr);
-    try {
-      return this.module.wasm.UTF8ToString(idPtr);
-    } finally {
-      this.module.wasm._interop_free(idPtr);
-    }
+    return this.interopHelper.getStringFromObjectNotNull(this.ptr, this.wasm._beatmapObject_getId);
   }
   
   get name(): string {
-    const namePtr = this.module.wasm._beatmapObject_getName(this.ptr);
-    try {
-      return this.module.wasm.UTF8ToString(namePtr);
-    } finally {
-      this.module.wasm._interop_free(namePtr);
-    }
+    return this.interopHelper.getStringFromObjectNotNull(this.ptr, this.wasm._beatmapObject_getName);
   }
   
   set name(value: string) {
-    const namePtr = this.module.wasm.stringToNewUTF8(value) as number;
-    try {
-      this.module.wasm._beatmapObject_setName(this.ptr, namePtr);
-    } finally {
-      this.module.wasm._interop_free(namePtr);
-    }
+    this.interopHelper.setStringToObject(this.ptr, value, this.wasm._beatmapObject_setName);
   }
   
   get parentId(): string | null {
-    const parentIdPtr = this.module.wasm._beatmapObject_getParentId(this.ptr);
-    if (parentIdPtr === 0) {
-      return null;
-    }
-    try {
-      return this.module.wasm.UTF8ToString(parentIdPtr);
-    } finally {
-      this.module.wasm._interop_free(parentIdPtr);
-    }
+    return this.interopHelper.getStringFromObject(this.ptr, this.wasm._beatmapObject_getParentId);
   }
   
   set parentId(value: string | null) {
-    const parentIdPtr = value !== null ? this.module.wasm.stringToNewUTF8(value) as number : 0;
-    try {
-      this.module.wasm._beatmapObject_setParentId(this.ptr, parentIdPtr);
-    } finally {
-      if (parentIdPtr !== 0) {
-        this.module.wasm._interop_free(parentIdPtr);
-      }
-    }
+    this.interopHelper.setStringToObject(this.ptr, value, this.wasm._beatmapObject_setParentId);
   }
   
   get type(): BeatmapObjectType {
-    return this.module.wasm._beatmapObject_getType(this.ptr);
+    return this.wasm._beatmapObject_getType(this.ptr);
   }
   
   set type(value: BeatmapObjectType) {
-    this.module.wasm._beatmapObject_setType(this.ptr, value);
+    this.wasm._beatmapObject_setType(this.ptr, value);
   }
   
   get parentType(): BeatmapObjectParentType {
-    return this.module.wasm._beatmapObject_getParentType(this.ptr);
+    return this.wasm._beatmapObject_getParentType(this.ptr);
   }
   
   set parentType(value: BeatmapObjectParentType) {
-    this.module.wasm._beatmapObject_setParentType(this.ptr, value);
+    this.wasm._beatmapObject_setParentType(this.ptr, value);
   }
   
   get parentOffset(): BeatmapObjectParentOffset {
-    const buf = this.module.wasm._interop_alloc(4 * 3); // allocate buffer for 3 f32 values
+    const sp = this.wasm.stackSave();
     try {
-      this.module.wasm._beatmapObject_getParentOffset(this.ptr, buf);
-      const position = this.module.wasm.HEAPF32[buf >> 2] as number;
-      const scale = this.module.wasm.HEAPF32[(buf >> 2) + 1] as number;
-      const rotation = this.module.wasm.HEAPF32[(buf >> 2) + 2] as number;
+      const buf = this.wasm.stackAlloc(12); // allocate buffer for 3 f32 values
+      this.wasm._beatmapObject_getParentOffset(this.ptr, buf);
+      const position = this.wasm.HEAP_DATA_VIEW.getFloat32(buf, true);
+      const scale = this.wasm.HEAP_DATA_VIEW.getFloat32(buf + 4, true);
+      const rotation = this.wasm.HEAP_DATA_VIEW.getFloat32(buf + 8, true);
       return { position, scale, rotation };
     } finally {
-      this.module.wasm._interop_free(buf);
+      this.wasm.stackRestore(sp);
     }
   }
   
   set parentOffset(value: BeatmapObjectParentOffset) {
-    const buf = this.module.wasm._interop_alloc(4 * 3); // allocate buffer for 3 f32 values
+    const sp = this.wasm.stackSave();
     try {
-      this.module.wasm.HEAPF32[buf >> 2] = value.position;
-      this.module.wasm.HEAPF32[(buf >> 2) + 1] = value.scale;
-      this.module.wasm.HEAPF32[(buf >> 2) + 2] = value.rotation;
-      this.module.wasm._beatmapObject_setParentOffset(this.ptr, buf);
+      const buf = this.wasm.stackAlloc(12); // allocate buffer for 3 f32 values
+      this.wasm.HEAP_DATA_VIEW.setFloat32(buf, value.position, true);
+      this.wasm.HEAP_DATA_VIEW.setFloat32(buf + 4, value.scale, true);
+      this.wasm.HEAP_DATA_VIEW.setFloat32(buf + 8, value.rotation, true);
+      this.wasm._beatmapObject_setParentOffset(this.ptr, buf);
     } finally {
-      this.module.wasm._interop_free(buf);
+      this.wasm.stackRestore(sp);
     }
   }
   
   get renderType(): BeatmapObjectRenderType {
-    return this.module.wasm._beatmapObject_getRenderType(this.ptr);
+    return this.wasm._beatmapObject_getRenderType(this.ptr);
   }
   
   set renderType(value: BeatmapObjectRenderType) {
-    this.module.wasm._beatmapObject_setRenderType(this.ptr, value);
+    this.wasm._beatmapObject_setRenderType(this.ptr, value);
   }
   
   get origin(): Vector<2> {
-    const buf = this.module.wasm._interop_alloc(4 * 2); // allocate buffer for 2 f32 values
+    const sp = this.wasm.stackSave();
     try {
-      this.module.wasm._beatmapObject_getOrigin(this.ptr, buf);
-      const x = this.module.wasm.HEAPF32[buf >> 2] as number;
-      const y = this.module.wasm.HEAPF32[(buf >> 2) + 1] as number;
+      const buf = this.wasm.stackAlloc(8); // allocate buffer for 2 f32 values
+      this.wasm._beatmapObject_getOrigin(this.ptr, buf);
+      const x = this.wasm.HEAP_DATA_VIEW.getFloat32(buf, true);
+      const y = this.wasm.HEAP_DATA_VIEW.getFloat32(buf + 4, true);
       return [x, y];
     } finally {
-      this.module.wasm._interop_free(buf);
+      this.wasm.stackRestore(sp);
     }
   }
   
   set origin(value: Vector<2>) {
-    const buf = this.module.wasm._interop_alloc(4 * 2); // allocate buffer for 2 f32 values
+    const sp = this.wasm.stackSave();
     try {
-      this.module.wasm.HEAPF32[buf >> 2] = value[0];
-      this.module.wasm.HEAPF32[(buf >> 2) + 1] = value[1];
-      this.module.wasm._beatmapObject_setOrigin(this.ptr, buf);
+      const buf = this.wasm.stackAlloc(8); // allocate buffer for 2 f32 values
+      this.wasm.HEAP_DATA_VIEW.setFloat32(buf, value[0], true);
+      this.wasm.HEAP_DATA_VIEW.setFloat32(buf + 4, value[1], true);
+      this.wasm._beatmapObject_setOrigin(this.ptr, buf);
     } finally {
-      this.module.wasm._interop_free(buf);
+      this.wasm.stackRestore(sp);
     }
   }
   
   get renderDepth(): number {
-    return this.module.wasm._beatmapObject_getRenderDepth(this.ptr);
+    return this.wasm._beatmapObject_getRenderDepth(this.ptr);
   }
   
   set renderDepth(value: number) {
-    this.module.wasm._beatmapObject_setRenderDepth(this.ptr, value);
+    this.wasm._beatmapObject_setRenderDepth(this.ptr, value);
   }
   
   get startTime(): number {
-    return this.module.wasm._beatmapObject_getStartTime(this.ptr);
+    return this.wasm._beatmapObject_getStartTime(this.ptr);
   }
   
   set startTime(value: number) {
-    this.module.wasm._beatmapObject_setStartTime(this.ptr, value);
+    this.wasm._beatmapObject_setStartTime(this.ptr, value);
   }
   
   get autoKillType(): BeatmapObjectAutoKillType {
-    return this.module.wasm._beatmapObject_getAutoKillType(this.ptr);
+    return this.wasm._beatmapObject_getAutoKillType(this.ptr);
   }
   
   set autoKillType(value: BeatmapObjectAutoKillType) {
-    this.module.wasm._beatmapObject_setAutoKillType(this.ptr, value);
+    this.wasm._beatmapObject_setAutoKillType(this.ptr, value);
   }
   
   get autoKillOffset(): number {
-    return this.module.wasm._beatmapObject_getAutoKillOffset(this.ptr);
+    return this.wasm._beatmapObject_getAutoKillOffset(this.ptr);
   }
   
   set autoKillOffset(value: number) {
-    this.module.wasm._beatmapObject_setAutoKillOffset(this.ptr, value);
+    this.wasm._beatmapObject_setAutoKillOffset(this.ptr, value);
   }
   
   get shape(): BeatmapObjectShape {
-    return this.module.wasm._beatmapObject_getShape(this.ptr);
+    return this.wasm._beatmapObject_getShape(this.ptr);
   }
   
   set shape(value: BeatmapObjectShape) {
-    this.module.wasm._beatmapObject_setShape(this.ptr, value);
+    this.wasm._beatmapObject_setShape(this.ptr, value);
   }
   
   get text(): string | null {
-    const textPtr = this.module.wasm._beatmapObject_getText(this.ptr);
-    if (textPtr === 0) {
-      return null;
-    }
-    try {
-      return this.module.wasm.UTF8ToString(textPtr);
-    } finally {
-      this.module.wasm._interop_free(textPtr);
-    }
+    return this.interopHelper.getStringFromObject(this.ptr, this.wasm._beatmapObject_getText);
   }
   
   set text(value: string | null) {
-    const textPtr = value !== null ? this.module.wasm.stringToNewUTF8(value) as number : 0;
-    try {
-      this.module.wasm._beatmapObject_setText(this.ptr, textPtr);
-    } finally {
-      if (textPtr !== 0) {
-        this.module.wasm._interop_free(textPtr);
-      }
-    }
+    this.interopHelper.setStringToObject(this.ptr, value, this.wasm._beatmapObject_setText);
   }
   
   get positionKeyframes(): KeyframeList<Vector<2>, RandomizableKeyframe<Vector<2>>> {
-    const positionKeyframesPtr = this.module.wasm._beatmapObject_getPositionKeyframes(this.ptr);
+    const positionKeyframesPtr = this.wasm._beatmapObject_getPositionKeyframes(this.ptr);
     return new KeyframeList(
       serializeVector2RandomizableKeyframe,
       deserializeVector2RandomizableKeyframe,
@@ -222,7 +182,7 @@ export class BeatmapObject extends NativeObject {
   }
 
   get scaleKeyframes(): KeyframeList<Vector<2>, RandomizableKeyframe<Vector<2>>> {
-    const scaleKeyframesPtr = this.module.wasm._beatmapObject_getScaleKeyframes(this.ptr);
+    const scaleKeyframesPtr = this.wasm._beatmapObject_getScaleKeyframes(this.ptr);
     return new KeyframeList(
       serializeVector2RandomizableKeyframe,
       deserializeVector2RandomizableKeyframe,
@@ -230,7 +190,7 @@ export class BeatmapObject extends NativeObject {
   }
 
   get rotationKeyframes(): KeyframeList<number, RandomizableKeyframe<number>> {
-    const rotationKeyframesPtr = this.module.wasm._beatmapObject_getRotationKeyframes(this.ptr);
+    const rotationKeyframesPtr = this.wasm._beatmapObject_getRotationKeyframes(this.ptr);
     return new KeyframeList(
       serializeFloatRandomizableKeyframe,
       deserializeFloatRandomizableKeyframe,
@@ -238,7 +198,7 @@ export class BeatmapObject extends NativeObject {
   }
 
   get colorKeyframes(): KeyframeList<BeatmapObjectIndexedColor, Keyframe<BeatmapObjectIndexedColor>> {
-    const colorKeyframesPtr = this.module.wasm._beatmapObject_getColorKeyframes(this.ptr);
+    const colorKeyframesPtr = this.wasm._beatmapObject_getColorKeyframes(this.ptr);
     return new KeyframeList(
       serializeBeatmapObjectIndexedColorKeyframe,
       deserializeBeatmapObjectIndexedColorKeyframe,

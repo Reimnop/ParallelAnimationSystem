@@ -71,7 +71,7 @@ public static class InteropIdContainer
     public static IntPtr IteratorGetCurrentKey(IntPtr enumeratorPtr)
     {
         var enumerator = InteropHelper.IntPtrToObject<IEnumerator<KeyValuePair<string, IStringIdentifiable>>>(enumeratorPtr);
-        return InteropHelper.StringToIntPtrUTF8(enumerator.Current.Key);
+        return InteropHelper.ObjectToIntPtr(enumerator.Current.Key);
     }
 
     [UnmanagedCallersOnly(EntryPoint = "idContainer_iterator_getCurrent_value")]

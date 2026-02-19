@@ -7767,6 +7767,10 @@ function RhpGetBiasedWasmFunctionIndexForFunctionPointer(fptr) { const func = wa
 
 
 
+  var stackAlloc = (sz) => __emscripten_stack_alloc(sz);
+
+
+
 
   FS.createPreloadedFile = FS_createPreloadedFile;
   FS.staticInit();
@@ -8405,6 +8409,9 @@ var wasmImports = {
 var wasmExports = await createWasm();
 var ___wasm_call_ctors = wasmExports['__wasm_call_ctors']
 var _malloc = wasmExports['malloc']
+var _string_getBytes = Module['_string_getBytes'] = wasmExports['string_getBytes']
+var _string_getByteCount = Module['_string_getByteCount'] = wasmExports['string_getByteCount']
+var _string_getLength = Module['_string_getLength'] = wasmExports['string_getLength']
 var _randomizableKeyframe_vector2_getIsRelative = Module['_randomizableKeyframe_vector2_getIsRelative'] = wasmExports['randomizableKeyframe_vector2_getIsRelative']
 var _randomizableKeyframe_vector2_getRandomInterval = Module['_randomizableKeyframe_vector2_getRandomInterval'] = wasmExports['randomizableKeyframe_vector2_getRandomInterval']
 var _randomizableKeyframe_vector2_getRandomValue = Module['_randomizableKeyframe_vector2_getRandomValue'] = wasmExports['randomizableKeyframe_vector2_getRandomValue']
@@ -8492,9 +8499,12 @@ var _emscripten_stack_get_current = wasmExports['emscripten_stack_get_current']
 // include: postamble.js
 // === Auto-generated postamble setup entry stuff ===
 
+Module['stackSave'] = stackSave;
+Module['stackRestore'] = stackRestore;
+Module['stackAlloc'] = stackAlloc;
 Module['UTF8ToString'] = UTF8ToString;
+Module['stringToUTF8'] = stringToUTF8;
 Module['lengthBytesUTF8'] = lengthBytesUTF8;
-Module['stringToNewUTF8'] = stringToNewUTF8;
 
 
 function run() {
