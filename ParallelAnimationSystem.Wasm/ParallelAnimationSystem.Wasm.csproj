@@ -19,6 +19,7 @@
   <ItemGroup Condition="'$(RuntimeIdentifier)' == 'browser-wasm'">
     <LinkerArg Include="-sMODULARIZE
     -sEXPORT_ES6
+    -sSUPPORT_BIG_ENDIAN
     -sMIN_WEBGL_VERSION=2
     -lGL
     -sEXPORTED_RUNTIME_METHODS=@runtime_exports.txt
