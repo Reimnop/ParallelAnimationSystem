@@ -25,45 +25,25 @@ declare namespace RuntimeExports {
      *   maximum number of bytes to read. You can omit this parameter to scan the
      *   string until the first 0 byte. If maxBytesToRead is passed, and the string
      *   at [ptr, ptr+maxBytesToReadr[ contains a null byte in the middle, then the
-     *   string will cut short at that byte index (i.e. maxBytesToRead will not
-     *   produce a string of exact length [ptr, ptr+maxBytesToRead[) N.B. mixing
-     *   frequent uses of UTF8ToString() with and without maxBytesToRead may throw
-     *   JS JIT optimizations off, so it is worth to consider consistently using one
+     *   string will cut short at that byte index.
+     * @param {boolean=} ignoreNul - If true, the function will not stop on a NUL character.
      * @return {string}
      */
-    function UTF8ToString(ptr: number, maxBytesToRead?: number | undefined): string;
+    function UTF8ToString(ptr: number, maxBytesToRead?: number | undefined, ignoreNul?: boolean | undefined): string;
 }
 interface WasmModule {
   _string_getBytes(_0: number, _1: number, _2: number): void;
   _string_getByteCount(_0: number): number;
   _string_getLength(_0: number): number;
-  _randomizableKeyframe_vector2_getIsRelative(_0: number): number;
-  _randomizableKeyframe_vector2_getRandomInterval(_0: number): number;
-  _randomizableKeyframe_vector2_getRandomValue(_0: number, _1: number): void;
-  _randomizableKeyframe_vector2_getRandomMode(_0: number): number;
-  _randomizableKeyframe_vector2_getValue(_0: number, _1: number): void;
-  _randomizableKeyframe_vector2_new(_0: number, _1: number, _2: number, _3: number, _4: number, _5: number, _6: number): number;
-  _randomizableKeyframe_float_getIsRelative(_0: number): number;
-  _randomizableKeyframe_float_getRandomInterval(_0: number): number;
-  _randomizableKeyframe_float_getRandomValue(_0: number): number;
-  _randomizableKeyframe_float_getRandomMode(_0: number): number;
-  _randomizableKeyframe_float_getValue(_0: number): number;
-  _randomizableKeyframe_float_new(_0: number, _1: number, _2: number, _3: number, _4: number, _5: number, _6: number): number;
   _main_getAppPointer(): number;
   _main_shutdown(): void;
   _main_start(_0: BigInt, _1: number, _2: number, _3: number, _4: number): void;
-  _keyframeList_iterator_dispose(_0: number): void;
-  _keyframeList_iterator_getCurrent(_0: number): number;
-  _keyframeList_iterator_reset(_0: number): void;
-  _keyframeList_iterator_moveNext(_0: number): number;
-  _keyframeList_getIterator(_0: number): number;
-  _keyframeList_replace(_0: number, _1: number, _2: number): void;
-  _keyframeList_removeAt(_0: number, _1: number): void;
-  _keyframeList_add(_0: number, _1: number): void;
-  _keyframeList_at(_0: number, _1: number): number;
+  _keyframeList_load(_0: number, _1: number, _2: number): void;
+  _keyframeList_fetchRange(_0: number, _1: number, _2: number, _3: number): void;
+  _keyframeList_getBufferSize(_0: number, _1: number, _2: number): number;
+  _keyframeList_fetchAt(_0: number, _1: number, _2: number): void;
+  _keyframeList_getKeyframeSize(_0: number, _1: number): number;
   _keyframeList_getCount(_0: number): number;
-  _keyframe_beatmapObjectIndexedColor_getValue(_0: number, _1: number): void;
-  _keyframe_beatmapObjectIndexedColor_new(_0: number, _1: number, _2: number): number;
   _keyframe_getEase(_0: number): number;
   _keyframe_getTime(_0: number): number;
   _keyframe_getType(_0: number): number;

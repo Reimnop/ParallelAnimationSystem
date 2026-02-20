@@ -1,5 +1,4 @@
 using System.Runtime.InteropServices;
-using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Wasm.Interop.Data;
 
 namespace ParallelAnimationSystem.Wasm.Interop;
@@ -13,89 +12,38 @@ public static class InteropKeyframeList
         return wrapper.Count;
     }
 
-    [UnmanagedCallersOnly(EntryPoint = "keyframeList_at")]
-    public static IntPtr At(IntPtr ptr, int index)
+    [UnmanagedCallersOnly(EntryPoint = "keyframeList_getKeyframeSize")]
+    public static int GetKeyframeSize(IntPtr ptr, int index)
     {
         var wrapper = InteropHelper.IntPtrToObject<IKeyframeListInteropWrapper>(ptr);
-        var item = wrapper[index];
-        return InteropHelper.ObjectToIntPtr(item);
+        return wrapper.GetKeyframeSize(index);
     }
 
-    [UnmanagedCallersOnly(EntryPoint = "keyframeList_add")]
-    public static void Add(IntPtr ptr, IntPtr keyframePtr)
+    [UnmanagedCallersOnly(EntryPoint = "keyframeList_fetchAt")]
+    public static void FetchAt(IntPtr ptr, IntPtr bufferPtr, int index)
     {
         var wrapper = InteropHelper.IntPtrToObject<IKeyframeListInteropWrapper>(ptr);
-        var keyframe = InteropHelper.IntPtrToObject<IKeyframe>(keyframePtr);
-        wrapper.Add(keyframe);
-    }
-
-    [UnmanagedCallersOnly(EntryPoint = "keyframeList_removeAt")]
-    public static void RemoveAt(IntPtr ptr, int index)
-    {
-        var wrapper = InteropHelper.IntPtrToObject<IKeyframeListInteropWrapper>(ptr);
-        wrapper.RemoveAt(index);
-    }
-
-    [UnmanagedCallersOnly(EntryPoint = "keyframeList_replace")]
-    public static unsafe void Replace(IntPtr ptr, IntPtr* keyframePtrsPtr, int keyframePtrCount)
-    {
-        var wrapper = InteropHelper.IntPtrToObject<IKeyframeListInteropWrapper>(ptr);
-
-        if (keyframePtrsPtr != null && keyframePtrCount != 0)
-        {
-            // get all the keyframes
-            var keyframes = new List<IKeyframe>(keyframePtrCount);
-            for (var i = 0; i < keyframePtrCount; i++)
-            {
-                var keyframePtr = Marshal.PtrToStructure<IntPtr>(keyframePtrsPtr[i]);
-                var keyframe = InteropHelper.IntPtrToObject<IKeyframe>(keyframePtr);
-                keyframes.Add(keyframe);
-            }
-        
-            // replace
-            wrapper.Replace(keyframes);
-        }
-        else
-        {
-            wrapper.Replace([]);
-        }
-    }
-
-    [UnmanagedCallersOnly(EntryPoint = "keyframeList_getIterator")]
-    public static IntPtr GetIterator(IntPtr ptr)
-    {
-        var wrapper = InteropHelper.IntPtrToObject<IKeyframeListInteropWrapper>(ptr);
-        // ReSharper disable once GenericEnumeratorNotDisposed
-        var enumerator = wrapper.GetEnumerator();
-        return InteropHelper.ObjectToIntPtr(enumerator);
-    }
-
-    [UnmanagedCallersOnly(EntryPoint = "keyframeList_iterator_moveNext")]
-    public static bool IteratorMoveNext(IntPtr enumeratorPtr)
-    {
-        var enumerator = InteropHelper.IntPtrToObject<IEnumerator<IKeyframe>>(enumeratorPtr);
-        return enumerator.MoveNext();
-    }
-
-    [UnmanagedCallersOnly(EntryPoint = "keyframeList_iterator_reset")]
-    public static void IteratorReset(IntPtr enumeratorPtr)
-    {
-        var enumerator = InteropHelper.IntPtrToObject<IEnumerator<IKeyframe>>(enumeratorPtr);
-        enumerator.Reset();
+        wrapper.FetchAt(bufferPtr, index);
     }
     
-    [UnmanagedCallersOnly(EntryPoint = "keyframeList_iterator_getCurrent")]
-    public static IntPtr IteratorGetCurrent(IntPtr enumeratorPtr)
+    [UnmanagedCallersOnly(EntryPoint = "keyframeList_getBufferSize")]
+    public static int GetBufferSize(IntPtr ptr, int start, int count)
     {
-        var enumerator = InteropHelper.IntPtrToObject<IEnumerator<IKeyframe>>(enumeratorPtr);
-        return InteropHelper.ObjectToIntPtr(enumerator.Current);
+        var wrapper = InteropHelper.IntPtrToObject<IKeyframeListInteropWrapper>(ptr);
+        return wrapper.GetBufferSize(start, count);
     }
     
-    [UnmanagedCallersOnly(EntryPoint = "keyframeList_iterator_dispose")]
-    public static void IteratorDispose(IntPtr enumeratorPtr)
+    [UnmanagedCallersOnly(EntryPoint = "keyframeList_fetchRange")]
+    public static void FetchRange(IntPtr ptr, IntPtr bufferPtr, int start, int count)
     {
-        var enumerator = InteropHelper.IntPtrToObject<IEnumerator<IKeyframe>>(enumeratorPtr);
-        if (enumerator is IDisposable disposable)
-            disposable.Dispose();
+        var wrapper = InteropHelper.IntPtrToObject<IKeyframeListInteropWrapper>(ptr);
+        wrapper.FetchRange(bufferPtr, start, count);
+    }
+
+    [UnmanagedCallersOnly(EntryPoint = "keyframeList_load")]
+    public static void Load(IntPtr ptr, IntPtr bufferPtr, int count)
+    {
+        var wrapper = InteropHelper.IntPtrToObject<IKeyframeListInteropWrapper>(ptr);
+        wrapper.Load(bufferPtr, count);
     }
 }

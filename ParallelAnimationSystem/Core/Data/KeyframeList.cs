@@ -27,9 +27,9 @@ public class KeyframeList<T>() : SortedList<T>(Comparer)
         ListChanged?.Invoke(this, this);
     }
     
-    public override void Replace(IEnumerable<T> collection)
+    public override void Load(IEnumerable<T> collection)
     {
-        base.Replace(collection);
+        base.Load(collection);
         ListChanged?.Invoke(this, this);
     }
 }

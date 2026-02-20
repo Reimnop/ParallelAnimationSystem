@@ -1,106 +1,77 @@
-import type { Keyframe } from "../data/Keyframe";
 import { NativeObject } from "../NativeObject";
 import type { Module } from "../Module";
+import type { KeyframeAdapter } from "./KeyframeAdapter";
 
-export type KeyframeSerializer<T, K extends Keyframe<T>> = (module: Module, keyframe: K) => number;
-export type KeyframeDeserializer<T, K extends Keyframe<T>> = (module: Module, ptr: number) => K;
-
-export class KeyframeList<T, K extends Keyframe<T>> extends NativeObject {
+export class KeyframeList<T> extends NativeObject {
   
-  private readonly serialize: KeyframeSerializer<T, K>;
-  private readonly deserialize: KeyframeDeserializer<T, K>;
+  private readonly adapter: KeyframeAdapter<T>;
   
-  public constructor(
-    serialize: KeyframeSerializer<T, K>,
-    deserialize: KeyframeDeserializer<T, K>,
-    module: Module, ptr: number) {
+  public constructor(adapter: KeyframeAdapter<T>, module: Module, ptr: number) {
     super(module, ptr);
-    this.serialize = serialize;
-    this.deserialize = deserialize;
+    this.adapter = adapter;
   }
   
   get count(): number {
     return this.wasm._keyframeList_getCount(this.ptr);
   }
   
-  at(index: number): K {
-    const keyframePtr = this.wasm._keyframeList_at(this.ptr, index);
+  fetchAt(index: number): T {
+    const sp = this.wasm.stackSave();
     try {
-      return this.deserialize(this.module, keyframePtr);
+      const bufferPtr = this.wasm.stackAlloc(this.adapter.size);
+      this.wasm._keyframeList_fetchAt(this.ptr, bufferPtr, index);
+      return this.adapter.read(bufferPtr);
     } finally {
-      this.wasm._interop_releasePointer(keyframePtr);
+      this.wasm.stackRestore(sp);
     }
   }
   
-  add(keyframe: K): void {
-    const keyframePtr = this.serialize(this.module, keyframe);
+  fetchRange(start: number, count: number): T[] {
+    const bufferSize = this.wasm._keyframeList_getBufferSize(this.ptr, start, count);
+    const bufferPtr = this.wasm._interop_alloc(bufferSize); // heap allocate to avoid stack overflow for large ranges
     try {
-      this.wasm._keyframeList_add(this.ptr, keyframePtr);
-    } finally {
-      this.wasm._interop_releasePointer(keyframePtr);
-    }
-  }
-  
-  removeAt(index: number): void {
-    this.wasm._keyframeList_removeAt(this.ptr, index);
-  }
-  
-  replace(keyframes: K[]) {
-    if (keyframes.length === 0) {
-      this.wasm._keyframeList_replace(this.ptr, 0, 0);
-      return;
-    }
-    
-    const keyframePtrs = this.keyframeListToPtrs(keyframes);
-    try {
-      const ptrSize = 4; // assume 32-bit pointers
-      const sp = this.wasm.stackSave();
-      try {
-        const keyframePtrsPtr = this.wasm.stackAlloc(keyframePtrs.length * ptrSize);
-        for (let i = 0; i < keyframePtrs.length; i++) {
-          this.wasm.HEAP_DATA_VIEW.setInt32(keyframePtrsPtr + i * ptrSize, keyframePtrs[i], true);
-        }
-        this.wasm._keyframeList_replace(this.ptr, keyframePtrsPtr, keyframes.length);
-      } finally {
-        this.wasm.stackRestore(sp);
+      this.wasm._keyframeList_fetchRange(this.ptr, bufferPtr, start, count);
+      
+      const keyframes: T[] = [];
+      for (let i = 0; i < count; i++) {
+        const value = this.adapter.read(bufferPtr + i * this.adapter.size);
+        keyframes.push(value);
       }
+      
+      return keyframes;
     } finally {
-      for (const ptr of keyframePtrs) {
-        this.wasm._interop_releasePointer(ptr);
-      }
+      this.wasm._interop_free(bufferPtr);
     }
   }
   
-  *[Symbol.iterator](): Iterator<K> {
-    const iteratorPtr = this.wasm._keyframeList_getIterator(this.ptr);
+  load(keyframes: T[]): void {
+    const bufferSize = keyframes.length * this.adapter.size;
+    const bufferPtr = this.wasm._interop_alloc(bufferSize); // heap allocate to avoid stack overflow for large arrays
     try {
-      while (this.wasm._keyframeList_iterator_moveNext(iteratorPtr) !== 0) {
-        const keyframePtr = this.wasm._keyframeList_iterator_getCurrent(iteratorPtr);
-        try {
-          yield this.deserialize(this.module, keyframePtr);
-        } finally {
-          this.wasm._interop_releasePointer(keyframePtr);
-        }
+      for (let i = 0; i < keyframes.length; i++) {
+        this.adapter.write(keyframes[i], bufferPtr + i * this.adapter.size);
+      }
+      this.wasm._keyframeList_load(this.ptr, bufferPtr, keyframes.length);
+    } finally {
+      this.wasm._interop_free(bufferPtr);
+    }
+  }
+  
+  toArray(): T[] {
+    return this.fetchRange(0, this.count);
+  }
+  
+  *[Symbol.iterator](): Iterator<T> {
+    const count = this.count;
+    const sp = this.wasm.stackSave();
+    try {
+      const bufferPtr = this.wasm.stackAlloc(this.adapter.size);
+      for (let i = 0; i < count; i++) {
+        this.wasm._keyframeList_fetchAt(this.ptr, bufferPtr, i);
+        yield this.adapter.read(bufferPtr);
       }
     } finally {
-      this.wasm._keyframeList_iterator_dispose(iteratorPtr);
-      this.wasm._interop_releasePointer(iteratorPtr);
+      this.wasm.stackRestore(sp);
     }
-  }
-  
-  private keyframeListToPtrs(keyframes: K[]): number[] {
-    const result: number[] = [];
-    try {
-      for (const keyframe of keyframes) {
-        const keyframePtr = this.serialize(this.module, keyframe);
-        result.push(keyframePtr);
-      }
-    } catch(e) {
-      for (const ptr of result) {
-        this.wasm._interop_releasePointer(ptr);
-      }
-      throw e;
-    }
-    return result;
   }
 }

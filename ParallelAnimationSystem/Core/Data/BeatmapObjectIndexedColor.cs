@@ -1,8 +1,11 @@
-﻿namespace ParallelAnimationSystem.Core.Data;
+﻿using System.Runtime.InteropServices;
 
+namespace ParallelAnimationSystem.Core.Data;
+
+[StructLayout(LayoutKind.Sequential)]
 public struct BeatmapObjectIndexedColor
 {
-    public required int ColorIndex1 { get; init; }
-    public required int ColorIndex2 { get; init; }
-    public required float Opacity { get; init; }
+    public int ColorIndex1;
+    public int ColorIndex2;
+    public float Opacity;
 }

@@ -249,7 +249,9 @@ public static class InteropBeatmapObject
     public static IntPtr GetPositionKeyframes(IntPtr ptr)
     {
         var beatmapObject = InteropHelper.IntPtrToObject<BeatmapObject>(ptr);
-        var wrapper = new KeyframeListInteropWrapper<RandomizableKeyframe<Vector2>>(beatmapObject.PositionKeyframes);
+        var wrapper = new KeyframeListInteropWrapper<RandomizableKeyframe<Vector2>>(
+            beatmapObject.PositionKeyframes,
+            new RandomizableKeyframeInteropAdapter<Vector2>());
         return InteropHelper.ObjectToIntPtr(wrapper);
     }
     
@@ -257,7 +259,9 @@ public static class InteropBeatmapObject
     public static IntPtr GetScaleKeyframes(IntPtr ptr)
     {
         var beatmapObject = InteropHelper.IntPtrToObject<BeatmapObject>(ptr);
-        var wrapper = new KeyframeListInteropWrapper<RandomizableKeyframe<Vector2>>(beatmapObject.ScaleKeyframes);
+        var wrapper = new KeyframeListInteropWrapper<RandomizableKeyframe<Vector2>>(
+            beatmapObject.ScaleKeyframes,
+            new RandomizableKeyframeInteropAdapter<Vector2>());
         return InteropHelper.ObjectToIntPtr(wrapper);
     }
     
@@ -265,7 +269,9 @@ public static class InteropBeatmapObject
     public static IntPtr GetRotationKeyframes(IntPtr ptr)
     {
         var beatmapObject = InteropHelper.IntPtrToObject<BeatmapObject>(ptr);
-        var wrapper = new KeyframeListInteropWrapper<RandomizableKeyframe<float>>(beatmapObject.RotationKeyframes);
+        var wrapper = new KeyframeListInteropWrapper<RandomizableKeyframe<float>>(
+            beatmapObject.RotationKeyframes,
+            new RandomizableKeyframeInteropAdapter<float>());
         return InteropHelper.ObjectToIntPtr(wrapper);
     }
     
@@ -273,7 +279,9 @@ public static class InteropBeatmapObject
     public static IntPtr GetColorKeyframes(IntPtr ptr)
     {
         var beatmapObject = InteropHelper.IntPtrToObject<BeatmapObject>(ptr);
-        var wrapper = new KeyframeListInteropWrapper<Keyframe<BeatmapObjectIndexedColor>>(beatmapObject.ColorKeyframes);
+        var wrapper = new KeyframeListInteropWrapper<Keyframe<BeatmapObjectIndexedColor>>(
+            beatmapObject.ColorKeyframes,
+            new KeyframeInteropAdapter<BeatmapObjectIndexedColor>());
         return InteropHelper.ObjectToIntPtr(wrapper);
     }
 }

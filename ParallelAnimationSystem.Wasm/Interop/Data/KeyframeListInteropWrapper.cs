@@ -1,46 +1,41 @@
-using System.Collections;
 using ParallelAnimationSystem.Core.Data;
 
 namespace ParallelAnimationSystem.Wasm.Interop.Data;
 
-public interface IKeyframeListInteropWrapper : IEnumerable<IKeyframe>
+public interface IKeyframeListInteropWrapper
 {
     int Count { get; }
-    IKeyframe this[int index] { get; }
-    void Add(IKeyframe keyframe);
-    void RemoveAt(int index);
-    void Replace(IEnumerable<IKeyframe> collection);
+    int GetKeyframeSize(int index);
+    void FetchAt(IntPtr bufferPtr, int index);
+    int GetBufferSize(int start, int count);
+    void FetchRange(IntPtr bufferPtr, int start, int count);
+    void Load(IntPtr bufferPtr, int count);
 }
 
-public class KeyframeListInteropWrapper<T>(KeyframeList<T> keyframeList): IKeyframeListInteropWrapper where T : IKeyframe
+public class KeyframeListInteropWrapper<T>(KeyframeList<T> keyframeList, IKeyframeInteropAdapter<T> adapter): IKeyframeListInteropWrapper where T : IKeyframe
 {
     public int Count => keyframeList.Count;
-    
-    public IKeyframe this[int index] => keyframeList[index];
-    
-    public void Add(IKeyframe keyframe)
+
+    public int GetKeyframeSize(int index)
+        => adapter.Size;
+
+    public void FetchAt(IntPtr bufferPtr, int index)
+        => adapter.ToBytes(keyframeList[index], bufferPtr);
+
+    public int GetBufferSize(int start, int count)
+        => adapter.Size * count;
+
+    public void FetchRange(IntPtr bufferPtr, int start, int count)
     {
-        keyframeList.Add((T)keyframe);
+        for (var i = 0; i < count; i++)
+            adapter.ToBytes(keyframeList[start + i], bufferPtr + i * adapter.Size);
     }
 
-    public void RemoveAt(int index)
+    public void Load(IntPtr bufferPtr, int count)
     {
-        keyframeList.RemoveAt(index);
-    }
-
-    public void Replace(IEnumerable<IKeyframe> collection)
-    {
-        keyframeList.Replace(collection.Cast<T>());
-    }
-    
-    public IEnumerator<IKeyframe> GetEnumerator()
-    {
-        foreach (var keyframe in keyframeList)
-            yield return keyframe;
-    }
-
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
+        var list = new List<T>(count);
+        for (var i = 0; i < count; i++)
+            list.Add(adapter.FromBytes(bufferPtr + i * adapter.Size));
+        keyframeList.Load(list);
     }
 }

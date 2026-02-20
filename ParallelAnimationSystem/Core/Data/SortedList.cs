@@ -24,7 +24,7 @@ public class SortedList<T>(IComparer<T> comparer) : IReadOnlyList<T>
     public virtual void Clear()
         => items.Clear();
 
-    public virtual void Replace(IEnumerable<T> collection)
+    public virtual void Load(IEnumerable<T> collection)
     {
         items.Clear();
         items.AddRange(collection);
