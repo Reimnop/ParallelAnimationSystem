@@ -6,6 +6,6 @@ namespace ParallelAnimationSystem.Wasm.Interop.Data;
 public interface IKeyframeInteropAdapter<T> where T : IKeyframe
 {
     int Size { get; }
-    void ToBytes(T keyframe, IntPtr bufferPtr);
-    T FromBytes(IntPtr bufferPtr);
+    void Write(T keyframe, IntPtr bufferPtr);
+    T Read(IntPtr bufferPtr);
 }

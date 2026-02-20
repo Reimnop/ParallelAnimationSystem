@@ -20,7 +20,7 @@ public class KeyframeListInteropWrapper<T>(KeyframeList<T> keyframeList, IKeyfra
         => adapter.Size;
 
     public void FetchAt(IntPtr bufferPtr, int index)
-        => adapter.ToBytes(keyframeList[index], bufferPtr);
+        => adapter.Write(keyframeList[index], bufferPtr);
 
     public int GetBufferSize(int start, int count)
         => adapter.Size * count;
@@ -28,14 +28,14 @@ public class KeyframeListInteropWrapper<T>(KeyframeList<T> keyframeList, IKeyfra
     public void FetchRange(IntPtr bufferPtr, int start, int count)
     {
         for (var i = 0; i < count; i++)
-            adapter.ToBytes(keyframeList[start + i], bufferPtr + i * adapter.Size);
+            adapter.Write(keyframeList[start + i], bufferPtr + i * adapter.Size);
     }
 
     public void Load(IntPtr bufferPtr, int count)
     {
         var list = new List<T>(count);
         for (var i = 0; i < count; i++)
-            list.Add(adapter.FromBytes(bufferPtr + i * adapter.Size));
+            list.Add(adapter.Read(bufferPtr + i * adapter.Size));
         keyframeList.Load(list);
     }
 }

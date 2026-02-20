@@ -17,7 +17,7 @@ public class KeyframeInteropAdapter<T> : IKeyframeInteropAdapter<Keyframe<T>> wh
 
     public int Size => Unsafe.SizeOf<Buffer>();
 
-    public unsafe void ToBytes(Keyframe<T> keyframe, IntPtr bufferPtr)
+    public unsafe void Write(Keyframe<T> keyframe, IntPtr bufferPtr)
     {
         var data = new Buffer
         {
@@ -28,7 +28,7 @@ public class KeyframeInteropAdapter<T> : IKeyframeInteropAdapter<Keyframe<T>> wh
         Unsafe.Write(bufferPtr.ToPointer(), data);
     }
 
-    public unsafe Keyframe<T> FromBytes(IntPtr bufferPtr)
+    public unsafe Keyframe<T> Read(IntPtr bufferPtr)
     {
         var buffer = Unsafe.Read<Buffer>(bufferPtr.ToPointer());
         return new Keyframe<T>(buffer.Time, buffer.Ease, buffer.Value);

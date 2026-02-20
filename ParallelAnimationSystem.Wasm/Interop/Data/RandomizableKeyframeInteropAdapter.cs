@@ -21,7 +21,7 @@ public class RandomizableKeyframeInteropAdapter<T> : IKeyframeInteropAdapter<Ran
     
     public int Size => Unsafe.SizeOf<Buffer>();
     
-    public unsafe void ToBytes(RandomizableKeyframe<T> keyframe, IntPtr bufferPtr)
+    public unsafe void Write(RandomizableKeyframe<T> keyframe, IntPtr bufferPtr)
     {
         var data = new Buffer
         {
@@ -36,7 +36,7 @@ public class RandomizableKeyframeInteropAdapter<T> : IKeyframeInteropAdapter<Ran
         Unsafe.Write(bufferPtr.ToPointer(), data);
     }
 
-    public unsafe RandomizableKeyframe<T> FromBytes(IntPtr bufferPtr)
+    public unsafe RandomizableKeyframe<T> Read(IntPtr bufferPtr)
     {
         var buffer = Unsafe.Read<Buffer>(bufferPtr.ToPointer());
         return new RandomizableKeyframe<T>(
