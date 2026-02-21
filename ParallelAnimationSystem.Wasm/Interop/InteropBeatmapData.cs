@@ -11,7 +11,25 @@ public static class InteropBeatmapData
     {
         var beatmapData = InteropHelper.IntPtrToObject<BeatmapData>(ptr);
         var objects = beatmapData.Objects;
-        var adapter = new IdContainerInteropWrapper<BeatmapObject>(objects);
-        return InteropHelper.ObjectToIntPtr(adapter);
+        var wrapper = new IdContainerInteropWrapper<BeatmapObject>(objects);
+        return InteropHelper.ObjectToIntPtr(wrapper);
+    }
+
+    [UnmanagedCallersOnly(EntryPoint = "beatmapData_getPrefabInstances")]
+    public static IntPtr GetPrefabInstances(IntPtr ptr)
+    {
+        var beatmapData = InteropHelper.IntPtrToObject<BeatmapData>(ptr);
+        var prefabInstances = beatmapData.PrefabInstances;
+        var wrapper = new IdContainerInteropWrapper<BeatmapPrefabInstance>(prefabInstances);
+        return InteropHelper.ObjectToIntPtr(wrapper);
+    }
+
+    [UnmanagedCallersOnly(EntryPoint = "beatmapData_getPrefabs")]
+    public static IntPtr GetPrefabs(IntPtr ptr)
+    {
+        var beatmapData = InteropHelper.IntPtrToObject<BeatmapData>(ptr);
+        var prefabs = beatmapData.Prefabs;
+        var wrapper = new IdContainerInteropWrapper<BeatmapPrefab>(prefabs);
+        return InteropHelper.ObjectToIntPtr(wrapper);
     }
 }

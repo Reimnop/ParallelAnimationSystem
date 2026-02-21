@@ -7143,7 +7143,7 @@ function RhpGetBiasedWasmFunctionIndexForFunctionPointer(fptr) {
 }
 
 // Imports from the Wasm binary.
-var _malloc, _string_getBytes, _string_getByteCount, _string_getLength, _main_getAppPointer, _main_shutdown, _main_start, _keyframeList_load, _keyframeList_fetchRange, _keyframeList_getBufferSize, _keyframeList_fetchAt, _keyframeList_getKeyframeSize, _keyframeList_getCount, _keyframe_getEase, _keyframe_getTime, _keyframe_getType, _idContainer_iterator_dispose, _idContainer_iterator_getCurrent_value, _idContainer_iterator_getCurrent_key, _idContainer_iterator_reset, _idContainer_iterator_moveNext, _idContainer_getIterator, _idContainer_remove, _idContainer_insert, _idContainer_getById, _idContainer_getCount, _interop_free, _interop_alloc, _interop_releasePointer, _beatmapObject_getColorKeyframes, _beatmapObject_getRotationKeyframes, _beatmapObject_getScaleKeyframes, _beatmapObject_getPositionKeyframes, _beatmapObject_setText, _beatmapObject_getText, _beatmapObject_setShape, _beatmapObject_getShape, _beatmapObject_setAutoKillOffset, _beatmapObject_getAutoKillOffset, _beatmapObject_setAutoKillType, _beatmapObject_getAutoKillType, _beatmapObject_setStartTime, _beatmapObject_getStartTime, _beatmapObject_setRenderDepth, _beatmapObject_getRenderDepth, _beatmapObject_setOrigin, _beatmapObject_getOrigin, _beatmapObject_setRenderType, _beatmapObject_getRenderType, _beatmapObject_setParentOffset, _beatmapObject_getParentOffset, _beatmapObject_setParentType, _beatmapObject_getParentType, _beatmapObject_setType, _beatmapObject_getType, _beatmapObject_setParentId, _beatmapObject_getParentId, _beatmapObject_setName, _beatmapObject_getName, _beatmapObject_getId, _beatmapObject_new, _beatmapData_getObjects, _app_processFrame, _app_getBeatmapDataPointer, _emscripten_builtin_memalign, __emscripten_stack_restore, __emscripten_stack_alloc, _emscripten_stack_get_current, memory, __indirect_function_table, wasmMemory, wasmTable;
+var _malloc, _string_getBytes, _string_getByteCount, _string_getLength, _main_getAppPointer, _main_shutdown, _main_start, _keyframeList_load, _keyframeList_fetchRange, _keyframeList_getBufferSize, _keyframeList_fetchAt, _keyframeList_getKeyframeSize, _keyframeList_getCount, _keyframe_getEase, _keyframe_getTime, _keyframe_getType, _idContainer_iterator_dispose, _idContainer_iterator_getCurrent_value, _idContainer_iterator_getCurrent_key, _idContainer_iterator_reset, _idContainer_iterator_moveNext, _idContainer_getIterator, _idContainer_remove, _idContainer_insert, _idContainer_getById, _idContainer_getCount, _interop_free, _interop_alloc, _interop_releasePointer, _beatmapPrefabInstance_setPrefabId, _beatmapPrefabInstance_getPrefabId, _beatmapPrefabInstance_setRotation, _beatmapPrefabInstance_getRotation, _beatmapPrefabInstance_setScale, _beatmapPrefabInstance_getScale, _beatmapPrefabInstance_setPosition, _beatmapPrefabInstance_getPosition, _beatmapPrefabInstance_setStartTime, _beatmapPrefabInstance_getStartTime, _beatmapPrefabInstance_getId, _beatmapPrefabInstance_new, _beatmapPrefab_getObjects, _beatmapPrefab_setOffset, _beatmapPrefab_getOffset, _beatmapPrefab_setName, _beatmapPrefab_getName, _beatmapPrefab_getId, _beatmapPrefab_new, _beatmapObject_getColorKeyframes, _beatmapObject_getRotationKeyframes, _beatmapObject_getScaleKeyframes, _beatmapObject_getPositionKeyframes, _beatmapObject_setText, _beatmapObject_getText, _beatmapObject_setShape, _beatmapObject_getShape, _beatmapObject_setAutoKillOffset, _beatmapObject_getAutoKillOffset, _beatmapObject_setAutoKillType, _beatmapObject_getAutoKillType, _beatmapObject_setStartTime, _beatmapObject_getStartTime, _beatmapObject_setRenderDepth, _beatmapObject_getRenderDepth, _beatmapObject_setOrigin, _beatmapObject_getOrigin, _beatmapObject_setRenderType, _beatmapObject_getRenderType, _beatmapObject_setParentOffset, _beatmapObject_getParentOffset, _beatmapObject_setParentType, _beatmapObject_getParentType, _beatmapObject_setType, _beatmapObject_getType, _beatmapObject_setParentId, _beatmapObject_getParentId, _beatmapObject_setName, _beatmapObject_getName, _beatmapObject_getId, _beatmapObject_new, _beatmapData_getPrefabs, _beatmapData_getPrefabInstances, _beatmapData_getObjects, _app_processFrame, _app_getBeatmapDataPointer, _emscripten_builtin_memalign, __emscripten_stack_restore, __emscripten_stack_alloc, _emscripten_stack_get_current, memory, __indirect_function_table, wasmMemory, wasmTable;
 
 function assignWasmExports(wasmExports) {
   _malloc = wasmExports["malloc"];
@@ -7175,6 +7175,25 @@ function assignWasmExports(wasmExports) {
   _interop_free = Module["_interop_free"] = wasmExports["interop_free"];
   _interop_alloc = Module["_interop_alloc"] = wasmExports["interop_alloc"];
   _interop_releasePointer = Module["_interop_releasePointer"] = wasmExports["interop_releasePointer"];
+  _beatmapPrefabInstance_setPrefabId = Module["_beatmapPrefabInstance_setPrefabId"] = wasmExports["beatmapPrefabInstance_setPrefabId"];
+  _beatmapPrefabInstance_getPrefabId = Module["_beatmapPrefabInstance_getPrefabId"] = wasmExports["beatmapPrefabInstance_getPrefabId"];
+  _beatmapPrefabInstance_setRotation = Module["_beatmapPrefabInstance_setRotation"] = wasmExports["beatmapPrefabInstance_setRotation"];
+  _beatmapPrefabInstance_getRotation = Module["_beatmapPrefabInstance_getRotation"] = wasmExports["beatmapPrefabInstance_getRotation"];
+  _beatmapPrefabInstance_setScale = Module["_beatmapPrefabInstance_setScale"] = wasmExports["beatmapPrefabInstance_setScale"];
+  _beatmapPrefabInstance_getScale = Module["_beatmapPrefabInstance_getScale"] = wasmExports["beatmapPrefabInstance_getScale"];
+  _beatmapPrefabInstance_setPosition = Module["_beatmapPrefabInstance_setPosition"] = wasmExports["beatmapPrefabInstance_setPosition"];
+  _beatmapPrefabInstance_getPosition = Module["_beatmapPrefabInstance_getPosition"] = wasmExports["beatmapPrefabInstance_getPosition"];
+  _beatmapPrefabInstance_setStartTime = Module["_beatmapPrefabInstance_setStartTime"] = wasmExports["beatmapPrefabInstance_setStartTime"];
+  _beatmapPrefabInstance_getStartTime = Module["_beatmapPrefabInstance_getStartTime"] = wasmExports["beatmapPrefabInstance_getStartTime"];
+  _beatmapPrefabInstance_getId = Module["_beatmapPrefabInstance_getId"] = wasmExports["beatmapPrefabInstance_getId"];
+  _beatmapPrefabInstance_new = Module["_beatmapPrefabInstance_new"] = wasmExports["beatmapPrefabInstance_new"];
+  _beatmapPrefab_getObjects = Module["_beatmapPrefab_getObjects"] = wasmExports["beatmapPrefab_getObjects"];
+  _beatmapPrefab_setOffset = Module["_beatmapPrefab_setOffset"] = wasmExports["beatmapPrefab_setOffset"];
+  _beatmapPrefab_getOffset = Module["_beatmapPrefab_getOffset"] = wasmExports["beatmapPrefab_getOffset"];
+  _beatmapPrefab_setName = Module["_beatmapPrefab_setName"] = wasmExports["beatmapPrefab_setName"];
+  _beatmapPrefab_getName = Module["_beatmapPrefab_getName"] = wasmExports["beatmapPrefab_getName"];
+  _beatmapPrefab_getId = Module["_beatmapPrefab_getId"] = wasmExports["beatmapPrefab_getId"];
+  _beatmapPrefab_new = Module["_beatmapPrefab_new"] = wasmExports["beatmapPrefab_new"];
   _beatmapObject_getColorKeyframes = Module["_beatmapObject_getColorKeyframes"] = wasmExports["beatmapObject_getColorKeyframes"];
   _beatmapObject_getRotationKeyframes = Module["_beatmapObject_getRotationKeyframes"] = wasmExports["beatmapObject_getRotationKeyframes"];
   _beatmapObject_getScaleKeyframes = Module["_beatmapObject_getScaleKeyframes"] = wasmExports["beatmapObject_getScaleKeyframes"];
@@ -7207,6 +7226,8 @@ function assignWasmExports(wasmExports) {
   _beatmapObject_getName = Module["_beatmapObject_getName"] = wasmExports["beatmapObject_getName"];
   _beatmapObject_getId = Module["_beatmapObject_getId"] = wasmExports["beatmapObject_getId"];
   _beatmapObject_new = Module["_beatmapObject_new"] = wasmExports["beatmapObject_new"];
+  _beatmapData_getPrefabs = Module["_beatmapData_getPrefabs"] = wasmExports["beatmapData_getPrefabs"];
+  _beatmapData_getPrefabInstances = Module["_beatmapData_getPrefabInstances"] = wasmExports["beatmapData_getPrefabInstances"];
   _beatmapData_getObjects = Module["_beatmapData_getObjects"] = wasmExports["beatmapData_getObjects"];
   _app_processFrame = Module["_app_processFrame"] = wasmExports["app_processFrame"];
   _app_getBeatmapDataPointer = Module["_app_getBeatmapDataPointer"] = wasmExports["app_getBeatmapDataPointer"];
