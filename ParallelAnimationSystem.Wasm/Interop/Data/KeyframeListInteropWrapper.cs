@@ -12,30 +12,30 @@ public interface IKeyframeListInteropWrapper
     void Load(IntPtr bufferPtr, int count);
 }
 
-public class KeyframeListInteropWrapper<T>(KeyframeList<T> keyframeList, IKeyframeInteropAdapter<T> adapter): IKeyframeListInteropWrapper where T : IKeyframe
+public class KeyframeListInteropWrapper<T>(KeyframeList<T> keyframeList, IKeyframeInteropCodec<T> codec): IKeyframeListInteropWrapper where T : IKeyframe
 {
     public int Count => keyframeList.Count;
 
     public int GetKeyframeSize(int index)
-        => adapter.Size;
+        => codec.Size;
 
     public void FetchAt(IntPtr bufferPtr, int index)
-        => adapter.Write(keyframeList[index], bufferPtr);
+        => codec.Write(keyframeList[index], bufferPtr);
 
     public int GetBufferSize(int start, int count)
-        => adapter.Size * count;
+        => codec.Size * count;
 
     public void FetchRange(IntPtr bufferPtr, int start, int count)
     {
         for (var i = 0; i < count; i++)
-            adapter.Write(keyframeList[start + i], bufferPtr + i * adapter.Size);
+            codec.Write(keyframeList[start + i], bufferPtr + i * codec.Size);
     }
 
     public void Load(IntPtr bufferPtr, int count)
     {
         var list = new List<T>(count);
         for (var i = 0; i < count; i++)
-            list.Add(adapter.Read(bufferPtr + i * adapter.Size));
+            list.Add(codec.Read(bufferPtr + i * codec.Size));
         keyframeList.Load(list);
     }
 }

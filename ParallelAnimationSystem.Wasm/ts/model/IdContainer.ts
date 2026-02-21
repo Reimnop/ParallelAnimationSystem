@@ -5,7 +5,7 @@ export class IdContainer<T extends NativeObject> extends NativeObject {
   
   private readonly ctor: NativeObjectConstructor<T>;
   
-  constructor(ctor: NativeObjectConstructor<T>, module: Module, ptr: number) {
+  constructor(module: Module, ptr: number, ctor: NativeObjectConstructor<T>) {
     super(module, ptr);
     this.ctor = ctor;
   }

@@ -251,7 +251,7 @@ public static class InteropBeatmapObject
         var beatmapObject = InteropHelper.IntPtrToObject<BeatmapObject>(ptr);
         var wrapper = new KeyframeListInteropWrapper<RandomizableKeyframe<Vector2>>(
             beatmapObject.PositionKeyframes,
-            new RandomizableKeyframeInteropAdapter<Vector2>());
+            new RandomizableKeyframeInteropCodec<Vector2>());
         return InteropHelper.ObjectToIntPtr(wrapper);
     }
     
@@ -261,7 +261,7 @@ public static class InteropBeatmapObject
         var beatmapObject = InteropHelper.IntPtrToObject<BeatmapObject>(ptr);
         var wrapper = new KeyframeListInteropWrapper<RandomizableKeyframe<Vector2>>(
             beatmapObject.ScaleKeyframes,
-            new RandomizableKeyframeInteropAdapter<Vector2>());
+            new RandomizableKeyframeInteropCodec<Vector2>());
         return InteropHelper.ObjectToIntPtr(wrapper);
     }
     
@@ -271,7 +271,7 @@ public static class InteropBeatmapObject
         var beatmapObject = InteropHelper.IntPtrToObject<BeatmapObject>(ptr);
         var wrapper = new KeyframeListInteropWrapper<RandomizableKeyframe<float>>(
             beatmapObject.RotationKeyframes,
-            new RandomizableKeyframeInteropAdapter<float>());
+            new RandomizableKeyframeInteropCodec<float>());
         return InteropHelper.ObjectToIntPtr(wrapper);
     }
     
@@ -281,7 +281,7 @@ public static class InteropBeatmapObject
         var beatmapObject = InteropHelper.IntPtrToObject<BeatmapObject>(ptr);
         var wrapper = new KeyframeListInteropWrapper<Keyframe<BeatmapObjectIndexedColor>>(
             beatmapObject.ColorKeyframes,
-            new KeyframeInteropAdapter<BeatmapObjectIndexedColor>());
+            new KeyframeInteropCodec<BeatmapObjectIndexedColor>());
         return InteropHelper.ObjectToIntPtr(wrapper);
     }
 }

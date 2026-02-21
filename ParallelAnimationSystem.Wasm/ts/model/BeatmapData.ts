@@ -5,6 +5,6 @@ import { BeatmapObject } from "./BeatmapObject";
 export class BeatmapData extends NativeObject {
   get objects(): IdContainer<BeatmapObject> {
     const ptr = this.wasm._beatmapData_getObjects(this.ptr);
-    return new IdContainer(BeatmapObject, this.module, ptr);
+    return new IdContainer(this.module, ptr, BeatmapObject);
   }
 }

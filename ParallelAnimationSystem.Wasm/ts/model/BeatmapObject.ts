@@ -7,14 +7,12 @@ import type { BeatmapObjectRenderType } from "../data/BeatmapObjectRenderType";
 import type { Vector } from "../data/Vector";
 import type { BeatmapObjectAutoKillType } from "../data/BeatmapObjectAutoKillType";
 import type { BeatmapObjectShape } from "../data/BeatmapObjectShape";
-import { KeyframeList } from "./KeyframeList";
+import { FixedSizeKeyframeList } from "./FixedSizeKeyframeList";
 import type { Keyframe, RandomizableKeyframe } from "../data/Keyframe";
 import type { BeatmapObjectIndexedColor } from "../data/BeatmapObjectIndexedColor";
-import {
-  KeyframeBeatmapObjectIndexedColorAdapter,
-  RandomizableKeyframeFloatAdapter,
-  RandomizableKeyframeVector2Adapter
-} from "./KeyframeAdapter";
+import type { KeyframeList } from "./KeyframeList";
+import { KeyframeCodec, RandomizableKeyframeCodec } from "./FixedSizeKeyframeCodec";
+import { BeatmapObjectIndexedColorCodec, Float32Codec, Vector2Codec } from "./StructCodec";
 
 export class BeatmapObject extends NativeObject {
   static create(module: Module, id: string): BeatmapObject {
@@ -173,30 +171,30 @@ export class BeatmapObject extends NativeObject {
   }
   
   get positionKeyframes(): KeyframeList<RandomizableKeyframe<Vector<2>>> {
-    const positionKeyframesPtr = this.wasm._beatmapObject_getPositionKeyframes(this.ptr);
-    return new KeyframeList(
-      new RandomizableKeyframeVector2Adapter(this.module),
-      this.module, positionKeyframesPtr);
+    const keyframesPtr = this.wasm._beatmapObject_getPositionKeyframes(this.ptr);
+    return new FixedSizeKeyframeList<RandomizableKeyframe<Vector<2>>>(
+      this.module, keyframesPtr,
+      new RandomizableKeyframeCodec<Vector<2>>(this.module, new Vector2Codec()));
   }
 
   get scaleKeyframes(): KeyframeList<RandomizableKeyframe<Vector<2>>> {
-    const scaleKeyframesPtr = this.wasm._beatmapObject_getScaleKeyframes(this.ptr);
-    return new KeyframeList(
-      new RandomizableKeyframeVector2Adapter(this.module),
-      this.module, scaleKeyframesPtr);
+    const keyframesPtr = this.wasm._beatmapObject_getScaleKeyframes(this.ptr);
+    return new FixedSizeKeyframeList<RandomizableKeyframe<Vector<2>>>(
+      this.module, keyframesPtr,
+      new RandomizableKeyframeCodec<Vector<2>>(this.module, new Vector2Codec()));
   }
 
   get rotationKeyframes(): KeyframeList<RandomizableKeyframe<number>> {
-    const rotationKeyframesPtr = this.wasm._beatmapObject_getRotationKeyframes(this.ptr);
-    return new KeyframeList(
-      new RandomizableKeyframeFloatAdapter(this.module),
-      this.module, rotationKeyframesPtr);
+    const keyframesPtr = this.wasm._beatmapObject_getRotationKeyframes(this.ptr);
+    return new FixedSizeKeyframeList<RandomizableKeyframe<number>>(
+      this.module, keyframesPtr,
+      new RandomizableKeyframeCodec<number>(this.module, new Float32Codec()));
   }
 
   get colorKeyframes(): KeyframeList<Keyframe<BeatmapObjectIndexedColor>> {
     const colorKeyframesPtr = this.wasm._beatmapObject_getColorKeyframes(this.ptr);
-    return new KeyframeList(
-      new KeyframeBeatmapObjectIndexedColorAdapter(this.module),
-      this.module, colorKeyframesPtr);
+    return new FixedSizeKeyframeList<Keyframe<BeatmapObjectIndexedColor>>(
+      this.module, colorKeyframesPtr,
+      new KeyframeCodec<BeatmapObjectIndexedColor>(this.module, new BeatmapObjectIndexedColorCodec()));
   }
 }
