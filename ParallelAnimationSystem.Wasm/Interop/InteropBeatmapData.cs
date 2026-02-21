@@ -32,4 +32,13 @@ public static class InteropBeatmapData
         var wrapper = new IdContainerInteropWrapper<BeatmapPrefab>(prefabs);
         return InteropHelper.ObjectToIntPtr(wrapper);
     }
+
+    [UnmanagedCallersOnly(EntryPoint = "beatmapData_getThemes")]
+    public static IntPtr GetThemes(IntPtr ptr)
+    {
+        var beatmapData = InteropHelper.IntPtrToObject<BeatmapData>(ptr);
+        var themes = beatmapData.Themes;
+        var wrapper = new IdContainerInteropWrapper<BeatmapTheme>(themes);
+        return InteropHelper.ObjectToIntPtr(wrapper);
+    }
 }

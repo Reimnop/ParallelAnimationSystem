@@ -11,10 +11,6 @@ export namespace ColorRgbs {
   export const Black = hexToColorRgb("#000000");
 }
 
-export function createColorRgb(r: number, g: number, b: number): ColorRgb {
-  return [r, g, b];
-}
-
 export function createColorRgb255(r: number, g: number, b: number): ColorRgb {
   return [r / 255, g / 255, b / 255];
 }
