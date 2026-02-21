@@ -1,15 +1,17 @@
-export type ColorRgb = number[] & { length: 3 };
+import type { Vector } from "./Vector";
 
-export namespace ColorRgbs {
-  export const White = hexToColorRgb("#FFFFFF");
-  export const Red = hexToColorRgb("#FF0000");
-  export const Green = hexToColorRgb("#00FF00");
-  export const Blue = hexToColorRgb("#0000FF");
-  export const Yellow = hexToColorRgb("#FFFF00");
-  export const Cyan = hexToColorRgb("#00FFFF");
-  export const Magenta = hexToColorRgb("#FF00FF");
-  export const Black = hexToColorRgb("#000000");
-}
+export type ColorRgb = Vector<3>;
+
+export const Colors = {
+  white: hexToColorRgb("#FFFFFF"),
+  red: hexToColorRgb("#FF0000"),
+  green: hexToColorRgb("#00FF00"),
+  blue: hexToColorRgb("#0000FF"),
+  yellow: hexToColorRgb("#FFFF00"),
+  cyan: hexToColorRgb("#00FFFF"),
+  magenta: hexToColorRgb("#FF00FF"),
+  black: hexToColorRgb("#000000")
+};
 
 export function createColorRgb255(r: number, g: number, b: number): ColorRgb {
   return [r / 255, g / 255, b / 255];
