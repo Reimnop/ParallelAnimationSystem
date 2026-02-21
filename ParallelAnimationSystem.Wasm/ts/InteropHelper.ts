@@ -32,7 +32,7 @@ export class InteropHelper {
       const size = this.wasm._string_getByteCount(ptr);
       const buf = this.wasm.stackAlloc(size + 1);
       this.wasm._string_getBytes(ptr, buf, size);
-      this.wasm.HEAP_DATA_VIEW.setUint8(ptr + size, 0); // null-terminate
+      this.wasm.HEAP_DATA_VIEW.setUint8(buf + size, 0); // null-terminate
       return this.wasm.UTF8ToString(buf);
     } finally {
       this.wasm.stackRestore(sp);
