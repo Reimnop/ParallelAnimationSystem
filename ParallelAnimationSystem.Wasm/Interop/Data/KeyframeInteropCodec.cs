@@ -5,7 +5,7 @@ using ParallelAnimationSystem.Core.Data;
 
 namespace ParallelAnimationSystem.Wasm.Interop.Data;
 
-public class KeyframeInteropCodec<T> : IKeyframeInteropCodec<Keyframe<T>> where T : unmanaged
+public class KeyframeInteropCodec<T> : IFixedSizeKeyframeInteropCodec<Keyframe<T>> where T : unmanaged
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
     private struct Buffer

@@ -92,8 +92,7 @@ export class RandomizableKeyframeCodec<T>
   }
 }
 
-export class KeyframeCodec<T>
-  implements FixedSizeKeyframeCodec<Keyframe<T>>
+export class KeyframeCodec<T> implements FixedSizeKeyframeCodec<Keyframe<T>>
 {
   size: number;
 

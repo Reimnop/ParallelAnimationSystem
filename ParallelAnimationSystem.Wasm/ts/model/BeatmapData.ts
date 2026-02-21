@@ -4,6 +4,7 @@ import { BeatmapObject } from "./BeatmapObject";
 import { BeatmapPrefabInstance } from "./BeatmapPrefabInstance";
 import { BeatmapPrefab } from "./BeatmapPrefab";
 import { BeatmapTheme } from "./BeatmapTheme";
+import { BeatmapEvents } from "./BeatmapEvents";
 
 export class BeatmapData extends NativeObject {
   get objects(): IdContainer<BeatmapObject> {
@@ -24,5 +25,10 @@ export class BeatmapData extends NativeObject {
   get themes(): IdContainer<BeatmapTheme> {
     const ptr = this.wasm._beatmapData_getThemes(this.ptr);
     return new IdContainer(this.module, ptr, BeatmapTheme);
+  }
+  
+  get events(): BeatmapEvents {
+    const ptr = this.wasm._beatmapData_getEvents(this.ptr);
+    return new BeatmapEvents(this.module, ptr);
   }
 }

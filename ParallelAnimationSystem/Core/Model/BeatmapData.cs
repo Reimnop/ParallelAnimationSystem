@@ -6,5 +6,5 @@ public class BeatmapData
     public IdContainer<BeatmapTheme> Themes { get; } = new();
     public IdContainer<BeatmapPrefabInstance> PrefabInstances { get; } = new();
     public IdContainer<BeatmapPrefab> Prefabs { get; } = new();
-    public BeatmapEventList Events { get; } = new();
+    public BeatmapEvents Events { get; } = new();
 }

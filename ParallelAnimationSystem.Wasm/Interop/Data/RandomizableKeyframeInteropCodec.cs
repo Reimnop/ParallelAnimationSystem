@@ -5,7 +5,7 @@ using ParallelAnimationSystem.Core.Data;
 
 namespace ParallelAnimationSystem.Wasm.Interop.Data;
 
-public class RandomizableKeyframeInteropCodec<T> : IKeyframeInteropCodec<RandomizableKeyframe<T>> where T : unmanaged
+public class RandomizableKeyframeInteropCodec<T> : IFixedSizeKeyframeInteropCodec<RandomizableKeyframe<T>> where T : unmanaged
 {
     [StructLayout(LayoutKind.Sequential, Pack = 1)] // tightly pack the struct to minimize size
     private struct Buffer

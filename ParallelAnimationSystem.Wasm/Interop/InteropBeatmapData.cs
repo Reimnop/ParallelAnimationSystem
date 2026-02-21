@@ -41,4 +41,12 @@ public static class InteropBeatmapData
         var wrapper = new IdContainerInteropWrapper<BeatmapTheme>(themes);
         return InteropHelper.ObjectToIntPtr(wrapper);
     }
+
+    [UnmanagedCallersOnly(EntryPoint = "beatmapData_getEvents")]
+    public static IntPtr GetEvents(IntPtr ptr)
+    {
+        var beatmapData = InteropHelper.IntPtrToObject<BeatmapData>(ptr);
+        var events = beatmapData.Events;
+        return InteropHelper.ObjectToIntPtr(events);
+    }
 }

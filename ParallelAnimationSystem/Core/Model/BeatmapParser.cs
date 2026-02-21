@@ -58,7 +58,7 @@ public static class BeatmapParser
         }
     }
 
-    private static void ParseEvents(IBeatmap beatmap, BeatmapEventList events)
+    private static void ParseEvents(IBeatmap beatmap, BeatmapEvents events)
     {
         var cameraPositionKeyframes = beatmap.Events.Movement
             .Select(positionKeyframe 

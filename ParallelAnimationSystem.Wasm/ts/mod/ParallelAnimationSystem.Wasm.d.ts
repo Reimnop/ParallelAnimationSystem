@@ -128,6 +128,12 @@ interface WasmModule {
   _beatmapObject_getName(_0: number): number;
   _beatmapObject_getId(_0: number): number;
   _beatmapObject_new(_0: number): number;
+  _beatmapEvents_getTheme(_0: number): number;
+  _beatmapEvents_getCameraShake(_0: number): number;
+  _beatmapEvents_getCameraRotation(_0: number): number;
+  _beatmapEvents_getCameraScale(_0: number): number;
+  _beatmapEvents_getCameraPosition(_0: number): number;
+  _beatmapData_getEvents(_0: number): number;
   _beatmapData_getThemes(_0: number): number;
   _beatmapData_getPrefabs(_0: number): number;
   _beatmapData_getPrefabInstances(_0: number): number;

@@ -28,7 +28,7 @@ export class FixedSizeKeyframeList<T> extends NativeObject implements KeyframeLi
   }
   
   fetchRange(start: number, count: number): T[] {
-    const bufferSize = this.wasm._keyframeList_getBufferSize(this.ptr, start, count);
+    const bufferSize = count * this.adapter.size;
     const bufferPtr = this.wasm._interop_alloc(bufferSize); // heap allocate to avoid stack overflow for large ranges
     try {
       this.wasm._keyframeList_fetchRange(this.ptr, bufferPtr, start, count);
