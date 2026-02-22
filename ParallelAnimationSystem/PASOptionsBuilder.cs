@@ -13,7 +13,7 @@ public class PASOptionsBuilder(IServiceCollection services)
     
     private AppSettings? appSettings;
     private readonly List<Func<IResourceSource>> resourceSourceFactories = [];
-    private ServiceDefinition<IWindowManager>? windowManagerDefinition;
+    private ServiceDefinition<IWindow>? windowDefinition;
     private ServiceDefinition<IMediaProvider>? mediaProviderDefinition;
     private ServiceDefinition<IRenderer>? rendererDefinition;
     private ServiceDefinition<IRenderingFactory>? renderingFactoryDefinition;
@@ -36,15 +36,15 @@ public class PASOptionsBuilder(IServiceCollection services)
     public PASOptionsBuilder AddResourceSource(IResourceSource resourceSource)
         => AddResourceSource(() => resourceSource);
     
-    public PASOptionsBuilder UseWindowManager(ServiceDefinition<IWindowManager> definition)
+    public PASOptionsBuilder UseWindow(ServiceDefinition<IWindow> definition)
     {
-        windowManagerDefinition = definition;
+        windowDefinition = definition;
         return this;
     }
     
-    public PASOptionsBuilder UseWindowManager<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>()
-        where T : IWindowManager
-        => UseWindowManager(typeof(T));
+    public PASOptionsBuilder UseWindow<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>()
+        where T : IWindow
+        => UseWindow(typeof(T));
     
     public PASOptionsBuilder UseMediaProvider(ServiceDefinition<IMediaProvider> definition)
     {
@@ -80,8 +80,8 @@ public class PASOptionsBuilder(IServiceCollection services)
     {
         if (appSettings is null)
             ThrowNotSet(nameof(appSettings));
-        if (windowManagerDefinition is null)
-            ThrowNotSet(nameof(windowManagerDefinition));
+        if (windowDefinition is null)
+            ThrowNotSet(nameof(windowDefinition));
         if (mediaProviderDefinition is null)
             ThrowNotSet(nameof(mediaProviderDefinition));
         if (rendererDefinition is null)
@@ -93,7 +93,7 @@ public class PASOptionsBuilder(IServiceCollection services)
         {
             AppSettings = appSettings,
             ResourceSourceFactories = resourceSourceFactories,
-            WindowManagerDefinition = windowManagerDefinition,
+            WindowDefinition = windowDefinition,
             MediaProviderDefinition = mediaProviderDefinition,
             RendererDefinition = rendererDefinition,
             RenderingFactoryDefinition = renderingFactoryDefinition,

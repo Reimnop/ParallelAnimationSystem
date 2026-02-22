@@ -61,10 +61,10 @@ var audioCodecOption = new Option<string>(
     getDefaultValue: () => "aac"
 );
 
-var seedOption = new Option<long>(
+var seedOption = new Option<ulong?>(
     aliases: ["--seed"],
-    description: "Seed for the random number generator, set to -1 to use a random seed",
-    getDefaultValue: () => -1
+    description: "Seed for the random number generator",
+    getDefaultValue: () => null
 );
 
 var speedOption = new Option<float>(

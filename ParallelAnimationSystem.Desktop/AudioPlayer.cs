@@ -24,6 +24,8 @@ public class AudioPlayer(int stream) : IDisposable
 
     public double Length => Bass.ChannelBytes2Seconds(stream, Bass.ChannelGetLength(stream));
     
+    public bool Playing => Bass.ChannelIsActive(stream) == PlaybackState.Playing;
+    
     public void Play()
     {
         Bass.ChannelPlay(stream);

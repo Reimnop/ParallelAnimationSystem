@@ -1,5 +1,8 @@
 ﻿using System.Collections.Concurrent;
+using Microsoft.Extensions.DependencyInjection;
+using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Rendering;
+using ParallelAnimationSystem.Windowing;
 
 namespace ParallelAnimationSystem.Desktop;
 
@@ -9,17 +12,19 @@ public sealed class DesktopApp
     private readonly ConcurrentQueue<IDrawList> queuedDrawLists = [];
 
     private readonly IServiceProvider serviceProvider;
-    private readonly MediaContext mediaContext;
+    private readonly AudioPlayer audioPlayer;
 
     private bool running = true;
 
     public DesktopApp(IServiceProvider serviceProvider, MediaContext mediaContext, IRenderingFactory renderingFactory)
     {
         this.serviceProvider = serviceProvider;
-        this.mediaContext = mediaContext;
 
         for (var i = 0; i < 3; i++)
             drawListPool.Enqueue(renderingFactory.CreateDrawList());
+        
+        // Preload audio player
+        audioPlayer = AudioPlayer.Load(mediaContext.AudioPath);
     }
 
     public void StartApp()
@@ -27,8 +32,7 @@ public sealed class DesktopApp
         // Initialize app core
         var appCore = serviceProvider.InitializeAppCore();
         
-        // Create audio player
-        using var audioPlayer = AudioPlayer.Load(mediaContext.AudioPath);
+        // Play audio
         audioPlayer.Play();
         
         // Start render thread
@@ -49,12 +53,19 @@ public sealed class DesktopApp
             // Enqueue the draw list for rendering
             queuedDrawLists.Enqueue(drawList);
         }
+        
+        // Wait for render thread to finish
+        renderThread.Join();
+        
+        // Stop audio
+        audioPlayer.Stop();
     }
 
     private void StartRenderThread()
     {
+        // Initialize renderer
         var renderer = serviceProvider.InitializeRenderer();
-        var window = renderer.Window;
+        var window = serviceProvider.GetRequiredService<IWindow>();
 
         while (!window.ShouldClose)
         {

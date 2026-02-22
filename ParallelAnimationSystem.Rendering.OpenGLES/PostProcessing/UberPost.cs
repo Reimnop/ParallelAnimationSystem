@@ -2,6 +2,7 @@ using OpenTK.Graphics.OpenGL;
 using System.Numerics;
 using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core;
+using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Mathematics;
 
 namespace ParallelAnimationSystem.Rendering.OpenGLES.PostProcessing;
@@ -9,8 +10,6 @@ namespace ParallelAnimationSystem.Rendering.OpenGLES.PostProcessing;
 public class UberPost : IDisposable
 {
     private readonly int program;
-    
-    private readonly int sizeUniformLocation;
     
     private readonly int timeUniformLocation;
     
@@ -40,11 +39,11 @@ public class UberPost : IDisposable
     
     private readonly int framebuffer;
 
+    private readonly int vaoHandle;
+
     public UberPost(ResourceLoader loader, int vertexShader)
     {
-        program = LoaderUtil.LoadPPProgram(loader, "UberPost", vertexShader);
-        
-        sizeUniformLocation = GL.GetUniformLocation(program, "uSize");
+        program = LoaderUtil.LoadPostProcessingProgram(loader, "UberPost", vertexShader);
         
         timeUniformLocation = GL.GetUniformLocation(program, "uTime");
         
@@ -74,6 +73,9 @@ public class UberPost : IDisposable
         
         // Initialize framebuffer
         framebuffer = GL.GenFramebuffer();
+        
+        // Initialize a simple VAO
+        vaoHandle = GL.GenVertexArray();
     }
     
     public bool Process(
@@ -83,19 +85,11 @@ public class UberPost : IDisposable
         float lensDistortionIntensity,
         Vector2 lensDistortionCenter, 
         float chromaticAberrationIntensity,
-        Vector2 vignetteCenter, float vignetteIntensity, bool vignetteRounded, float vignetteRoundness, float vignetteSmoothness, Vector3 vignetteColor,
-        Vector3 gradientColor1, Vector3 gradientColor2, float gradientIntensity, float gradientRotation, GradientOverlayMode gradientMode,
+        Vector2 vignetteCenter, float vignetteIntensity, bool vignetteRounded, float vignetteRoundness, float vignetteSmoothness, ColorRgb vignetteColor,
+        ColorRgb gradientColor1, ColorRgb gradientColor2, float gradientIntensity, float gradientRotation, GradientOverlayMode gradientMode,
         float glitchIntensity, float glitchSpeed, Vector2 glitchSize,
         int inputTexture, int outputTexture)
     {
-        if (hueShiftAngle == 0.0f && 
-            lensDistortionIntensity == 0.0f && 
-            chromaticAberrationIntensity == 0.0f && 
-            vignetteIntensity == 0.0f &&
-            gradientIntensity == 0.0f &&
-            glitchIntensity == 0.0f)
-            return false;
-        
         // Attach output texture to framebuffer
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, framebuffer);
         GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, outputTexture, 0);
@@ -106,8 +100,6 @@ public class UberPost : IDisposable
         
         GL.ActiveTexture(TextureUnit.Texture0);
         GL.BindTexture(TextureTarget.Texture2d, inputTexture);
-        
-        GL.Uniform2i(sizeUniformLocation, size.X, size.Y);
         
         GL.Uniform1f(timeUniformLocation, time);
         
@@ -123,10 +115,10 @@ public class UberPost : IDisposable
         GL.Uniform1f(vignetteRoundedUniformLocation, vignetteRounded ? 1.0f : 0.0f);
         GL.Uniform1f(vignetteRoundnessUniformLocation, (1.0f - vignetteRoundness) * 6.0f + vignetteRoundness);
         GL.Uniform1f(vignetteSmoothnessUniformLocation, vignetteSmoothness * 5.0f);
-        GL.Uniform3f(vignetteColorUniformLocation, 1, vignetteColor);
+        GL.Uniform3f(vignetteColorUniformLocation, vignetteColor.R, vignetteColor.G, vignetteColor.B);
         
-        GL.Uniform3f(gradientColor1UniformLocation, 1, gradientColor1);
-        GL.Uniform3f(gradientColor2UniformLocation, 1, gradientColor2);
+        GL.Uniform3f(gradientColor1UniformLocation, gradientColor1.R, gradientColor1.G, gradientColor1.B);
+        GL.Uniform3f(gradientColor2UniformLocation, gradientColor2.R, gradientColor2.G, gradientColor2.B);
         GL.Uniform1f(gradientIntensityUniformLocation, gradientIntensity);
         
         unsafe
@@ -145,6 +137,7 @@ public class UberPost : IDisposable
         GL.Uniform1f(glitchSpeedUniformLocation, glitchSpeed);
         GL.Uniform2f(glitchSizeUniformLocation, 1, glitchSize);
         
+        GL.BindVertexArray(vaoHandle);
         GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
         
         return true;
@@ -154,5 +147,6 @@ public class UberPost : IDisposable
     {
         GL.DeleteProgram(program);
         GL.DeleteFramebuffer(framebuffer);
+        GL.DeleteVertexArray(vaoHandle);
     }
 }

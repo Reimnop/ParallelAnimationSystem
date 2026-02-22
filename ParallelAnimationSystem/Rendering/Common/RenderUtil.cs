@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Numerics;
-using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Mathematics;
+using ParallelAnimationSystem.Rendering.Data;
 
 namespace ParallelAnimationSystem.Rendering.Common;
 

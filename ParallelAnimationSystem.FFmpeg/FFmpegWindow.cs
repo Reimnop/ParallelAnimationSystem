@@ -9,11 +9,7 @@ namespace ParallelAnimationSystem.FFmpeg;
 
 public unsafe class FFmpegWindow : IOpenGLWindow, IDisposable
 {
-    public string Title
-    {
-        get => GLFW.GetWindowTitle(window);
-        set => GLFW.SetWindowTitle(window, value);
-    }
+    private const string Title = "PAS Offscreen Window";
 
     public Vector2i FramebufferSize
     {
@@ -25,13 +21,19 @@ public unsafe class FFmpegWindow : IOpenGLWindow, IDisposable
     }
     
     public bool ShouldClose => GLFW.WindowShouldClose(window);
+    
+    public bool IsContextCurrent => GLFW.GetCurrentContext() == window;
 
     public FrameData? CurrentFrame { get; private set; }
 
     private readonly Window* window;
 
-    public FFmpegWindow(string title, FFmpegWindowSettings settings, OpenGLSettings glSettings)
+    public FFmpegWindow(FFmpegWindowSettings windowSettings, OpenGLSettings glSettings)
     {
+        // Initialize GLFW
+        if (!GLFW.Init())
+            throw new Exception("Failed to initialize GLFW");
+        
         if (glSettings.IsES)
         {
             GLFW.WindowHint(WindowHintClientApi.ClientApi, ClientApi.OpenGlEsApi);
@@ -42,7 +44,7 @@ public unsafe class FFmpegWindow : IOpenGLWindow, IDisposable
             GLFW.WindowHint(WindowHintOpenGlProfile.OpenGlProfile, OpenGlProfile.Core);
         }
 
-        if (settings.UseEgl) 
+        if (windowSettings.UseEgl) 
         {
             GLFW.WindowHint(WindowHintContextApi.ContextCreationApi, ContextApi.EglContextApi);
         }
@@ -53,7 +55,7 @@ public unsafe class FFmpegWindow : IOpenGLWindow, IDisposable
         GLFW.WindowHint(WindowHintBool.Resizable, false);
         GLFW.WindowHint(WindowHintBool.Decorated, false);
         
-        window = GLFW.CreateWindow(settings.Size.X, settings.Size.Y, title, null, null);
+        window = GLFW.CreateWindow(windowSettings.Size.X, windowSettings.Size.Y, Title, null, null);
     }
     
     public void MakeContextCurrent()
@@ -117,6 +119,9 @@ public unsafe class FFmpegWindow : IOpenGLWindow, IDisposable
             
         // GLFW.SwapBuffers(window);
     }
+
+    public IntPtr GetProcAddress(string procName)
+        => GLFW.GetProcAddress(procName);
 
     public void Close()
     {

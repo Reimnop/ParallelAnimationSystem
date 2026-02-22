@@ -7,6 +7,6 @@ public interface IRenderingFactory
 {
     IMesh CreateMesh(ReadOnlySpan<Vector2> vertices, ReadOnlySpan<int> indices);
     IFont CreateFont(Stream stream);
-    IText CreateText(RichText text, FontCollection fonts);
+    IText CreateText(ShapedRichText richText);
     IDrawList CreateDrawList();
 }

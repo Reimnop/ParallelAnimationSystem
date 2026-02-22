@@ -1,24 +1,38 @@
 using System.Numerics;
-using ParallelAnimationSystem.Mathematics;
+using System.Runtime.InteropServices;
 
 namespace ParallelAnimationSystem.Core.Data;
 
-public struct ColorRgba(float r, float g, float b, float a) : IEquatable<ColorRgba>
+[StructLayout(LayoutKind.Sequential, Pack = 4)]
+public struct ColorRgba(float r, float g, float b, float a)
+    : IEquatable<ColorRgba>
 {
-    public float R => r;
-    public float G => g;
-    public float B => b;
-    public float A => a;
+    public float R = r;
+    public float G = g;
+    public float B = b;
+    public float A = a;
     
+    public ColorRgba(byte r, byte g, byte b, float a) : this(r / 255f, g / 255f, b / 255f, a)
+    {
+    }
+    
+    public ColorRgba(float value, float a = 1f) : this(value, value, value, a)
+    {
+    }
+    
+    public ColorRgba(ColorRgb rgb, float a = 1f) : this(rgb.R, rgb.G, rgb.B, a)
+    {
+    }
+
     public static ColorRgba operator*(ColorRgba color, float scalar) 
         => new(color.R * scalar, color.G * scalar, color.B * scalar, color.A * scalar);
     
     public static ColorRgba Lerp(ColorRgba a, ColorRgba b, float t) 
         => new(
-            MathUtil.Lerp(a.R, b.R, t),
-            MathUtil.Lerp(a.G, b.G, t),
-            MathUtil.Lerp(a.B, b.B, t),
-            MathUtil.Lerp(a.A, b.A, t));
+            float.Lerp(a.R, b.R, t),
+            float.Lerp(a.G, b.G, t),
+            float.Lerp(a.B, b.B, t),
+            float.Lerp(a.A, b.A, t));
     
     public static bool operator ==(ColorRgba left, ColorRgba right)
         => left.Equals(right);

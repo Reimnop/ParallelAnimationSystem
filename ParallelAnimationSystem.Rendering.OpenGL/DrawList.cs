@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Numerics;
 using ParallelAnimationSystem.Core.Data;
-using ParallelAnimationSystem.Data;
+using ParallelAnimationSystem.Rendering.Data;
 
 namespace ParallelAnimationSystem.Rendering.OpenGL;
 

@@ -1,14 +1,12 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Numerics;
+using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Rendering;
 using TmpIO;
 using TmpParser;
 
 namespace ParallelAnimationSystem.Text;
 
-public delegate T RenderGlyphFactory<out T>(Vector2 min, Vector2 max, Vector2 minUV, Vector2 maxUV, Vector4 color, BoldItalic boldItalic, int fontIndex);
-
-public class TextShaper<T>(RenderGlyphFactory<T> renderGlyphFactory, FontCollection fonts)
+public class TextShaper(FontCollection fonts)
 {
     private record ShapedGlyph(float Position, float YOffset, IFont Font, TmpGlyph Glyph, float Size, Style Style);
     
@@ -33,11 +31,21 @@ public class TextShaper<T>(RenderGlyphFactory<T> renderGlyphFactory, FontCollect
         public ColorAlpha CurrentMarkColor { get; set; }
         public required FontStack CurrentFontStack { get; set; }
     }
+
+    public ShapedRichText ShapeText(string text, string defaultFontName, HorizontalAlignment horizontalAlignment, VerticalAlignment verticalAlignment)
+        => new()
+        {
+            Glyphs = EnumerateTextGlyphs(text, defaultFontName, horizontalAlignment, verticalAlignment).ToList()
+        };
     
-    public IEnumerable<T> ShapeText(RichText richText)
+    public void ShapeText(string text, string defaultFontName, HorizontalAlignment horizontalAlignment, VerticalAlignment verticalAlignment, ShapedRichText output)
     {
-        var text = richText.Text;
-        
+        output.Glyphs.Clear();
+        output.Glyphs.AddRange(EnumerateTextGlyphs(text, defaultFontName, horizontalAlignment, verticalAlignment));
+    }
+    
+    private IEnumerable<ShapedTextGlyph> EnumerateTextGlyphs(string text, string defaultFontName, HorizontalAlignment horizontalAlignment, VerticalAlignment verticalAlignment)
+    {
         if (text.EndsWith('\n'))
             text = text[..^1]; // ONLY remove the VERY last newline (TMP quirk)
         
@@ -59,8 +67,8 @@ public class TextShaper<T>(RenderGlyphFactory<T> renderGlyphFactory, FontCollect
         }
         
         // Get default font
-        if (!fonts.TryGetFontStack(richText.DefaultFontName, out var defaultFontStack))
-            throw new InvalidOperationException($"Default font '{richText.DefaultFontName}' not found in font collection");
+        if (!fonts.TryGetFontStack(defaultFontName, out var defaultFontStack))
+            throw new InvalidOperationException($"Default font '{defaultFontName}' not found in font collection");
 
         var state = new ShapingState
         {
@@ -77,7 +85,7 @@ public class TextShaper<T>(RenderGlyphFactory<T> renderGlyphFactory, FontCollect
         // Offset lines according to alignment
         foreach (var line in linesOfShapedGlyphs)
         {
-            var alignment = line.Alignment ?? richText.HorizontalAlignment;
+            var alignment = line.Alignment ?? horizontalAlignment;
             var xOffset = alignment switch
             {
                 HorizontalAlignment.Left => 0.0f,
@@ -102,12 +110,12 @@ public class TextShaper<T>(RenderGlyphFactory<T> renderGlyphFactory, FontCollect
         // Output render glyphs
         GetParagraphHeight(linesOfShapedGlyphs, out var top, out var bottom);
         var paragraphHeight = top - bottom;
-        var yOffset = richText.VerticalAlignment switch
+        var yOffset = verticalAlignment switch
         {
             VerticalAlignment.Top => paragraphHeight,
             VerticalAlignment.Center => paragraphHeight / 2.0f,
             VerticalAlignment.Bottom => 0.0f,
-            _ => throw new ArgumentOutOfRangeException(nameof(richText.VerticalAlignment)),
+            _ => throw new ArgumentOutOfRangeException(nameof(verticalAlignment)),
         };
 
         var y = yOffset - top - linesOfShapedGlyphs[0].Ascender; // y is now at the BASELINE of the first line of the paragraph
@@ -122,13 +130,13 @@ public class TextShaper<T>(RenderGlyphFactory<T> renderGlyphFactory, FontCollect
                 var boldItalic = (bold ? BoldItalic.Bold : BoldItalic.None) | (italic ? BoldItalic.Italic : BoldItalic.None);
                 
                 var colorAlpha = shapedGlyph.Style.Color;
-                var color = new Vector4(
+                var color = new ColorRgba(
                     colorAlpha.Rgb.HasValue 
-                        ? new Vector3(
-                            colorAlpha.Rgb.Value.R / 255.0f,
-                            colorAlpha.Rgb.Value.G / 255.0f,
-                            colorAlpha.Rgb.Value.B / 255.0f)
-                        : new Vector3(float.NaN), 
+                        ? new ColorRgb(
+                            colorAlpha.Rgb.Value.R,
+                            colorAlpha.Rgb.Value.G,
+                            colorAlpha.Rgb.Value.B)
+                        : new ColorRgb(float.NaN), 
                     colorAlpha.A.HasValue
                         ? colorAlpha.A.Value / 255.0f
                         : float.NaN);
@@ -146,36 +154,39 @@ public class TextShaper<T>(RenderGlyphFactory<T> renderGlyphFactory, FontCollect
                     var minY = glyphBaseline + glyph.BearingY * sizeMultiplier;
                     var maxX = minX + glyph.Width * sizeMultiplier;
                     var maxY = minY - glyph.Height * sizeMultiplier;
-                    var minUV = new Vector2(glyph.MinX, glyph.MinY);
-                    var maxUV = new Vector2(glyph.MaxX, glyph.MaxY);
-                    yield return renderGlyphFactory(new Vector2(minX, minY), new Vector2(maxX, maxY), minUV, maxUV, color, boldItalic, shapedGlyph.Font.Id);
+                    yield return new ShapedTextGlyph(
+                        minX, minY, maxX, maxY,
+                        glyph.MinX, glyph.MinY, glyph.MaxX, glyph.MaxY,
+                        color, boldItalic, shapedGlyph.Font.Id);
                 }
             }
 
             foreach (var mark in line.Marks)
             {
                 var colorAlpha = mark.Color;
-                var color = new Vector4(
+                var color = new ColorRgba(
                     colorAlpha.Rgb.HasValue 
-                        ? new Vector3(
-                            colorAlpha.Rgb.Value.R / 255.0f,
-                            colorAlpha.Rgb.Value.G / 255.0f,
-                            colorAlpha.Rgb.Value.B / 255.0f)
-                        : new Vector3(float.NaN), 
+                        ? new ColorRgb(
+                            colorAlpha.Rgb.Value.R,
+                            colorAlpha.Rgb.Value.G,
+                            colorAlpha.Rgb.Value.B)
+                        : new ColorRgb(float.NaN), 
                     colorAlpha.A.HasValue
                         ? colorAlpha.A.Value / 255.0f
                         : float.NaN);
                 
                 // Discard marks with 0 alpha since we can't see them anyway
-                if (color.W == 0.0f)
+                if (color.A == 0.0f)
                     continue;
                 
                 var minX = mark.MinX;
                 var minY = y + mark.MinY;
                 var maxX = mark.MaxX;
                 var maxY = y + mark.MaxY;
-                yield return renderGlyphFactory(new Vector2(minX, minY), new Vector2(maxX, maxY), Vector2.Zero, Vector2.Zero, color, BoldItalic.None, -1);
-            }
+                yield return new ShapedTextGlyph(
+                    minX, minY, maxX, maxY,
+                    0.0f, 0.0f, 0.0f, 0.0f,
+                    color, BoldItalic.None, -1); }
             
             // Bring y to the BASELINE of the next line
             if (i + 1 < linesOfShapedGlyphs.Count)

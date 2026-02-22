@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering.OpenGL;
 using ParallelAnimationSystem.Rendering.OpenGLES;
+using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.FFmpeg;
 
@@ -18,7 +19,7 @@ public static class FFmpegStartup
         int framerate,
         string videoCodec,
         string audioCodec,
-        long seed,
+        ulong? seed,
         float speed,
         RenderingBackend backend,
         bool enablePostProcessing,
@@ -26,10 +27,7 @@ public static class FFmpegStartup
     {
         var appSettings = new AppSettings
         {
-            WorkerCount = -1,
-            Seed = seed < 0
-                ? (ulong) DateTimeOffset.Now.ToUnixTimeMilliseconds()
-                : (ulong) seed,
+            Seed = seed ?? NumberUtil.SplitMix64((ulong) DateTimeOffset.Now.ToUnixTimeSeconds()),
             AspectRatio = null,
             EnablePostProcessing = enablePostProcessing,
             EnableTextRendering = enableTextRendering,
@@ -68,7 +66,7 @@ public static class FFmpegStartup
         services.AddPAS(builder =>
         {
             builder.UseAppSettings(appSettings);
-            builder.UseWindowManager<FFmpegWindowManager>();
+            builder.UseWindow<FFmpegWindow>();
             builder.UseMediaProvider<FFmpegMediaProvider>();
             switch (backend)
             {

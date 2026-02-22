@@ -6,8 +6,8 @@ using OpenTK.Graphics.OpenGL;
 using System.Numerics;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Mathematics;
-using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Rendering.Common;
+using ParallelAnimationSystem.Rendering.Data;
 using ParallelAnimationSystem.Rendering.OpenGL.PostProcessing;
 using ParallelAnimationSystem.Util;
 using ParallelAnimationSystem.Windowing;
@@ -23,9 +23,8 @@ public class Renderer : IRenderer, IDisposable
     
     private const int MaxFontsCount = 12;
     private const int MsaaSamples = 4;
-
-    public IWindow Window => window;
-
+    private const int MaxOverlays = 10;
+    
     private readonly IOpenGLWindow window;
     
     // Rendering data
@@ -36,7 +35,8 @@ public class Renderer : IRenderer, IDisposable
     private readonly List<FontInfo?> fontInfos = [];
     
     // Post processors
-    private readonly Bloom bloom;
+    private readonly LegacyBloom legacyBloom;
+    private readonly UniversalBloom universalBloom;
     private readonly UberPost uberPost;
     
     // Graphics data
@@ -59,43 +59,47 @@ public class Renderer : IRenderer, IDisposable
     private int postProcessTextureHandle1, postProcessTextureHandle2;
     private readonly int postProcessFboHandle;
 
+    private Vector2i currentOverlaySize;
+    private readonly int overlayProgram;
+    private readonly int overlaySourceOffsetsUniformLocation, overlaySourceScalesUniformLocation, overlaySourceCountUniformLocation;
+    private readonly int overlaySampler;
+    private int overlayTexture;
+
+    private readonly int overlayFramebufferHandle;
+
     private readonly List<DrawList.DrawData> opaqueDrawData = [];
     private readonly List<DrawList.DrawData> transparentDrawData = [];
     
     private readonly Buffer<DrawElementsIndirectCommand> multiDrawIndirectBuffer = new();
     private readonly Buffer<MultiDrawItem> multiDrawStorageBuffer = new();
     private readonly Buffer<RenderGlyph> multiDrawGlyphBuffer = new();
+    
+    // Overlay renderers
+    private readonly List<IOverlayRenderer> overlayRenderers = [];
 
+    // Injected dependencies
     private readonly AppSettings appSettings;
     private readonly IncomingResourceQueue incomingResourceQueue;
     private readonly ILogger<Renderer> logger;
 
     public Renderer(
         AppSettings appSettings,
-        IWindowManager windowManager,
+        IWindow window,
         ResourceLoader loader,
         IncomingResourceQueue incomingResourceQueue,
         ILogger<Renderer> logger)
     {
         this.appSettings = appSettings;
+        this.window = (IOpenGLWindow) window;
         this.incomingResourceQueue = incomingResourceQueue;
         this.logger = logger;
-
+        
         logger.LogInformation("Initializing OpenGL renderer");
         
-        // Create window
-        window = (IOpenGLWindow) windowManager.CreateWindow(
-            "Parallel Animation System", 
-            new OpenGLSettings
-            {
-                MajorVersion = 4,
-                MinorVersion = 6,
-                IsES = false
-            });
-        window.MakeContextCurrent();
+        this.window.MakeContextCurrent();
         
         // Load OpenGL bindings
-        GLLoader.LoadBindings(new WMBindingsContext((IOpenGLWindowManager) windowManager));
+        GLLoader.LoadBindings(new BindingsContext(this.window));
         
         logger.LogInformation("Window created");
         
@@ -129,7 +133,6 @@ public class Renderer : IRenderer, IDisposable
 
         #endregion
         
-        
         #region OpenGL Data Initialization
 
         {
@@ -160,56 +163,7 @@ public class Renderer : IRenderer, IDisposable
             multiDrawGlyphBufferHandle = GL.CreateBuffer();
 
             // Initialize shader program
-            var vertexShaderSource = loader.ReadResourceString("Shaders/UberVertex.glsl");
-            if (vertexShaderSource is null)
-                throw new InvalidOperationException("Could not load Uber vertex shader source");
-
-            var fragmentShaderSource = loader.ReadResourceString("Shaders/UberFragment.glsl");
-            if (fragmentShaderSource is null)
-                throw new InvalidOperationException("Could not load Uber fragment shader source");
-
-            // Create shaders
-            var vertexShader = GL.CreateShader(ShaderType.VertexShader);
-            GL.ShaderSource(vertexShader, vertexShaderSource);
-            GL.CompileShader(vertexShader);
-
-            // Check for vertex shader compilation errors
-            var vertexStatus = GL.GetShaderi(vertexShader, ShaderParameterName.CompileStatus);
-            if (vertexStatus == 0)
-            {
-                GL.GetShaderInfoLog(vertexShader, out var infoLog);
-                throw new InvalidOperationException($"Vertex shader compilation failed: {infoLog}");
-            }
-
-            var fragmentShader = GL.CreateShader(ShaderType.FragmentShader);
-            GL.ShaderSource(fragmentShader, fragmentShaderSource);
-            GL.CompileShader(fragmentShader);
-
-            // Check for fragment shader compilation errors
-            var fragmentStatus = GL.GetShaderi(fragmentShader, ShaderParameterName.CompileStatus);
-            if (fragmentStatus == 0)
-            {
-                GL.GetShaderInfoLog(fragmentShader, out var infoLog);
-                throw new InvalidOperationException($"Fragment shader compilation failed: {infoLog}");
-            }
-
-            // Create program
-            programHandle = GL.CreateProgram();
-            GL.AttachShader(programHandle, vertexShader);
-            GL.AttachShader(programHandle, fragmentShader);
-            GL.LinkProgram(programHandle);
-
-            // Check for program linking errors
-            var linkStatus = GL.GetProgrami(programHandle, ProgramProperty.LinkStatus);
-            if (linkStatus == 0)
-            {
-                GL.GetProgramInfoLog(programHandle, out var infoLog);
-                throw new InvalidOperationException($"Program linking failed: {infoLog}");
-            }
-
-            // Clean up
-            GL.DeleteShader(vertexShader);
-            GL.DeleteShader(fragmentShader);
+            programHandle = LoaderUtil.LoadShaderProgram(loader, "UberVertex", "UberFragment");
 
             // Get uniform locations
             fontAtlasesUniformLocation = GL.GetUniformLocation(programHandle, "uFontAtlases");
@@ -242,10 +196,52 @@ public class Renderer : IRenderer, IDisposable
             // We will bind the texture later
 
             currentFboSize = size;
+            
+            // Initialize overlay resources
+            
+            // Load overlay program
+            overlayProgram = LoaderUtil.LoadComputeProgram(loader, "Overlay");
+            overlaySourceOffsetsUniformLocation = GL.GetUniformLocation(overlayProgram, "uSourceOffsets");
+            overlaySourceScalesUniformLocation = GL.GetUniformLocation(overlayProgram, "uSourceScales");
+            overlaySourceCountUniformLocation = GL.GetUniformLocation(overlayProgram, "uSourceCount");
+            
+            var overlaySourceSamplersUniformLocation = GL.GetUniformLocation(overlayProgram, "uSourceSamplers");
+            
+            GL.UseProgram(overlayProgram);
+            for (var i = 0; i < MaxOverlays; i++)
+                GL.Uniform1i(overlaySourceSamplersUniformLocation + i, 1, i);
+            
+            // Hardcode offsets and scales from 1 to MaxOverlays
+            for (var i = 0; i < MaxOverlays; i++)
+            {
+                GL.Uniform2f(overlaySourceOffsetsUniformLocation + i, 0f, 0f);
+                GL.Uniform2f(overlaySourceScalesUniformLocation + i, 1f, 1f);
+            }
+            
+            // Create overlay sampler
+            overlaySampler = GL.CreateSampler();
+            GL.SamplerParameteri(overlaySampler, SamplerParameterI.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.SamplerParameteri(overlaySampler, SamplerParameterI.TextureMagFilter, (int)TextureMagFilter.Nearest);
+            GL.SamplerParameteri(overlaySampler, SamplerParameterI.TextureWrapS, (int)TextureWrapMode.ClampToBorder);
+            GL.SamplerParameteri(overlaySampler, SamplerParameterI.TextureWrapT, (int)TextureWrapMode.ClampToBorder);
+
+            var borderColor = Vector4.Zero;
+            GL.SamplerParameterf(overlaySampler, SamplerParameterF.TextureBorderColor, in borderColor.X);
+            
+            // Initialize overlay texture
+            overlayTexture = GL.CreateTexture(TextureTarget.Texture2d);
+            GL.TextureStorage2D(overlayTexture, 1, SizedInternalFormat.Rgba16f, size.X, size.Y);
+            
+            // Create overlay fbo
+            overlayFramebufferHandle = GL.CreateFramebuffer();
+            GL.NamedFramebufferTexture(overlayFramebufferHandle, FramebufferAttachment.ColorAttachment0, overlayTexture, 0);
+            
+            currentOverlaySize = size;
 
             // Initialize post processors
+            legacyBloom = new LegacyBloom(loader);
+            universalBloom = new UniversalBloom(loader);
             uberPost = new UberPost(loader);
-            bloom = new Bloom(loader);
         }
 
         #endregion
@@ -253,9 +249,58 @@ public class Renderer : IRenderer, IDisposable
     
     public void Dispose()
     {
-        if (Window is IDisposable disposable)
-            disposable.Dispose();
+        // Don't dispose because it will die with the context anyway
+        // TODO: If we ever need to reinit just the renderer without disposing the window, implement this
+        
+        // logger.LogInformation("Disposing OpenGL renderer");
+        //
+        // // Delete OpenGL resources
+        // GL.DeleteFramebuffer(fboHandle);
+        // GL.DeleteRenderbuffer(fboColorBufferHandle);
+        // GL.DeleteRenderbuffer(fboDepthBufferHandle);
+        // GL.DeleteFramebuffer(postProcessFboHandle);
+        // GL.DeleteTexture(postProcessTextureHandle1);
+        // GL.DeleteTexture(postProcessTextureHandle2);
+        //
+        // GL.DeleteBuffer(vertexBufferHandle);
+        // GL.DeleteBuffer(indexBufferHandle);
+        // GL.DeleteVertexArray(vertexArrayHandle);
+        //
+        // GL.DeleteBuffer(multiDrawIndirectBufferHandle);
+        // GL.DeleteBuffer(multiDrawStorageBufferHandle);
+        // GL.DeleteBuffer(multiDrawGlyphBufferHandle);
+        //
+        // GL.DeleteProgram(programHandle);
+        // GL.DeleteSampler(fontAtlasSampler);
+        //
+        // // Delete font atlas textures
+        // foreach (var fontInfoNullable in fontInfos)
+        // {
+        //     if (!fontInfoNullable.HasValue)
+        //         continue;
+        //     
+        //     var fontInfo = fontInfoNullable.Value;
+        //     GL.DeleteTexture(fontInfo.AtlasHandle);
+        // }
+        // 
+        // // Delete overlay resources
+        // GL.DeleteProgram(overlayProgram);
+        // GL.DeleteSampler(overlaySampler);
+        // if (overlayTexture != 0)
+        //     GL.DeleteTexture(overlayTexture);
+        // GL.DeleteFramebuffer(overlayFramebufferHandle);
+        //
+        // // Dispose post processors
+        // legacyBloom.Dispose();
+        // universalBloom.Dispose();
+        // uberPost.Dispose();
     }
+    
+    public void AddOverlayRenderer(IOverlayRenderer overlayRenderer)
+        => overlayRenderers.Add(overlayRenderer);
+    
+    public bool RemoveOverlayRenderer(IOverlayRenderer overlayRenderer) 
+        => overlayRenderers.Remove(overlayRenderer);
 
     public void ProcessFrame(IDrawList drawList)
     {
@@ -358,7 +403,7 @@ public class Renderer : IRenderer, IDisposable
         RenderDrawDataList(opaqueDrawData, camera);
         
         // Transparent pass, enable blending, disable depth write
-        GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+        GL.BlendFuncSeparate(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha, BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha);
         GL.Enable(EnableCap.Blend);
         GL.DepthMask(false);
         
@@ -386,15 +431,71 @@ public class Renderer : IRenderer, IDisposable
         // Do post-processing
         var finalTexture = HandlePostProcessing(oglDrawList.PostProcessingData, postProcessTextureHandle1, postProcessTextureHandle2);
         
-        // Bind final texture to post process fbo
-        GL.NamedFramebufferTexture(postProcessFboHandle, FramebufferAttachment.ColorAttachment0, finalTexture, 0);
+        // Render overlays into final texture
+        {
+            // Update final texture if size changed
+            if (currentOverlaySize != size)
+            {
+                currentOverlaySize = size;
+                
+                GL.DeleteTexture(overlayTexture);
+                
+                overlayTexture = GL.CreateTexture(TextureTarget.Texture2d);
+                GL.TextureStorage2D(overlayTexture, 1, SizedInternalFormat.Rgba16f, size.X, size.Y);
+            }
+            
+            Span<int> overlayTextures = stackalloc int[MaxOverlays];
+            overlayTextures[0] = finalTexture;
+
+            var overlayCount = 1;
+            foreach (var overlayRenderer in overlayRenderers)
+            {
+                if (overlayCount >= MaxOverlays)
+                    break;
+                
+                var texture = overlayRenderer.ProcessFrame(size);
+                if (texture != 0)
+                    overlayTextures[overlayCount++] = texture;
+            }
+
+            GL.BindImageTexture(0, overlayTexture, 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f);
+            
+            // Set overlay textures and samplers
+            for (var i = 0; i < overlayCount; i++)
+            {
+                GL.BindTextureUnit((uint) i, overlayTextures[i]);
+                GL.BindSampler((uint) i, overlaySampler);
+            }
+            
+            GL.UseProgram(overlayProgram);
+            
+            // Set scale and offset of first overlay
+            var offsetXInt = (size.X - renderSize.X) / 2;
+            var offsetYInt = (size.Y - renderSize.Y) / 2;
+            var offsetX = offsetXInt / (float) size.X;
+            var offsetY = offsetYInt / (float) size.Y;
+            
+            var scaleX = renderSize.X / (float) size.X;
+            var scaleY = renderSize.Y / (float) size.Y;
+            
+            GL.Uniform2f(overlaySourceOffsetsUniformLocation, offsetX, offsetY);
+            GL.Uniform2f(overlaySourceScalesUniformLocation, scaleX, scaleY);
+            
+            // Set overlay count
+            GL.Uniform1i(overlaySourceCountUniformLocation, overlayCount);
+            
+            GL.DispatchCompute(
+                (uint)MathUtil.DivideCeil(size.X, 8),
+                (uint)MathUtil.DivideCeil(size.Y, 8),
+                1);
+            GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit);
+        }
+        
+        // Bind overlay texture to overlay fbo
+        GL.NamedFramebufferTexture(overlayFramebufferHandle, FramebufferAttachment.ColorAttachment0, overlayTexture, 0);
         
         // Present to window
-        var screenOffset = new Vector2i(
-            (size.X - renderSize.X) / 2,
-            (size.Y - renderSize.Y) / 2);
-        
-        window.Present(postProcessFboHandle, Vector4.Zero, renderSize, screenOffset);
+        window.Present(overlayFramebufferHandle, Vector4.Zero, size, Vector2i.Zero);
     }
 
     private void RenderDrawDataList(List<DrawList.DrawData> drawDataList, Matrix3x2 camera)
@@ -516,18 +617,21 @@ public class Renderer : IRenderer, IDisposable
 
     private int HandlePostProcessing(PostProcessingData data, int texture1, int texture2)
     {
-        if (bloom.Process(currentFboSize, data.BloomIntensity, data.BloomDiffusion, texture1, texture2))
+        if (legacyBloom.Process(currentFboSize, data.LegacyBloom.Intensity, data.LegacyBloom.Diffusion, texture1, texture2))
+            Swap(ref texture1, ref texture2);
+        
+        if (universalBloom.Process(currentFboSize, data.UniversalBloom.Intensity, data.UniversalBloom.Diffusion, texture1, texture2))
             Swap(ref texture1, ref texture2);
         
         if (uberPost.Process(
                 currentFboSize,
                 data.Time,
-                data.HueShiftAngle,
-                data.LensDistortionIntensity, data.LensDistortionCenter,
-                data.ChromaticAberrationIntensity,
-                data.VignetteCenter, data.VignetteIntensity, data.VignetteRounded, data.VignetteRoundness, data.VignetteSmoothness, data.VignetteColor,
-                data.GradientColor1, data.GradientColor2, data.GradientIntensity, data.GradientRotation, data.GradientMode,
-                data.GlitchIntensity, data.GlitchSpeed, data.GlitchSize,
+                data.HueShift.Angle,
+                data.LensDistortion.Intensity, data.LensDistortion.Center,
+                data.ChromaticAberration.Intensity,
+                data.Vignette.Center, data.Vignette.Intensity, data.Vignette.Rounded, data.Vignette.Roundness, data.Vignette.Smoothness, data.Vignette.Color,
+                data.Gradient.Color1, data.Gradient.Color2, data.Gradient.Intensity, data.Gradient.Rotation, data.Gradient.Mode,
+                data.Glitch.Intensity, data.Glitch.Speed, data.Glitch.Size,
                 texture1, texture2))
             Swap(ref texture1, ref texture2);
         

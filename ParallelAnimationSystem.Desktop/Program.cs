@@ -47,10 +47,10 @@ var workersOption = new Option<int>(
     getDefaultValue: () => 4
 );
 
-var seedOption = new Option<long>(
+var seedOption = new Option<ulong?>(
     aliases: ["--seed"],
-    description: "Seed for the random number generator, set to -1 to use a random seed",
-    getDefaultValue: () => -1
+    description: "Seed for the random number generator",
+    getDefaultValue: () => null
 );
 
 var backendOption = new Option<RenderingBackend>(
@@ -113,13 +113,11 @@ rootCommand.SetHandler(context =>
         height,
         vsync,
         useEgl,
-        workerCount,
         seed,
         backend,
         lockAspectRatio,
         enablePostProcessing,
-        enableTextRendering
-    );
+        enableTextRendering);
 });
 
 return rootCommand.Invoke(args);

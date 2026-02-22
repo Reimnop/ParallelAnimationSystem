@@ -4,6 +4,7 @@ using FFMpegCore.Pipes;
 using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Rendering;
+using ParallelAnimationSystem.Windowing;
 using StbVorbisSharp;
 
 namespace ParallelAnimationSystem.FFmpeg;
@@ -14,6 +15,7 @@ public class FFmpegFrameGenerator(
     AppCore appCore,
     IRenderingFactory renderingFactory,
     IRenderer renderer,
+    IWindow window,
     ILogger<FFmpegFrameGenerator> logger)
 {
     public void Generate()
@@ -66,8 +68,8 @@ public class FFmpegFrameGenerator(
             // Clear draw list for next frame
             drawList.Clear();
             
-            var window = (FFmpegWindow) renderer.Window;
-            var currentFrame = window.CurrentFrame;
+            var ffmpegWindow = (FFmpegWindow) window;
+            var currentFrame = ffmpegWindow.CurrentFrame;
             if (currentFrame is null)
                 continue;
             
