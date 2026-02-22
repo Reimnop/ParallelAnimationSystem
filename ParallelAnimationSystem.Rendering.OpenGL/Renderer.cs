@@ -651,12 +651,12 @@ public class Renderer : IRenderer, IDisposable
 
         foreach (var incomingMesh in incomingMeshes)
         {
-            meshInfos.EnsureCount(incomingMesh.MeshId);
-            
             var vertexOffset = vertexBuffer.Length;
             var indexOffset = indexBuffer.Length;
             var indexCount = incomingMesh.Indices.Length;
-            meshInfos.Add(new MeshInfo(vertexOffset, indexOffset, indexCount));
+            
+            meshInfos.EnsureCount(incomingMesh.Id + 1);
+            meshInfos[incomingMesh.Id] = new MeshInfo(vertexOffset, indexOffset, indexCount);
             
             vertexBuffer.Append(incomingMesh.Vertices);
             indexBuffer.Append(incomingMesh.Indices);
@@ -678,7 +678,7 @@ public class Renderer : IRenderer, IDisposable
         
         foreach (var font in incomingFonts)
         {
-            if (font.FontId >= MaxFontsCount)
+            if (font.Id >= MaxFontsCount)
                 throw new InvalidOperationException($"Exceeded maximum number of fonts ({MaxFontsCount}) supported by the renderer");
             
             var atlas = font.Atlas;
@@ -691,8 +691,8 @@ public class Renderer : IRenderer, IDisposable
             GL.TextureSubImage2D(atlasHandle, 0, 0, 0, atlas.Width, atlas.Height, PixelFormat.Rgb, PixelType.HalfFloat, atlas.Data);
             
             // Put it in our font info list
-            fontInfos.EnsureCount(font.FontId + 1);
-            fontInfos[font.FontId] = new FontInfo(atlasHandle);
+            fontInfos.EnsureCount(font.Id + 1);
+            fontInfos[font.Id] = new FontInfo(atlasHandle);
         }
         
         logger.LogInformation("Updated {FontCount} font atlases", incomingFonts.Count);

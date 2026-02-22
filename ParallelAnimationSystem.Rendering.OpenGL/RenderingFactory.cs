@@ -4,23 +4,31 @@ using TmpIO;
 
 namespace ParallelAnimationSystem.Rendering.OpenGL;
 
-public class RenderingFactory(IncomingResourceQueue queue) : IRenderingFactory
+public class RenderingFactory : IRenderingFactory
 {
-    private int currentMeshId;
-    private int currentFontId;
+    public event EventHandler<Mesh>? MeshCreated;
+    public event EventHandler<Font>? FontCreated;
+    
+    public IReadOnlyList<Mesh> Meshes => meshes;
+    public IReadOnlyList<Font> Fonts => fonts;
+
+    private readonly List<Mesh> meshes = [];
+    private readonly List<Font> fonts = [];
 
     public IMesh CreateMesh(ReadOnlySpan<Vector2> vertices, ReadOnlySpan<int> indices)
     {
-        var mesh = new Mesh(currentMeshId++);
-        queue.EnqueueMesh(new IncomingResourceQueue.IncomingMesh(mesh.Id, vertices.ToArray(), indices.ToArray()));
+        var mesh = new Mesh(meshes.Count, vertices.ToArray(), indices.ToArray());
+        meshes.Add(mesh);
+        MeshCreated?.Invoke(this, mesh);
         return mesh;
     }
 
     public IFont CreateFont(Stream stream)
     {
         var fontFile = TmpRead.Read(stream);
-        var font = new Font(currentFontId++, fontFile);
-        queue.EnqueueFont(new IncomingResourceQueue.IncomingFont(font.Id, fontFile.Atlas));
+        var font = new Font(fonts.Count, fontFile);
+        fonts.Add(font);
+        FontCreated?.Invoke(this, font);
         return font;
     }
     

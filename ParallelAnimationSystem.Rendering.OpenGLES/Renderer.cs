@@ -667,8 +667,8 @@ public class Renderer : IRenderer, IDisposable
             GL.TexStorage2D(TextureTarget.Texture2d, 1, SizedInternalFormat.Rgb16f, atlas.Width, atlas.Height);
             GL.TexSubImage2D(TextureTarget.Texture2d, 0, 0, 0, atlas.Width, atlas.Height, PixelFormat.Rgb, PixelType.HalfFloat, atlas.Data);
             
-            fontInfos.EnsureCount(incomingFont.FontId + 1);
-            fontInfos[incomingFont.FontId] = new FontInfo(atlasHandle);
+            fontInfos.EnsureCount(incomingFont.Id + 1);
+            fontInfos[incomingFont.Id] = new FontInfo(atlasHandle);
         }
         
         logger.LogInformation("Updated {FontCount} font atlases", incomingFonts.Count);
@@ -688,8 +688,8 @@ public class Renderer : IRenderer, IDisposable
                 indices[i] += vertexBuffer.Length; // Offset indices
             
             var meshInfo = new MeshInfo(indexBuffer.Length, indices.Length);
-            meshInfos.EnsureCount(incomingMesh.MeshId + 1);
-            meshInfos[incomingMesh.MeshId] = meshInfo;
+            meshInfos.EnsureCount(incomingMesh.Id + 1);
+            meshInfos[incomingMesh.Id] = meshInfo;
             
             vertexBuffer.Append(vertices);
             indexBuffer.Append(indices);
