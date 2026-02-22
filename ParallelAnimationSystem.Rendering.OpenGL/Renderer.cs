@@ -249,51 +249,50 @@ public class Renderer : IRenderer, IDisposable
     
     public void Dispose()
     {
-        // Don't dispose because it will die with the context anyway
-        // TODO: If we ever need to reinit just the renderer without disposing the window, implement this
+        logger.LogInformation("Disposing OpenGL renderer");
         
-        // logger.LogInformation("Disposing OpenGL renderer");
-        //
-        // // Delete OpenGL resources
-        // GL.DeleteFramebuffer(fboHandle);
-        // GL.DeleteRenderbuffer(fboColorBufferHandle);
-        // GL.DeleteRenderbuffer(fboDepthBufferHandle);
-        // GL.DeleteFramebuffer(postProcessFboHandle);
-        // GL.DeleteTexture(postProcessTextureHandle1);
-        // GL.DeleteTexture(postProcessTextureHandle2);
-        //
-        // GL.DeleteBuffer(vertexBufferHandle);
-        // GL.DeleteBuffer(indexBufferHandle);
-        // GL.DeleteVertexArray(vertexArrayHandle);
-        //
-        // GL.DeleteBuffer(multiDrawIndirectBufferHandle);
-        // GL.DeleteBuffer(multiDrawStorageBufferHandle);
-        // GL.DeleteBuffer(multiDrawGlyphBufferHandle);
-        //
-        // GL.DeleteProgram(programHandle);
-        // GL.DeleteSampler(fontAtlasSampler);
-        //
-        // // Delete font atlas textures
-        // foreach (var fontInfoNullable in fontInfos)
-        // {
-        //     if (!fontInfoNullable.HasValue)
-        //         continue;
-        //     
-        //     var fontInfo = fontInfoNullable.Value;
-        //     GL.DeleteTexture(fontInfo.AtlasHandle);
-        // }
-        // 
-        // // Delete overlay resources
-        // GL.DeleteProgram(overlayProgram);
-        // GL.DeleteSampler(overlaySampler);
-        // if (overlayTexture != 0)
-        //     GL.DeleteTexture(overlayTexture);
-        // GL.DeleteFramebuffer(overlayFramebufferHandle);
-        //
-        // // Dispose post processors
-        // legacyBloom.Dispose();
-        // universalBloom.Dispose();
-        // uberPost.Dispose();
+        window.MakeContextCurrent();
+        
+        // Delete OpenGL resources
+        GL.DeleteFramebuffer(fboHandle);
+        GL.DeleteRenderbuffer(fboColorBufferHandle);
+        GL.DeleteRenderbuffer(fboDepthBufferHandle);
+        GL.DeleteFramebuffer(postProcessFboHandle);
+        GL.DeleteTexture(postProcessTextureHandle1);
+        GL.DeleteTexture(postProcessTextureHandle2);
+        
+        GL.DeleteBuffer(vertexBufferHandle);
+        GL.DeleteBuffer(indexBufferHandle);
+        GL.DeleteVertexArray(vertexArrayHandle);
+        
+        GL.DeleteBuffer(multiDrawIndirectBufferHandle);
+        GL.DeleteBuffer(multiDrawStorageBufferHandle);
+        GL.DeleteBuffer(multiDrawGlyphBufferHandle);
+        
+        GL.DeleteProgram(programHandle);
+        GL.DeleteSampler(fontAtlasSampler);
+        
+        // Delete font atlas textures
+        foreach (var fontInfoNullable in fontInfos)
+        {
+            if (!fontInfoNullable.HasValue)
+                continue;
+            
+            var fontInfo = fontInfoNullable.Value;
+            GL.DeleteTexture(fontInfo.AtlasHandle);
+        }
+        
+        // Delete overlay resources
+        GL.DeleteProgram(overlayProgram);
+        GL.DeleteSampler(overlaySampler);
+        if (overlayTexture != 0)
+            GL.DeleteTexture(overlayTexture);
+        GL.DeleteFramebuffer(overlayFramebufferHandle);
+        
+        // Dispose post processors
+        legacyBloom.Dispose();
+        universalBloom.Dispose();
+        uberPost.Dispose();
     }
     
     public void AddOverlayRenderer(IOverlayRenderer overlayRenderer)

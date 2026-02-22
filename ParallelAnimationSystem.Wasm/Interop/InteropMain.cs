@@ -57,19 +57,7 @@ public static class InteropMain
         });
 
         var sp = services.BuildServiceProvider();
-        var appCore = sp.InitializeAppCore();
-        var renderer = sp.InitializeRenderer();
-        
-        var renderingFactory = sp.GetRequiredService<IRenderingFactory>();
-        var drawList = renderingFactory.CreateDrawList();
-
-        app = new WasmApp
-        {
-            ServiceProvider = sp,
-            AppCore = appCore,
-            Renderer = renderer,
-            DrawList = drawList
-        };
+        app = new WasmApp(sp);
     }
 
     [UnmanagedCallersOnly(EntryPoint = "main_shutdown")]

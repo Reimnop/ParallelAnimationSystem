@@ -33,10 +33,11 @@ public static class StartupExtension
             services.AddSingleton<AppCore, TAppCore>();
         
             // Add external services
-            options.WindowDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);
             options.MediaProviderDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);
-            options.RendererDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);
             options.RenderingFactoryDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);
+            
+            options.WindowDefinition.RegisterToServiceCollection(services, ServiceLifetime.Scoped);
+            options.RendererDefinition.RegisterToServiceCollection(services, ServiceLifetime.Scoped);
         
             // Copy resource source factories to our own list
             var resourceSourceFactories = new List<Func<IResourceSource>>();
@@ -66,8 +67,8 @@ public static class StartupExtension
         
 #if DEBUG
             // Add ImGui
-            services.AddSingleton<ImGuiContext>();
-            services.AddSingleton<ImGuiBackend>();
+            services.AddScoped<ImGuiContext>();
+            services.AddScoped<ImGuiBackend>();
 #endif
         
             // Add migrations
@@ -76,19 +77,5 @@ public static class StartupExtension
         
             return services;
         }
-    }
-
-    extension(IServiceProvider serviceProvider)
-    {
-        public AppCore InitializeAppCore()
-            => serviceProvider.GetRequiredService<AppCore>();
-
-        public IRenderer InitializeRenderer()
-            => serviceProvider.GetRequiredService<IRenderer>();
-
-#if DEBUG
-        public ImGuiBackend InitializeImGui()
-            => serviceProvider.GetRequiredService<ImGuiBackend>();
-#endif
     }
 }

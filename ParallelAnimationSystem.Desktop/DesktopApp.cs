@@ -14,7 +14,7 @@ public sealed class DesktopApp
     private readonly IServiceProvider serviceProvider;
     private readonly AudioPlayer audioPlayer;
 
-    private bool running = true;
+    private volatile bool running = true;
 
     public DesktopApp(IServiceProvider serviceProvider, MediaContext mediaContext, IRenderingFactory renderingFactory)
     {
@@ -30,7 +30,7 @@ public sealed class DesktopApp
     public void StartApp()
     {
         // Initialize app core
-        var appCore = serviceProvider.InitializeAppCore();
+        var appCore = serviceProvider.GetRequiredService<AppCore>();
         
         // Play audio
         audioPlayer.Play();
@@ -63,9 +63,11 @@ public sealed class DesktopApp
 
     private void StartRenderThread()
     {
+        using var scope = serviceProvider.CreateScope();
+        
         // Initialize renderer
-        var renderer = serviceProvider.InitializeRenderer();
-        var window = serviceProvider.GetRequiredService<IWindow>();
+        var renderer = scope.ServiceProvider.GetRequiredService<IRenderer>();
+        var window = scope.ServiceProvider.GetRequiredService<IWindow>();
 
         while (!window.ShouldClose)
         {

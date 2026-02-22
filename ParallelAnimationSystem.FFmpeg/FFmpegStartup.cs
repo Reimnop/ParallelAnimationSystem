@@ -80,11 +80,12 @@ public static class FFmpegStartup
         });
         
         // Register frame generator
-        services.AddTransient<FFmpegFrameGenerator>();
+        services.AddScoped<FFmpegFrameGenerator>();
         
-        var serviceProvider = services.BuildServiceProvider();
+        using var serviceProvider = services.BuildServiceProvider();
+        using var scope = serviceProvider.CreateScope();
         
-        var frameGenerator = serviceProvider.GetRequiredService<FFmpegFrameGenerator>();
+        var frameGenerator = scope.ServiceProvider.GetRequiredService<FFmpegFrameGenerator>();
         frameGenerator.Generate();
     }
 }

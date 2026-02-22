@@ -10,7 +10,7 @@ public static class InteropApp
     public static IntPtr GetBeatmapDataPointer(IntPtr ptr)
     {
         var app = InteropHelper.IntPtrToObject<WasmApp>(ptr);
-        var beatmapService = app.ServiceProvider.GetRequiredService<BeatmapService>();
+        var beatmapService = app.BeatmapService;
         return InteropHelper.ObjectToIntPtr(beatmapService.BeatmapData);
     }
     

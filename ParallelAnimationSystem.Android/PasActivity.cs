@@ -111,10 +111,11 @@ public class PasActivity : Activity
         });
         
         // Initialize PAS services
-        var serviceProvider = services.BuildServiceProvider();
-
-        var appCore = serviceProvider.InitializeAppCore();
-        var renderer = serviceProvider.InitializeRenderer();
+        using var serviceProvider = services.BuildServiceProvider();
+        var appCore = serviceProvider.GetRequiredService<AppCore>();
+        
+        using var renderScope = serviceProvider.CreateScope();
+        var renderer = renderScope.ServiceProvider.GetRequiredService<IRenderer>();
         
         var window = serviceProvider.GetRequiredService<IWindow>();
         
