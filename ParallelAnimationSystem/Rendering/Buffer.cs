@@ -39,9 +39,8 @@ public class Buffer<T>(int capacity = 1024) where T : unmanaged
         // Resize buffer if necessary
         if (start + data.Length >= this.data.Length)
         {
-            var newSize = this.data.Length;
-            while (start + data.Length >= newSize)
-                newSize *= 2;
+            var newSize = this.data.Length * 2;
+            newSize = Math.Max(newSize, start + data.Length);
 
             Array.Resize(ref this.data, newSize);
         }
