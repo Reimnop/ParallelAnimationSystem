@@ -682,7 +682,7 @@ public class Renderer : IRenderer, IDisposable
         foreach (var incomingMesh in incomingMeshes)
         {
             var vertices = incomingMesh.Vertices;
-            var indices = incomingMesh.Indices;
+            var indices = incomingMesh.Indices.ToArray();
 
             for (var i = 0; i < indices.Length; i++)
                 indices[i] += vertexBuffer.Length; // Offset indices
