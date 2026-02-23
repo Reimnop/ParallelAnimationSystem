@@ -96,6 +96,9 @@ public class MemoryAllocator<T>(int initialCapacity = 1024) where T : unmanaged
         if (lastBlock.IsFree)
         {
             // expand last block
+            // we know the last block will always be smaller than needed
+            // because if it was large enough, the previous loop would have
+            // found it, so we just set the new size and mark it as used
             lastBlock = lastBlock with
             {
                 Size = size,
@@ -105,6 +108,7 @@ public class MemoryAllocator<T>(int initialCapacity = 1024) where T : unmanaged
         }
         else
         {
+            // create new block at the end of the buffer
             lastBlock = new Block
             {
                 Offset = lastBlock.Offset + lastBlock.Size,
