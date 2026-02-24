@@ -1,6 +1,6 @@
 {
   "name": "paswasm",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Typed JavaScript package for ParallelAnimationSystem.Wasm",
   "type": "module",
   "main": "dist/index.js",
