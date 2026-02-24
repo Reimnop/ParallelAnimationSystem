@@ -38,4 +38,12 @@ const beatmapData = await beatmapDataResponse.text();
 // load beatmap into PAS
 const beatmapService = app.beatmapService;
 beatmapService.loadBeatmap(beatmapData, BeatmapFormat.Vgd);
+
+// enter main render loop
+const update = (time) => {
+  app.processFrame(time / 1000); // convert time from millsecond to second
+  requestAnimationFrame(update);
+};
+
+requestAnimationFrame(update);
 ```
