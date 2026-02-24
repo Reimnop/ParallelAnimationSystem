@@ -173,6 +173,9 @@ public class ThemeManager(PlaybackThemeContainer playbackThemes) : IDisposable
 
     private void OnBeatmapThemeRemoved(object? sender, BeatmapTheme e)
     {
+        var index = playbackThemes.GetIndexForId(e.Id);
+        playbackThemes.Remove(index);
+        
         e.PropertyChanged -= OnBeatmapThemePropertyChanged;
         e.PlayerColorUpdated -= OnBeatmapThemePlayerColorUpdated;
         e.ObjectColorUpdated -= OnBeatmapThemeObjectColorUpdated;

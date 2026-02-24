@@ -7,6 +7,7 @@ namespace ParallelAnimationSystem.Wasm;
 
 public class WasmApp : IDisposable
 {
+    public RandomSeedService RandomSeedService { get; }
     public BeatmapService BeatmapService { get; }
 
     private readonly ServiceProvider sp;
@@ -20,6 +21,7 @@ public class WasmApp : IDisposable
     {
         this.sp = sp;
         
+        RandomSeedService = sp.GetRequiredService<RandomSeedService>();
         BeatmapService = sp.GetRequiredService<BeatmapService>();
         
         appCore = sp.GetRequiredService<AppCore>();

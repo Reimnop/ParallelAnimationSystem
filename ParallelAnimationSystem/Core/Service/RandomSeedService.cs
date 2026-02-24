@@ -2,7 +2,7 @@
 
 namespace ParallelAnimationSystem.Core.Service;
 
-public class RandomSeedService
+public class RandomSeedService(ILogger<RandomSeedService> logger)
 {
     public event EventHandler<ulong>? SeedChanged;
     
@@ -16,15 +16,8 @@ public class RandomSeedService
             
             field = value;
             SeedChanged?.Invoke(this, field);
+            
+            logger.LogInformation("Using random seed '{Seed}'", field);
         }
-    }
-
-    public RandomSeedService(AppSettings appSettings, ILogger<RandomSeedService> logger)
-    {
-        // initialize the seed from app settings
-        Seed = appSettings.Seed;
-        
-        // log the initial seed
-        logger.LogInformation("Using random seed '{Seed}'", Seed);
     }
 }

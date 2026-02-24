@@ -5,6 +5,7 @@ using MattiasCibien.Extensions.Logging.Logcat;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Core;
+using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.OpenGLES;
@@ -48,7 +49,6 @@ public class PasActivity : Activity
 
         var appSettings = new AppSettings
         {
-            Seed = NumberUtil.SplitMix64((ulong) DateTimeOffset.Now.ToUnixTimeSeconds()),
             AspectRatio = lockAspectRatio ? 16.0f / 9.0f : null,
             EnablePostProcessing = enablePostProcessing,
             EnableTextRendering = enableTextRendering,
@@ -106,12 +106,20 @@ public class PasActivity : Activity
         {
             builder.UseAppSettings(appSettings);
             builder.UseWindow<AndroidWindow>();
-            builder.UseMediaProvider<AndroidMediaProvider>();
             builder.UseOpenGLESRenderer();
         });
         
         // Initialize PAS services
         using var serviceProvider = services.BuildServiceProvider();
+        
+        // Set random seed
+        var randomSeedService = serviceProvider.GetRequiredService<RandomSeedService>();
+        randomSeedService.Seed = NumberUtil.SplitMix64((ulong)DateTimeOffset.Now.ToUnixTimeSeconds());
+        
+        // Load beatmap
+        var beatmapService = serviceProvider.GetRequiredService<BeatmapService>();
+        beatmapService.LoadBeatmap(beatmapData, beatmapFormat);
+        
         var appCore = serviceProvider.GetRequiredService<AppCore>();
         
         using var renderScope = serviceProvider.CreateScope();

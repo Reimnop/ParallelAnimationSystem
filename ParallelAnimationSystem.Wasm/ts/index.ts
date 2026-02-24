@@ -1,4 +1,4 @@
-import PASFactory from "./mod/ParallelAnimationSystem.Wasm";
+import PASFactory from "./wasm/ParallelAnimationSystem.Wasm";
 import { Module } from "./Module";
 
 export default async function createPAS(canvas: HTMLCanvasElement): Promise<Module> {

@@ -33,7 +33,6 @@ public static class StartupExtension
             services.AddSingleton<AppCore, TAppCore>();
         
             // Add external services
-            options.MediaProviderDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);
             options.RenderingFactoryDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);
             
             options.WindowDefinition.RegisterToServiceCollection(services, ServiceLifetime.Scoped);

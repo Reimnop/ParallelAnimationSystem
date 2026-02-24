@@ -1,6 +1,5 @@
-import type { MainModule } from "./mod/ParallelAnimationSystem.Wasm";
+import type { MainModule } from "./wasm/ParallelAnimationSystem.Wasm";
 import { App } from "./App";
-import type { BeatmapFormat } from "./data/BeatmapFormat";
 import { MemoryManager } from "./MemoryManager";
 import { InteropHelper } from "./InteropHelper";
 
@@ -45,28 +44,17 @@ export class Module {
   }
 
   get app(): App | null {
-    const ptr = this.wasm._main_getAppPointer();
+    const ptr = this.wasm._main_getApp();
     if (ptr === 0) {
       return null;
     }
     return new App(this, ptr);
   }
 
-  start(seed: BigInt, enablePostProcessing: boolean, enableTextRendering: boolean, beatmapData: string, beatmapFormat: BeatmapFormat): void {
-    // we allocate the beatmap data string on the heap
-    // because beatmap data can be large, and we don't
-    // want to risk overflowing the stack
-    const beatmapDataPtr = this.interopHelper.stringToUTF8OnHeap(beatmapData);
-    try {
-      this.wasm._main_start(
-          seed,
-          enablePostProcessing ? 1 : 0,
-          enableTextRendering ? 1 : 0,
-          beatmapDataPtr,
-          beatmapFormat);
-    } finally {
-      this.wasm._interop_free(beatmapDataPtr);
-    }
+  start(enablePostProcessing: boolean, enableTextRendering: boolean): void {
+    this.wasm._main_start(
+      enablePostProcessing ? 1 : 0,
+      enableTextRendering ? 1 : 0);
   }
 
   shutdown(): void {

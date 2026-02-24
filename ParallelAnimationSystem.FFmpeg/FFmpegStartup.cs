@@ -1,5 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using ParallelAnimationSystem.Core;
+using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering.OpenGL;
 using ParallelAnimationSystem.Rendering.OpenGLES;
@@ -27,7 +29,6 @@ public static class FFmpegStartup
     {
         var appSettings = new AppSettings
         {
-            Seed = seed ?? NumberUtil.SplitMix64((ulong) DateTimeOffset.Now.ToUnixTimeSeconds()),
             AspectRatio = null,
             EnablePostProcessing = enablePostProcessing,
             EnableTextRendering = enableTextRendering,
@@ -67,7 +68,6 @@ public static class FFmpegStartup
         {
             builder.UseAppSettings(appSettings);
             builder.UseWindow<FFmpegWindow>();
-            builder.UseMediaProvider<FFmpegMediaProvider>();
             switch (backend)
             {
                 case RenderingBackend.OpenGL:
@@ -83,9 +83,33 @@ public static class FFmpegStartup
         services.AddScoped<FFmpegFrameGenerator>();
         
         using var serviceProvider = services.BuildServiceProvider();
+        
+        // Set random seed
+        var randomSeedService = serviceProvider.GetRequiredService<RandomSeedService>();
+        randomSeedService.Seed = seed ?? NumberUtil.SplitMix64((ulong)DateTimeOffset.Now.ToUnixTimeSeconds());
+        
+        // Load beatmap
+        ReadBeatmap(beatmapPath, out var beatmapData, out var beatmapFormat);
+        
+        var beatmapService = serviceProvider.GetRequiredService<BeatmapService>();
+        beatmapService.LoadBeatmap(beatmapData, beatmapFormat);
+        
         using var scope = serviceProvider.CreateScope();
         
         var frameGenerator = scope.ServiceProvider.GetRequiredService<FFmpegFrameGenerator>();
         frameGenerator.Generate();
+    }
+    
+    private static void ReadBeatmap(string beatmapPath, out string beatmapData, out BeatmapFormat beatmapFormat)
+    {
+        beatmapData = File.ReadAllText(beatmapPath);
+        
+        var extension = Path.GetExtension(beatmapPath).ToLowerInvariant();
+        beatmapFormat = extension switch
+        {
+            ".lsb" => BeatmapFormat.Lsb,
+            ".vgd" => BeatmapFormat.Vgd,
+            _ => throw new NotSupportedException($"Unsupported beatmap format '{extension}'")
+        };
     }
 }

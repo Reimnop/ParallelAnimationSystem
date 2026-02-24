@@ -14,7 +14,6 @@ public class PASOptionsBuilder(IServiceCollection services)
     private AppSettings? appSettings;
     private readonly List<Func<IResourceSource>> resourceSourceFactories = [];
     private ServiceDefinition<IWindow>? windowDefinition;
-    private ServiceDefinition<IMediaProvider>? mediaProviderDefinition;
     private ServiceDefinition<IRenderer>? rendererDefinition;
     private ServiceDefinition<IRenderingFactory>? renderingFactoryDefinition;
 
@@ -46,16 +45,6 @@ public class PASOptionsBuilder(IServiceCollection services)
         where T : IWindow
         => UseWindow(typeof(T));
     
-    public PASOptionsBuilder UseMediaProvider(ServiceDefinition<IMediaProvider> definition)
-    {
-        mediaProviderDefinition = definition;
-        return this;
-    }
-    
-    public PASOptionsBuilder UseMediaProvider<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>()
-        where T : IMediaProvider
-        => UseMediaProvider(typeof(T));
-    
     public PASOptionsBuilder UseRenderer(ServiceDefinition<IRenderer> definition)
     {
         rendererDefinition = definition;
@@ -82,8 +71,6 @@ public class PASOptionsBuilder(IServiceCollection services)
             ThrowNotSet(nameof(appSettings));
         if (windowDefinition is null)
             ThrowNotSet(nameof(windowDefinition));
-        if (mediaProviderDefinition is null)
-            ThrowNotSet(nameof(mediaProviderDefinition));
         if (rendererDefinition is null)
             ThrowNotSet(nameof(rendererDefinition));
         if (renderingFactoryDefinition is null)
@@ -94,7 +81,6 @@ public class PASOptionsBuilder(IServiceCollection services)
             AppSettings = appSettings,
             ResourceSourceFactories = resourceSourceFactories,
             WindowDefinition = windowDefinition,
-            MediaProviderDefinition = mediaProviderDefinition,
             RendererDefinition = rendererDefinition,
             RenderingFactoryDefinition = renderingFactoryDefinition,
         };

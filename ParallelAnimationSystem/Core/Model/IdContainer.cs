@@ -26,4 +26,12 @@ public class IdContainer<T> : Dictionary<string, T> where T : IStringIdentifiabl
         Removed?.Invoke(this, obj);
         return true;
     }
+    
+    public new void Clear()
+    {
+        var removed = Values.ToList();
+        base.Clear();
+        foreach (var obj in removed)
+            Removed?.Invoke(this, obj);
+    }
 }

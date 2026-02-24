@@ -29,7 +29,6 @@ public static class DesktopStartup
     {
         var appSettings = new AppSettings
         {
-            Seed = seed ?? NumberUtil.SplitMix64((ulong) DateTimeOffset.Now.ToUnixTimeSeconds()),
             AspectRatio = lockAspectRatio ? 16.0f / 9.0f : null,
             EnablePostProcessing = enablePostProcessing,
             EnableTextRendering = enableTextRendering,
@@ -60,7 +59,6 @@ public static class DesktopStartup
         {
             builder.UseAppSettings(appSettings);
             builder.UseWindow<DesktopWindow>();
-            builder.UseMediaProvider<DesktopMediaProvider>();
             switch (backend)
             {
                 case RenderingBackend.OpenGL:
@@ -84,6 +82,6 @@ public static class DesktopStartup
         
         // Start the app
         var app = serviceProvider.GetRequiredService<DesktopApp>();
-        app.StartApp();
+        app.StartApp(seed ?? NumberUtil.SplitMix64((ulong)DateTimeOffset.Now.ToUnixTimeSeconds()));
     }
 }

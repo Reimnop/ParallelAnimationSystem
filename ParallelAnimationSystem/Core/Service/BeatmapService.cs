@@ -1,23 +1,29 @@
 ﻿using System.Diagnostics;
+using System.Text.Json.Nodes;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Pamx.Ls;
+using Pamx.Vg;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Core.Model;
 
 namespace ParallelAnimationSystem.Core.Service;
 
-public class BeatmapService
+public class BeatmapService : IDisposable
 {
     public BeatmapData BeatmapData { get; }
-    public BeatmapFormat BeatmapFormat { get; }
+    public BeatmapFormat BeatmapFormat { get; private set; }
     
-    private readonly ThemeManager themeManager;
-    private readonly EventManager eventManager;
-    private readonly AnimationPipeline animationPipeline;
+    public readonly IServiceProvider serviceProvider;
+    public readonly ObjectSourceManager objectSourceManager;
+    public readonly EventManager eventManager;
+    public readonly ThemeManager themeManager;
+    public readonly AnimationPipeline animationPipeline;
+    public readonly PlaybackObjectContainer playbackObjects;
+    public readonly ILogger<BeatmapService> logger;
 
     public BeatmapService(
         IServiceProvider serviceProvider,
-        IMediaProvider mediaProvider,
         ObjectSourceManager objectSourceManager,
         EventManager eventManager,
         ThemeManager themeManager,
@@ -25,46 +31,81 @@ public class BeatmapService
         PlaybackObjectContainer playbackObjects,
         ILogger<BeatmapService> logger)
     {
-        this.themeManager = themeManager;
+        this.serviceProvider = serviceProvider;
+        this.objectSourceManager = objectSourceManager;
         this.eventManager = eventManager;
+        this.themeManager = themeManager;
         this.animationPipeline = animationPipeline;
-        
-        // Load beatmap
-        var sw = Stopwatch.StartNew();
-        
-        var beatmap = mediaProvider.LoadBeatmap(out var beatmapFormat);
-        BeatmapFormat = beatmapFormat;
-        
-        logger.LogInformation("Using beatmap format {BeatmapFormat}", BeatmapFormat);
-        logger.LogInformation("Loading beatmap took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
+        this.playbackObjects = playbackObjects;
+        this.logger = logger;
 
-        // Migrate the beatmap to the latest version of the beatmap format
-        sw.Restart();
-        switch (beatmapFormat)
-        {
-            case BeatmapFormat.Lsb:
-                serviceProvider.GetRequiredService<LsMigration>().MigrateBeatmap(beatmap);
-                break;
-            case BeatmapFormat.Vgd:
-                serviceProvider.GetRequiredService<VgMigration>().MigrateBeatmap(beatmap);
-                break;
-        }
-        logger.LogInformation("Migrating beatmap took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
-
-        // Load beatmap
-        sw.Restart();
-        BeatmapData = BeatmapParser.Parse(beatmap);
-        logger.LogInformation("Parsing beatmap took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
-
-        sw.Restart();
+        BeatmapData = new BeatmapData();
+        
         objectSourceManager.AttachBeatmapData(BeatmapData);
         eventManager.AttachBeatmapData(BeatmapData);
         themeManager.AttachBeatmapData(BeatmapData);
-        logger.LogInformation("Attaching beatmap data took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
-        
-        logger.LogInformation("Beatmap loading complete, loaded {ObjectCount} objects", playbackObjects.Count);
+    }
 
-        sw.Stop();
+    public void Dispose()
+    {
+        // Detach beatmap data from managers
+        objectSourceManager.DetachBeatmapData();
+        eventManager.DetachBeatmapData();
+        themeManager.DetachBeatmapData();
+    }
+
+    public void LoadBeatmap(string data, BeatmapFormat format)
+    {
+        // Load beatmap
+        var sw = Stopwatch.StartNew();
+
+        try
+        {
+            BeatmapData.Clear();
+            logger.LogInformation("Clearing existing beatmap data took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
+
+            // Parse beatmap
+            sw.Restart();
+            var beatmapJson = JsonNode.Parse(data);
+            if (beatmapJson is not JsonObject beatmapJsonObject)
+                throw new InvalidDataException("Invalid beatmap JSON");
+
+            var beatmap = format switch
+            {
+                BeatmapFormat.Lsb => LsDeserialization.DeserializeBeatmap(beatmapJsonObject),
+                BeatmapFormat.Vgd => VgDeserialization.DeserializeBeatmap(beatmapJsonObject),
+                _ => throw new NotSupportedException($"Unsupported beatmap format '{format}'"),
+            };
+
+            logger.LogInformation("Parsing beatmap took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
+
+            // Migrate the beatmap
+            sw.Restart();
+            switch (format)
+            {
+                case BeatmapFormat.Lsb:
+                    serviceProvider.GetRequiredService<LsMigration>().MigrateBeatmap(beatmap);
+                    break;
+                case BeatmapFormat.Vgd:
+                    serviceProvider.GetRequiredService<VgMigration>().MigrateBeatmap(beatmap);
+                    break;
+            }
+
+            logger.LogInformation("Migrating beatmap took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
+
+            // Import beatmap
+            sw.Restart();
+            BeatmapImporter.Import(beatmap, BeatmapData);
+            logger.LogInformation("Importing beatmap data took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
+
+            BeatmapFormat = format;
+
+            logger.LogInformation("Beatmap loading complete, loaded {ObjectCount} objects", playbackObjects.Count);
+        }
+        finally
+        {
+            sw.Stop();
+        }
     }
 
     public void ProcessBeatmap(float time, out ThemeColorState themeColorState, out EventState eventState, out ReadOnlySpan<ObjectDrawItem> drawItems)

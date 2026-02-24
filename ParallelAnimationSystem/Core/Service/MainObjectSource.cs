@@ -98,7 +98,7 @@ public class MainObjectSource : IDisposable
         beatmapData.Objects.Inserted += OnBeatmapObjectInserted;
         beatmapData.Objects.Removed += OnBeatmapObjectRemoved;
     }
-    
+
     public void DetachBeatmapData()
     {
         if (attachedBeatmapData is null)

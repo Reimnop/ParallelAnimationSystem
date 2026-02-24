@@ -50,4 +50,21 @@ public class BeatmapEvents
         Glitch.ListChanged += (_, e) => GlitchKeyframesChanged?.Invoke(this, e);
         Hue.ListChanged += (_, e) => HueKeyframesChanged?.Invoke(this, e);
     }
+
+    public void Clear()
+    {
+        CameraPosition.Clear();
+        CameraScale.Clear();
+        CameraRotation.Clear();
+        CameraShake.Clear();
+        Theme.Clear();
+        Chroma.Clear();
+        Bloom.Clear();
+        Vignette.Clear();
+        LensDistortion.Clear();
+        Grain.Clear();
+        Gradient.Clear();
+        Glitch.Clear();
+        Hue.Clear();
+    }
 }
