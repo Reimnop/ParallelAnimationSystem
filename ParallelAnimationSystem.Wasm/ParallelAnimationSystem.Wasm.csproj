@@ -21,6 +21,7 @@
     -sEXPORT_ES6
     -sSUPPORT_BIG_ENDIAN
     -sMIN_WEBGL_VERSION=2
+    -sENVIRONMENT=web
     -lGL
     -sEXPORTED_RUNTIME_METHODS=@runtime_exports.txt
     --emit-tsd ParallelAnimationSystem.Wasm.d.ts" />
@@ -52,7 +53,6 @@
     <None Include="runtime_exports.txt" />
     <None Include="build-wasm.sh" />
     <None Include="build-wasm.ps1" />
-    <None Include="tsconfig.json" />
   </ItemGroup>
 
 </Project>
