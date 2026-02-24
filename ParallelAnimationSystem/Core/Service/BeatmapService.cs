@@ -14,13 +14,13 @@ public class BeatmapService : IDisposable
     public BeatmapData BeatmapData { get; }
     public BeatmapFormat BeatmapFormat { get; private set; }
     
-    public readonly IServiceProvider serviceProvider;
-    public readonly ObjectSourceManager objectSourceManager;
-    public readonly EventManager eventManager;
-    public readonly ThemeManager themeManager;
-    public readonly AnimationPipeline animationPipeline;
-    public readonly PlaybackObjectContainer playbackObjects;
-    public readonly ILogger<BeatmapService> logger;
+    private readonly IServiceProvider serviceProvider;
+    private readonly ObjectSourceManager objectSourceManager;
+    private readonly EventManager eventManager;
+    private readonly ThemeManager themeManager;
+    private readonly AnimationPipeline animationPipeline;
+    private readonly PlaybackObjectContainer playbackObjects;
+    private readonly ILogger<BeatmapService> logger;
 
     public BeatmapService(
         IServiceProvider serviceProvider,
