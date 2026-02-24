@@ -1,6 +1,6 @@
 {
   "name": "paswasm",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Typed JavaScript package for ParallelAnimationSystem.Wasm",
   "type": "module",
   "main": "dist/index.js",
@@ -9,13 +9,10 @@
     "dist"
   ],
   "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    }
+    "./*": "./dist/*"
   },
   "scripts": {
-    "build:js": "tsup src/index.ts --format esm --dts --clean",
+    "build:js": "tsup src/**/*.ts --format esm --dts --splitting --out-dir dist",
     "build:wasm": "copyfiles -f src/wasm/ParallelAnimationSystem.Wasm.wasm dist/",
     "build": "pnpm run build:js && pnpm run build:wasm"
   },
