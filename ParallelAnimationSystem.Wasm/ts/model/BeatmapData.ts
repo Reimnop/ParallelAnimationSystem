@@ -31,4 +31,8 @@ export class BeatmapData extends NativeObject {
     const ptr = this.wasm._beatmapData_getEvents(this.ptr);
     return new BeatmapEvents(this.module, ptr);
   }
+  
+  clear(): void {
+    this.wasm._beatmapData_clear(this.ptr);
+  }
 }

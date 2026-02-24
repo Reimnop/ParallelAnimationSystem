@@ -146,6 +146,7 @@ interface WasmModule {
   _beatmapEvents_getCameraRotation(_0: number): number;
   _beatmapEvents_getCameraScale(_0: number): number;
   _beatmapEvents_getCameraPosition(_0: number): number;
+  _beatmapData_clear(_0: number): void;
   _beatmapData_getEvents(_0: number): number;
   _beatmapData_getThemes(_0: number): number;
   _beatmapData_getPrefabs(_0: number): number;
