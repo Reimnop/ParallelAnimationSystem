@@ -1,4 +1,6 @@
 ﻿using System.CommandLine;
+using System.CommandLine.Builder;
+using System.CommandLine.Parsing;
 using ParallelAnimationSystem.FFmpeg;
 
 var beatmapOption = new Option<string>(
@@ -142,4 +144,17 @@ rootCommand.SetHandler(context =>
     );
 });
 
-return rootCommand.Invoke(args);
+var parser = new CommandLineBuilder(rootCommand)
+    .UseVersionOption()
+    .UseHelp()
+    .UseEnvironmentVariableDirective()
+    .UseParseDirective()
+    .UseSuggestDirective()
+    .RegisterWithDotnetSuggest()
+    .UseTypoCorrections()
+    .UseParseErrorReporting()
+    // .UseExceptionHandler()
+    .CancelOnProcessTermination()
+    .Build();
+    
+return parser.Invoke(args);
