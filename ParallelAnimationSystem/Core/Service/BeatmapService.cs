@@ -69,15 +69,17 @@ public class BeatmapService : IDisposable
             var beatmapJson = JsonNode.Parse(data);
             if (beatmapJson is not JsonObject beatmapJsonObject)
                 throw new InvalidDataException("Invalid beatmap JSON");
+            logger.LogInformation("Parsing beatmap took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
 
+            // Deserialize beatmap
+            sw.Restart();
             var beatmap = format switch
             {
                 BeatmapFormat.Lsb => LsDeserialization.DeserializeBeatmap(beatmapJsonObject),
                 BeatmapFormat.Vgd => VgDeserialization.DeserializeBeatmap(beatmapJsonObject),
                 _ => throw new NotSupportedException($"Unsupported beatmap format '{format}'"),
             };
-
-            logger.LogInformation("Parsing beatmap took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
+            logger.LogInformation("Deserializing beatmap took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
 
             // Migrate the beatmap
             sw.Restart();
@@ -90,7 +92,6 @@ public class BeatmapService : IDisposable
                     serviceProvider.GetRequiredService<VgMigration>().MigrateBeatmap(beatmap);
                     break;
             }
-
             logger.LogInformation("Migrating beatmap took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
 
             // Import beatmap
