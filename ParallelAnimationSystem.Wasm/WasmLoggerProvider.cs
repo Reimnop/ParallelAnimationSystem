@@ -30,9 +30,9 @@ public class WasmLoggerProvider : ILoggerProvider
             var categoryStr = $"{categoryName.Split('.')[^1]}";
 
             if (logLevel < LogLevel.Error)
-                Console.WriteLine($"[{logLevelStr} - {categoryStr}] {logLevelStr} {message}");
+                Console.WriteLine($"[{logLevelStr} - {categoryStr}] {message}");
             else
-                Console.Error.WriteLine($"[{logLevelStr} - {categoryStr}] {logLevelStr} {message}");
+                Console.Error.WriteLine($"[{logLevelStr} - {categoryStr}] {message}");
         }
     }
     
