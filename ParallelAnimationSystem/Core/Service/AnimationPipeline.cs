@@ -13,7 +13,12 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
     private static readonly Comparer<ObjectDrawItem> comparer = Comparer<ObjectDrawItem>.Create((x, y) =>
     {
         var primaryComparison = x.SortKeyPrimary.CompareTo(y.SortKeyPrimary);
-        return primaryComparison != 0 ? primaryComparison : x.SortKeySecondary.CompareTo(y.SortKeySecondary);
+        if (primaryComparison != 0)
+            return primaryComparison;
+        var secondaryComparison = x.SortKeySecondary.CompareTo(y.SortKeySecondary);
+        if (secondaryComparison != 0)
+            return secondaryComparison;
+        return x.SortKeyTertiary.CompareTo(y.SortKeyTertiary);
     });
     
     private const float TextScaleFactor = 3.0f / 32.0f;
@@ -67,17 +72,30 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
         Debug.Assert(currentThemeColorState is not null);
         var color = playbackObject.ColorSequence.ComputeValueAt(currentTime - playbackObject.StartTime, currentThemeColorState);
         
-        GetSortKeys(
-            parentDepth,
-            renderLayer,
-            playbackObject,
-            out var primaryKey,
-            out var secondaryKey);
+        // calculate sort keys
+        // ----- PRIMARY KEY -----
+        // [8 bits layer][32 bits reversed renderDepth][16 bits reversed parentDepth]
         
+        var layerKey = (ulong)renderLayer << 48;
+        var renderDepthKey = (ulong)(uint.MaxValue - NumberUtil.FloatToOrderedUInt(playbackObject.RenderDepth)) << 16;
+        var parentDepthKey = (ulong)(ushort.MaxValue - parentDepth);
+
+        var primaryKey = layerKey | renderDepthKey | parentDepthKey;
+        
+        // ----- SECONDARY KEY -----
+        // [32 bits startTime]
+        var secondaryKey = (ulong)NumberUtil.FloatToOrderedUInt(playbackObject.StartTime);
+        
+        // ----- TERTIARY KEY -----
+        // [64 bits object id]
+        var tertiaryKey = playbackObject.Id.Value;
+        
+        // build draw item
         ref var drawItem = ref drawItemCache[cacheIndex];
         
         drawItem.SortKeyPrimary = primaryKey;
         drawItem.SortKeySecondary = secondaryKey;
+        drawItem.SortKeyTertiary = tertiaryKey;
         drawItem.Transform = originMatrix * textScale * transform;
         drawItem.Color1 = color.Color1.Pack();
         drawItem.Color2 = color.Color2.Pack();
@@ -182,35 +200,5 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
             var newCapacity = Math.Max(drawItemCache.Length * 2, capacity);
             Array.Resize(ref drawItemCache, newCapacity);
         }
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void GetSortKeys(
-        ushort parentDepth,
-        RenderLayer layer,
-        PlaybackObject playbackObject,
-        out ulong primaryKey,
-        out ulong secondaryKey)
-    {
-        // ----- PRIMARY KEY -----
-        // [16 bits layer][32 bits reversed renderDepth][16 bits reversed parentDepth]
-        
-        // Convert float to ordered uint so bitwise compare works
-        var orderedDepth= NumberUtil.FloatToOrderedUInt(playbackObject.RenderDepth);
-        var renderDepthKey  = (ulong)(uint.MaxValue - orderedDepth) << 16;
-
-        var layerKey   = (ulong)layer << 48;
-        var parentDepthKey  = (ulong)(ushort.MaxValue - parentDepth);
-
-        primaryKey = layerKey | renderDepthKey | parentDepthKey;
-
-        // ----- SECONDARY KEY -----
-        // [32 bits reversed startTime][32 bits lower objectId bits]
-
-        var orderedStartTime = NumberUtil.FloatToOrderedUInt(playbackObject.StartTime);
-        var startTimeKey    = (ulong)(uint.MaxValue - orderedStartTime) << 32;
-        var objectIdKey     = playbackObject.Id & 0xFFFFFFFFUL;
-
-        secondaryKey = startTimeKey | objectIdKey;
     }
 }

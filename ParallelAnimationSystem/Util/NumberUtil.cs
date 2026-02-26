@@ -45,6 +45,14 @@ public static class NumberUtil
         var mask = (uint)((int)bits >> 31); // 0x00000000 or 0xFFFFFFFF
         return bits ^ (mask | 0x80000000);
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ushort HalfToOrderedUShort(Half value)
+    {
+        var bits = BitConverter.HalfToUInt16Bits(value);
+        var mask = (ushort)((short)bits >> 15); // 0x0000 or 0xFFFF
+        return (ushort)(bits ^ (mask | 0x8000));
+    }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ulong ComputeHash(string str)

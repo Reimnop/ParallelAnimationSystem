@@ -1,6 +1,6 @@
 namespace ParallelAnimationSystem.Core.Service;
 
-public enum RenderLayer : ushort
+public enum RenderLayer : byte
 {
     Background = 0,
     Foreground = 1,
