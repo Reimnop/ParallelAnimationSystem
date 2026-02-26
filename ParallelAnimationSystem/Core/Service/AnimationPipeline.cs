@@ -96,10 +96,10 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
         Debug.Assert(currentThemeColorState is not null);
         var color = playbackObject.ColorSequence.ComputeValueAt(currentTime - playbackObject.StartTime, currentThemeColorState);
         
+        drawItemCache[cacheIndex].SortKey = GetSortKey(parentDepth, playbackObject.RenderDepth, renderLayer);
         drawItemCache[cacheIndex].Transform = originMatrix * textScale * transform;
         drawItemCache[cacheIndex].Color1 = color.Color1;
         drawItemCache[cacheIndex].Color2 = color.Color2;
-        drawItemCache[cacheIndex].SortKey = GetSortKey(parentDepth, playbackObject.RenderDepth, renderLayer);
         drawItemCache[cacheIndex].Opacity = color.Opacity;
         drawItemCache[cacheIndex].ObjectIndex = objectIndex;
     }
