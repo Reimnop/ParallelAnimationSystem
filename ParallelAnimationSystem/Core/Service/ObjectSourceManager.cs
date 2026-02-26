@@ -9,6 +9,8 @@ namespace ParallelAnimationSystem.Core.Service;
 public class ObjectSourceManager(TextRenderingService textRenderingService, PlaybackObjectContainer playbackObjects, RandomSeedService seedService) : IDisposable
 {
     private readonly MainObjectSource mainObjectSource = new(textRenderingService, playbackObjects, seedService);
+    private readonly CameraObjectSource cameraObjectSource = new(playbackObjects);
+    
     private readonly Dictionary<string, PrefabInstanceObjectSource> prefabInstanceObjectSources = [];
     private readonly Dictionary<string, HashSet<string>> instanceIdsByPrefabId = [];
 
@@ -17,6 +19,7 @@ public class ObjectSourceManager(TextRenderingService textRenderingService, Play
     public void Dispose()
     {
         mainObjectSource.Dispose();
+        cameraObjectSource.Dispose();
         
         foreach (var prefabInstanceObjectSource in prefabInstanceObjectSources.Values)
             prefabInstanceObjectSource.Dispose();
@@ -29,8 +32,9 @@ public class ObjectSourceManager(TextRenderingService textRenderingService, Play
         
         attachedBeatmapData = beatmapData;
         
-        // initialize main object source
+        // initialize global object sources
         mainObjectSource.AttachBeatmapData(attachedBeatmapData);
+        cameraObjectSource.AttachEvents(attachedBeatmapData.Events);
         
         // initialize prefab instance object sources
         foreach (var (_, instance) in beatmapData.PrefabInstances)
@@ -71,8 +75,11 @@ public class ObjectSourceManager(TextRenderingService textRenderingService, Play
         if (attachedBeatmapData is null)
             return;
         
+        // detach global object sources
         mainObjectSource.DetachBeatmapData();
-
+        cameraObjectSource.DetachEvents();
+        
+        // detach prefabs
         foreach (var (_, prefabInstanceObjectSource) in prefabInstanceObjectSources)
             prefabInstanceObjectSource.Dispose();
         

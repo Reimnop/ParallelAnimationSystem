@@ -4,5 +4,6 @@ public enum PlaybackObjectType
 {
     Visible,
     Invisible,
-    PrefabIntermediate
+    PrefabIntermediate,
+    Camera
 }

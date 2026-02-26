@@ -70,7 +70,7 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
         var transform = CalculateObjectTransform(
             objectIndex,
             ParentType.All, ParentOffset.Zero,
-            currentTime, out var parentDepth);
+            currentTime, out var parentDepth, out var layerOffset);
         
         // use origin matrix if shape is not text
         var originMatrix = playbackObject.Shape == ObjectShape.Text 
@@ -88,7 +88,7 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
         drawItemCache[cacheIndex].Transform = originMatrix * textScale * transform;
         drawItemCache[cacheIndex].Color1 = color.Color1;
         drawItemCache[cacheIndex].Color2 = color.Color2;
-        drawItemCache[cacheIndex].RenderDepth = playbackObject.RenderDepth;
+        drawItemCache[cacheIndex].RenderDepth = playbackObject.RenderDepth + layerOffset;
         drawItemCache[cacheIndex].ParentDepth = parentDepth;
         drawItemCache[cacheIndex].Opacity = color.Opacity;
         drawItemCache[cacheIndex].ObjectIndex = objectIndex;
@@ -97,9 +97,10 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
     private Matrix3x2 CalculateObjectTransform(
         int playbackObjectIndex,
         ParentType parentType, ParentOffset parentOffset,
-        float time, out int parentDepth)
+        float time, out int parentDepth, out float layerOffset)
     {
         parentDepth = 0;
+        layerOffset = 0f;
         
         var matrix = Matrix3x2.Identity;
         
@@ -110,8 +111,11 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
         {
             parentDepth++;
 
-            if (playbackObject.Type == PlaybackObjectType.PrefabIntermediate)
+            if (playbackObject.Type is PlaybackObjectType.PrefabIntermediate or PlaybackObjectType.Camera)
                 parentType = ParentType.All;
+            
+            if (playbackObject.Type == PlaybackObjectType.Camera)
+                layerOffset -= 1000f; // ensure camera is always on top
 
             switch (parentType)
             {
