@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace ParallelAnimationSystem.Core.Data;
@@ -44,4 +45,22 @@ public struct ColorRgb(float r, float g, float b) : IEquatable<ColorRgb>
 
     public Vector3 ToVector()
         => new(R, G, B);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public uint Pack()
+    {
+        var r = (uint)Math.Clamp(R * 255f, 0f, 255f);
+        var g = (uint)Math.Clamp(G * 255f, 0f, 255f);
+        var b = (uint)Math.Clamp(B * 255f, 0f, 255f);
+        return (r << 16) | (g << 8) | b;    
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ColorRgb Unpack(uint packed)
+    {
+        var r = (byte)((packed >> 16) & 0xFF);
+        var g = (byte)((packed >> 8) & 0xFF);
+        var b = (byte)(packed & 0xFF);
+        return new ColorRgb(r, g, b);
+    }
 }

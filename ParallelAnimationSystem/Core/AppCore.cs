@@ -22,7 +22,7 @@ public class AppCore(
 
     public void ProcessFrame(float time, IDrawList drawList)
     {
-        beatmapService.ProcessBeatmap(time, out var themeColorState, out var eventState, out var drawItems, out _);
+        beatmapService.ProcessBeatmap(time, out var themeColorState, out var eventState, out var drawItems);
         
         // Calculate shake vector
         const float shakeMagic1 = 123.97f;
@@ -74,7 +74,7 @@ public class AppCore(
         }
 
         // Draw all alive game objects
-        foreach (var drawItem in drawItems)
+        foreach (ref var drawItem in drawItems)
         {
             var transform = drawItem.Transform;
 
@@ -89,8 +89,8 @@ public class AppCore(
                 {
                     var renderMode = playbackObject.RenderMode;
 
-                    var color1 = drawItem.Color1;
-                    var color2 = drawItem.Color2;
+                    var color1 = ColorRgb.Unpack(drawItem.Color1);
+                    var color2 = ColorRgb.Unpack(drawItem.Color2);
                         
                     var color1Rgba = new ColorRgba(color1, drawItem.Opacity);
                     var color2Rgba = color1 == color2 
