@@ -69,10 +69,8 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
         
         GetSortKeys(
             parentDepth,
-            playbackObject.RenderDepth,
             renderLayer,
-            playbackObject.StartTime,
-            playbackObject.Id,
+            playbackObject,
             out var primaryKey,
             out var secondaryKey);
         
@@ -189,10 +187,8 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void GetSortKeys(
         ushort parentDepth,
-        float renderDepth,
         RenderLayer layer,
-        float startTime,
-        ulong objectId,
+        PlaybackObject playbackObject,
         out ulong primaryKey,
         out ulong secondaryKey)
     {
@@ -200,7 +196,7 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
         // [16 bits layer][32 bits reversed renderDepth][16 bits reversed parentDepth]
         
         // Convert float to ordered uint so bitwise compare works
-        var orderedDepth= NumberUtil.FloatToOrderedUInt(renderDepth);
+        var orderedDepth= NumberUtil.FloatToOrderedUInt(playbackObject.RenderDepth);
         var renderDepthKey  = (ulong)(uint.MaxValue - orderedDepth) << 16;
 
         var layerKey   = (ulong)layer << 48;
@@ -211,10 +207,9 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
         // ----- SECONDARY KEY -----
         // [32 bits reversed startTime][32 bits lower objectId bits]
 
-        var orderedStartTime = NumberUtil.FloatToOrderedUInt(startTime);
+        var orderedStartTime = NumberUtil.FloatToOrderedUInt(playbackObject.StartTime);
         var startTimeKey    = (ulong)(uint.MaxValue - orderedStartTime) << 32;
-
-        var objectIdKey     = objectId & 0xFFFFFFFFUL;
+        var objectIdKey     = playbackObject.Id & 0xFFFFFFFFUL;
 
         secondaryKey = startTimeKey | objectIdKey;
     }
