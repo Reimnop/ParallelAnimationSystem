@@ -9,8 +9,7 @@ public struct ObjectDrawItem
     public Matrix3x2 Transform; // 24 bytes
     public ColorRgb Color1; // 12 bytes
     public ColorRgb Color2; // 12 bytes
-    public float RenderDepth; // 4 bytes
-    public int ParentDepth; // 4 bytes
+    public ulong SortKey; // 8 bytes
     public float Opacity; // 4 bytes
     public int ObjectIndex; // 4 bytes
 }

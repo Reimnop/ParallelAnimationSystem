@@ -22,7 +22,7 @@ public class AppCore(
 
     public void ProcessFrame(float time, IDrawList drawList)
     {
-        beatmapService.ProcessBeatmap(time, out var themeColorState, out var eventState, out var drawItems);
+        beatmapService.ProcessBeatmap(time, out var themeColorState, out var eventState, out var drawItems, out _);
         
         // Calculate shake vector
         const float shakeMagic1 = 123.97f;

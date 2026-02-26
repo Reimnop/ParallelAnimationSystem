@@ -109,10 +109,10 @@ public class BeatmapService : IDisposable
         }
     }
 
-    public void ProcessBeatmap(float time, out ThemeColorState themeColorState, out EventState eventState, out ReadOnlySpan<ObjectDrawItem> drawItems)
+    public void ProcessBeatmap(float time, out ThemeColorState themeColorState, out EventState eventState, out IEnumerable<ObjectDrawItem> drawItems, out int drawItemCount)
     {
         themeColorState = themeManager.ComputeThemeAt(time);
         eventState = eventManager.ComputeEventAt(time, themeColorState);
-        drawItems = animationPipeline.ComputeDrawItems(time, themeColorState);
+        drawItems = animationPipeline.ComputeDrawItems(time, themeColorState, out drawItemCount);
     }
 }
