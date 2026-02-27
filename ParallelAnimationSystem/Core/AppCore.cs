@@ -77,6 +77,12 @@ public class AppCore(
         foreach (ref var drawItem in drawItems)
         {
             var transform = drawItem.Transform;
+            
+            // check if scale is zero, if so skip rendering this object
+            var scaleXSquared = transform.M11 * transform.M11 + transform.M12 * transform.M12;
+            var scaleYSquared = transform.M21 * transform.M21 + transform.M22 * transform.M22;
+            if (scaleXSquared < 0.001f || scaleYSquared < 0.001f)
+                continue;
 
             if (!playbackObjects.TryGetItem(drawItem.ObjectIndex, out var playbackObject))
                 continue;
