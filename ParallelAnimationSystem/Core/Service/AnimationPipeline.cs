@@ -1,25 +1,15 @@
 ﻿using System.Diagnostics;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Mathematics;
-using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core.Service;
 
-public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playbackObjects)
+public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playbackObjects, PlaybackObjectSortingService sortingService)
 {
-    private static readonly Comparer<ObjectDrawItem> comparer = Comparer<ObjectDrawItem>.Create((x, y) =>
-    {
-        var primaryComparison = x.SortKeyPrimary.CompareTo(y.SortKeyPrimary);
-        if (primaryComparison != 0)
-            return primaryComparison;
-        var secondaryComparison = x.SortKeySecondary.CompareTo(y.SortKeySecondary);
-        if (secondaryComparison != 0)
-            return secondaryComparison;
-        return x.SortKeyTertiary.CompareTo(y.SortKeyTertiary);
-    });
+    private static readonly Comparer<ObjectDrawItem> comparer = Comparer<ObjectDrawItem>.Create(
+        (x, y) => x.SortKey.CompareTo(y.SortKey));
     
     private const float TextScaleFactor = 3.0f / 32.0f;
     private static readonly Matrix3x2 TextScaleMatrix = FastMatrix.GetScaleMatrix(TextScaleFactor, TextScaleFactor);
@@ -27,6 +17,7 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
     private const int InitialCacheCapacity = 1000;
     
     private ObjectDrawItem[] drawItemCache = new ObjectDrawItem[InitialCacheCapacity];
+    private uint[] objectSortKeys = [];
     
     private float currentTime;
     private ThemeColorState? currentThemeColorState;
@@ -40,6 +31,8 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
         var count = aliveObjects.Count;
         
         EnsureCacheCapacity(count);
+
+        objectSortKeys = sortingService.GetSortOrderIndices();
 
         Parallel.ForEach(aliveObjects, ProcessPlaybackObject);
         
@@ -57,7 +50,7 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
         var transform = CalculateObjectTransform(
             objectIndex,
             ParentType.All, ParentOffset.Zero,
-            currentTime, out var parentDepth, out var renderLayer);
+            currentTime);
         
         // use origin matrix if shape is not text
         var originMatrix = playbackObject.Shape == ObjectShape.Text 
@@ -72,34 +65,10 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
         Debug.Assert(currentThemeColorState is not null);
         var color = playbackObject.ColorSequence.ComputeValueAt(currentTime - playbackObject.StartTime, currentThemeColorState);
         
-        // calculate sort keys
-        ulong primaryKey, secondaryKey, tertiaryKey;
-        unchecked
-        {
-            // ----- PRIMARY KEY -----
-            // [8 bits layer][32 bits reversed renderDepth][16 bits reversed parentDepth]
-        
-            var layerKey = (ulong)renderLayer << 48;
-            var renderDepthKey = (ulong)(uint.MaxValue - NumberUtil.FloatToOrderedUInt(playbackObject.RenderDepth)) << 16;
-            var parentDepthKey = (ulong)(ushort.MaxValue - parentDepth);
-
-            primaryKey = layerKey | renderDepthKey | parentDepthKey;
-        
-            // ----- SECONDARY KEY -----
-            // [32 bits startTime]
-            secondaryKey = NumberUtil.FloatToOrderedUInt(playbackObject.StartTime);
-        
-            // ----- TERTIARY KEY -----
-            // [64 bits object id]
-            tertiaryKey = playbackObject.Id.Value;
-        }
-        
         // build draw item
         ref var drawItem = ref drawItemCache[cacheIndex];
         
-        drawItem.SortKeyPrimary = primaryKey;
-        drawItem.SortKeySecondary = secondaryKey;
-        drawItem.SortKeyTertiary = tertiaryKey;
+        drawItem.SortKey = objectSortKeys[objectIndex];
         drawItem.Transform = originMatrix * textScale * transform;
         drawItem.Color1 = color.Color1.Pack();
         drawItem.Color2 = color.Color2.Pack();
@@ -110,11 +79,8 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
     private Matrix3x2 CalculateObjectTransform(
         int playbackObjectIndex,
         ParentType parentType, ParentOffset parentOffset,
-        float time, out ushort parentDepth, out RenderLayer renderLayer)
+        float time)
     {
-        parentDepth = 0;
-        renderLayer = RenderLayer.Foreground;
-        
         var matrix = Matrix3x2.Identity;
         
         if (!playbackObjects.TryGetItem(playbackObjectIndex, out var playbackObject))
@@ -122,13 +88,8 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
 
         while (true)
         {
-            parentDepth++;
-
             if (playbackObject.Type is PlaybackObjectType.PrefabIntermediate or PlaybackObjectType.Camera)
                 parentType = ParentType.All;
-            
-            if (playbackObject.Type == PlaybackObjectType.Camera)
-                renderLayer = RenderLayer.Camera;
 
             switch (parentType)
             {

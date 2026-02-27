@@ -50,6 +50,7 @@ public static class StartupExtension
         
             // Add main services
             services.AddSingleton<AnimationPipeline>();
+            services.AddSingleton<PlaybackObjectSortingService>();
             services.AddSingleton<Timeline>();
             services.AddSingleton<ObjectSourceManager>();
             services.AddSingleton<PlaybackObjectContainer>();
