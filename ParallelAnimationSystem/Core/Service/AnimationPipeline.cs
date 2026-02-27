@@ -73,22 +73,26 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
         var color = playbackObject.ColorSequence.ComputeValueAt(currentTime - playbackObject.StartTime, currentThemeColorState);
         
         // calculate sort keys
-        // ----- PRIMARY KEY -----
-        // [8 bits layer][32 bits reversed renderDepth][16 bits reversed parentDepth]
+        ulong primaryKey, secondaryKey, tertiaryKey;
+        unchecked
+        {
+            // ----- PRIMARY KEY -----
+            // [8 bits layer][32 bits reversed renderDepth][16 bits reversed parentDepth]
         
-        var layerKey = (ulong)renderLayer << 48;
-        var renderDepthKey = (ulong)(uint.MaxValue - NumberUtil.FloatToOrderedUInt(playbackObject.RenderDepth)) << 16;
-        var parentDepthKey = (ulong)(ushort.MaxValue - parentDepth);
+            var layerKey = (ulong)renderLayer << 48;
+            var renderDepthKey = (ulong)(uint.MaxValue - NumberUtil.FloatToOrderedUInt(playbackObject.RenderDepth)) << 16;
+            var parentDepthKey = (ulong)(ushort.MaxValue - parentDepth);
 
-        var primaryKey = layerKey | renderDepthKey | parentDepthKey;
+            primaryKey = layerKey | renderDepthKey | parentDepthKey;
         
-        // ----- SECONDARY KEY -----
-        // [32 bits startTime]
-        var secondaryKey = (ulong)NumberUtil.FloatToOrderedUInt(playbackObject.StartTime);
+            // ----- SECONDARY KEY -----
+            // [32 bits startTime]
+            secondaryKey = NumberUtil.FloatToOrderedUInt(playbackObject.StartTime);
         
-        // ----- TERTIARY KEY -----
-        // [64 bits object id]
-        var tertiaryKey = playbackObject.Id.Value;
+            // ----- TERTIARY KEY -----
+            // [64 bits object id]
+            tertiaryKey = playbackObject.Id.Value;
+        }
         
         // build draw item
         ref var drawItem = ref drawItemCache[cacheIndex];

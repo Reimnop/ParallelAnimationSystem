@@ -41,17 +41,23 @@ public static class NumberUtil
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint FloatToOrderedUInt(float value)
     {
-        var bits = BitConverter.SingleToUInt32Bits(value);
-        var mask = (uint)((int)bits >> 31); // 0x00000000 or 0xFFFFFFFF
-        return bits ^ (mask | 0x80000000);
+        unchecked
+        {
+            var bits = BitConverter.SingleToUInt32Bits(value);
+            var mask = (uint)((int)bits >> 31); // 0x00000000 or 0xFFFFFFFF
+            return bits ^ (mask | 0x80000000);
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ushort HalfToOrderedUShort(Half value)
     {
-        var bits = BitConverter.HalfToUInt16Bits(value);
-        var mask = (ushort)((short)bits >> 15); // 0x0000 or 0xFFFF
-        return (ushort)(bits ^ (mask | 0x8000));
+        unchecked
+        {
+            var bits = BitConverter.HalfToUInt16Bits(value);
+            var mask = (ushort)((short)bits >> 15); // 0x0000 or 0xFFFF
+            return (ushort)(bits ^ (mask | 0x8000));
+        }
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
