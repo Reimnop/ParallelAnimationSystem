@@ -43,12 +43,6 @@ var useEglOption = new Option<bool>(
     getDefaultValue: () => false
 );
 
-var workersOption = new Option<int>(
-    aliases: ["--workers"],
-    description: "Number of worker threads, set to -1 to use all available threads",
-    getDefaultValue: () => 4
-);
-
 var seedOption = new Option<ulong?>(
     aliases: ["--seed"],
     description: "Seed for the random number generator",
@@ -86,7 +80,6 @@ rootCommand.AddOption(widthOption);
 rootCommand.AddOption(heightOption);
 rootCommand.AddOption(vsyncOption);
 rootCommand.AddOption(useEglOption);
-rootCommand.AddOption(workersOption);
 rootCommand.AddOption(seedOption);
 rootCommand.AddOption(backendOption);
 rootCommand.AddOption(lockAspectOption);
@@ -101,7 +94,6 @@ rootCommand.SetHandler(context =>
     var height = context.ParseResult.GetValueForOption(heightOption);
     var vsync = context.ParseResult.GetValueForOption(vsyncOption);
     var useEgl = context.ParseResult.GetValueForOption(useEglOption);
-    var workerCount = context.ParseResult.GetValueForOption(workersOption);
     var seed = context.ParseResult.GetValueForOption(seedOption);
     var backend = context.ParseResult.GetValueForOption(backendOption);
     var lockAspectRatio = context.ParseResult.GetValueForOption(lockAspectOption);
