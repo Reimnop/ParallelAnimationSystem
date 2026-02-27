@@ -70,8 +70,8 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
         
         drawItem.SortKey = objectSortKeys[objectIndex];
         drawItem.Transform = originMatrix * textScale * transform;
-        drawItem.Color1 = color.Color1.Pack();
-        drawItem.Color2 = color.Color2.Pack();
+        drawItem.Color1 = color.Color1;
+        drawItem.Color2 = color.Color2;
         drawItem.Opacity = color.Opacity;
         drawItem.ObjectIndex = objectIndex;
     }

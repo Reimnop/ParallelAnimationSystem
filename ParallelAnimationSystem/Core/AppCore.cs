@@ -95,10 +95,10 @@ public class AppCore(
                 {
                     var renderMode = playbackObject.RenderMode;
                         
-                    var color1Rgba = new ColorRgba(ColorRgb.Unpack(drawItem.Color1), drawItem.Opacity);
+                    var color1Rgba = new ColorRgba(drawItem.Color1, drawItem.Opacity);
                     var color2Rgba = drawItem.Color1 == drawItem.Color2 
-                        ? new ColorRgba(ColorRgb.Unpack(drawItem.Color2), 0.0f)
-                        : new ColorRgba(ColorRgb.Unpack(drawItem.Color2), drawItem.Opacity);
+                        ? new ColorRgba(drawItem.Color2, 0.0f)
+                        : new ColorRgba(drawItem.Color2, drawItem.Opacity);
             
                     drawList.AddMesh(mesh, transform, color1Rgba, color2Rgba, renderMode);
                 }
