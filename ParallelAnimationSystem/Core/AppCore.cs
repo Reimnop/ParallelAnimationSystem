@@ -94,14 +94,11 @@ public class AppCore(
                 if (meshService.TryGetMeshForShape(shapeIndex, shapeOptionIndex, out var mesh))
                 {
                     var renderMode = playbackObject.RenderMode;
-
-                    var color1 = ColorRgb.Unpack(drawItem.Color1);
-                    var color2 = ColorRgb.Unpack(drawItem.Color2);
                         
-                    var color1Rgba = new ColorRgba(color1, drawItem.Opacity);
-                    var color2Rgba = color1 == color2 
-                        ? new ColorRgba(color2, 0.0f)
-                        : new ColorRgba(color2, drawItem.Opacity);
+                    var color1Rgba = new ColorRgba(ColorRgb.Unpack(drawItem.Color1), drawItem.Opacity);
+                    var color2Rgba = drawItem.Color1 == drawItem.Color2 
+                        ? new ColorRgba(ColorRgb.Unpack(drawItem.Color2), 0.0f)
+                        : new ColorRgba(ColorRgb.Unpack(drawItem.Color2), drawItem.Opacity);
             
                     drawList.AddMesh(mesh, transform, color1Rgba, color2Rgba, renderMode);
                 }
