@@ -9,7 +9,7 @@ namespace ParallelAnimationSystem.Core.Service;
 public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playbackObjects, PlaybackObjectSortingService sortingService)
 {
     private static readonly Comparer<ObjectDrawItem> comparer = Comparer<ObjectDrawItem>.Create(
-        (x, y) => x.SortKey.CompareTo(y.SortKey));
+        static (x, y) => x.SortRank.CompareTo(y.SortRank));
     
     private const float TextScaleFactor = 3.0f / 32.0f;
     private static readonly Matrix3x2 TextScaleMatrix = FastMatrix.GetScaleMatrix(TextScaleFactor, TextScaleFactor);
@@ -17,7 +17,7 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
     private const int InitialCacheCapacity = 1000;
     
     private ObjectDrawItem[] drawItemCache = new ObjectDrawItem[InitialCacheCapacity];
-    private uint[] objectSortKeys = [];
+    private uint[] objectIndexToSortRank = [];
     
     private float currentTime;
     private ThemeColorState? currentThemeColorState;
@@ -30,9 +30,11 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
         var aliveObjects = timeline.ComputeAliveObjects(time);
         var count = aliveObjects.Count;
         
+        // ensure we have enough capacity in the cache to store all draw items
         EnsureCacheCapacity(count);
 
-        objectSortKeys = sortingService.GetSortOrderIndices();
+        // get the mapping from object index to sort rank
+        objectIndexToSortRank = sortingService.GetObjectIndexToSortRankMapping();
 
         Parallel.ForEach(aliveObjects, ProcessPlaybackObject);
         
@@ -68,7 +70,7 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
         // build draw item
         ref var drawItem = ref drawItemCache[cacheIndex];
         
-        drawItem.SortKey = objectSortKeys[objectIndex];
+        drawItem.SortRank = objectIndexToSortRank[objectIndex];
         drawItem.Transform = originMatrix * textScale * transform;
         drawItem.Color1 = color.Color1;
         drawItem.Color2 = color.Color2;
