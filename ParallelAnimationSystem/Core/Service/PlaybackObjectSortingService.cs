@@ -123,7 +123,7 @@ public class PlaybackObjectSortingService : IDisposable
     {
         logger.LogInformation("Computing visible object sort rank");
         
-        var sortItems = GetSortItems(visibleObjects);
+        var sortItems = LoadSortItems();
         
         // sort ranks
         Array.Sort(sortItems, static (x, y) =>
@@ -163,11 +163,11 @@ public class PlaybackObjectSortingService : IDisposable
         }
     }
 
-    private ObjectSortItem[] GetSortItems(IReadOnlyCollection<PlaybackObject> objects)
+    private ObjectSortItem[] LoadSortItems()
     {
-        var sortData = new ObjectSortItem[objects.Count];
+        var sortData = new ObjectSortItem[visibleObjects.Count];
         var i = 0;
-        foreach (var obj in objects)
+        foreach (var obj in visibleObjects)
         {
             var objIndex = playbackObjects.GetIndexForId(obj.Id);
             TraverseParents(objIndex, out var parentDepth, out var renderLayer);
