@@ -8,8 +8,7 @@ namespace ParallelAnimationSystem.Core.Service;
 
 public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playbackObjects, PlaybackObjectSortingService sortingService)
 {
-    private static readonly Comparer<ObjectDrawItem> comparer = Comparer<ObjectDrawItem>.Create(
-        static (x, y) => x.SortRank.CompareTo(y.SortRank));
+    private static readonly Comparison<ObjectDrawItem> sortRankComparison = static (x, y) => x.SortRank.CompareTo(y.SortRank);
     
     private const float TextScaleFactor = 3.0f / 32.0f;
     private static readonly Matrix3x2 TextScaleMatrix = FastMatrix.GetScaleMatrix(TextScaleFactor, TextScaleFactor);
@@ -39,9 +38,9 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
         Parallel.ForEach(aliveObjects, ProcessPlaybackObject);
         
         // sort orderedObjectIndices based on the corresponding draw items
-        Array.Sort(drawItemCache, 0, count, comparer);
-
-        return drawItemCache.AsSpan(0, count);
+        var drawItemSpan = drawItemCache.AsSpan(0, count);
+        drawItemSpan.Sort(sortRankComparison);
+        return drawItemSpan;
     }
 
     private void ProcessPlaybackObject(int objectIndex, ParallelLoopState loopState, long cacheIndex)
