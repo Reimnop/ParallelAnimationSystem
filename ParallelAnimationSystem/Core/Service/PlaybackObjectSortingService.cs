@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Core.Data;
+using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core.Service;
 
@@ -166,13 +167,12 @@ public class PlaybackObjectSortingService : IDisposable
     private ObjectSortItem[] LoadSortItems()
     {
         var sortData = new ObjectSortItem[visibleObjects.Count];
-        var i = 0;
-        foreach (var obj in visibleObjects)
+        foreach (var (i, obj) in visibleObjects.Indexed())
         {
             var objIndex = playbackObjects.GetIndexForId(obj.Id);
             TraverseParents(objIndex, out var parentDepth, out var renderLayer);
             
-            sortData[i++] = new ObjectSortItem
+            sortData[i] = new ObjectSortItem
             {
                 Id = obj.Id,
                 Index = objIndex,
