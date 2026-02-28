@@ -8,12 +8,12 @@ public class PlaybackObjectSortingService : IDisposable
 {
     private struct ObjectSortItem
     {
-        public RenderLayer RenderLayer;
-        public float RenderDepth;
-        public int ParentDepth;
-        public float StartTime;
         public Identifier Id;
         public int Index;
+        public float StartTime;
+        public float RenderDepth;
+        public int ParentDepth;
+        public RenderLayer RenderLayer;
     }
     
     private bool sortRankDirty = false;
@@ -123,16 +123,11 @@ public class PlaybackObjectSortingService : IDisposable
     {
         logger.LogInformation("Computing visible object sort rank");
         
-        var sortItems = GetSortData(visibleObjects);
-        var ranks = new uint[sortItems.Length];
-        FillWithIncrementing(ranks);
+        var sortItems = GetSortItems(visibleObjects);
         
         // sort ranks
-        Array.Sort(ranks, (i, j) =>
+        Array.Sort(sortItems, static (x, y) =>
         {
-            ref var x = ref sortItems[i];
-            ref var y = ref sortItems[j];
-            
             var layerComparison = x.RenderLayer.CompareTo(y.RenderLayer);
             if (layerComparison != 0)
                 return layerComparison;
@@ -153,7 +148,7 @@ public class PlaybackObjectSortingService : IDisposable
         });
         
         // make sure sortRanks has enough capacity
-        var maxIndex = sortItems.Max(d => d.Index);
+        var maxIndex = sortItems.Select(x => x.Index).Max();
         if (maxIndex >= sortRanks.Length)
         {
             var newSize = Math.Max(maxIndex + 1, sortRanks.Length * 2);
@@ -161,15 +156,14 @@ public class PlaybackObjectSortingService : IDisposable
         }
         
         // map from object index to sort rank
-        for (uint sortedPosition = 0; sortedPosition < ranks.Length; sortedPosition++)
+        for (uint sortedPosition = 0; sortedPosition < sortItems.Length; sortedPosition++)
         {
-            var rank = ranks[sortedPosition];
-            ref var sortItem = ref sortItems[rank];
+            ref var sortItem = ref sortItems[sortedPosition];
             sortRanks[sortItem.Index] = sortedPosition;
         }
     }
 
-    private ObjectSortItem[] GetSortData(IReadOnlyCollection<PlaybackObject> objects)
+    private ObjectSortItem[] GetSortItems(IReadOnlyCollection<PlaybackObject> objects)
     {
         var sortData = new ObjectSortItem[objects.Count];
         var i = 0;
@@ -180,21 +174,15 @@ public class PlaybackObjectSortingService : IDisposable
             
             sortData[i++] = new ObjectSortItem
             {
-                RenderLayer = renderLayer,
+                Id = obj.Id,
+                Index = objIndex,
+                StartTime = obj.StartTime,
                 RenderDepth = obj.RenderDepth,
                 ParentDepth = parentDepth,
-                StartTime = obj.StartTime,
-                Id = obj.Id,
-                Index = objIndex
+                RenderLayer = renderLayer
             };
         }
         return sortData;
-    }
-
-    private void FillWithIncrementing(uint[] indices)
-    {
-        for (uint i = 0; i < indices.Length; i++)
-            indices[i] = i;
     }
 
     private void TraverseParents(int playbackObjectIndex, out int parentDepth, out RenderLayer renderLayer)
