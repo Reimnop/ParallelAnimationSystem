@@ -136,12 +136,18 @@ var rootCommand = new RootCommand("Parallel Animation System");
     );
 
     var outputPathOption = new Option<string>(
-        aliases: ["--output-path"],
-        description: "Path to the output video file, set this to render to video"
+        aliases: ["-o", "--output-path"],
+        description: "Path to the output video file"
     )
     {
         IsRequired = true
     };
+
+    var ffmpegArgsOption = new Option<string>(
+        aliases: ["--ffmpeg-args"],
+        description: "Output arguments to pass to FFmpeg",
+        getDefaultValue: () => "-c:v libx264 -pix_fmt yuv420p -preset slow -c:a aac"
+    );
 
     var enablePreviewOption = new Option<bool>(
         aliases: ["--preview"],
@@ -153,6 +159,7 @@ var rootCommand = new RootCommand("Parallel Animation System");
     AddCommonOptions(ffmpegSubcommand);
     ffmpegSubcommand.AddOption(ffmpegPathOption);
     ffmpegSubcommand.AddOption(outputPathOption);
+    ffmpegSubcommand.AddOption(ffmpegArgsOption);
     ffmpegSubcommand.AddOption(enablePreviewOption);
     
     rootCommand.AddCommand(ffmpegSubcommand);
@@ -170,6 +177,7 @@ var rootCommand = new RootCommand("Parallel Animation System");
         var enableTextRendering = context.ParseResult.GetValueForOption(textRenderingOption);
         var ffmpegPath = context.ParseResult.GetValueForOption(ffmpegPathOption)!;
         var outputPath = context.ParseResult.GetValueForOption(outputPathOption)!;
+        var ffmpegArgs = context.ParseResult.GetValueForOption(ffmpegArgsOption)!;
         var enablePreview = context.ParseResult.GetValueForOption(enablePreviewOption);
         
         FFmpegStartup.ConsumeOptions(   
@@ -184,6 +192,7 @@ var rootCommand = new RootCommand("Parallel Animation System");
             enableTextRendering,
             ffmpegPath,
             outputPath,
+            ffmpegArgs,
             enablePreview);
     });
 }

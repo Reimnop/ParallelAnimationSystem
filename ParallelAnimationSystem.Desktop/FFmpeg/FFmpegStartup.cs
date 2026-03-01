@@ -19,6 +19,7 @@ public static class FFmpegStartup
         bool enableTextRendering,
         string ffmpegPath,
         string outputPath,
+        string ffmpegArgs,
         bool enablePreview)
     {
         var services = new ServiceCollection();
@@ -33,7 +34,8 @@ public static class FFmpegStartup
         services.AddSingleton(new FFmpegSettings
         {
             ExecPath = ffmpegPath,
-            EnablePreview = enablePreview
+            EnablePreview = enablePreview,
+            Args = ffmpegArgs
         });
 
         services

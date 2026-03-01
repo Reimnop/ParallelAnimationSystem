@@ -1,3 +1,4 @@
+using System.CommandLine.Parsing;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO.Pipes;
@@ -57,21 +58,12 @@ public class FFmpegFrameGenerator(
             "-i", audioPath,
             
             // video filter
-            "-vf", "vflip",
-            
-            // output video args
-            "-c:v", "libx264",
-            "-pix_fmt", "yuv420p",
-            "-preset", "slow",
-            
-            // output audio args
-            "-c:a", "aac",
-            "-b:a", "192k",
-            "-ac", "2",
-            "-channel_layout", "stereo",
-            
-            outputPath
+            "-vf", "vflip"
         ]);
+
+        var outputArgs = CommandLineStringSplitter.Instance.Split(settings.Args);
+        processStartInfo.ArgumentList.AddRange(outputArgs);
+        processStartInfo.ArgumentList.Add(outputPath);
         
         using var ffmpegProcess = Process.Start(processStartInfo);
         if (ffmpegProcess == null)
