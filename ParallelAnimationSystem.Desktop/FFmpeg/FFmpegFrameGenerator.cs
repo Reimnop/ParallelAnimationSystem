@@ -74,10 +74,7 @@ public class FFmpegFrameGenerator(
             throw new InvalidOperationException("Failed to start FFmpeg process");
         
         // Log FFmpeg output and errors
-        var logFs = new StreamWriter("ffmpeg_output.log", Encoding.UTF8, new FileStreamOptions
-        {
-            Mode = FileMode.Create
-        });
+        var logFs = new StreamWriter("ffmpeg_output.log");
         
         ffmpegProcess.OutputDataReceived += (_, args) =>
         {
