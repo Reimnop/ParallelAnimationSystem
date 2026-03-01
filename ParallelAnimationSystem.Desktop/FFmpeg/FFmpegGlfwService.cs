@@ -11,6 +11,7 @@ public class FFmpegGlfwService(OpenGLSettings glSettings, FFmpegSettings setting
         
         // Set additional hints for FFmpeg compatibility
         GLFW.WindowHint(WindowHintBool.Resizable, false);
-        GLFW.WindowHint(WindowHintBool.Visible, settings.EnablePreview);
+        GLFW.WindowHint(WindowHintBool.Decorated, false);
+        GLFW.WindowHint(WindowHintBool.Visible, false);
     }
 }

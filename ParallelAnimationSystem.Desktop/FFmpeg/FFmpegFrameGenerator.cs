@@ -109,9 +109,6 @@ public class FFmpegFrameGenerator(
         var frameCount = (int)(duration * framerate);
         for (var i = 0; i < frameCount; i++)
         {
-            if (settings.EnablePreview)
-                window.PollEvents();
-            
             var time = i / (float)framerate;
             appCore.ProcessFrame(time, drawList);
             renderer.ProcessFrame(drawList);

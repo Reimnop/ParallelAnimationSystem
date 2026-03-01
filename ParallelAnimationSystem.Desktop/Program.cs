@@ -148,19 +148,12 @@ var rootCommand = new RootCommand("Parallel Animation System");
         description: "Output arguments to pass to FFmpeg",
         getDefaultValue: () => "-c:v libx264 -pix_fmt yuv420p -preset slow -c:a aac -b:a 192k -ac 2 -channel_layout stereo"
     );
-
-    var enablePreviewOption = new Option<bool>(
-        aliases: ["--preview"],
-        description: "Enable preview window (may reduce rendering performance)",
-        getDefaultValue: () => false
-    );
     
     var ffmpegSubcommand = new Command("render", "Render the beatmap to a video file using FFmpeg");
     AddCommonOptions(ffmpegSubcommand);
     ffmpegSubcommand.AddOption(ffmpegPathOption);
     ffmpegSubcommand.AddOption(outputPathOption);
     ffmpegSubcommand.AddOption(ffmpegArgsOption);
-    ffmpegSubcommand.AddOption(enablePreviewOption);
     
     rootCommand.AddCommand(ffmpegSubcommand);
     
@@ -178,7 +171,6 @@ var rootCommand = new RootCommand("Parallel Animation System");
         var ffmpegPath = context.ParseResult.GetValueForOption(ffmpegPathOption)!;
         var outputPath = context.ParseResult.GetValueForOption(outputPathOption)!;
         var ffmpegArgs = context.ParseResult.GetValueForOption(ffmpegArgsOption)!;
-        var enablePreview = context.ParseResult.GetValueForOption(enablePreviewOption);
         
         FFmpegStartup.ConsumeOptions(   
             beatmapPath,
@@ -192,8 +184,7 @@ var rootCommand = new RootCommand("Parallel Animation System");
             enableTextRendering,
             ffmpegPath,
             outputPath,
-            ffmpegArgs,
-            enablePreview);
+            ffmpegArgs);
     });
 }
 
