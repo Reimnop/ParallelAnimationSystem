@@ -1,8 +1,5 @@
 using System.CommandLine.Parsing;
 using System.Diagnostics;
-using System.Globalization;
-using System.IO.Pipes;
-using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pamx.Common.Implementation;
@@ -17,9 +14,17 @@ public class FFmpegFrameGenerator(
     IServiceProvider serviceProvider,
     IRenderingFactory renderingFactory,
     FFmpegSettings settings,
-    ILogger<FFmpegFrameGenerator> logger)
+    ILogger<FFmpegFrameGenerator> logger) : IDisposable
 {
     private readonly IDrawList drawList = renderingFactory.CreateDrawList();
+    
+    private readonly StreamWriter ffmpegLogWriter = new("ffmpeg_output.log");
+    
+    public void Dispose()
+    {
+        ffmpegLogWriter.Flush();
+        ffmpegLogWriter.Dispose();
+    }
 
     public void GenerateFrames(string beatmapPath, string audioPath, int framerate, string outputPath)
     {
@@ -74,24 +79,16 @@ public class FFmpegFrameGenerator(
             throw new InvalidOperationException("Failed to start FFmpeg process");
         
         // Log FFmpeg output and errors
-        var logFs = new StreamWriter("ffmpeg_output.log");
-        
         ffmpegProcess.OutputDataReceived += (_, args) =>
         {
             if (args.Data is not null)
-                logFs.WriteLine(args.Data);
+                ffmpegLogWriter.WriteLine(args.Data);
         };
         
         ffmpegProcess.ErrorDataReceived += (_, args) =>
         {
             if (args.Data is not null)
-                logFs.WriteLine(args.Data);
-        };
-        
-        ffmpegProcess.Exited += (_, _) =>
-        {
-            logFs.Flush();
-            logFs.Dispose();
+                ffmpegLogWriter.WriteLine(args.Data);
         };
         
         ffmpegProcess.BeginOutputReadLine();
