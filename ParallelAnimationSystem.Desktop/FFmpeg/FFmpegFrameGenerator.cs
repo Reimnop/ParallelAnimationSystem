@@ -60,7 +60,7 @@ public class FFmpegFrameGenerator(
             "-vf", "vflip",
             
             // output video args
-            "-c:v", "h264_nvenc",
+            "-c:v", "libx264",
             "-pix_fmt", "yuv420p",
             "-preset", "slow",
             
