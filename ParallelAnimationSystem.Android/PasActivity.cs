@@ -6,7 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Service;
-using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.OpenGLES;
 using ParallelAnimationSystem.Util;
@@ -111,24 +110,22 @@ public class PasActivity : Activity
         
         // Initialize PAS services
         using var serviceProvider = services.BuildServiceProvider();
+        using var scope = serviceProvider.CreateScope();
         
         // Set random seed
-        var randomSeedService = serviceProvider.GetRequiredService<RandomSeedService>();
+        var randomSeedService = scope.ServiceProvider.GetRequiredService<RandomSeedService>();
         randomSeedService.Seed = NumberUtil.SplitMix64((ulong)DateTimeOffset.Now.ToUnixTimeSeconds());
         
         // Load beatmap
-        var beatmapService = serviceProvider.GetRequiredService<BeatmapService>();
+        var beatmapService = scope.ServiceProvider.GetRequiredService<BeatmapService>();
         beatmapService.LoadBeatmap(beatmapData, beatmapFormat);
         
-        var appCore = serviceProvider.GetRequiredService<AppCore>();
-        
-        using var renderScope = serviceProvider.CreateScope();
-        var renderer = renderScope.ServiceProvider.GetRequiredService<IRenderer>();
-        
-        var window = serviceProvider.GetRequiredService<IWindow>();
+        var appCore = scope.ServiceProvider.GetRequiredService<AppCore>();
+        var renderer = scope.ServiceProvider.GetRequiredService<IRenderer>();
+        var window = scope.ServiceProvider.GetRequiredService<IWindow>();
         
         // Get a draw list
-        var renderingFactory = serviceProvider.GetRequiredService<IRenderingFactory>();
+        var renderingFactory = scope.ServiceProvider.GetRequiredService<IRenderingFactory>();
         var drawList = renderingFactory.CreateDrawList();
         
         // Initialize audio player

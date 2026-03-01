@@ -12,8 +12,8 @@ public class WasmApp : IDisposable
 
     private readonly ServiceProvider sp;
     
+    private readonly IServiceScope scope;
     private readonly AppCore appCore;
-    private readonly IServiceScope renderScope;
     private readonly IDrawList drawList;
     private readonly IRenderer renderer;
     
@@ -21,15 +21,14 @@ public class WasmApp : IDisposable
     {
         this.sp = sp;
         
-        RandomSeedService = sp.GetRequiredService<RandomSeedService>();
-        BeatmapService = sp.GetRequiredService<BeatmapService>();
+        scope = sp.CreateScope();
         
-        appCore = sp.GetRequiredService<AppCore>();
+        RandomSeedService = scope.ServiceProvider.GetRequiredService<RandomSeedService>();
+        BeatmapService = scope.ServiceProvider.GetRequiredService<BeatmapService>();
+        appCore = scope.ServiceProvider.GetRequiredService<AppCore>();
+        renderer = scope.ServiceProvider.GetRequiredService<IRenderer>();
         
-        renderScope = sp.CreateScope();
-        renderer = renderScope.ServiceProvider.GetRequiredService<IRenderer>();
-        
-        var renderingFactory = sp.GetRequiredService<IRenderingFactory>();
+        var renderingFactory = scope.ServiceProvider.GetRequiredService<IRenderingFactory>();
         drawList = renderingFactory.CreateDrawList();
     }
     
@@ -42,7 +41,7 @@ public class WasmApp : IDisposable
 
     public void Dispose()
     {
-        renderScope.Dispose();
+        scope.Dispose();
         sp.Dispose();
     }
 }
