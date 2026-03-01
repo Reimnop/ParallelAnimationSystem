@@ -1,48 +1,48 @@
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Mathematics;
-using ParallelAnimationSystem.Rendering.OpenGL;
-using ParallelAnimationSystem.Rendering.OpenGLES;
 using ParallelAnimationSystem.Util;
 
-#if DEBUG
-using ParallelAnimationSystem.DebugStuff;
-using ParallelAnimationSystem.Desktop.DebugStuff;
-#endif
+namespace ParallelAnimationSystem.Desktop.FFmpeg;
 
-namespace ParallelAnimationSystem.Desktop;
-
-public static class DesktopStartup
+public static class FFmpegStartup
 {
     public static void ConsumeOptions(
         string beatmapPath,
         string audioPath,
         int width,
         int height,
-        bool vsync,
         bool useEgl,
         ulong? seed,
         RenderingBackend backend,
         bool lockAspectRatio,
         bool enablePostProcessing,
-        bool enableTextRendering)
+        bool enableTextRendering,
+        string ffmpegPath,
+        string outputPath,
+        bool enablePreview)
     {
         var services = new ServiceCollection();
         
         services.AddSingleton(new DesktopWindowSettings
         {
             Size = new Vector2i(width, height),
-            VSync = vsync,
+            VSync = false,
             UseEgl = useEgl
         });
 
+        services.AddSingleton(new FFmpegSettings
+        {
+            ExecPath = ffmpegPath,
+            EnablePreview = enablePreview
+        });
+
         services
-            .AddPlatform<DesktopWindow, GlfwService>(
+            .AddPlatform<FFmpegWindow, FFmpegGlfwService>(
                 backend,
                 lockAspectRatio,
                 enablePostProcessing, enableTextRendering)
-            .AddTransient<DesktopApp>();
+            .AddTransient<FFmpegFrameGenerator>();
         
         // Build service provider
         using var serviceProvider = services.BuildServiceProvider();
@@ -51,8 +51,8 @@ public static class DesktopStartup
         var rss = serviceProvider.GetRequiredService<RandomSeedService>();
         rss.Seed = seed ?? NumberUtil.SplitMix64((ulong)DateTimeOffset.Now.ToUnixTimeSeconds());
         
-        // Start the app
-        var app = serviceProvider.GetRequiredService<DesktopApp>();
-        app.StartApp(beatmapPath, audioPath);
+        // Start frame generator
+        var frameGenerator = serviceProvider.GetRequiredService<FFmpegFrameGenerator>();
+        frameGenerator.GenerateFrames(beatmapPath, audioPath, 60, outputPath);
     }
 }

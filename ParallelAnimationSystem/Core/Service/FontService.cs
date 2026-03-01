@@ -5,14 +5,14 @@ using TmpParser;
 
 namespace ParallelAnimationSystem.Core.Service;
 
-public class TextRenderingService
+public class FontService
 {
     private readonly TextShaper textShaper;
     
     private readonly ResourceLoader resourceLoader;
     private readonly IRenderingFactory renderingFactory;
     
-    public TextRenderingService(ResourceLoader resourceLoader, IRenderingFactory renderingFactory)
+    public FontService(ResourceLoader resourceLoader, IRenderingFactory renderingFactory)
     {
         this.resourceLoader = resourceLoader;
         this.renderingFactory = renderingFactory;

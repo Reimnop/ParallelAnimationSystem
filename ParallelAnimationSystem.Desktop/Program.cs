@@ -1,7 +1,9 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
+using System.Diagnostics;
 using ParallelAnimationSystem.Desktop;
+using ParallelAnimationSystem.Desktop.FFmpeg;
 
 var beatmapOption = new Option<string>(
     aliases: ["-b", "--beatmap"],
@@ -73,6 +75,23 @@ var textRenderingOption = new Option<bool>(
     getDefaultValue: () => true
 );
 
+var ffmpegPathOption = new Option<string>(
+    aliases: ["--ffmpeg-path"],
+    description: "(FFmpeg) Path to the FFmpeg executable",
+    getDefaultValue: () => "ffmpeg"
+);
+
+var outputPathOption = new Option<string?>(
+    aliases: ["--output-path"],
+    description: "(FFmpeg) Path to the output video file, set this to render to video"
+);
+
+var enablePreviewOption = new Option<bool>(
+    aliases: ["--preview"],
+    description: "(FFmpeg) Enable preview window (may reduce rendering performance)",
+    getDefaultValue: () => false
+);
+
 var rootCommand = new RootCommand("Parallel Animation System");
 rootCommand.AddOption(beatmapOption);
 rootCommand.AddOption(audioOption);
@@ -85,6 +104,9 @@ rootCommand.AddOption(backendOption);
 rootCommand.AddOption(lockAspectOption);
 rootCommand.AddOption(postProcessingOption);
 rootCommand.AddOption(textRenderingOption);
+rootCommand.AddOption(ffmpegPathOption);
+rootCommand.AddOption(outputPathOption);
+rootCommand.AddOption(enablePreviewOption);
 
 rootCommand.SetHandler(context =>
 {
@@ -99,19 +121,44 @@ rootCommand.SetHandler(context =>
     var lockAspectRatio = context.ParseResult.GetValueForOption(lockAspectOption);
     var enablePostProcessing = context.ParseResult.GetValueForOption(postProcessingOption);
     var enableTextRendering = context.ParseResult.GetValueForOption(textRenderingOption);
-    
-    DesktopStartup.ConsumeOptions(
-        beatmapPath,
-        audioPath,
-        width,
-        height,
-        vsync,
-        useEgl,
-        seed,
-        backend,
-        lockAspectRatio,
-        enablePostProcessing,
-        enableTextRendering);
+    var ffmpegPath = context.ParseResult.GetValueForOption(ffmpegPathOption);
+    var outputPath = context.ParseResult.GetValueForOption(outputPathOption);
+    var enablePreview = context.ParseResult.GetValueForOption(enablePreviewOption);
+
+    if (outputPath is null)
+    {
+        DesktopStartup.ConsumeOptions(
+            beatmapPath,
+            audioPath,
+            width,
+            height,
+            vsync,
+            useEgl,
+            seed,
+            backend,
+            lockAspectRatio,
+            enablePostProcessing,
+            enableTextRendering);
+    }
+    else
+    {
+        Debug.Assert(ffmpegPath is not null);
+        
+        FFmpegStartup.ConsumeOptions(   
+            beatmapPath,
+            audioPath,
+            width,
+            height,
+            useEgl,
+            seed,
+            backend,
+            lockAspectRatio,
+            enablePostProcessing,
+            enableTextRendering,
+            ffmpegPath,
+            outputPath,
+            enablePreview);
+    }
 });
 
 var parser = new CommandLineBuilder(rootCommand)

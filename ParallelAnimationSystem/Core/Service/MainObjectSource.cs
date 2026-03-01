@@ -16,13 +16,13 @@ public class MainObjectSource : IDisposable
 
     private BeatmapData? attachedBeatmapData;
 
-    private readonly TextRenderingService textRenderingService;
+    private readonly FontService fontService;
     private readonly PlaybackObjectContainer playbackObjects;
     private readonly RandomSeedService seedService;
 
-    public MainObjectSource(TextRenderingService textRenderingService, PlaybackObjectContainer playbackObjects, RandomSeedService seedService)
+    public MainObjectSource(FontService fontService, PlaybackObjectContainer playbackObjects, RandomSeedService seedService)
     {
-        this.textRenderingService = textRenderingService;
+        this.fontService = fontService;
         this.playbackObjects = playbackObjects;
         this.seedService = seedService;
         
@@ -157,7 +157,7 @@ public class MainObjectSource : IDisposable
             RenderDepth = beatmapObject.RenderDepth,
             Shape = beatmapObject.Shape,
             Text = beatmapObject.Text is not null 
-                ? textRenderingService.ShapeText(beatmapObject.Text, beatmapObject.Origin) 
+                ? fontService.ShapeText(beatmapObject.Text, beatmapObject.Origin) 
                 : null
         };
         
@@ -262,7 +262,7 @@ public class MainObjectSource : IDisposable
             case nameof(BeatmapObject.Origin):
                 playbackObject.Origin = beatmapObject.Origin;
                 playbackObject.Text = beatmapObject.Text is not null 
-                    ? textRenderingService.ShapeText(beatmapObject.Text, beatmapObject.Origin)
+                    ? fontService.ShapeText(beatmapObject.Text, beatmapObject.Origin)
                     : null;
                 break;
             case nameof(BeatmapObject.RenderDepth):
@@ -273,7 +273,7 @@ public class MainObjectSource : IDisposable
                 break;
             case nameof(BeatmapObject.Text):
                 playbackObject.Text = beatmapObject.Text is not null 
-                    ? textRenderingService.ShapeText(beatmapObject.Text, beatmapObject.Origin)
+                    ? fontService.ShapeText(beatmapObject.Text, beatmapObject.Origin)
                     : null;
                 break;
         }

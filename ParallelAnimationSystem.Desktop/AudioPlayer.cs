@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using ManagedBass;
 
 namespace ParallelAnimationSystem.Desktop;
@@ -39,6 +40,21 @@ public class AudioPlayer(int stream) : IDisposable
     public void Stop()
     {
         Bass.ChannelStop(stream);
+    }
+
+    // Gets the raw audio samples as a byte array, in int16 format, stereo
+    public byte[] GetSamples()
+    {
+        using var ms = new MemoryStream();
+        var buffer = new byte[1024];
+        while (true)
+        {
+            var bytesRead = Bass.ChannelGetData(stream, buffer, buffer.Length);
+            if (bytesRead <= 0)
+                break;
+            ms.Write(buffer, 0, bytesRead);
+        }
+        return ms.ToArray();
     }
     
     public static AudioPlayer Load(string path)

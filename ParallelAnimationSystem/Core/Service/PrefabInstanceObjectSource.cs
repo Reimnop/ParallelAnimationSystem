@@ -84,14 +84,14 @@ public class PrefabInstanceObjectSource : IDisposable
     private BeatmapPrefab? attachedPrefab;
     
     private readonly Identifier instanceId;
-    private readonly TextRenderingService textRenderingService;
+    private readonly FontService fontService;
     private readonly PlaybackObjectContainer playbackObjects;
     private readonly RandomSeedService seedService;
 
-    public PrefabInstanceObjectSource(Identifier instanceId, TextRenderingService textRenderingService, PlaybackObjectContainer playbackObjects, RandomSeedService seedService)
+    public PrefabInstanceObjectSource(Identifier instanceId, FontService fontService, PlaybackObjectContainer playbackObjects, RandomSeedService seedService)
     {
         this.instanceId = instanceId;
-        this.textRenderingService = textRenderingService;
+        this.fontService = fontService;
         this.playbackObjects = playbackObjects;
         this.seedService = seedService;
 
@@ -264,7 +264,7 @@ public class PrefabInstanceObjectSource : IDisposable
             RenderDepth = beatmapObject.RenderDepth,
             Shape = beatmapObject.Shape,
             Text = beatmapObject.Text is not null 
-                ? textRenderingService.ShapeText(beatmapObject.Text, beatmapObject.Origin)
+                ? fontService.ShapeText(beatmapObject.Text, beatmapObject.Origin)
                 : null
         };
 
@@ -550,7 +550,7 @@ public class PrefabInstanceObjectSource : IDisposable
             case nameof(BeatmapObject.Origin):
                 playbackObject.Origin = beatmapObject.Origin;
                 playbackObject.Text = beatmapObject.Text is not null 
-                    ? textRenderingService.ShapeText(beatmapObject.Text, beatmapObject.Origin)
+                    ? fontService.ShapeText(beatmapObject.Text, beatmapObject.Origin)
                     : null;
                 break;
             case nameof(BeatmapObject.RenderDepth):
@@ -561,7 +561,7 @@ public class PrefabInstanceObjectSource : IDisposable
                 break;
             case nameof(BeatmapObject.Text):
                 playbackObject.Text = beatmapObject.Text is not null 
-                    ? textRenderingService.ShapeText(beatmapObject.Text, beatmapObject.Origin)
+                    ? fontService.ShapeText(beatmapObject.Text, beatmapObject.Origin)
                     : null;
                 break;
         }

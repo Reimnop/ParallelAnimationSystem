@@ -6,9 +6,9 @@ using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core.Service;
 
-public class ObjectSourceManager(TextRenderingService textRenderingService, PlaybackObjectContainer playbackObjects, RandomSeedService seedService) : IDisposable
+public class ObjectSourceManager(FontService fontService, PlaybackObjectContainer playbackObjects, RandomSeedService seedService) : IDisposable
 {
-    private readonly MainObjectSource mainObjectSource = new(textRenderingService, playbackObjects, seedService);
+    private readonly MainObjectSource mainObjectSource = new(fontService, playbackObjects, seedService);
     private readonly CameraObjectSource cameraObjectSource = new(playbackObjects);
     
     private readonly Dictionary<string, PrefabInstanceObjectSource> prefabInstanceObjectSources = [];
@@ -39,7 +39,7 @@ public class ObjectSourceManager(TextRenderingService textRenderingService, Play
         // initialize prefab instance object sources
         foreach (var (_, instance) in beatmapData.PrefabInstances)
         {
-            var prefabInstanceObjectSource = new PrefabInstanceObjectSource(instance.Id, textRenderingService, playbackObjects, seedService)
+            var prefabInstanceObjectSource = new PrefabInstanceObjectSource(instance.Id, fontService, playbackObjects, seedService)
             {
                 StartTime = instance.StartTime,
                 Position = instance.Position,
@@ -99,7 +99,7 @@ public class ObjectSourceManager(TextRenderingService textRenderingService, Play
 
     private void OnPrefabInstanceInserted(object? sender, BeatmapPrefabInstance e)
     {
-        var prefabInstanceObjectSource = new PrefabInstanceObjectSource(e.Id, textRenderingService, playbackObjects, seedService)
+        var prefabInstanceObjectSource = new PrefabInstanceObjectSource(e.Id, fontService, playbackObjects, seedService)
         {
             StartTime = e.StartTime,
             Position = e.Position,
