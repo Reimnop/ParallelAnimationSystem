@@ -103,5 +103,9 @@ public class FFmpegFrameGenerator(
             var frameData = window.FrameData;
             ffmpegProcess.StandardInput.BaseStream.Write(frameData);
         }
+        
+        // Wait for FFmpeg process to finish
+        ffmpegProcess.StandardInput.Close();
+        ffmpegProcess.WaitForExit();
     }
 }
