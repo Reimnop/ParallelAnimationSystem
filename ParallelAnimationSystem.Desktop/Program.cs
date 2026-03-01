@@ -146,7 +146,7 @@ var rootCommand = new RootCommand("Parallel Animation System");
     var ffmpegArgsOption = new Option<string>(
         aliases: ["--ffmpeg-args"],
         description: "Output arguments to pass to FFmpeg",
-        getDefaultValue: () => "-c:v libx264 -pix_fmt yuv420p -preset slow -c:a aac"
+        getDefaultValue: () => "-c:v libx264 -pix_fmt yuv420p -preset slow -c:a aac -b:a 192k -ac 2 -channel_layout stereo"
     );
 
     var enablePreviewOption = new Option<bool>(
