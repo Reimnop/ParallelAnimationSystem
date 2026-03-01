@@ -40,7 +40,8 @@ public class FFmpegFrameGenerator(
         var processStartInfo = new ProcessStartInfo(settings.ExecPath) 
         {
             UseShellExecute = false,
-            RedirectStandardInput = true
+            RedirectStandardInput = true,
+            CreateNoWindow = true
         };
         
         processStartInfo.ArgumentList.AddRange([
@@ -72,19 +73,18 @@ public class FFmpegFrameGenerator(
         logger.LogInformation("Started FFmpeg process with PID {PID}", ffmpegProcess.Id);
         
         // Generate frames
-        logger.LogInformation("Rendering video frames");
+        logger.LogInformation("Rendering video to {OutputPath}", outputPath);
         
         var appCore = sp.GetRequiredService<AppCore>();
         
         // Load audio
         using var audioPlayer = AudioPlayer.Load(audioPath);
-
+        
+        // Preserve space for progress bar
         var duration = (float)audioPlayer.Length;
         var frameCount = (int)(duration * framerate);
         for (var i = 0; i < frameCount; i++)
         {
-            logger.LogInformation("Rendering frame {Frame}/{TotalFrames}", i + 1, frameCount);
-            
             if (settings.EnablePreview)
                 window.PollEvents();
             
@@ -94,10 +94,30 @@ public class FFmpegFrameGenerator(
 
             var frameData = window.FrameData;
             ffmpegProcess.StandardInput.BaseStream.Write(frameData);
+            
+            RenderProgress(i + 1, frameCount);
         }
         
         // Wait for FFmpeg process to finish
         ffmpegProcess.StandardInput.Close();
         ffmpegProcess.WaitForExit();
+        
+        logger.LogInformation("Finished rendering video");
+    }
+    
+    private static void RenderProgress(int frame, int totalFrames)
+    {
+        const int barWidth = 20;
+
+        var bar = $"[{new string('#', (int)(frame / (float)totalFrames * barWidth)),-barWidth}] " +
+                  $"{frame}/{totalFrames} " +
+                  $"({(frame / (float)totalFrames * 100):0.00}%)";
+
+        // Clear + redraw
+        Console.Write("\e[2K");
+        Console.WriteLine(bar);
+        
+        // Move back up a line
+        Console.Write("\e[1A");
     }
 }
