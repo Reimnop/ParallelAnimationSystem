@@ -15,7 +15,6 @@ public static class FFmpegStartup
         bool useEgl,
         ulong? seed,
         RenderingBackend backend,
-        bool lockAspectRatio,
         bool enablePostProcessing,
         bool enableTextRendering,
         string ffmpegPath,
@@ -40,7 +39,7 @@ public static class FFmpegStartup
         services
             .AddPlatform<FFmpegWindow, FFmpegGlfwService>(
                 backend,
-                lockAspectRatio,
+                false,
                 enablePostProcessing, enableTextRendering)
             .AddTransient<FFmpegFrameGenerator>();
         

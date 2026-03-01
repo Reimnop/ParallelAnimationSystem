@@ -1,7 +1,6 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
-using System.Diagnostics;
 using ParallelAnimationSystem.Desktop;
 using ParallelAnimationSystem.Desktop.FFmpeg;
 
@@ -33,12 +32,6 @@ var heightOption = new Option<int>(
     getDefaultValue: () => 768
 );
 
-var vsyncOption = new Option<bool>(
-    aliases: ["--vsync"],
-    description: "Enable VSync",
-    getDefaultValue: () => true
-);
-
 var useEglOption = new Option<bool>(
     aliases: ["--use-egl"],
     description: "Use EGL for context creation",
@@ -57,12 +50,6 @@ var backendOption = new Option<RenderingBackend>(
     getDefaultValue: () => RenderingBackend.OpenGL
 );
 
-var lockAspectOption = new Option<bool>(
-    aliases: ["--lock-aspect"],
-    description: "Lock the aspect ratio to 16:9",
-    getDefaultValue: () => true
-);
-
 var postProcessingOption = new Option<bool>(
     aliases: ["--post-processing"],
     description: "Enable post-processing",
@@ -75,58 +62,56 @@ var textRenderingOption = new Option<bool>(
     getDefaultValue: () => true
 );
 
-var ffmpegPathOption = new Option<string>(
-    aliases: ["--ffmpeg-path"],
-    description: "(FFmpeg) Path to the FFmpeg executable",
-    getDefaultValue: () => "ffmpeg"
-);
-
-var outputPathOption = new Option<string?>(
-    aliases: ["--output-path"],
-    description: "(FFmpeg) Path to the output video file, set this to render to video"
-);
-
-var enablePreviewOption = new Option<bool>(
-    aliases: ["--preview"],
-    description: "(FFmpeg) Enable preview window (may reduce rendering performance)",
-    getDefaultValue: () => false
-);
+void AddCommonOptions(Command command)
+{
+    command.AddOption(beatmapOption);
+    command.AddOption(audioOption);
+    command.AddOption(widthOption);
+    command.AddOption(heightOption);
+    command.AddOption(useEglOption);
+    command.AddOption(seedOption);
+    command.AddOption(backendOption);
+    command.AddOption(postProcessingOption);
+    command.AddOption(textRenderingOption);
+}
 
 var rootCommand = new RootCommand("Parallel Animation System");
-rootCommand.AddOption(beatmapOption);
-rootCommand.AddOption(audioOption);
-rootCommand.AddOption(widthOption);
-rootCommand.AddOption(heightOption);
-rootCommand.AddOption(vsyncOption);
-rootCommand.AddOption(useEglOption);
-rootCommand.AddOption(seedOption);
-rootCommand.AddOption(backendOption);
-rootCommand.AddOption(lockAspectOption);
-rootCommand.AddOption(postProcessingOption);
-rootCommand.AddOption(textRenderingOption);
-rootCommand.AddOption(ffmpegPathOption);
-rootCommand.AddOption(outputPathOption);
-rootCommand.AddOption(enablePreviewOption);
 
-rootCommand.SetHandler(context =>
+// run subcommand
 {
-    var beatmapPath = context.ParseResult.GetValueForOption(beatmapOption)!;
-    var audioPath = context.ParseResult.GetValueForOption(audioOption)!;
-    var width = context.ParseResult.GetValueForOption(widthOption);
-    var height = context.ParseResult.GetValueForOption(heightOption);
-    var vsync = context.ParseResult.GetValueForOption(vsyncOption);
-    var useEgl = context.ParseResult.GetValueForOption(useEglOption);
-    var seed = context.ParseResult.GetValueForOption(seedOption);
-    var backend = context.ParseResult.GetValueForOption(backendOption);
-    var lockAspectRatio = context.ParseResult.GetValueForOption(lockAspectOption);
-    var enablePostProcessing = context.ParseResult.GetValueForOption(postProcessingOption);
-    var enableTextRendering = context.ParseResult.GetValueForOption(textRenderingOption);
-    var ffmpegPath = context.ParseResult.GetValueForOption(ffmpegPathOption);
-    var outputPath = context.ParseResult.GetValueForOption(outputPathOption);
-    var enablePreview = context.ParseResult.GetValueForOption(enablePreviewOption);
+    var vsyncOption = new Option<bool>(
+        aliases: ["--vsync"],
+        description: "Enable VSync",
+        getDefaultValue: () => true
+    );
 
-    if (outputPath is null)
+    var lockAspectOption = new Option<bool>(
+        aliases: ["--lock-aspect"],
+        description: "Lock the aspect ratio to 16:9",
+        getDefaultValue: () => true
+    );
+
+    var runSubcommand = new Command("run", "Run the beatmap in a window with real-time rendering");
+    AddCommonOptions(runSubcommand);
+    runSubcommand.AddOption(vsyncOption);
+    runSubcommand.AddOption(lockAspectOption);
+    
+    rootCommand.AddCommand(runSubcommand);
+    
+    runSubcommand.SetHandler(context =>
     {
+        var beatmapPath = context.ParseResult.GetValueForOption(beatmapOption)!;
+        var audioPath = context.ParseResult.GetValueForOption(audioOption)!;
+        var width = context.ParseResult.GetValueForOption(widthOption);
+        var height = context.ParseResult.GetValueForOption(heightOption);
+        var vsync = context.ParseResult.GetValueForOption(vsyncOption);
+        var useEgl = context.ParseResult.GetValueForOption(useEglOption);
+        var seed = context.ParseResult.GetValueForOption(seedOption);
+        var backend = context.ParseResult.GetValueForOption(backendOption);
+        var lockAspectRatio = context.ParseResult.GetValueForOption(lockAspectOption);
+        var enablePostProcessing = context.ParseResult.GetValueForOption(postProcessingOption);
+        var enableTextRendering = context.ParseResult.GetValueForOption(textRenderingOption);
+        
         DesktopStartup.ConsumeOptions(
             beatmapPath,
             audioPath,
@@ -139,10 +124,53 @@ rootCommand.SetHandler(context =>
             lockAspectRatio,
             enablePostProcessing,
             enableTextRendering);
-    }
-    else
+    });
+}
+
+// render subcommand
+{
+    var ffmpegPathOption = new Option<string>(
+        aliases: ["--ffmpeg-path"],
+        description: "Path to the FFmpeg executable",
+        getDefaultValue: () => "ffmpeg"
+    );
+
+    var outputPathOption = new Option<string>(
+        aliases: ["--output-path"],
+        description: "Path to the output video file, set this to render to video"
+    )
     {
-        Debug.Assert(ffmpegPath is not null);
+        IsRequired = true
+    };
+
+    var enablePreviewOption = new Option<bool>(
+        aliases: ["--preview"],
+        description: "Enable preview window (may reduce rendering performance)",
+        getDefaultValue: () => false
+    );
+    
+    var ffmpegSubcommand = new Command("render", "Render the beatmap to a video file using FFmpeg");
+    AddCommonOptions(ffmpegSubcommand);
+    ffmpegSubcommand.AddOption(ffmpegPathOption);
+    ffmpegSubcommand.AddOption(outputPathOption);
+    ffmpegSubcommand.AddOption(enablePreviewOption);
+    
+    rootCommand.AddCommand(ffmpegSubcommand);
+    
+    ffmpegSubcommand.SetHandler(context =>
+    {
+        var beatmapPath = context.ParseResult.GetValueForOption(beatmapOption)!;
+        var audioPath = context.ParseResult.GetValueForOption(audioOption)!;
+        var width = context.ParseResult.GetValueForOption(widthOption);
+        var height = context.ParseResult.GetValueForOption(heightOption);
+        var useEgl = context.ParseResult.GetValueForOption(useEglOption);
+        var seed = context.ParseResult.GetValueForOption(seedOption);
+        var backend = context.ParseResult.GetValueForOption(backendOption);
+        var enablePostProcessing = context.ParseResult.GetValueForOption(postProcessingOption);
+        var enableTextRendering = context.ParseResult.GetValueForOption(textRenderingOption);
+        var ffmpegPath = context.ParseResult.GetValueForOption(ffmpegPathOption)!;
+        var outputPath = context.ParseResult.GetValueForOption(outputPathOption)!;
+        var enablePreview = context.ParseResult.GetValueForOption(enablePreviewOption);
         
         FFmpegStartup.ConsumeOptions(   
             beatmapPath,
@@ -152,14 +180,13 @@ rootCommand.SetHandler(context =>
             useEgl,
             seed,
             backend,
-            lockAspectRatio,
             enablePostProcessing,
             enableTextRendering,
             ffmpegPath,
             outputPath,
             enablePreview);
-    }
-});
+    });
+}
 
 var parser = new CommandLineBuilder(rootCommand)
     .UseVersionOption()
