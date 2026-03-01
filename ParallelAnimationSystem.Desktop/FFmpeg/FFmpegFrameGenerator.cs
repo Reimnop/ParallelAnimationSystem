@@ -2,6 +2,7 @@ using System.CommandLine.Parsing;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO.Pipes;
+using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pamx.Common.Implementation;
@@ -41,6 +42,8 @@ public class FFmpegFrameGenerator(
         {
             UseShellExecute = false,
             RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
             CreateNoWindow = true
         };
         
@@ -69,6 +72,33 @@ public class FFmpegFrameGenerator(
         using var ffmpegProcess = Process.Start(processStartInfo);
         if (ffmpegProcess == null)
             throw new InvalidOperationException("Failed to start FFmpeg process");
+        
+        // Log FFmpeg output and errors
+        var logFs = new StreamWriter("ffmpeg_output.log", Encoding.UTF8, new FileStreamOptions
+        {
+            Mode = FileMode.Create
+        });
+        
+        ffmpegProcess.OutputDataReceived += (_, args) =>
+        {
+            if (args.Data is not null)
+                logFs.WriteLine(args.Data);
+        };
+        
+        ffmpegProcess.ErrorDataReceived += (_, args) =>
+        {
+            if (args.Data is not null)
+                logFs.WriteLine(args.Data);
+        };
+        
+        ffmpegProcess.Exited += (_, _) =>
+        {
+            logFs.Flush();
+            logFs.Dispose();
+        };
+        
+        ffmpegProcess.BeginOutputReadLine();
+        ffmpegProcess.BeginErrorReadLine();
         
         logger.LogInformation("Started FFmpeg process with PID {PID}", ffmpegProcess.Id);
         
