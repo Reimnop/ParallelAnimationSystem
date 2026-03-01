@@ -3,7 +3,7 @@ using ParallelAnimationSystem.Windowing.OpenGL;
 
 namespace ParallelAnimationSystem.Desktop.FFmpeg;
 
-public class FFmpegGlfwService(OpenGLSettings glSettings, FFmpegSettings settings) : GlfwService(glSettings)
+public class FFmpegGlfwService(OpenGLSettings glSettings) : GlfwService(glSettings)
 {
     protected override void SetWindowHints(int width, int height, string title, bool useEgl)
     {
