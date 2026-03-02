@@ -74,9 +74,15 @@ public class AppCore(
         }
 
         // Draw all alive game objects
-        foreach (var drawItem in drawItems)
+        foreach (ref var drawItem in drawItems)
         {
             var transform = drawItem.Transform;
+            
+            // check if scale is zero, if so skip rendering this object
+            var scaleXSquared = transform.M11 * transform.M11 + transform.M12 * transform.M12;
+            var scaleYSquared = transform.M21 * transform.M21 + transform.M22 * transform.M22;
+            if (scaleXSquared < 0.001f || scaleYSquared < 0.001f)
+                continue;
 
             if (!playbackObjects.TryGetItem(drawItem.ObjectIndex, out var playbackObject))
                 continue;
@@ -88,14 +94,11 @@ public class AppCore(
                 if (meshService.TryGetMeshForShape(shapeIndex, shapeOptionIndex, out var mesh))
                 {
                     var renderMode = playbackObject.RenderMode;
-
-                    var color1 = drawItem.Color1;
-                    var color2 = drawItem.Color2;
                         
-                    var color1Rgba = new ColorRgba(color1, drawItem.Opacity);
-                    var color2Rgba = color1 == color2 
-                        ? new ColorRgba(color2, 0.0f)
-                        : new ColorRgba(color2, drawItem.Opacity);
+                    var color1Rgba = new ColorRgba(drawItem.Color1, drawItem.Opacity);
+                    var color2Rgba = drawItem.Color1 == drawItem.Color2 
+                        ? new ColorRgba(drawItem.Color2, 0.0f)
+                        : new ColorRgba(drawItem.Color2, drawItem.Opacity);
             
                     drawList.AddMesh(mesh, transform, color1Rgba, color2Rgba, renderMode);
                 }

@@ -1,5 +1,4 @@
 using System.Numerics;
-using System.Runtime.InteropServices;
 using Ico.Reader;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Windowing.GraphicsLibraryFramework;
@@ -12,9 +11,6 @@ namespace ParallelAnimationSystem.Desktop;
 public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
 {
     private const string Title = "Parallel Animation System";
-
-    // Called every time events are polled
-    public event EventHandler? EventsPolled; 
     
     public Vector2i FramebufferSize
     {
@@ -31,33 +27,14 @@ public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
     
     public Window* Handle => window;
 
+    private readonly GlfwService glfw;
     private readonly Window* window;
 
-    public DesktopWindow(DesktopWindowSettings windowSettings, OpenGLSettings glSettings)
+    public DesktopWindow(DesktopWindowSettings windowSettings, GlfwService glfw)
     {
-        // Initialize GLFW
-        if (!GLFW.Init())
-            throw new Exception("Failed to initialize GLFW");
+        this.glfw = glfw;
         
-        if (glSettings.IsES)
-        {
-            GLFW.WindowHint(WindowHintClientApi.ClientApi, ClientApi.OpenGlEsApi);
-        }
-        else
-        {
-            GLFW.WindowHint(WindowHintClientApi.ClientApi, ClientApi.OpenGlApi);
-            GLFW.WindowHint(WindowHintOpenGlProfile.OpenGlProfile, OpenGlProfile.Core);
-        }
-
-        if (windowSettings.UseEgl) 
-        {
-            GLFW.WindowHint(WindowHintContextApi.ContextCreationApi, ContextApi.EglContextApi);
-        }
-        
-        GLFW.WindowHint(WindowHintInt.ContextVersionMajor, glSettings.MajorVersion);
-        GLFW.WindowHint(WindowHintInt.ContextVersionMinor, glSettings.MinorVersion);
-        
-        window = GLFW.CreateWindow(windowSettings.Size.X, windowSettings.Size.Y, Title, null, null);
+        window = this.glfw.CreateWindowHandle(windowSettings.Size.X, windowSettings.Size.Y, Title, windowSettings.UseEgl);
         
         GLFW.MakeContextCurrent(window);
         GLFW.SwapInterval(windowSettings.VSync ? 1 : 0);
@@ -66,6 +43,11 @@ public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
         using var iconStream = typeof(DesktopWindow).Assembly.GetManifestResourceStream("ParallelAnimationSystem.Desktop.icon.ico");
         if (iconStream is not null)
             LoadIcon(iconStream);
+    }
+    
+    public void Dispose()
+    {
+        GLFW.DestroyWindow(window);
     }
 
     private void LoadIcon(Stream iconStream)
@@ -107,9 +89,7 @@ public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
 
     public void PollEvents()
     {
-        GLFW.PollEvents();
-        
-        EventsPolled?.Invoke(this, EventArgs.Empty);
+        glfw.PollEvents();
     }
     
     public void Present(int framebuffer, Vector4 clearColor, Vector2i size, Vector2i offset)
@@ -131,6 +111,8 @@ public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
             0, 0, size.X, size.Y,
             offset.X, offset.Y, offset.X + size.X, offset.Y + size.Y,
             ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Nearest);
+
+        OnFramePresent(dstSize);
         
         GLFW.SwapBuffers(window);
     }
@@ -143,12 +125,8 @@ public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
         GLFW.SetWindowShouldClose(window, true);
     }
     
-    public void Dispose()
+    // Frame presentation hook
+    protected virtual void OnFramePresent(Vector2i framebufferSize)
     {
-        GLFW.DestroyWindow(window);
-        GLFW.Terminate();
     }
-    
-    [DllImport("Dwmapi.dll")]
-    static extern int DwmFlush();
 }

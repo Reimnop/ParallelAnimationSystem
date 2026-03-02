@@ -18,7 +18,7 @@ public static class PASOptionsBuilderExtension
             .UseRenderingFactory<RenderingFactory>()
             .AddResourceSource(new EmbeddedResourceSource(typeof(PASOptionsBuilderExtension).Assembly));
 
-        builder.Services.AddSingleton<IncomingResourceQueue>();
+        builder.Services.AddScoped<IncomingResourceQueue>();
 
         builder.Services.AddSingleton(new OpenGLSettings
         {
@@ -29,7 +29,7 @@ public static class PASOptionsBuilderExtension
         
 #if DEBUG
         // Add ImGui renderer backend
-        builder.Services.AddSingleton<IImGuiRendererBackend, ImGuiRendererBackend>();
+        builder.Services.AddScoped<IImGuiRendererBackend, ImGuiRendererBackend>();
 #endif
         
         return builder;

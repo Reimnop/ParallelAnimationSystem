@@ -5,7 +5,7 @@ using MattiasCibien.Extensions.Logging.Logcat;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Core;
-using ParallelAnimationSystem.Mathematics;
+using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.OpenGLES;
 using ParallelAnimationSystem.Util;
@@ -48,7 +48,6 @@ public class PasActivity : Activity
 
         var appSettings = new AppSettings
         {
-            Seed = NumberUtil.SplitMix64((ulong) DateTimeOffset.Now.ToUnixTimeSeconds()),
             AspectRatio = lockAspectRatio ? 16.0f / 9.0f : null,
             EnablePostProcessing = enablePostProcessing,
             EnableTextRendering = enableTextRendering,
@@ -106,20 +105,27 @@ public class PasActivity : Activity
         {
             builder.UseAppSettings(appSettings);
             builder.UseWindow<AndroidWindow>();
-            builder.UseMediaProvider<AndroidMediaProvider>();
             builder.UseOpenGLESRenderer();
         });
         
         // Initialize PAS services
-        var serviceProvider = services.BuildServiceProvider();
-
-        var appCore = serviceProvider.InitializeAppCore();
-        var renderer = serviceProvider.InitializeRenderer();
+        using var serviceProvider = services.BuildServiceProvider();
+        using var scope = serviceProvider.CreateScope();
         
-        var window = serviceProvider.GetRequiredService<IWindow>();
+        // Set random seed
+        var randomSeedService = scope.ServiceProvider.GetRequiredService<RandomSeedService>();
+        randomSeedService.Seed = NumberUtil.SplitMix64((ulong)DateTimeOffset.Now.ToUnixTimeSeconds());
+        
+        // Load beatmap
+        var beatmapService = scope.ServiceProvider.GetRequiredService<BeatmapService>();
+        beatmapService.LoadBeatmap(beatmapData, beatmapFormat);
+        
+        var appCore = scope.ServiceProvider.GetRequiredService<AppCore>();
+        var renderer = scope.ServiceProvider.GetRequiredService<IRenderer>();
+        var window = scope.ServiceProvider.GetRequiredService<IWindow>();
         
         // Get a draw list
-        var renderingFactory = serviceProvider.GetRequiredService<IRenderingFactory>();
+        var renderingFactory = scope.ServiceProvider.GetRequiredService<IRenderingFactory>();
         var drawList = renderingFactory.CreateDrawList();
         
         // Initialize audio player

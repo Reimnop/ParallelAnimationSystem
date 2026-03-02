@@ -1,34 +1,48 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using System.Numerics;
-using TmpIO;
 
 namespace ParallelAnimationSystem.Rendering.OpenGL;
 
-public class IncomingResourceQueue
+public class IncomingResourceQueue : IDisposable
 {
-    public record IncomingMesh(int MeshId, Vector2[] Vertices, int[] Indices);
-    public record IncomingFont(int FontId, TmpAtlas Atlas);
+    private readonly Queue<Mesh> meshQueue = new();
+    private readonly Queue<Font> fontQueue = new();
+
+    private readonly RenderingFactory renderingFactory;
+
+    public IncomingResourceQueue(IRenderingFactory renderingFactory)
+    {
+        this.renderingFactory = (RenderingFactory)renderingFactory;
+        
+        // add all existing resources to the queues
+        foreach (var mesh in this.renderingFactory.Meshes)
+            meshQueue.Enqueue(mesh);
+        
+        foreach (var font in this.renderingFactory.Fonts)
+            fontQueue.Enqueue(font);
+
+        this.renderingFactory.MeshCreated += OnMeshCreated;
+        this.renderingFactory.FontCreated += OnFontCreated;
+    }
+
+    public void Dispose()
+    {
+        renderingFactory.MeshCreated -= OnMeshCreated;
+        renderingFactory.FontCreated -= OnFontCreated;
+    }
     
-    private readonly Queue<IncomingMesh> meshQueue = new();
-    private readonly Queue<IncomingFont> fontQueue = new();
-    
-    public void EnqueueMesh(IncomingMesh mesh)
+    private void OnMeshCreated(object? sender, Mesh e)
     {
         lock (meshQueue)
-        {
-            meshQueue.Enqueue(mesh);
-        }
+            meshQueue.Enqueue(e);
     }
     
-    public void EnqueueFont(IncomingFont font)
+    private void OnFontCreated(object? sender, Font e)
     {
         lock (fontQueue)
-        {
-            fontQueue.Enqueue(font);
-        }
+            fontQueue.Enqueue(e);
     }
     
-    public bool TryDequeueAllMeshes([MaybeNullWhen(false)] out List<IncomingMesh> meshes)
+    public bool TryDequeueAllMeshes([MaybeNullWhen(false)] out List<Mesh> meshes)
     {
         lock (meshQueue)
         {
@@ -46,7 +60,7 @@ public class IncomingResourceQueue
         return true;
     }
     
-    public bool TryDequeueAllFonts([MaybeNullWhen(false)] out List<IncomingFont> fonts)
+    public bool TryDequeueAllFonts([MaybeNullWhen(false)] out List<Font> fonts)
     {
         lock (fontQueue)
         {

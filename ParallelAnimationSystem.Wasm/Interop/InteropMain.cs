@@ -12,35 +12,19 @@ public static class InteropMain
     private static WasmApp? app;
     
     [UnmanagedCallersOnly(EntryPoint = "main_start")]
-    public static unsafe void Start(
-        ulong seed, 
-        bool enablePostProcessing, 
-        bool enableTextRendering,
-        byte* beatmapDataPtr,
-        int beatmapFormat)
+    public static void Start(bool enablePostProcessing, bool enableTextRendering)
     {
         if (app is not null)
             throw new InvalidOperationException("App already started, call shutdown first");
-        
-        var beatmapData = Marshal.PtrToStringUTF8((IntPtr) beatmapDataPtr);
-        if (beatmapData is null)
-            throw new NullReferenceException("Beatmap data is null");
 
         var appSettings = new AppSettings
         {
-            Seed = seed,
             AspectRatio = null,
             EnablePostProcessing = enablePostProcessing,
             EnableTextRendering = enableTextRendering,
         };
 
         var services = new ServiceCollection();
-        
-        services.AddSingleton(new MediaContext
-        {
-            BeatmapData = beatmapData,
-            BeatmapFormat = (BeatmapFormat) beatmapFormat
-        });
         
         services.AddLogging(builder =>
         {
@@ -52,24 +36,11 @@ public static class InteropMain
         {
             builder.UseAppSettings(appSettings);
             builder.UseWindow<WasmWindow>();
-            builder.UseMediaProvider<WasmMediaProvider>();
             builder.UseOpenGLESRenderer();
         });
 
         var sp = services.BuildServiceProvider();
-        var appCore = sp.InitializeAppCore();
-        var renderer = sp.InitializeRenderer();
-        
-        var renderingFactory = sp.GetRequiredService<IRenderingFactory>();
-        var drawList = renderingFactory.CreateDrawList();
-
-        app = new WasmApp
-        {
-            ServiceProvider = sp,
-            AppCore = appCore,
-            Renderer = renderer,
-            DrawList = drawList
-        };
+        app = new WasmApp(sp);
     }
 
     [UnmanagedCallersOnly(EntryPoint = "main_shutdown")]
@@ -79,8 +50,8 @@ public static class InteropMain
         app = null;
     }
     
-    [UnmanagedCallersOnly(EntryPoint = "main_getAppPointer")]
-    public static IntPtr GetAppPointer()
+    [UnmanagedCallersOnly(EntryPoint = "main_getApp")]
+    public static IntPtr GetApp()
     {
         if (app is null)
             return IntPtr.Zero;

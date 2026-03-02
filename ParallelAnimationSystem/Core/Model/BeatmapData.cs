@@ -7,4 +7,13 @@ public class BeatmapData
     public IdContainer<BeatmapPrefabInstance> PrefabInstances { get; } = new();
     public IdContainer<BeatmapPrefab> Prefabs { get; } = new();
     public BeatmapEvents Events { get; } = new();
+
+    public void Clear()
+    {
+        Objects.Clear();
+        Themes.Clear();
+        PrefabInstances.Clear();
+        Prefabs.Clear();
+        Events.Clear();
+    }
 }

@@ -5,7 +5,8 @@ namespace ParallelAnimationSystem.Rendering.OpenGLES;
 public class Font(int id, TmpFile file) : IFont
 {
     public int Id => id;
-    public TmpMetadata Metadata { get; } = file.Metadata;
+    public TmpAtlas Atlas => file.Atlas;
+    public TmpMetadata Metadata => file.Metadata;
 
     private readonly Dictionary<char, TmpCharacter> ordinalToCharacter
         = file.Characters.ToDictionary(x => x.Character);

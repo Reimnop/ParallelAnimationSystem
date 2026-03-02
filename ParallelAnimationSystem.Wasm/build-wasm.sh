@@ -3,8 +3,8 @@ set -euo pipefail
 
 dotnet publish -c Release
 
-rm -rf ./ts/mod
-mkdir -p ./ts/mod
-cp -r ./bin/Release/net10.0/browser-wasm/native/* ./ts/mod
+rm -rf ./ts/src/wasm
+mkdir -p ./ts/src/wasm
+cp -r ./bin/Release/net10.0/browser-wasm/native/* ./ts/src/wasm
 
-echo "Copied native files to ./ts/mod"
+echo "Copied native files to ./ts/src/wasm"

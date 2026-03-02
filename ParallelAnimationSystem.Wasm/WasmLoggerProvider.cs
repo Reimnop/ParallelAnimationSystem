@@ -15,7 +15,24 @@ public class WasmLoggerProvider : ILoggerProvider
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception, string> formatter)
         {
             var message = formatter(state, exception!);
-            Console.WriteLine($"[{logLevel}] {message}\n{categoryName}");
+            
+            var logLevelStr = logLevel switch
+            {
+                LogLevel.Trace => "Trace",
+                LogLevel.Debug => "Debug",
+                LogLevel.Information => "Info",
+                LogLevel.Warning => "Warn",
+                LogLevel.Error => "Error",
+                LogLevel.Critical => "Critical",
+                _ => "Unknown"
+            };
+            
+            var categoryStr = $"{categoryName.Split('.')[^1]}";
+
+            if (logLevel < LogLevel.Error)
+                Console.WriteLine($"[{logLevelStr} - {categoryStr}] {message}");
+            else
+                Console.Error.WriteLine($"[{logLevelStr} - {categoryStr}] {message}");
         }
     }
     

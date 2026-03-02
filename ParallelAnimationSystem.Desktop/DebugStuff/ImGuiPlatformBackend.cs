@@ -15,6 +15,7 @@ public class ImGuiPlatformBackend : IImGuiPlatformBackend, IDisposable
     public event EventHandler<IImGuiPlatformBackend.MouseWheelEventArgs>? MouseWheel;
     public event EventHandler<IImGuiPlatformBackend.UpdateFrameEventArgs>? UpdateFrame;
     
+    private readonly GlfwService glfw;
     private readonly DesktopWindow window;
 
     // ReSharper disable PrivateFieldCanBeConvertedToLocalVariable
@@ -27,11 +28,12 @@ public class ImGuiPlatformBackend : IImGuiPlatformBackend, IDisposable
     
     private double previousTime;
     
-    public unsafe ImGuiPlatformBackend(IWindow window)
+    public unsafe ImGuiPlatformBackend(GlfwService glfw, IWindow window)
     {
+        this.glfw = glfw;
         this.window = (DesktopWindow) window;
         
-        this.window.EventsPolled += OnWindowEventsPolled;
+        this.glfw.EventsPolled += OnGlfwEventsPolled;
 
         scrollCallback = OnScrollCallback;
         charCallback = OnCharCallback;
@@ -56,7 +58,7 @@ public class ImGuiPlatformBackend : IImGuiPlatformBackend, IDisposable
         GLFW.SetMouseButtonCallback(windowPtr, null);
         GLFW.SetCursorPosCallback(windowPtr, null);
         
-        window.EventsPolled -= OnWindowEventsPolled;
+        this.glfw.EventsPolled -= OnGlfwEventsPolled;
     }
 
     private unsafe void OnScrollCallback(Window* windowPtr, double offsetX, double offsetY)
@@ -103,7 +105,7 @@ public class ImGuiPlatformBackend : IImGuiPlatformBackend, IDisposable
             new IImGuiPlatformBackend.MousePositionEventArgs(new Vector2((float) x, (float) y)));
     }
 
-    private unsafe void OnWindowEventsPolled(object? sender, EventArgs e)
+    private unsafe void OnGlfwEventsPolled(object? sender, EventArgs e)
     {
         var time = GLFW.GetTime();
         var deltaTime = time - previousTime;

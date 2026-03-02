@@ -91,7 +91,7 @@ public class Timeline : IDisposable
     
     private void DetachPlaybackObject(IndexedCollectionEntry<PlaybackObject> entry)
     {
-        if (entry.Item.Type != PlaybackObjectType.Visible)
+        if (entry.Item.Type == PlaybackObjectType.Visible)
             RemoveObjectFromPlayback(entry.Index);
         
         entry.Item.PropertyChanged -= OnPlaybackObjectPropertyChanged;

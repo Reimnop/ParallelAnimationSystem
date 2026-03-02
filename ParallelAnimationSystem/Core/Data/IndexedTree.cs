@@ -101,7 +101,7 @@ public class IndexedTree<T> : IIndexedCollection<T> where T : IIdentifiable
         return true;
     }
 
-    public bool SetParent(int childIndex, int? parentIndex)
+    public virtual bool SetParent(int childIndex, int? parentIndex)
     {
         if (childIndex < 0 || childIndex >= items.Count) 
             return false;

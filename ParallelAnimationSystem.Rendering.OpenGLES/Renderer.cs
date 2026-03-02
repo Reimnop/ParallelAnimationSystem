@@ -278,50 +278,49 @@ public class Renderer : IRenderer, IDisposable
     
     public void Dispose()
     {
-        // Don't dispose because it will die with the context anyway
-        // TODO: If we ever need to reinit just the renderer without disposing the window, implement this
+        logger.LogInformation("Disposing OpenGL ES renderer");
         
-        // logger.LogInformation("Disposing OpenGL ES renderer");
-        //
-        // // Delete GL resources
-        // GL.DeleteProgram(programHandle);
-        // GL.DeleteProgram(glyphProgramHandle);
-        //
-        // GL.DeleteBuffer(mainVertexBufferHandle);
-        // GL.DeleteBuffer(mainIndexBufferHandle);
-        // GL.DeleteVertexArray(mainVertexArrayHandle);
-        //
-        // GL.DeleteBuffer(textInstanceBufferHandle);
-        // GL.DeleteVertexArray(textVertexArrayHandle);
-        // GL.DeleteSampler(textAtlasSamplerHandle);
-        //
-        // GL.DeleteRenderbuffer(fboColorBufferHandle);
-        // GL.DeleteRenderbuffer(fboDepthBufferHandle);
-        // GL.DeleteFramebuffer(fboHandle);
-        //
-        // GL.DeleteTexture(postProcessTextureHandle1);
-        // GL.DeleteTexture(postProcessTextureHandle2);
-        // GL.DeleteFramebuffer(postProcessFboHandle);
-        //
-        // foreach (var fontInfoNullable in fontInfos)
-        // {
-        //     if (!fontInfoNullable.HasValue)
-        //         continue;
-        //     
-        //     var fontInfo = fontInfoNullable.Value;
-        //     GL.DeleteTexture(fontInfo.AtlasHandle);
-        // }
-        // 
-        // GL.DeleteSampler(overlaySampler);
-        // GL.DeleteTexture(overlayTexture);
-        // GL.DeleteFramebuffer(overlayFboHandle);
-        // GL.DeleteProgram(overlayProgram);
-        //
-        // GL.DeleteVertexArray(emptyVao);
-        //
-        // legacyBloom.Dispose();
-        // universalBloom.Dispose();
-        // uberPost.Dispose();
+        window.MakeContextCurrent();
+        
+        // Delete GL resources
+        GL.DeleteProgram(programHandle);
+        GL.DeleteProgram(glyphProgramHandle);
+        
+        GL.DeleteBuffer(mainVertexBufferHandle);
+        GL.DeleteBuffer(mainIndexBufferHandle);
+        GL.DeleteVertexArray(mainVertexArrayHandle);
+        
+        GL.DeleteBuffer(textInstanceBufferHandle);
+        GL.DeleteVertexArray(textVertexArrayHandle);
+        GL.DeleteSampler(textAtlasSamplerHandle);
+        
+        GL.DeleteRenderbuffer(fboColorBufferHandle);
+        GL.DeleteRenderbuffer(fboDepthBufferHandle);
+        GL.DeleteFramebuffer(fboHandle);
+        
+        GL.DeleteTexture(postProcessTextureHandle1);
+        GL.DeleteTexture(postProcessTextureHandle2);
+        GL.DeleteFramebuffer(postProcessFboHandle);
+        
+        foreach (var fontInfoNullable in fontInfos)
+        {
+            if (!fontInfoNullable.HasValue)
+                continue;
+            
+            var fontInfo = fontInfoNullable.Value;
+            GL.DeleteTexture(fontInfo.AtlasHandle);
+        }
+        
+        GL.DeleteSampler(overlaySampler);
+        GL.DeleteTexture(overlayTexture);
+        GL.DeleteFramebuffer(overlayFboHandle);
+        GL.DeleteProgram(overlayProgram);
+        
+        GL.DeleteVertexArray(emptyVao);
+        
+        legacyBloom.Dispose();
+        universalBloom.Dispose();
+        uberPost.Dispose();
     }
 
     public void AddOverlayRenderer(IOverlayRenderer overlayRenderer)
@@ -668,8 +667,8 @@ public class Renderer : IRenderer, IDisposable
             GL.TexStorage2D(TextureTarget.Texture2d, 1, SizedInternalFormat.Rgb16f, atlas.Width, atlas.Height);
             GL.TexSubImage2D(TextureTarget.Texture2d, 0, 0, 0, atlas.Width, atlas.Height, PixelFormat.Rgb, PixelType.HalfFloat, atlas.Data);
             
-            fontInfos.EnsureCount(incomingFont.FontId + 1);
-            fontInfos[incomingFont.FontId] = new FontInfo(atlasHandle);
+            fontInfos.EnsureCount(incomingFont.Id + 1);
+            fontInfos[incomingFont.Id] = new FontInfo(atlasHandle);
         }
         
         logger.LogInformation("Updated {FontCount} font atlases", incomingFonts.Count);
@@ -683,14 +682,14 @@ public class Renderer : IRenderer, IDisposable
         foreach (var incomingMesh in incomingMeshes)
         {
             var vertices = incomingMesh.Vertices;
-            var indices = incomingMesh.Indices;
+            var indices = incomingMesh.Indices.ToArray();
 
             for (var i = 0; i < indices.Length; i++)
                 indices[i] += vertexBuffer.Length; // Offset indices
             
             var meshInfo = new MeshInfo(indexBuffer.Length, indices.Length);
-            meshInfos.EnsureCount(incomingMesh.MeshId + 1);
-            meshInfos[incomingMesh.MeshId] = meshInfo;
+            meshInfos.EnsureCount(incomingMesh.Id + 1);
+            meshInfos[incomingMesh.Id] = meshInfo;
             
             vertexBuffer.Append(vertices);
             indexBuffer.Append(indices);

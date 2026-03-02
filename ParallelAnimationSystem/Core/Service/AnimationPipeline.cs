@@ -1,38 +1,14 @@
 ﻿using System.Diagnostics;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Mathematics;
 
 namespace ParallelAnimationSystem.Core.Service;
 
-public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playbackObjects)
+public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playbackObjects, PlaybackObjectSortingService sortingService)
 {
-    private class ObjectDrawItemComparer(PlaybackObjectContainer playbackObjects) : IComparer<ObjectDrawItem>
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int Compare(ObjectDrawItem x, ObjectDrawItem y)
-        {
-            var renderDepthComparison = y.RenderDepth.CompareTo(x.RenderDepth);
-            if (renderDepthComparison != 0) 
-                return renderDepthComparison;
-            
-            var parentDepthComparison = y.ParentDepth.CompareTo(x.ParentDepth);
-            if (parentDepthComparison != 0) 
-                return parentDepthComparison;
-            
-            if (!playbackObjects.TryGetItem(x.ObjectIndex, out var xObj) ||
-                !playbackObjects.TryGetItem(y.ObjectIndex, out var yObj))
-                return 0;
-            
-            var startTimeComparison = xObj.StartTime.CompareTo(yObj.StartTime);
-            if (startTimeComparison != 0)
-                return startTimeComparison;
-            
-            return xObj.Id.Value.CompareTo(yObj.Id.Value);
-        }
-    }
+    private static readonly Comparison<ObjectDrawItem> sortRankComparison = static (x, y) => x.SortRank.CompareTo(y.SortRank);
     
     private const float TextScaleFactor = 3.0f / 32.0f;
     private static readonly Matrix3x2 TextScaleMatrix = FastMatrix.GetScaleMatrix(TextScaleFactor, TextScaleFactor);
@@ -40,26 +16,31 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
     private const int InitialCacheCapacity = 1000;
     
     private ObjectDrawItem[] drawItemCache = new ObjectDrawItem[InitialCacheCapacity];
+    private uint[] objectIndexToSortRank = [];
     
     private float currentTime;
     private ThemeColorState? currentThemeColorState;
-    
-    private readonly ObjectDrawItemComparer drawItemComparer = new(playbackObjects);
-    
-    public ReadOnlySpan<ObjectDrawItem> ComputeDrawItems(float time, ThemeColorState themeColorState)
+
+    public Span<ObjectDrawItem> ComputeDrawItems(float time, ThemeColorState themeColorState)
     {
         currentTime = time;
         currentThemeColorState = themeColorState;
         
         var aliveObjects = timeline.ComputeAliveObjects(time);
-        EnsureCacheCapacity(aliveObjects.Count);
+        var count = aliveObjects.Count;
+        
+        // ensure we have enough capacity in the cache to store all draw items
+        EnsureCacheCapacity(count);
+
+        // get the mapping from object index to sort rank
+        objectIndexToSortRank = sortingService.GetObjectIndexToSortRankMapping();
 
         Parallel.ForEach(aliveObjects, ProcessPlaybackObject);
-
-        var drawItems = drawItemCache.AsSpan(0, aliveObjects.Count);
-        drawItems.Sort(drawItemComparer);
         
-        return drawItems;
+        // sort orderedObjectIndices based on the corresponding draw items
+        var drawItemSpan = drawItemCache.AsSpan(0, count);
+        drawItemSpan.Sort(sortRankComparison);
+        return drawItemSpan;
     }
 
     private void ProcessPlaybackObject(int objectIndex, ParallelLoopState loopState, long cacheIndex)
@@ -70,7 +51,7 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
         var transform = CalculateObjectTransform(
             objectIndex,
             ParentType.All, ParentOffset.Zero,
-            currentTime, out var parentDepth);
+            currentTime);
         
         // use origin matrix if shape is not text
         var originMatrix = playbackObject.Shape == ObjectShape.Text 
@@ -85,22 +66,22 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
         Debug.Assert(currentThemeColorState is not null);
         var color = playbackObject.ColorSequence.ComputeValueAt(currentTime - playbackObject.StartTime, currentThemeColorState);
         
-        drawItemCache[cacheIndex].Transform = originMatrix * textScale * transform;
-        drawItemCache[cacheIndex].Color1 = color.Color1;
-        drawItemCache[cacheIndex].Color2 = color.Color2;
-        drawItemCache[cacheIndex].RenderDepth = playbackObject.RenderDepth;
-        drawItemCache[cacheIndex].ParentDepth = parentDepth;
-        drawItemCache[cacheIndex].Opacity = color.Opacity;
-        drawItemCache[cacheIndex].ObjectIndex = objectIndex;
+        // build draw item
+        ref var drawItem = ref drawItemCache[cacheIndex];
+        
+        drawItem.SortRank = objectIndexToSortRank[objectIndex];
+        drawItem.Transform = originMatrix * textScale * transform;
+        drawItem.Color1 = color.Color1;
+        drawItem.Color2 = color.Color2;
+        drawItem.Opacity = color.Opacity;
+        drawItem.ObjectIndex = objectIndex;
     }
     
     private Matrix3x2 CalculateObjectTransform(
         int playbackObjectIndex,
         ParentType parentType, ParentOffset parentOffset,
-        float time, out int parentDepth)
+        float time)
     {
-        parentDepth = 0;
-        
         var matrix = Matrix3x2.Identity;
         
         if (!playbackObjects.TryGetItem(playbackObjectIndex, out var playbackObject))
@@ -108,9 +89,7 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
 
         while (true)
         {
-            parentDepth++;
-
-            if (playbackObject.Type == PlaybackObjectType.PrefabIntermediate)
+            if (playbackObject.Type is PlaybackObjectType.PrefabIntermediate or PlaybackObjectType.Camera)
                 parentType = ParentType.All;
 
             switch (parentType)

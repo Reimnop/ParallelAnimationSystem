@@ -15,59 +15,49 @@ public static class StartupExtension
     extension(IServiceCollection services)
     {
         public IServiceCollection AddPAS(Action<PASOptionsBuilder> builder)
-            => services.AddPAS<AppCore>(builder);
-
-        public IServiceCollection AddPAS<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TAppCore>(Action<PASOptionsBuilder> builder) where TAppCore : AppCore
         {
             var optionsBuilder = new PASOptionsBuilder(services);
             builder(optionsBuilder);
             var options = optionsBuilder.Build();
-            return services.AddPAS<TAppCore>(options);
+            return services.AddPAS(options);
         }
 
-        public IServiceCollection AddPAS<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TAppCore>(PASOptions options) where TAppCore : AppCore
+        public IServiceCollection AddPAS(PASOptions options)
         {
             services.AddSingleton(options.AppSettings);
-        
-            // Add beatmap runner
-            services.AddSingleton<AppCore, TAppCore>();
-        
-            // Add external services
-            options.WindowDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);
-            options.MediaProviderDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);
-            options.RendererDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);
+            
+            // Everything related to resources are singletons
             options.RenderingFactoryDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);
+            
+            // Add resource loader with all resource source factories
+            services.AddSingleton(_ => new ResourceLoader(options.ResourceSourceFactories
+                .Append(() => new EmbeddedResourceSource(typeof(StartupExtension).Assembly))));
+            
+            // These manage rendering resources, so they should be singletons
+            services.AddSingleton<MeshService>();
+            services.AddSingleton<FontService>();
         
-            // Copy resource source factories to our own list
-            var resourceSourceFactories = new List<Func<IResourceSource>>();
-            resourceSourceFactories.AddRange(options.ResourceSourceFactories);
-        
-            // Add our own sources
-            resourceSourceFactories.Add(() => new EmbeddedResourceSource(typeof(StartupExtension).Assembly));
-        
-            // Add resource loader
-            services.AddSingleton(_ => new ResourceLoader(resourceSourceFactories));
+            // Add rendering services
+            options.WindowDefinition.RegisterToServiceCollection(services, ServiceLifetime.Scoped);
+            options.RendererDefinition.RegisterToServiceCollection(services, ServiceLifetime.Scoped);
         
             // Add main services
-            services.AddSingleton<AnimationPipeline>();
-            services.AddSingleton<Timeline>();
-            services.AddSingleton<ObjectSourceManager>();
-            services.AddSingleton<PlaybackObjectContainer>();
-
-            services.AddSingleton<ThemeManager>();
-            services.AddSingleton<PlaybackThemeContainer>();
-
-            services.AddSingleton<EventManager>();
-
-            services.AddSingleton<RandomSeedService>();
-            services.AddSingleton<TextRenderingService>();
-            services.AddSingleton<MeshService>();
-            services.AddSingleton<BeatmapService>();
+            services.AddScoped<AppCore>();
+            services.AddScoped<AnimationPipeline>();
+            services.AddScoped<PlaybackObjectSortingService>();
+            services.AddScoped<Timeline>();
+            services.AddScoped<ObjectSourceManager>();
+            services.AddScoped<PlaybackObjectContainer>();
+            services.AddScoped<ThemeManager>();
+            services.AddScoped<PlaybackThemeContainer>();
+            services.AddScoped<EventManager>();
+            services.AddScoped<RandomSeedService>();
+            services.AddScoped<BeatmapService>();
         
 #if DEBUG
             // Add ImGui
-            services.AddSingleton<ImGuiContext>();
-            services.AddSingleton<ImGuiBackend>();
+            services.AddScoped<ImGuiContext>();
+            services.AddScoped<ImGuiBackend>();
 #endif
         
             // Add migrations
@@ -76,19 +66,5 @@ public static class StartupExtension
         
             return services;
         }
-    }
-
-    extension(IServiceProvider serviceProvider)
-    {
-        public AppCore InitializeAppCore()
-            => serviceProvider.GetRequiredService<AppCore>();
-
-        public IRenderer InitializeRenderer()
-            => serviceProvider.GetRequiredService<IRenderer>();
-
-#if DEBUG
-        public ImGuiBackend InitializeImGui()
-            => serviceProvider.GetRequiredService<ImGuiBackend>();
-#endif
     }
 }

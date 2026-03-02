@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 using ParallelAnimationSystem.Core;
+using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Windowing;
 
@@ -12,27 +13,32 @@ public sealed class DesktopApp
     private readonly ConcurrentQueue<IDrawList> queuedDrawLists = [];
 
     private readonly IServiceProvider serviceProvider;
-    private readonly AudioPlayer audioPlayer;
 
-    private bool running = true;
+    private volatile bool running = true;
 
-    public DesktopApp(IServiceProvider serviceProvider, MediaContext mediaContext, IRenderingFactory renderingFactory)
+    public DesktopApp(IServiceProvider serviceProvider, IRenderingFactory renderingFactory)
     {
         this.serviceProvider = serviceProvider;
 
         for (var i = 0; i < 3; i++)
             drawListPool.Enqueue(renderingFactory.CreateDrawList());
-        
-        // Preload audio player
-        audioPlayer = AudioPlayer.Load(mediaContext.AudioPath);
     }
 
-    public void StartApp()
+    public void StartApp(string beatmapPath, string audioPath)
     {
-        // Initialize app core
-        var appCore = serviceProvider.InitializeAppCore();
+        using var scope = serviceProvider.CreateScope();
+        var sp = scope.ServiceProvider;
+        
+        // Load beatmap
+        BeatmapHelper.ReadBeatmap(beatmapPath, out var beatmapData, out var beatmapFormat);
+        var beatmapService = sp.GetRequiredService<BeatmapService>();
+        beatmapService.LoadBeatmap(beatmapData, beatmapFormat);
+        
+        // Initialize core service
+        var appCore = sp.GetRequiredService<AppCore>();
         
         // Play audio
+        using var audioPlayer = AudioPlayer.Load(audioPath);
         audioPlayer.Play();
         
         // Start render thread
@@ -63,9 +69,12 @@ public sealed class DesktopApp
 
     private void StartRenderThread()
     {
+        using var scope = serviceProvider.CreateScope();
+        var sp = scope.ServiceProvider;
+        
         // Initialize renderer
-        var renderer = serviceProvider.InitializeRenderer();
-        var window = serviceProvider.GetRequiredService<IWindow>();
+        var renderer = sp.GetRequiredService<IRenderer>();
+        var window = sp.GetRequiredService<IWindow>();
 
         while (!window.ShouldClose)
         {

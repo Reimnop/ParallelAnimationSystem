@@ -49,4 +49,11 @@ public static class InteropBeatmapData
         var events = beatmapData.Events;
         return InteropHelper.ObjectToIntPtr(events);
     }
+    
+    [UnmanagedCallersOnly(EntryPoint = "beatmapData_clear")]
+    public static void Clear(IntPtr ptr)
+    {
+        var beatmapData = InteropHelper.IntPtrToObject<BeatmapData>(ptr);
+        beatmapData.Clear();
+    }
 }
