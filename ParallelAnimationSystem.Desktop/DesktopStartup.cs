@@ -1,9 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Mathematics;
-using ParallelAnimationSystem.Rendering.OpenGL;
-using ParallelAnimationSystem.Rendering.OpenGLES;
 using ParallelAnimationSystem.Util;
 
 #if DEBUG

@@ -124,15 +124,12 @@ public class PasActivity : Activity
         var renderer = scope.ServiceProvider.GetRequiredService<IRenderer>();
         var window = scope.ServiceProvider.GetRequiredService<IWindow>();
         
-        // Get a draw list
-        var renderingFactory = scope.ServiceProvider.GetRequiredService<IRenderingFactory>();
-        var drawList = renderingFactory.CreateDrawList();
-        
         // Initialize audio player
         using var audioPlayer = AudioPlayer.Load(audioData);
         audioPlayer.Play();
         
         // Enter main loop
+        var drawList = new DrawList();
         while (!window.ShouldClose)
         {
             window.PollEvents();
@@ -142,7 +139,7 @@ public class PasActivity : Activity
             renderer.ProcessFrame(drawList);
             
             // Clear the draw list for the next frame
-            drawList.Clear();
+            drawList.Reset();
         }
         
         audioPlayer.Stop();

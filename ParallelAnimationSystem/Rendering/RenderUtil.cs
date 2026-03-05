@@ -3,7 +3,7 @@ using System.Numerics;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering.Data;
 
-namespace ParallelAnimationSystem.Rendering.Common;
+namespace ParallelAnimationSystem.Rendering;
 
 public static class RenderUtil
 {

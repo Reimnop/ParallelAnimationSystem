@@ -1,5 +1,4 @@
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using Pamx.Common;
 using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core.Data;
@@ -7,7 +6,6 @@ using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering.Data;
-using ParallelAnimationSystem.Text;
 
 namespace ParallelAnimationSystem.Core;
 
@@ -16,11 +14,9 @@ public class AppCore(
     PlaybackObjectContainer playbackObjects,
     MeshService meshService,
     BeatmapService beatmapService,
-    IRenderingFactory renderingFactory)
+    TextCacheService textCacheService)
 {
-    private readonly ConditionalWeakTable<ShapedRichText, IText> loadedTexts = [];
-
-    public void ProcessFrame(float time, IDrawList drawList)
+    public void ProcessFrame(float time, DrawList drawList)
     {
         beatmapService.ProcessBeatmap(time, out var themeColorState, out var eventState, out var drawItems);
         
@@ -36,8 +32,6 @@ public class AppCore(
         shakeVector *= shake * 0.5f;
         
         // Start queuing draw commands
-        drawList.Clear();
-
         drawList.ClearColor = new ColorRgba(themeColorState.Background);
         drawList.CameraData = new CameraData(
             eventState.CameraPosition + shakeVector,
@@ -105,17 +99,11 @@ public class AppCore(
             }
             else if (appSettings.EnableTextRendering)
             {
-                if (playbackObject.Text is not null)
+                if (textCacheService.TryGetText(drawItem.ObjectIndex, out var textHandle))
                 {
-                    if (!loadedTexts.TryGetValue(playbackObject.Text, out var text))
-                    {
-                        text = renderingFactory.CreateText(playbackObject.Text);
-                        loadedTexts.Add(playbackObject.Text, text);
-                    }
-                    
                     var color1 = drawItem.Color1;
                     var color1Rgba = new ColorRgba(color1, drawItem.Opacity);
-                    drawList.AddText(text, transform, color1Rgba);
+                    drawList.AddText(textHandle, transform, color1Rgba);
                 }
             }
         }

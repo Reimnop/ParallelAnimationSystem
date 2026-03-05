@@ -1,8 +1,7 @@
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Service;
-using ParallelAnimationSystem.Rendering;
+using ParallelAnimationSystem.Core.Text;
 
 #if DEBUG
 using ParallelAnimationSystem.DebugStuff;
@@ -53,6 +52,9 @@ public static class StartupExtension
             services.AddScoped<EventManager>();
             services.AddScoped<RandomSeedService>();
             services.AddScoped<BeatmapService>();
+            services.AddScoped<TextShaper>();
+            services.AddScoped<MeshCacheService>();
+            services.AddScoped<TextCacheService>();
         
 #if DEBUG
             // Add ImGui

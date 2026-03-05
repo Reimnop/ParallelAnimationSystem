@@ -12,12 +12,10 @@ namespace ParallelAnimationSystem.Desktop.FFmpeg;
 
 public class FFmpegFrameGenerator(
     IServiceProvider serviceProvider,
-    IRenderingFactory renderingFactory,
     FFmpegSettings settings,
     ILogger<FFmpegFrameGenerator> logger) : IDisposable
 {
-    private readonly IDrawList drawList = renderingFactory.CreateDrawList();
-    
+    private readonly DrawList drawList = new();
     private readonly StreamWriter ffmpegLogWriter = new("ffmpeg_output.log");
     
     public void Dispose()

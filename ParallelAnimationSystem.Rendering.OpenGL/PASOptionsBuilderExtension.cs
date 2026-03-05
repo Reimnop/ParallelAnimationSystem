@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using ParallelAnimationSystem.Core;
+using ParallelAnimationSystem.Rendering.Common;
 using ParallelAnimationSystem.Windowing.OpenGL;
 
 #if DEBUG
@@ -17,8 +18,6 @@ public static class PASOptionsBuilderExtension
             .UseRenderer<Renderer>()
             .UseRenderingFactory<RenderingFactory>()
             .AddResourceSource(new EmbeddedResourceSource(typeof(PASOptionsBuilderExtension).Assembly));
-
-        builder.Services.AddScoped<IncomingResourceQueue>();
 
         builder.Services.AddSingleton(new OpenGLSettings
         {

@@ -1,6 +1,6 @@
 using TmpParser;
 
-namespace ParallelAnimationSystem.Text;
+namespace ParallelAnimationSystem.Core.Text;
 
 public record struct Mark(float MinX, float MinY, float MaxX, float MaxY, ColorAlpha Color)
 {

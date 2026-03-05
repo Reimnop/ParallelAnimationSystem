@@ -4,12 +4,15 @@ using ParallelAnimationSystem.Rendering;
 
 namespace ParallelAnimationSystem.Core.Service;
 
-public class MeshService
+public class MeshService : IDisposable
 {
-    private readonly List<List<IMesh>> meshes = [];
+    private readonly IRenderingFactory renderingFactory;
+    private readonly List<List<MeshHandle>> meshes = [];
 
     public MeshService(IRenderingFactory renderingFactory, ILogger<MeshService> logger)
     {
+        this.renderingFactory = renderingFactory;
+        
         logger.LogInformation("Registering meshes");
         
         meshes.Add([
@@ -54,7 +57,7 @@ public class MeshService
         ]);
     }
 
-    public bool TryGetMeshForShape(int shape, int shapeOption, [MaybeNullWhen(false)] out IMesh mesh)
+    public bool TryGetMeshForShape(int shape, int shapeOption, out MeshHandle mesh)
     {
         if (shape < meshes.Count && shapeOption < meshes[shape].Count)
         {
@@ -62,7 +65,18 @@ public class MeshService
             return true;
         }
 
-        mesh = null;
+        mesh = default;
         return false;
+    }
+
+    public void Dispose()
+    {
+        foreach (var meshList in meshes)
+        {
+            foreach (var mesh in meshList)
+            {
+                renderingFactory.DestroyMesh(mesh);
+            }
+        }
     }
 }

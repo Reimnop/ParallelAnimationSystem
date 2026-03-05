@@ -1,14 +1,14 @@
-using System.Diagnostics.CodeAnalysis;
 using ParallelAnimationSystem.Core.Data;
+using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Rendering;
 using TmpIO;
 using TmpParser;
 
-namespace ParallelAnimationSystem.Text;
+namespace ParallelAnimationSystem.Core.Text;
 
-public class TextShaper(FontCollection fonts)
+public class TextShaper(FontService fontService)
 {
-    private record ShapedGlyph(float Position, float YOffset, IFont Font, TmpGlyph Glyph, float Size, Style Style);
+    private record ShapedGlyph(float Position, float YOffset, FontHandle Font, TmpGlyph Glyph, float Size, Style Style);
     
     private record Line(
         float Ascender,
@@ -67,7 +67,7 @@ public class TextShaper(FontCollection fonts)
         }
         
         // Get default font
-        if (!fonts.TryGetFontStack(defaultFontName, out var defaultFontStack))
+        if (!fontService.TryGetFontStack(defaultFontName, out var defaultFontStack))
             throw new InvalidOperationException($"Default font '{defaultFontName}' not found in font collection");
 
         var state = new ShapingState
@@ -144,7 +144,11 @@ public class TextShaper(FontCollection fonts)
                 var x = shapedGlyph.Position;
                 var font = shapedGlyph.Font;
                 var glyph = shapedGlyph.Glyph;
-                var metadata = font.Metadata;
+                
+                if (!fontService.TryGetFontInfo(font, out var fontInfo))
+                    continue;
+                
+                var metadata = fontInfo.Metadata;
                 if (glyph.Width != 0.0f && glyph.Height != 0.0f)
                 {
                     var sizeMultiplier = shapedGlyph.Size / metadata.Size;
@@ -157,7 +161,7 @@ public class TextShaper(FontCollection fonts)
                     yield return new ShapedTextGlyph(
                         minX, minY, maxX, maxY,
                         glyph.MinX, glyph.MinY, glyph.MaxX, glyph.MaxY,
-                        color, boldItalic, shapedGlyph.Font.Id);
+                        color, boldItalic, shapedGlyph.Font);
                 }
             }
 
@@ -186,7 +190,7 @@ public class TextShaper(FontCollection fonts)
                 yield return new ShapedTextGlyph(
                     minX, minY, maxX, maxY,
                     0.0f, 0.0f, 0.0f, 0.0f,
-                    color, BoldItalic.None, -1); }
+                    color, BoldItalic.None, null); }
             
             // Bring y to the BASELINE of the next line
             if (i + 1 < linesOfShapedGlyphs.Count)
@@ -230,7 +234,10 @@ public class TextShaper(FontCollection fonts)
                     if (!TryGetGlyph(fontStack, c, out var glyph, out var font))
                         continue;
                     
-                    var fontMetadata = font.Metadata;
+                    if (!fontService.TryGetFontInfo(font, out var fontInfo))
+                        continue;
+                    
+                    var fontMetadata = fontInfo.Metadata;
                     
                     var currentSize = ResolveMeasurement(state.CurrentSize, fontStack.Size, fontStack.Size);
                     var currentCSpace = ResolveMeasurement(state.CurrentCSpace, fontStack.Size, fontStack.Size);
@@ -345,7 +352,7 @@ public class TextShaper(FontCollection fonts)
             if (element is FontElement fontElement)
             {
                 var fontName = fontElement.Value?.ToLowerInvariant();
-                if (!string.IsNullOrEmpty(fontName) && fonts.TryGetFontStack(fontName, out var fontStack))
+                if (!string.IsNullOrEmpty(fontName) && fontService.TryGetFontStack(fontName, out var fontStack))
                     state.CurrentFontStack = fontStack;
             }
         }
@@ -355,7 +362,11 @@ public class TextShaper(FontCollection fonts)
         
         var lastFontStack = state.CurrentFontStack;
         var firstFontHandle = lastFontStack.Fonts[0];
-        var firstFontMetadata = firstFontHandle.Metadata;
+        
+        if (!fontService.TryGetFontInfo(firstFontHandle, out var firstFontInfo))
+            throw new InvalidOperationException($"Could not get font info for font handle {firstFontHandle.Id}");
+        
+        var firstFontMetadata = firstFontInfo.Metadata;
         var lastCurrentSize = ResolveMeasurement(state.CurrentSize, lastFontStack.Size, lastFontStack.Size);
         var normalizedLastAscender = firstFontMetadata.Ascender / firstFontMetadata.Size;
         var normalizedLastDescender = firstFontMetadata.Descender / firstFontMetadata.Size;
@@ -380,14 +391,17 @@ public class TextShaper(FontCollection fonts)
             _ => throw new ArgumentOutOfRangeException(nameof(measurement)),
         };
 
-    private bool TryGetGlyph(FontStack fontStack, char c, out TmpGlyph glyph, [MaybeNullWhen(false)] out IFont font)
+    private bool TryGetGlyph(FontStack fontStack, char c, out TmpGlyph glyph, out FontHandle font)
     {
         foreach (var fontHandle in fontStack.Fonts)
         {
-            if (!fontHandle.TryGetCharacterFromOrdinal(c, out var character))
+            if (!fontService.TryGetFontInfo(fontHandle, out var fontInfo))
                 continue;
             
-            if (!fontHandle.TryGetGlyphFromId(character.GlyphId, out glyph))
+            if (!fontInfo.TryGetCharacterFromOrdinal(c, out var character))
+                continue;
+            
+            if (!fontInfo.TryGetGlyphFromId(character.GlyphId, out glyph))
                 continue;
             
             font = fontHandle;
@@ -395,7 +409,7 @@ public class TextShaper(FontCollection fonts)
         }
         
         glyph = default;
-        font = null;
+        font = default;
         return false;
     }
     

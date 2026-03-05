@@ -3,8 +3,8 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core.Data;
+using ParallelAnimationSystem.Core.Text;
 using ParallelAnimationSystem.Rendering.Data;
-using ParallelAnimationSystem.Text;
 
 namespace ParallelAnimationSystem.Core.Service;
 

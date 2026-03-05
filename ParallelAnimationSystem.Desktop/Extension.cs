@@ -6,6 +6,7 @@ using ParallelAnimationSystem.Rendering.OpenGLES;
 using ParallelAnimationSystem.Windowing;
 
 #if DEBUG
+using ParallelAnimationSystem.DebugStuff;
 using ParallelAnimationSystem.Desktop.DebugStuff;
 #endif
 
