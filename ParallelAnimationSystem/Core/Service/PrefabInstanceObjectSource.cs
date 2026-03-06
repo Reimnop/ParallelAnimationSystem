@@ -5,6 +5,7 @@ using System.Numerics;
 using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Core.Model;
+using ParallelAnimationSystem.Core.Shape;
 using ParallelAnimationSystem.Core.Text;
 using ParallelAnimationSystem.Rendering.Data;
 using ParallelAnimationSystem.Util;
@@ -266,6 +267,9 @@ public class PrefabInstanceObjectSource : IDisposable
             Shape = beatmapObject.Shape,
             Text = beatmapObject.Text is not null 
                 ? textShaper.ShapeText(beatmapObject.Text, beatmapObject.Origin)
+                : null,
+            CustomShapeMesh = beatmapObject.CustomShapeInfo is not null
+                ? VGShape.GenerateMesh(beatmapObject.CustomShapeInfo)
                 : null
         };
 
@@ -563,6 +567,11 @@ public class PrefabInstanceObjectSource : IDisposable
             case nameof(BeatmapObject.Text):
                 playbackObject.Text = beatmapObject.Text is not null 
                     ? textShaper.ShapeText(beatmapObject.Text, beatmapObject.Origin)
+                    : null;
+                break;
+            case nameof(BeatmapObject.CustomShapeInfo):
+                playbackObject.CustomShapeMesh = beatmapObject.CustomShapeInfo is not null
+                    ? VGShape.GenerateMesh(beatmapObject.CustomShapeInfo)
                     : null;
                 break;
         }

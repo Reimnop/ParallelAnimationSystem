@@ -10,6 +10,18 @@ public static class VGShape
     public const int MaxVertexCount = 32;
     public const int MinVertexCount = 3;
     public const int SegmentsPerCorner = 4; // Adjust for smoother/rougher corners
+
+    public static VGMesh GenerateMesh(VGShapeInfo shapeInfo)
+    {
+        var radius = shapeInfo.Sides switch
+        {
+            3 => 0.575f,
+            4 => 0.7071f,
+            6 => 0.5f,
+            _ => 0.5f
+        };
+        return GenerateRoundedRingMesh(radius, shapeInfo.Sides, shapeInfo.Roundness, shapeInfo.Thickness, shapeInfo.SliceCount);
+    }
     
     public static VGMesh GenerateFilledMesh(float radius, int vertexCount)
     {
@@ -268,12 +280,12 @@ public static class VGShape
         return new VGMesh(vertices, indices);
     }
 
-    public static VGMesh RoundedRingMesh(
-        float radius = 0.5f,
-        int cornerCount = 4,
-        float cornerRoundness = 0.25f,
-        float thickness = 0.2f,
-        int sliceCount = -1) // -1 means draw full shape
+    public static VGMesh GenerateRoundedRingMesh(
+        float radius,
+        int cornerCount,
+        float cornerRoundness,
+        float thickness,
+        int sliceCount) // -1 means draw full shape
     {
         if (cornerCount is < MinVertexCount or > MaxVertexCount)
             throw new ArgumentOutOfRangeException(nameof(cornerCount),
@@ -295,7 +307,7 @@ public static class VGShape
             return GenerateRoundedPolygonMesh(radius, cornerCount, cornerRoundness);
 
         if (cornerCount == sliceCount)
-            return RoundedRingMesh(radius, cornerCount, cornerRoundness, thickness);
+            return GenerateRoundedRingMesh(radius, cornerCount, cornerRoundness, thickness);
         
         var verticesPerRing = 0;
 

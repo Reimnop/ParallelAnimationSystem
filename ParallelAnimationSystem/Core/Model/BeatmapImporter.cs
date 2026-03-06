@@ -3,6 +3,7 @@ using Pamx.Common;
 using Pamx.Common.Data;
 using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core.Data;
+using ParallelAnimationSystem.Core.Shape;
 
 namespace ParallelAnimationSystem.Core.Model;
 
@@ -240,7 +241,14 @@ public static class BeatmapImporter
             AutoKillType = obj.AutoKillType,
             AutoKillOffset = obj.AutoKillOffset,
             Shape = obj.Shape,
-            Text = obj.Text
+            Text = obj.Text,
+            CustomShapeInfo = obj.CustomShapeParams.HasValue 
+                ? new VGShapeInfo(
+                    obj.CustomShapeParams.Value.Sides,
+                    obj.CustomShapeParams.Value.Roundness,
+                    obj.CustomShapeParams.Value.Thickness,
+                    obj.CustomShapeParams.Value.Slices)
+                : null
         };
 
         var positionKeyframes = obj.PositionEvents.Select(CreateVector2Keyframe);

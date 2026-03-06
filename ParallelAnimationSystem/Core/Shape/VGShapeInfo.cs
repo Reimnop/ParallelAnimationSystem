@@ -1,13 +1,12 @@
 ﻿namespace ParallelAnimationSystem.Core.Shape;
 
-public class VGShapeInfo(float radius, int vertexCount, float cornerRoundness, float thickness, int sliceCount)
+public class VGShapeInfo(int sides, float roundness, float thickness, int sliceCount)
 {
-    public float Radius => radius;
-    public int VertexCount => vertexCount;
-    public float CornerRoundness => cornerRoundness;
+    public int Sides => sides;
+    public float Roundness => roundness;
     public float Thickness => thickness;
     public int SliceCount => sliceCount;
 
     public override int GetHashCode()
-        => HashCode.Combine(Radius, VertexCount, CornerRoundness, Thickness, SliceCount);
+        => HashCode.Combine(Sides, Roundness, Thickness, SliceCount);
 }

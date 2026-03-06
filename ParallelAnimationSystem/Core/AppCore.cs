@@ -14,7 +14,8 @@ public class AppCore(
     PlaybackObjectContainer playbackObjects,
     MeshService meshService,
     BeatmapService beatmapService,
-    TextCacheService textCacheService)
+    TextCacheService textCacheService,
+    MeshCacheService meshCacheService)
 {
     public void ProcessFrame(float time, DrawList drawList)
     {
@@ -83,9 +84,7 @@ public class AppCore(
             
             if (playbackObject.Shape != ObjectShape.Text)
             {
-                playbackObject.Shape.ToSeparate(out var shapeIndex, out var shapeOptionIndex);
-
-                if (meshService.TryGetMeshForShape(shapeIndex, shapeOptionIndex, out var mesh))
+                if (TryGetMesh(playbackObject, drawItem.ObjectIndex, out var mesh))
                 {
                     var renderMode = playbackObject.RenderMode;
                         
@@ -107,6 +106,28 @@ public class AppCore(
                 }
             }
         }
+    }
+
+    private bool TryGetMesh(PlaybackObject playbackObject, int objectIndex, out MeshHandle meshHandle)
+    {
+        playbackObject.Shape.ToSeparate(out var shapeIndex, out var shapeOptionIndex);
+        
+        // look in main mesh service first
+        if (meshService.TryGetMeshForShape(shapeIndex, shapeOptionIndex, out meshHandle))
+            return true;
+        
+        // then look in mesh cache if shape is custom
+        if (playbackObject.Shape 
+            is ObjectShape.SquareCustom 
+            or ObjectShape.CircleCustom
+            or ObjectShape.TriangleCustom
+            or ObjectShape.Custom
+            or ObjectShape.HexagonCustom)
+            if (meshCacheService.TryGetMesh(objectIndex, out meshHandle))
+                return true;
+        
+        meshHandle = default;
+        return false;
     }
     
     private static HueShiftPostProcessingData CreateHueShiftData(float hue)
