@@ -287,10 +287,7 @@ public static class VGShape
         float thickness,
         int sliceCount) // -1 means draw full shape
     {
-        if (cornerCount is < MinVertexCount or > MaxVertexCount)
-            throw new ArgumentOutOfRangeException(nameof(cornerCount),
-                $"Corner count must be between {MinVertexCount} and {MaxVertexCount}");
-        
+        cornerCount = Math.Clamp(cornerCount, MinVertexCount, MaxVertexCount);
         sliceCount = sliceCount < 0 ? cornerCount : Math.Clamp(sliceCount, 1, cornerCount);
 
         if (cornerCount > 12)
