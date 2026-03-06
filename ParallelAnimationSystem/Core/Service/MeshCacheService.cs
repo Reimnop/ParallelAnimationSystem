@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using ParallelAnimationSystem.Core.Data;
+using ParallelAnimationSystem.Core.Shape;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Util;
 
@@ -7,10 +8,18 @@ namespace ParallelAnimationSystem.Core.Service;
 
 public class MeshCacheService
 {
+    private class CacheItem(Identifier id, MeshHandle meshHandle) : IIdentifiable
+    {
+        public Identifier Id => id;
+        public MeshHandle MeshHandle => meshHandle;
+        public int RefCount { get; set; }
+    }
+    
     private readonly IRenderingFactory renderingFactory;
     private readonly PlaybackObjectContainer playbackObjects;
 
-    private readonly List<MeshHandle?> meshHandles = [];
+    private readonly IndexedList<CacheItem> cacheItems = [];
+    private readonly List<int?> objectIndexToCacheIndex = [];
 
     public MeshCacheService(IRenderingFactory renderingFactory, PlaybackObjectContainer playbackObjects)
     {
@@ -58,23 +67,23 @@ public class MeshCacheService
     private void InsertVisiblePlaybackObject(IndexedCollectionEntry<PlaybackObject> entry)
     {
         var playbackObject = entry.Item;
-        if (playbackObject.CustomShapeMesh is not null)
+        if (playbackObject.CustomShapeInfo is not null)
         {
-            meshHandles.EnsureCount(entry.Index + 1);
-            meshHandles[entry.Index] = renderingFactory.CreateMesh(playbackObject.CustomShapeMesh.Vertices, playbackObject.CustomShapeMesh.Indices);
+            objectIndexToCacheIndex.EnsureCount(entry.Index + 1);
+            objectIndexToCacheIndex[entry.Index] = CreateMeshCacheHandle(playbackObject.CustomShapeInfo);
         }
     }
     
     private void RemoveVisiblePlaybackObject(IndexedCollectionEntry<PlaybackObject> entry)
     {
         var playbackObject = entry.Item;
-        if (playbackObject.CustomShapeMesh is not null)
+        if (playbackObject.CustomShapeInfo is not null)
         {
-            var meshHandle = meshHandles[entry.Index];
-            if (meshHandle.HasValue)
+            var cacheIndex = objectIndexToCacheIndex[entry.Index];
+            if (cacheIndex.HasValue)
             {
-                renderingFactory.DestroyMesh(meshHandle.Value);
-                meshHandles[entry.Index] = null;
+                DestroyMeshCacheHandle(cacheIndex.Value);
+                objectIndexToCacheIndex[entry.Index] = null;
             }
         }
     }
@@ -94,21 +103,21 @@ public class MeshCacheService
                 else
                     RemoveVisiblePlaybackObject(new IndexedCollectionEntry<PlaybackObject>(playbackObject, index));
                 break;
-            case nameof(PlaybackObject.CustomShapeMesh):
+            case nameof(PlaybackObject.CustomShapeInfo):
                 if (playbackObject.Type == PlaybackObjectType.Visible)
                 {
-                    if (index < meshHandles.Count)
+                    if (index < objectIndexToCacheIndex.Count)
                     {
-                        var oldMeshHandle = meshHandles[index];
-                        if (oldMeshHandle.HasValue)
-                            renderingFactory.DestroyMesh(oldMeshHandle.Value);
-                        meshHandles[index] = null;
+                        var oldMeshCacheHandle = objectIndexToCacheIndex[index];
+                        if (oldMeshCacheHandle.HasValue)
+                            DestroyMeshCacheHandle(oldMeshCacheHandle.Value);
+                        objectIndexToCacheIndex[index] = null;
                     }
 
-                    if (playbackObject.CustomShapeMesh is not null)
+                    if (playbackObject.CustomShapeInfo is not null)
                     {
-                        meshHandles.EnsureCount(index + 1);
-                        meshHandles[index] = renderingFactory.CreateMesh(playbackObject.CustomShapeMesh.Vertices, playbackObject.CustomShapeMesh.Indices);
+                        objectIndexToCacheIndex.EnsureCount(index + 1);
+                        objectIndexToCacheIndex[index] = CreateMeshCacheHandle(playbackObject.CustomShapeInfo);
                     }
                 }
                 break;
@@ -117,16 +126,58 @@ public class MeshCacheService
     
     public bool TryGetMesh(int objectIndex, out MeshHandle meshHandle)
     {
-        if (objectIndex >= 0 && objectIndex < meshHandles.Count)
+        if (objectIndex >= 0 && objectIndex < objectIndexToCacheIndex.Count)
         {
-            var handle = meshHandles[objectIndex];
-            if (handle.HasValue)
+            var meshCacheHandle = objectIndexToCacheIndex[objectIndex];
+            if (meshCacheHandle.HasValue && cacheItems.TryGetItem(meshCacheHandle.Value, out var cacheItem))
             {
-                meshHandle = handle.Value;
+                meshHandle = cacheItem.MeshHandle;
                 return true;
             }
         }
         meshHandle = default;
         return false;
+    }
+
+    private int CreateMeshCacheHandle(VGShapeInfo shapeInfo)
+    {
+        var id = GetShapeInfoId(shapeInfo);
+        var index = cacheItems.GetIndexForId(id);
+        if (cacheItems.TryGetItem(index, out var cacheItem))
+        {
+            cacheItem.RefCount++;
+            return index;
+        }
+
+        var mesh = VGShape.GenerateMesh(shapeInfo);
+        var meshHandle = renderingFactory.CreateMesh(mesh.Vertices, mesh.Indices);
+        cacheItem = new CacheItem(id, meshHandle)
+        {
+            RefCount = 1
+        };
+        cacheItems.Insert(cacheItem);
+        return index;
+    }
+    
+    private void DestroyMeshCacheHandle(int index)
+    {
+        if (cacheItems.TryGetItem(index, out var cacheItem))
+        {
+            cacheItem.RefCount--;
+            if (cacheItem.RefCount <= 0)
+            {
+                renderingFactory.DestroyMesh(cacheItem.MeshHandle);
+                cacheItems.Remove(index);
+            }
+        }
+    }
+
+    private static Identifier GetShapeInfoId(VGShapeInfo shapeInfo)
+    {
+        var sidesHash = NumberUtil.ComputeHash(shapeInfo.Sides);
+        var roundnessHash = NumberUtil.ComputeHash(shapeInfo.Roundness);
+        var thicknessHash = NumberUtil.ComputeHash(shapeInfo.Thickness);
+        var sliceCountHash = NumberUtil.ComputeHash(shapeInfo.SliceCount);
+        return NumberUtil.Mix(sidesHash, roundnessHash, thicknessHash, sliceCountHash);
     }
 }

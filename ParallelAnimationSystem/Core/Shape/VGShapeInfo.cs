@@ -6,7 +6,4 @@ public class VGShapeInfo(int sides, float roundness, float thickness, int sliceC
     public float Roundness => roundness;
     public float Thickness => thickness;
     public int SliceCount => sliceCount;
-
-    public override int GetHashCode()
-        => HashCode.Combine(Sides, Roundness, Thickness, SliceCount);
 }

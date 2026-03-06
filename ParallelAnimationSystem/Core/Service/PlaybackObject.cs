@@ -75,7 +75,7 @@ public class PlaybackObject(Identifier id) : IIdentifiable, INotifyPropertyChang
         set => SetField(ref field, value);
     }
     
-    public VGMesh? CustomShapeMesh 
+    public VGShapeInfo? CustomShapeInfo 
     {
         get;
         set => SetField(ref field, value);

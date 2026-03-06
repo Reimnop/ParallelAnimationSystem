@@ -268,9 +268,7 @@ public class PrefabInstanceObjectSource : IDisposable
             Text = beatmapObject.Text is not null 
                 ? textShaper.ShapeText(beatmapObject.Text, beatmapObject.Origin)
                 : null,
-            CustomShapeMesh = beatmapObject.CustomShapeInfo is not null
-                ? VGShape.GenerateMesh(beatmapObject.CustomShapeInfo)
-                : null
+            CustomShapeInfo = beatmapObject.CustomShapeInfo
         };
 
         // populate sequences
@@ -570,9 +568,7 @@ public class PrefabInstanceObjectSource : IDisposable
                     : null;
                 break;
             case nameof(BeatmapObject.CustomShapeInfo):
-                playbackObject.CustomShapeMesh = beatmapObject.CustomShapeInfo is not null
-                    ? VGShape.GenerateMesh(beatmapObject.CustomShapeInfo)
-                    : null;
+                playbackObject.CustomShapeInfo = beatmapObject.CustomShapeInfo;
                 break;
         }
     }
