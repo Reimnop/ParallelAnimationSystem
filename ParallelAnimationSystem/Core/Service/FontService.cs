@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using ParallelAnimationSystem.Core.Text;
 using ParallelAnimationSystem.Rendering;
+using ParallelAnimationSystem.Rendering.Handle;
 using ParallelAnimationSystem.Util;
 using TmpIO;
 

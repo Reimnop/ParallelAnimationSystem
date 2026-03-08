@@ -1,4 +1,5 @@
 using ParallelAnimationSystem.Rendering;
+using ParallelAnimationSystem.Rendering.Handle;
 
 namespace ParallelAnimationSystem.Core.Text;
 

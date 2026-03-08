@@ -6,6 +6,7 @@ using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering.Data;
+using ParallelAnimationSystem.Rendering.Handle;
 
 namespace ParallelAnimationSystem.Core;
 

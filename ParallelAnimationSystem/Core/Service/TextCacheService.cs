@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Rendering;
+using ParallelAnimationSystem.Rendering.Handle;
 using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core.Service;

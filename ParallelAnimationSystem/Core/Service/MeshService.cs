@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Rendering;
+using ParallelAnimationSystem.Rendering.Handle;
 
 namespace ParallelAnimationSystem.Core.Service;
 

@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
 using ParallelAnimationSystem.Core.Text;
 using ParallelAnimationSystem.Data;
+using ParallelAnimationSystem.Rendering.Handle;
 
 namespace ParallelAnimationSystem.Rendering.Common;
 

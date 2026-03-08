@@ -1,4 +1,4 @@
-namespace ParallelAnimationSystem.Rendering;
+namespace ParallelAnimationSystem.Rendering.Handle;
 
 public readonly struct FontHandle(int id) : IRenderingResourceHandle
 {
