@@ -25,21 +25,13 @@ public static class RenderUtil
     
     public static bool ShouldUseTransparentDrawList(in DrawCommand drawCommand, in DrawData drawData)
     {
-        if (drawCommand.DrawType != DrawType.Text)
-        {
-            ref var meshDrawItem = ref drawData.MeshDrawItems[drawCommand.DrawId];
-            if (meshDrawItem.RenderMode == RenderMode.Normal)
-            {
-                return meshDrawItem.Color1.A < 1f; // We only use Color1 in normal render mode
-            }
-            else
-            {
-                return meshDrawItem.Color1.A < 1f || meshDrawItem.Color2.A < 1f;
-            }
-        }
-        else // Text is always transparent
-        {
-            return true;
-        }
+        if (drawCommand.DrawType == DrawType.Text)
+            return true; // Text is always transparent
+        
+        ref var meshDrawItem = ref drawData.MeshDrawItems[drawCommand.DrawId];
+        if (meshDrawItem.RenderMode == RenderMode.Normal)
+            return meshDrawItem.Color1.A < 1f; // We only use Color1 in normal render mode
+
+        return meshDrawItem.Color1.A < 1f || meshDrawItem.Color2.A < 1f;
     }
 }
