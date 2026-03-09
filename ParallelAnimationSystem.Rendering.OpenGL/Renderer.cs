@@ -36,6 +36,13 @@ public class Renderer : IRenderer, IDisposable
         public int GlyphCount;
     }
     
+    private struct DrawCommandWithDepth
+    {
+        public DrawType DrawType;
+        public int DrawId;
+        public float Depth;
+    }
+    
     private const int MaxFontsCount = 12;
     private const int MsaaSamples = 4;
     private const int MaxOverlays = 10;
@@ -82,8 +89,8 @@ public class Renderer : IRenderer, IDisposable
 
     private readonly int overlayFramebufferHandle;
 
-    private readonly List<DrawCommand> opaqueDrawCommands = [];
-    private readonly List<DrawCommand> transparentDrawCommands = [];
+    private readonly List<DrawCommandWithDepth> opaqueDrawCommands = [];
+    private readonly List<DrawCommandWithDepth> transparentDrawCommands = [];
     
     private readonly Buffer<DrawElementsIndirectCommand> multiDrawIndirectBuffer = new();
     private readonly Buffer<MultiDrawItem> multiDrawStorageBuffer = new();
@@ -338,7 +345,7 @@ public class Renderer : IRenderer, IDisposable
     public bool RemoveOverlayRenderer(IOverlayRenderer overlayRenderer) 
         => overlayRenderers.Remove(overlayRenderer);
 
-    public void ProcessFrame(DrawList drawList)
+    public void ProcessFrame(IDrawDataProvider drawDataProvider)
     {
         var size = window.FramebufferSize;
         var renderWidth = size.X;
@@ -365,46 +372,36 @@ public class Renderer : IRenderer, IDisposable
         // Update OpenGL data
         UpdateOpenGlData(renderSize);
         
+        // Get draw data
+        var drawData = drawDataProvider.DrawData;
+        
         // Split draw list into opaque and transparent
         opaqueDrawCommands.Clear();
         transparentDrawCommands.Clear();
 
-        var meshDrawItems = drawList.MeshDrawItems;
-        var textDrawItems = drawList.TextDrawItems;
-        
-        foreach (var drawCommand in drawList.DrawCommands)
+        var currentDepthInt = 0;
+        foreach (ref var drawCommand in drawData.DrawCommands)
         {
-            // Add to appropriate list
-            if (drawCommand.DrawType != DrawType.Text)
+            if (RenderUtil.ShouldUseTransparentDrawList(drawCommand, drawData))
             {
-                ref var meshDrawItem = ref meshDrawItems[drawCommand.DrawId];
-                if (meshDrawItem.RenderMode == RenderMode.Normal)
+                transparentDrawCommands.Add(new DrawCommandWithDepth
                 {
-                    if (meshDrawItem.Color1.A < 1f) // We only use Color1 in normal render mode
-                    {
-                        transparentDrawCommands.Add(drawCommand);
-                    }
-                    else
-                    {
-                        opaqueDrawCommands.Add(drawCommand);
-                    }
-                }
-                else
-                {
-                    if (meshDrawItem.Color1.A < 1f || meshDrawItem.Color2.A < 1f)
-                    {
-                        transparentDrawCommands.Add(drawCommand);
-                    }
-                    else
-                    {
-                        opaqueDrawCommands.Add(drawCommand);
-                    }
-                }
+                    DrawType = drawCommand.DrawType,
+                    DrawId = drawCommand.DrawId,
+                    Depth = currentDepthInt / (float)(1 << 24)
+                });
             }
-            else // Text is always transparent
+            else
             {
-                transparentDrawCommands.Add(drawCommand);
+                opaqueDrawCommands.Add(new DrawCommandWithDepth
+                {
+                    DrawType = drawCommand.DrawType,
+                    DrawId = drawCommand.DrawId,
+                    Depth = currentDepthInt / (float)(1 << 24)
+                });
             }
+
+            currentDepthInt++;
         }
         
         // Reverse opaque draw data list so that it is drawn
@@ -412,15 +409,15 @@ public class Renderer : IRenderer, IDisposable
         opaqueDrawCommands.Reverse();
         
         // Get camera matrix (view and projection)
-        var camera = RenderUtil.GetCameraMatrix(drawList.CameraData, renderSize);
+        var camera = RenderUtil.GetCameraMatrix(drawData.CameraData, renderSize);
         
         // Render
         GL.Viewport(0, 0, currentFboSize.X, currentFboSize.Y);
         
         // Clear buffers
-        var clearColor = drawList.ClearColor.ToVector();
+        var clearColor = drawData.ClearColor;
         var depth = 0.0f;
-        GL.ClearNamedFramebufferf(fboHandle, OpenTK.Graphics.OpenGL.Buffer.Color, 0, in clearColor.X);
+        GL.ClearNamedFramebufferf(fboHandle, OpenTK.Graphics.OpenGL.Buffer.Color, 0, in clearColor.R);
         GL.ClearNamedFramebufferf(fboHandle, OpenTK.Graphics.OpenGL.Buffer.Depth, 0, in depth);
         
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, fboHandle);
@@ -460,8 +457,7 @@ public class Renderer : IRenderer, IDisposable
         // Render opaque draw data
         RenderDrawDataList(
             CollectionsMarshal.AsSpan(opaqueDrawCommands),
-            meshDrawItems,
-            textDrawItems,
+            drawData,
             camera);
         
         // Transparent pass, enable blending, disable depth write
@@ -472,8 +468,7 @@ public class Renderer : IRenderer, IDisposable
         // Render transparent draw data
         RenderDrawDataList(
             CollectionsMarshal.AsSpan(transparentDrawCommands),
-            meshDrawItems,
-            textDrawItems,
+            drawData,
             camera);
         
         // Restore depth write state
@@ -495,7 +490,7 @@ public class Renderer : IRenderer, IDisposable
             BlitFramebufferFilter.Linear);
         
         // Do post-processing
-        var finalTexture = HandlePostProcessing(drawList.PostProcessingData, postProcessTextureHandle1, postProcessTextureHandle2);
+        var finalTexture = HandlePostProcessing(drawData.PostProcessingData, postProcessTextureHandle1, postProcessTextureHandle2);
         
         // Render overlays into final texture
         {
@@ -564,7 +559,7 @@ public class Renderer : IRenderer, IDisposable
         window.Present(overlayFramebufferHandle, Vector4.Zero, size, Vector2i.Zero);
     }
 
-    private void RenderDrawDataList(Span<DrawCommand> drawCommands, Span<MeshDrawItem> meshDrawItems, Span<TextDrawItem> textDrawItems, Matrix3x2 camera)
+    private void RenderDrawDataList(in Span<DrawCommandWithDepth> drawCommands, in DrawData drawData, in Matrix3x2 camera)
     {
         if (drawCommands.Length == 0)
             return;
@@ -582,7 +577,7 @@ public class Renderer : IRenderer, IDisposable
             {
                 case DrawType.Mesh:
                 {
-                    ref var meshDrawItem = ref meshDrawItems[drawCommand.DrawId];
+                    ref var meshDrawItem = ref drawData.MeshDrawItems[drawCommand.DrawId];
                     ref var meshInfo = ref meshInfosSpan[meshDrawItem.MeshHandle.Id];
                     
                     var mvp = meshDrawItem.Transform * camera;
@@ -590,9 +585,9 @@ public class Renderer : IRenderer, IDisposable
                     multiDrawStorageBuffer.Append(new MultiDrawItem
                     {
                         Mvp = mvp,
-                        Color1 = meshDrawItem.Color1.ToVector(),
-                        Color2 = meshDrawItem.Color2.ToVector(),
-                        Z = RenderUtil.EncodeIntDepth(drawCommand.DrawIndex),
+                        Color1 = meshDrawItem.Color1,
+                        Color2 = meshDrawItem.Color2,
+                        Z = drawCommand.Depth,
                         RenderMode = (int) meshDrawItem.RenderMode,
                         RenderType = 0, // 0 is mesh
                         GlyphOffset = 0
@@ -610,7 +605,7 @@ public class Renderer : IRenderer, IDisposable
                 }
                 case DrawType.Text:
                 {
-                    ref var textDrawItem = ref textDrawItems[drawCommand.DrawId];
+                    ref var textDrawItem = ref drawData.TextDrawItems[drawCommand.DrawId];
                     ref var textInfo = ref textInfosSpan[textDrawItem.TextHandle.Id];
                     
                     var mvp = textDrawItem.Transform * camera;
@@ -618,8 +613,8 @@ public class Renderer : IRenderer, IDisposable
                     multiDrawStorageBuffer.Append(new MultiDrawItem
                     {
                         Mvp = mvp,
-                        Color1 = textDrawItem.Color.ToVector(),
-                        Z = RenderUtil.EncodeIntDepth(drawCommand.DrawIndex),
+                        Color1 = textDrawItem.Color,
+                        Z = drawCommand.Depth,
                         RenderMode = 0, // 0 is normal
                         RenderType = 1, // 1 is text
                         GlyphOffset = textInfo.GlyphOffset

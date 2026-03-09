@@ -5,44 +5,21 @@ using ParallelAnimationSystem.Rendering.Handle;
 
 namespace ParallelAnimationSystem.Rendering;
 
-public struct MeshDrawItem
+public class DrawList : IDrawDataProvider
 {
-    public MeshHandle MeshHandle;
-    public Matrix3x2 Transform;
-    public ColorRgba Color1;
-    public ColorRgba Color2;
-    public RenderMode RenderMode;
-}
-
-public struct TextDrawItem
-{
-    public TextHandle TextHandle;
-    public Matrix3x2 Transform;
-    public ColorRgba Color;
-}
-
-public enum DrawType
-{
-    Mesh,
-    Text
-}
-
-public struct DrawCommand
-{
-    public DrawType DrawType;
-    public int DrawId;
-    public int DrawIndex;
-}
-
-public class DrawList
-{
+    public DrawData DrawData => new()
+    {
+        CameraData = CameraData,
+        PostProcessingData = PostProcessingData,
+        ClearColor = ClearColor,
+        MeshDrawItems = meshDrawItems.AsSpan(0, meshDrawItemCount),
+        TextDrawItems = textDrawItems.AsSpan(0, textDrawItemCount),
+        DrawCommands = drawCommands.AsSpan(0, drawCommandCount)
+    };
+    
     public CameraData CameraData { get; set; } = new(Vector2.Zero, 10.0f, 0.0f);
     public PostProcessingData PostProcessingData { get; set; }
     public ColorRgba ClearColor { get; set; } = new(0.0f, 0.0f, 0.0f, 1.0f);
-    
-    public Span<MeshDrawItem> MeshDrawItems => meshDrawItems.AsSpan(0, meshDrawItemCount);
-    public Span<TextDrawItem> TextDrawItems => textDrawItems.AsSpan(0, textDrawItemCount);
-    public Span<DrawCommand> DrawCommands => drawCommands.AsSpan(0, drawCommandCount);
 
     private MeshDrawItem[] meshDrawItems = new MeshDrawItem[1000];
     private TextDrawItem[] textDrawItems = new TextDrawItem[1000];
@@ -66,7 +43,6 @@ public class DrawList
         ref var drawCommand = ref drawCommands[drawCommandCount];
         drawCommand.DrawType = DrawType.Mesh;
         drawCommand.DrawId = meshDrawItemCount;
-        drawCommand.DrawIndex = drawCommandCount;
         drawCommandCount++;
         
         meshDrawItemCount++;
@@ -84,7 +60,6 @@ public class DrawList
         ref var drawCommand = ref drawCommands[drawCommandCount];
         drawCommand.DrawType = DrawType.Text;
         drawCommand.DrawId = textDrawItemCount;
-        drawCommand.DrawIndex = drawCommandCount;
         drawCommandCount++;
         
         textDrawItemCount++;

@@ -39,6 +39,13 @@ public class Renderer : IRenderer, IDisposable
         public int GlyphCount;
     }
     
+    private struct DrawCommandWithDepth
+    {
+        public DrawType DrawType;
+        public int DrawId;
+        public float Depth;
+    }
+    
     private readonly IOpenGLWindow window;
     
     // Rendering data
@@ -81,8 +88,8 @@ public class Renderer : IRenderer, IDisposable
     private readonly UberPost uberPost;
     
     // Temporary draw data lists
-    private readonly List<DrawCommand> opaqueDrawCommands = [];
-    private readonly List<DrawCommand> transparentDrawCommands = [];
+    private readonly List<DrawCommandWithDepth> opaqueDrawCommands = [];
+    private readonly List<DrawCommandWithDepth> transparentDrawCommands = [];
 
     // Overlay renderers
     private readonly List<IOverlayRenderer> overlayRenderers = [];
@@ -386,7 +393,7 @@ public class Renderer : IRenderer, IDisposable
         return overlayRenderers.Remove(overlayRenderer);
     }
     
-    public void ProcessFrame(DrawList drawList)
+    public void ProcessFrame(IDrawDataProvider drawDataProvider)
     {
         var size = window.FramebufferSize;
         var renderWidth = size.X;
@@ -413,49 +420,40 @@ public class Renderer : IRenderer, IDisposable
         // Update OpenGL data
         UpdateOpenGlData(renderSize);
         
+        // Get draw data
+        var drawData = drawDataProvider.DrawData;
+        
         // Get camera matrix (view and projection)
-        var camera = RenderUtil.GetCameraMatrix(drawList.CameraData, renderSize);
+        var camera = RenderUtil.GetCameraMatrix(drawData.CameraData, renderSize);
         
         // Split draw list into opaque and transparent
         opaqueDrawCommands.Clear();
         transparentDrawCommands.Clear();
         
-        var meshDrawItems = drawList.MeshDrawItems;
-        var textDrawItems = drawList.TextDrawItems;
-        
-        foreach (var drawCommand in drawList.DrawCommands)
+        var currentDepthInt = 0;
+        foreach (var drawCommand in drawData.DrawCommands)
         {
             // Add to appropriate list
-            if (drawCommand.DrawType != DrawType.Text)
+            if (RenderUtil.ShouldUseTransparentDrawList(drawCommand, drawData))
             {
-                ref var meshDrawItem = ref meshDrawItems[drawCommand.DrawId];
-                if (meshDrawItem.RenderMode == RenderMode.Normal)
+                transparentDrawCommands.Add(new DrawCommandWithDepth
                 {
-                    if (meshDrawItem.Color1.A < 1f) // We only use Color1 in normal render mode
-                    {
-                        transparentDrawCommands.Add(drawCommand);
-                    }
-                    else
-                    {
-                        opaqueDrawCommands.Add(drawCommand);
-                    }
-                }
-                else
-                {
-                    if (meshDrawItem.Color1.A < 1f || meshDrawItem.Color2.A < 1f)
-                    {
-                        transparentDrawCommands.Add(drawCommand);
-                    }
-                    else
-                    {
-                        opaqueDrawCommands.Add(drawCommand);
-                    }
-                }
+                    DrawType = drawCommand.DrawType,
+                    DrawId = drawCommand.DrawId,
+                    Depth = currentDepthInt / (float)(1 << 24)
+                });
             }
-            else // Text is always transparent
+            else
             {
-                transparentDrawCommands.Add(drawCommand);
+                opaqueDrawCommands.Add(new DrawCommandWithDepth
+                {
+                    DrawType = drawCommand.DrawType,
+                    DrawId = drawCommand.DrawId,
+                    Depth = currentDepthInt / (float)(1 << 24)
+                });
             }
+
+            currentDepthInt++;
         }
         
         // Reverse opaque draw data list so that it is drawn
@@ -479,7 +477,7 @@ public class Renderer : IRenderer, IDisposable
         
         // Clear the screen
         GL.Viewport(0, 0, renderSize.X, renderSize.Y);
-        var clearColor = drawList.ClearColor;
+        var clearColor = drawData.ClearColor;
         GL.ClearColor(clearColor.R, clearColor.G, clearColor.B, clearColor.A);
         GL.ClearDepthf(0.0f);
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
@@ -494,8 +492,7 @@ public class Renderer : IRenderer, IDisposable
         // Draw each mesh
         RenderDrawDataList(
             CollectionsMarshal.AsSpan(opaqueDrawCommands),
-            meshDrawItems,
-            textDrawItems,
+            drawData,
             camera);
         
         // Transparent pass, enable blending, disable depth write
@@ -506,8 +503,7 @@ public class Renderer : IRenderer, IDisposable
         // Draw each mesh
         RenderDrawDataList(
             CollectionsMarshal.AsSpan(transparentDrawCommands),
-            meshDrawItems,
-            textDrawItems,
+            drawData,
             camera);
         
         // Restore depth write state
@@ -529,7 +525,7 @@ public class Renderer : IRenderer, IDisposable
             BlitFramebufferFilter.Linear);
         
         // Process post-process effects
-        var finalTexture = HandlePostProcessing(drawList.PostProcessingData, postProcessTextureHandle1, postProcessTextureHandle2);
+        var finalTexture = HandlePostProcessing(drawData.PostProcessingData, postProcessTextureHandle1, postProcessTextureHandle2);
         
         // Render overlays
         var firstOverlayOffsetXInt = (size.X - renderSize.X) / 2;
@@ -645,7 +641,7 @@ public class Renderer : IRenderer, IDisposable
         return texture1;
     }
     
-    private void RenderDrawDataList(Span<DrawCommand> drawCommands, Span<MeshDrawItem> meshDrawItems, Span<TextDrawItem> textDrawItems, Matrix3x2 camera)
+    private void RenderDrawDataList(in Span<DrawCommandWithDepth> drawCommands, in DrawData drawData, in Matrix3x2 camera)
     {
         var meshInfosSpan = CollectionsMarshal.AsSpan(meshInfos);
         var textInfosSpan = CollectionsMarshal.AsSpan(textInfos);
@@ -656,7 +652,7 @@ public class Renderer : IRenderer, IDisposable
             {
                 case DrawType.Mesh:
                 {
-                    ref var meshDrawItem = ref meshDrawItems[drawCommand.DrawId];
+                    ref var meshDrawItem = ref drawData.MeshDrawItems[drawCommand.DrawId];
                     ref var meshInfo = ref meshInfosSpan[meshDrawItem.MeshHandle.Id];
                     
                     var mvp = meshDrawItem.Transform * camera;
@@ -670,7 +666,7 @@ public class Renderer : IRenderer, IDisposable
                         GL.UniformMatrix3x2fv(mvpUniformLocation, 1, false, (float*)&mvp);
                     }
             
-                    GL.Uniform1f(zUniformLocation, RenderUtil.EncodeIntDepth(drawCommand.DrawIndex));
+                    GL.Uniform1f(zUniformLocation, drawCommand.Depth);
                     GL.Uniform1i(renderModeUniformLocation, (int) meshDrawItem.RenderMode);
                     GL.Uniform4f(color1UniformLocation, meshDrawItem.Color1.R, meshDrawItem.Color1.G, meshDrawItem.Color1.B, meshDrawItem.Color1.A);
                     GL.Uniform4f(color2UniformLocation, meshDrawItem.Color2.R, meshDrawItem.Color2.G, meshDrawItem.Color2.B, meshDrawItem.Color2.A);
@@ -685,7 +681,7 @@ public class Renderer : IRenderer, IDisposable
                 }
                 case DrawType.Text:
                 {
-                    ref var textDrawItem = ref textDrawItems[drawCommand.DrawId];
+                    ref var textDrawItem = ref drawData.TextDrawItems[drawCommand.DrawId];
                     ref var textInfo = ref textInfosSpan[textDrawItem.TextHandle.Id];
                     
                     var mvp = textDrawItem.Transform * camera;
@@ -697,7 +693,7 @@ public class Renderer : IRenderer, IDisposable
                     {
                         GL.UniformMatrix3x2fv(glyphMvpUniformLocation, 1, false, (float*)&mvp);
                     }
-                    GL.Uniform1f(glyphZUniformLocation, RenderUtil.EncodeIntDepth(drawCommand.DrawIndex));
+                    GL.Uniform1f(glyphZUniformLocation, drawCommand.Depth);
                     
                     // Set color
                     GL.Uniform4f(glyphBaseColorUniformLocation, textDrawItem.Color.R, textDrawItem.Color.G, textDrawItem.Color.B, textDrawItem.Color.A);

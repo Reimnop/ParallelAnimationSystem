@@ -7,10 +7,7 @@ namespace ParallelAnimationSystem.Rendering;
 
 public static class RenderUtil
 {
-    public static float EncodeIntDepth(int depth)
-        => depth / 8388608.0f; // 2^23
-    
-    public static Matrix3x2 GetCameraMatrix(CameraData camera, Vector2i size)
+    public static Matrix3x2 GetCameraMatrix(in CameraData camera, Vector2i size)
     {
         if (camera.Scale == 0.0f)
             return new Matrix3x2();
@@ -24,5 +21,25 @@ public static class RenderUtil
         
         var projection = Matrix3x2.CreateScale(1.0f / aspectRatio, 1.0f);
         return view * projection;
+    }
+    
+    public static bool ShouldUseTransparentDrawList(in DrawCommand drawCommand, in DrawData drawData)
+    {
+        if (drawCommand.DrawType != DrawType.Text)
+        {
+            ref var meshDrawItem = ref drawData.MeshDrawItems[drawCommand.DrawId];
+            if (meshDrawItem.RenderMode == RenderMode.Normal)
+            {
+                return meshDrawItem.Color1.A < 1f; // We only use Color1 in normal render mode
+            }
+            else
+            {
+                return meshDrawItem.Color1.A < 1f || meshDrawItem.Color2.A < 1f;
+            }
+        }
+        else // Text is always transparent
+        {
+            return true;
+        }
     }
 }

@@ -2,5 +2,5 @@ namespace ParallelAnimationSystem.Rendering;
 
 public interface IRenderer
 {
-    void ProcessFrame(DrawList drawList);
+    void ProcessFrame(IDrawDataProvider drawDataProvider);
 }
