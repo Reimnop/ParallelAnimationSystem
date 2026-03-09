@@ -290,7 +290,7 @@ public class AsyncRenderQueue : IRenderQueue
             
             // return draw list to pool
             drawListPool.Return(actualDrawList);
-        }, false));
+        }, true));
     }
 
     public void FlushOneFrame(IRenderer renderer)
