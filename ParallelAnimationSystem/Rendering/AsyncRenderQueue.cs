@@ -34,8 +34,8 @@ public class AsyncRenderQueue : IRenderQueue
             public ColorRgba Color;
         }
         
-        public CameraData CameraData { get; set; }
-        public PostProcessingData PostProcessingData { get; set; }
+        public CameraState CameraState { get; set; }
+        public PostProcessingState PostProcessingState { get; set; }
         public ColorRgba ClearColor { get; set; }
         
         private RefMeshDrawItem[] meshDrawItems = new RefMeshDrawItem[1000];
@@ -87,8 +87,11 @@ public class AsyncRenderQueue : IRenderQueue
 
         public void Reset()
         {
-            CameraData = new CameraData(Vector2.Zero, 10.0f, 0.0f);
-            PostProcessingData = default;
+            CameraState = new CameraState
+            {
+                Scale = 10f
+            };
+            PostProcessingState = default;
             ClearColor = new ColorRgba(0.0f, 0.0f, 0.0f, 1.0f);
         
             meshDrawItemCount = 0;
@@ -122,8 +125,8 @@ public class AsyncRenderQueue : IRenderQueue
             
             return new DrawData
             {
-                CameraData = CameraData,
-                PostProcessingData = PostProcessingData,
+                CameraState = CameraState,
+                PostProcessingState = PostProcessingState,
                 ClearColor = ClearColor,
                 MeshDrawItems = cachedMeshDrawItems.AsSpan(0, meshDrawItemCount),
                 TextDrawItems = cachedTextDrawItems.AsSpan(0, textDrawItemCount),

@@ -87,7 +87,7 @@ public class UberPost : IDisposable
         float chromaticAberrationIntensity,
         Vector2 vignetteCenter, float vignetteIntensity, bool vignetteRounded, float vignetteRoundness, float vignetteSmoothness, ColorRgb vignetteColor,
         ColorRgb gradientColor1, ColorRgb gradientColor2, float gradientIntensity, float gradientRotation, GradientOverlayMode gradientMode,
-        float glitchIntensity, float glitchSpeed, Vector2 glitchSize,
+        float glitchIntensity, float glitchSpeed, float glitchWidth,
         int inputTexture, int outputTexture)
     {
         // Attach output texture to framebuffer
@@ -133,9 +133,10 @@ public class UberPost : IDisposable
         
         GL.Uniform1i(gradientModeUniformLocation, (int) gradientMode);
         
-        GL.Uniform1f(glitchIntensityUniformLocation, glitchIntensity);
-        GL.Uniform1f(glitchSpeedUniformLocation, glitchSpeed);
-        GL.Uniform2f(glitchSizeUniformLocation, 1, glitchSize);
+        // TODO: Properly implement glitch effect
+        GL.Uniform1f(glitchIntensityUniformLocation, 0f);
+        GL.Uniform1f(glitchSpeedUniformLocation, 0f);
+        GL.Uniform2f(glitchSizeUniformLocation, 0f, 0f);
         
         GL.BindVertexArray(vaoHandle);
         GL.DrawArrays(PrimitiveType.Triangles, 0, 3);

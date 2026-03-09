@@ -35,8 +35,8 @@ public struct TextDrawItem
 
 public ref struct DrawData
 {
-    public CameraData CameraData;
-    public PostProcessingData PostProcessingData;
+    public CameraState CameraState;
+    public PostProcessingState PostProcessingState;
     public ColorRgba ClearColor;
     public Span<DrawCommand> DrawCommands;
     public Span<MeshDrawItem> MeshDrawItems;

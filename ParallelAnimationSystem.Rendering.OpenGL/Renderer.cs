@@ -408,7 +408,7 @@ public class Renderer : IRenderer, IDisposable
         opaqueDrawCommands.Reverse();
         
         // Get camera matrix (view and projection)
-        var camera = RenderUtil.GetCameraMatrix(drawData.CameraData, renderSize);
+        var camera = RenderUtil.GetCameraMatrix(drawData.CameraState, renderSize);
         
         // Render
         GL.Viewport(0, 0, currentFboSize.X, currentFboSize.Y);
@@ -489,7 +489,7 @@ public class Renderer : IRenderer, IDisposable
             BlitFramebufferFilter.Linear);
         
         // Do post-processing
-        var finalTexture = HandlePostProcessing(drawData.PostProcessingData, postProcessTextureHandle1, postProcessTextureHandle2);
+        var finalTexture = HandlePostProcessing(drawData.PostProcessingState, postProcessTextureHandle1, postProcessTextureHandle2);
         
         // Render overlays into final texture
         {
@@ -669,23 +669,23 @@ public class Renderer : IRenderer, IDisposable
             0);
     }
 
-    private int HandlePostProcessing(PostProcessingData data, int texture1, int texture2)
+    private int HandlePostProcessing(PostProcessingState state, int texture1, int texture2)
     {
-        if (legacyBloom.Process(currentFboSize, data.LegacyBloom.Intensity, data.LegacyBloom.Diffusion, texture1, texture2))
+        if (legacyBloom.Process(currentFboSize, state.LegacyBloom.Intensity, state.LegacyBloom.Diffusion, texture1, texture2))
             Swap(ref texture1, ref texture2);
         
-        if (universalBloom.Process(currentFboSize, data.UniversalBloom.Intensity, data.UniversalBloom.Diffusion, texture1, texture2))
+        if (universalBloom.Process(currentFboSize, state.UniversalBloom.Intensity, state.UniversalBloom.Diffusion, texture1, texture2))
             Swap(ref texture1, ref texture2);
         
         if (uberPost.Process(
                 currentFboSize,
-                data.Time,
-                data.HueShift.Angle,
-                data.LensDistortion.Intensity, data.LensDistortion.Center,
-                data.ChromaticAberration.Intensity,
-                data.Vignette.Center, data.Vignette.Intensity, data.Vignette.Rounded, data.Vignette.Roundness, data.Vignette.Smoothness, data.Vignette.Color,
-                data.Gradient.Color1, data.Gradient.Color2, data.Gradient.Intensity, data.Gradient.Rotation, data.Gradient.Mode,
-                data.Glitch.Intensity, data.Glitch.Speed, data.Glitch.Size,
+                state.Time,
+                state.HueShift.Angle,
+                state.LensDistortion.Intensity, state.LensDistortion.Center,
+                state.ChromaticAberration.Intensity,
+                state.Vignette.Center, state.Vignette.Intensity, state.Vignette.Rounded, state.Vignette.Roundness, state.Vignette.Smoothness, state.Vignette.Color,
+                state.Gradient.Color1, state.Gradient.Color2, state.Gradient.Intensity, state.Gradient.Rotation, state.Gradient.Mode,
+                state.Glitch.Intensity, state.Glitch.Speed, state.Glitch.Width,
                 texture1, texture2))
             Swap(ref texture1, ref texture2);
         

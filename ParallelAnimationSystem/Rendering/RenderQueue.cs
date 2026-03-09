@@ -10,9 +10,9 @@ public class RenderQueue(IRenderingFactory renderingFactory) : IRenderQueue
 {
     private class DrawList : IDrawList, IDrawDataProvider
     {
-        public CameraData CameraData { get; set; } = new(Vector2.Zero, 10.0f, 0.0f);
-        public PostProcessingData PostProcessingData { get; set; }
-        public ColorRgba ClearColor { get; set; } = new(0.0f, 0.0f, 0.0f, 1.0f);
+        public CameraState CameraState { get; set; }
+        public PostProcessingState PostProcessingState { get; set; }
+        public ColorRgba ClearColor { get; set; }
 
         private MeshDrawItem[] meshDrawItems = new MeshDrawItem[1000];
         private TextDrawItem[] textDrawItems = new TextDrawItem[1000];
@@ -60,8 +60,11 @@ public class RenderQueue(IRenderingFactory renderingFactory) : IRenderQueue
 
         public void Reset()
         {
-            CameraData = new CameraData(Vector2.Zero, 10.0f, 0.0f);
-            PostProcessingData = default;
+            CameraState = new CameraState
+            {
+                Scale = 10f
+            };
+            PostProcessingState = default;
             ClearColor = new ColorRgba(0.0f, 0.0f, 0.0f, 1.0f);
 
             meshDrawItemCount = 0;
@@ -72,8 +75,8 @@ public class RenderQueue(IRenderingFactory renderingFactory) : IRenderQueue
         public DrawData CreateDrawData()
             => new()
             {
-                CameraData = CameraData,
-                PostProcessingData = PostProcessingData,
+                CameraState = CameraState,
+                PostProcessingState = PostProcessingState,
                 ClearColor = ClearColor,
                 MeshDrawItems = meshDrawItems.AsSpan(0, meshDrawItemCount),
                 TextDrawItems = textDrawItems.AsSpan(0, textDrawItemCount),

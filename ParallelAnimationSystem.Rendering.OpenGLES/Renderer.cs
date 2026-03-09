@@ -423,7 +423,7 @@ public class Renderer : IRenderer, IDisposable
         var drawData = drawDataProvider.CreateDrawData();
         
         // Get camera matrix (view and projection)
-        var camera = RenderUtil.GetCameraMatrix(drawData.CameraData, renderSize);
+        var camera = RenderUtil.GetCameraMatrix(drawData.CameraState, renderSize);
         
         // Split draw list into opaque and transparent
         opaqueDrawCommands.Clear();
@@ -524,7 +524,7 @@ public class Renderer : IRenderer, IDisposable
             BlitFramebufferFilter.Linear);
         
         // Process post-process effects
-        var finalTexture = HandlePostProcessing(drawData.PostProcessingData, postProcessTextureHandle1, postProcessTextureHandle2);
+        var finalTexture = HandlePostProcessing(drawData.PostProcessingState, postProcessTextureHandle1, postProcessTextureHandle2);
         
         // Render overlays
         var firstOverlayOffsetXInt = (size.X - renderSize.X) / 2;
@@ -613,27 +613,27 @@ public class Renderer : IRenderer, IDisposable
         window.Present(overlayFboHandle, Vector4.Zero, size, Vector2i.Zero);
     }
     
-    private int HandlePostProcessing(PostProcessingData data, int texture1, int texture2)
+    private int HandlePostProcessing(PostProcessingState state, int texture1, int texture2)
     {
         // Disable depth testing and blending
         GL.Disable(EnableCap.DepthTest);
         GL.Disable(EnableCap.Blend);
         
-        if (legacyBloom.Process(currentFboSize, data.LegacyBloom.Intensity, data.LegacyBloom.Diffusion, texture1, texture2))
+        if (legacyBloom.Process(currentFboSize, state.LegacyBloom.Intensity, state.LegacyBloom.Diffusion, texture1, texture2))
             Swap(ref texture1, ref texture2);
         
-        if (universalBloom.Process(currentFboSize, data.UniversalBloom.Intensity, data.UniversalBloom.Diffusion, texture1, texture2))
+        if (universalBloom.Process(currentFboSize, state.UniversalBloom.Intensity, state.UniversalBloom.Diffusion, texture1, texture2))
             Swap(ref texture1, ref texture2);
         
         if (uberPost.Process(
                 currentFboSize,
-                data.Time,
-                data.HueShift.Angle,
-                data.LensDistortion.Intensity, data.LensDistortion.Center,
-                data.ChromaticAberration.Intensity,
-                data.Vignette.Center, data.Vignette.Intensity, data.Vignette.Rounded, data.Vignette.Roundness, data.Vignette.Smoothness, data.Vignette.Color,
-                data.Gradient.Color1, data.Gradient.Color2, data.Gradient.Intensity, data.Gradient.Rotation, data.Gradient.Mode,
-                data.Glitch.Intensity, data.Glitch.Speed, data.Glitch.Size,
+                state.Time,
+                state.HueShift.Angle,
+                state.LensDistortion.Intensity, state.LensDistortion.Center,
+                state.ChromaticAberration.Intensity,
+                state.Vignette.Center, state.Vignette.Intensity, state.Vignette.Rounded, state.Vignette.Roundness, state.Vignette.Smoothness, state.Vignette.Color,
+                state.Gradient.Color1, state.Gradient.Color2, state.Gradient.Intensity, state.Gradient.Rotation, state.Gradient.Mode,
+                state.Glitch.Intensity, state.Glitch.Speed, state.Glitch.Width,
                 texture1, texture2))
             Swap(ref texture1, ref texture2);
         

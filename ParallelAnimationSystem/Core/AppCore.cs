@@ -7,6 +7,9 @@ using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering.Data;
 using ParallelAnimationSystem.Rendering.Handle;
+using BloomEffectState = ParallelAnimationSystem.Rendering.Data.BloomEffectState;
+using GradientEffectState = ParallelAnimationSystem.Rendering.Data.GradientEffectState;
+using VignetteEffectState = ParallelAnimationSystem.Rendering.Data.VignetteEffectState;
 
 namespace ParallelAnimationSystem.Core;
 
@@ -39,38 +42,73 @@ public class AppCore(
         
         // Start queuing draw commands
         drawList.ClearColor = new ColorRgba(themeColorState.Background);
-        drawList.CameraData = new CameraData(
-            eventState.CameraPosition + shakeVector,
-            eventState.CameraScale,
-            eventState.CameraRotation);
+        drawList.CameraState = new CameraState
+        {
+            Position = eventState.CameraPosition + shakeVector,
+            Scale = eventState.CameraScale,
+            Rotation = eventState.CameraRotation
+        };
         
         if (appSettings.EnablePostProcessing)
         {
-            drawList.PostProcessingData = new PostProcessingData(
-                Time: time, 
-                ChromaticAberration: CreateChromaticAberrationData(eventState.Chroma), 
-                LegacyBloom: CreateLegacyBloomData(eventState.Bloom.Intensity, beatmapService.BeatmapFormat == BeatmapFormat.Lsb), 
-                UniversalBloom: CreateUniversalBloomData(eventState.Bloom.Intensity, eventState.Bloom.Diffusion, beatmapService.BeatmapFormat == BeatmapFormat.Vgd), 
-                Vignette: CreateVignetteData(
-                    eventState.Vignette.Center,
-                    eventState.Vignette.Intensity,
-                    eventState.Vignette.Rounded,
-                    eventState.Vignette.Roundness,
-                    eventState.Vignette.Smoothness,
-                    eventState.Vignette.Color), 
-                Gradient: CreateGradientData(
-                    eventState.Gradient.Color1,
-                    eventState.Gradient.Color2,
-                    eventState.Gradient.Intensity,
-                    eventState.Gradient.Rotation,
-                    eventState.Gradient.Mode), 
-                HueShift: CreateHueShiftData(eventState.Hue), 
-                LensDistortion: CreateLensDistortionData(eventState.LensDistortion.Intensity, eventState.LensDistortion.Center), 
-                Glitch: CreateGlitchData(eventState.Glitch.Intensity, eventState.Glitch.Speed, eventState.Glitch.Width));
+            drawList.PostProcessingState = new PostProcessingState
+            {
+                Time = time,
+                ChromaticAberration = new ChromaticAberrationEffectState
+                {
+                    Intensity = eventState.Chroma
+                },
+                LegacyBloom = beatmapService.BeatmapFormat == BeatmapFormat.Lsb
+                    ? new BloomEffectState
+                    {
+                        Intensity = eventState.Bloom.Intensity,
+                        Diffusion = 7f
+                    }
+                    : default,
+                UniversalBloom = beatmapService.BeatmapFormat == BeatmapFormat.Vgd
+                    ? new BloomEffectState
+                    {
+                        Intensity = eventState.Bloom.Intensity,
+                        Diffusion = MathUtil.MapRange(eventState.Bloom.Diffusion, 5f, 30f, 0f, 1f)
+                    }
+                    : default,
+                Vignette = new VignetteEffectState
+                {
+                    Center = eventState.Vignette.Center,
+                    Intensity = eventState.Vignette.Intensity,
+                    Rounded = eventState.Vignette.Rounded,
+                    Roundness = eventState.Vignette.Roundness,
+                    Smoothness = eventState.Vignette.Smoothness,
+                    Color = eventState.Vignette.Color
+                },
+                Gradient = new GradientEffectState
+                {
+                    Color1 = eventState.Gradient.Color1,
+                    Color2 = eventState.Gradient.Color2,
+                    Intensity = eventState.Gradient.Intensity,
+                    Rotation = eventState.Gradient.Rotation,
+                    Mode = eventState.Gradient.Mode
+                },
+                HueShift = new HueShiftEffectState
+                {
+                    Angle = eventState.Hue
+                },
+                LensDistortion = new LensDistortionEffectState
+                {
+                    Intensity = eventState.LensDistortion.Intensity,
+                    Center = eventState.LensDistortion.Center
+                },
+                Glitch = new GlitchEffectState
+                {
+                    Intensity = eventState.Glitch.Intensity,
+                    Speed = eventState.Glitch.Speed,
+                    Width = eventState.Glitch.Width
+                }
+            };
         }
         else
         {
-            drawList.PostProcessingData = default;
+            drawList.PostProcessingState = default;
         }
 
         // Draw all alive game objects
@@ -136,52 +174,5 @@ public class AppCore(
         
         meshHandle = default;
         return false;
-    }
-    
-    private static HueShiftPostProcessingData CreateHueShiftData(float hue)
-    {
-        return new HueShiftPostProcessingData(hue);
-    }
-    
-    private static BloomPostProcessingData CreateLegacyBloomData(float intensity, bool enabled)
-    {
-        if (!enabled)
-            return new BloomPostProcessingData(0f, 0f);
-        
-        return new BloomPostProcessingData(intensity, 7f);
-    }
-    
-    private static BloomPostProcessingData CreateUniversalBloomData(float intensity, float diffusion, bool enabled)
-    {
-        if (!enabled)
-            return new BloomPostProcessingData(0f, 0f);
-        
-        diffusion = MathUtil.MapRange(diffusion, 5f, 30f, 0f, 1f);
-        return new BloomPostProcessingData(intensity, diffusion);
-    }
-    
-    private static LensDistortionPostProcessingData CreateLensDistortionData(float intensity, Vector2 center)
-    {
-        return new LensDistortionPostProcessingData(intensity, center);
-    }
-    
-    private static ChromaticAberrationPostProcessingData CreateChromaticAberrationData(float intensity)
-    {
-        return new ChromaticAberrationPostProcessingData(intensity);
-    }
-    
-    private static VignettePostProcessingData CreateVignetteData(Vector2 center, float intensity, bool rounded, float roundness, float smoothness, ColorRgb color)
-    {
-        return new VignettePostProcessingData(center, intensity, rounded, roundness, smoothness, color);
-    }
-    
-    private static GradientPostProcessingData CreateGradientData(ColorRgb color1, ColorRgb color2, float intensity, float rotation, GradientOverlayMode mode)
-    {
-        return new GradientPostProcessingData(color1, color2, intensity, rotation, mode);
-    }
-    
-    private static GlitchPostProcessingData CreateGlitchData(float intensity, float speed, float width)
-    {
-        return new GlitchPostProcessingData(0.0f, 0.0f, Vector2.One);
     }
 }

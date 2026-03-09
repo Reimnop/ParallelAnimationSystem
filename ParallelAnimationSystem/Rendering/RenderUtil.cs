@@ -7,7 +7,7 @@ namespace ParallelAnimationSystem.Rendering;
 
 public static class RenderUtil
 {
-    public static Matrix3x2 GetCameraMatrix(in CameraData camera, Vector2i size)
+    public static Matrix3x2 GetCameraMatrix(in CameraState camera, Vector2i size)
     {
         if (camera.Scale == 0.0f)
             return new Matrix3x2();
