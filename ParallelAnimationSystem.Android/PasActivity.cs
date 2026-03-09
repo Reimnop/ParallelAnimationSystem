@@ -105,6 +105,7 @@ public class PasActivity : Activity
         {
             builder.UseAppSettings(appSettings);
             builder.UseWindow<AndroidWindow>();
+            builder.UseRenderQueue<RenderQueue>();
             builder.UseOpenGLESRenderer();
         });
         
@@ -122,6 +123,7 @@ public class PasActivity : Activity
         
         var appCore = scope.ServiceProvider.GetRequiredService<AppCore>();
         var renderer = scope.ServiceProvider.GetRequiredService<IRenderer>();
+        var renderQueue = (RenderQueue)scope.ServiceProvider.GetRequiredService<IRenderQueue>();
         var window = scope.ServiceProvider.GetRequiredService<IWindow>();
         
         // Initialize audio player
@@ -129,17 +131,13 @@ public class PasActivity : Activity
         audioPlayer.Play();
         
         // Enter main loop
-        var drawList = new DrawList();
         while (!window.ShouldClose)
         {
             window.PollEvents();
             
             // Process a frame
-            appCore.ProcessFrame((float) audioPlayer.Position, drawList);
-            renderer.ProcessFrame(drawList);
-            
-            // Clear the draw list for the next frame
-            drawList.Reset();
+            appCore.ProcessFrame((float) audioPlayer.Position);
+            renderQueue.ProcessFrame(renderer);
         }
         
         audioPlayer.Stop();

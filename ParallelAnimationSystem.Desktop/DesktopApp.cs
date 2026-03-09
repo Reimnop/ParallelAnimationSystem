@@ -6,16 +6,10 @@ using ParallelAnimationSystem.Windowing;
 
 namespace ParallelAnimationSystem.Desktop;
 
-public sealed class DesktopApp
+public sealed class DesktopApp(IServiceProvider serviceProvider)
 {
-    private readonly DrawList drawList = new();
-    private readonly IServiceProvider serviceProvider;
-
-    public DesktopApp(IServiceProvider serviceProvider)
-    {
-        this.serviceProvider = serviceProvider;
-    }
-
+    private volatile bool appRunning = true;
+    
     public void StartApp(string beatmapPath, string audioPath)
     {
         using var scope = serviceProvider.CreateScope();
@@ -28,29 +22,47 @@ public sealed class DesktopApp
         
         // Initialize core service
         var appCore = sp.GetRequiredService<AppCore>();
-        var renderer = sp.GetRequiredService<IRenderer>();
-        var window = sp.GetRequiredService<IWindow>();
         
         // Play audio
         using var audioPlayer = AudioPlayer.Load(audioPath);
         audioPlayer.Play();
         
-        // Start the main thread
-        while (!window.ShouldClose)
-        {
-            window.PollEvents();
-            
-            // Populate the draw list
-            appCore.ProcessFrame((float) audioPlayer.Position, drawList);
-            
-            // Render the frame
-            renderer.ProcessFrame(drawList);
-            
-            // Reset draw list for the next frame
-            drawList.Reset();
-        }
+        // Start render thread
+        var renderThread = new Thread(StartRenderThread);
+        renderThread.Start();
+        
+        // Start the main loop
+        while (appRunning)
+            appCore.ProcessFrame((float) audioPlayer.Position);
         
         // Stop audio
         audioPlayer.Stop();
+        
+        // Wait for the render thread to finish
+        renderThread.Join();
+    }
+
+    private void StartRenderThread()
+    {
+        using var scope = serviceProvider.CreateScope();
+        var sp = scope.ServiceProvider;
+        
+        var renderQueue = (AsyncRenderQueue) sp.GetRequiredService<IRenderQueue>();
+        var renderer = sp.GetRequiredService<IRenderer>();
+        var window = sp.GetRequiredService<IWindow>();
+        
+        // Start the render loop
+        while (!window.ShouldClose)
+        {
+            window.PollEvents();
+
+            while (renderQueue.QueuedFrames == 0)
+                Thread.Yield();
+            
+            renderQueue.FlushOneFrame(renderer);
+        }
+        
+        // Signal the main thread to stop
+        appRunning = false;
     }
 }

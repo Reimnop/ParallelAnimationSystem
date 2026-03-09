@@ -16,7 +16,7 @@ public class WasmApp : IDisposable
     private readonly AppCore appCore;
     private readonly IRenderer renderer;
 
-    private readonly DrawList drawList = new();
+    private readonly RenderQueue renderQueue;
 
     public WasmApp(ServiceProvider sp)
     {
@@ -28,13 +28,13 @@ public class WasmApp : IDisposable
         BeatmapService = scope.ServiceProvider.GetRequiredService<BeatmapService>();
         appCore = scope.ServiceProvider.GetRequiredService<AppCore>();
         renderer = scope.ServiceProvider.GetRequiredService<IRenderer>();
+        renderQueue = (RenderQueue)scope.ServiceProvider.GetRequiredService<IRenderQueue>();
     }
     
     public void ProcessFrame(float time)
     {
-        drawList.Reset();
-        appCore.ProcessFrame(time, drawList);
-        renderer.ProcessFrame(drawList);
+        appCore.ProcessFrame(time);
+        renderQueue.ProcessFrame(renderer);
     }
 
     public void Dispose()

@@ -16,15 +16,15 @@ public class MeshCacheService
         public int RefCount { get; set; }
     }
     
-    private readonly IRenderingFactory renderingFactory;
+    private readonly IRenderQueue renderQueue;
     private readonly PlaybackObjectContainer playbackObjects;
 
     private readonly IndexedList<CacheItem> cacheItems = [];
     private readonly List<int?> objectIndexToCacheIndex = [];
 
-    public MeshCacheService(IRenderingFactory renderingFactory, PlaybackObjectContainer playbackObjects)
+    public MeshCacheService(IRenderQueue renderQueue, PlaybackObjectContainer playbackObjects)
     {
-        this.renderingFactory = renderingFactory;
+        this.renderQueue = renderQueue;
         this.playbackObjects = playbackObjects;
 
         foreach (var entry in playbackObjects)
@@ -151,7 +151,7 @@ public class MeshCacheService
         }
 
         var mesh = VGShape.GenerateMesh(shapeInfo);
-        var meshHandle = renderingFactory.CreateMesh(mesh.Vertices, mesh.Indices);
+        var meshHandle = renderQueue.CreateMesh(mesh.Vertices, mesh.Indices);
         cacheItem = new CacheItem(id, meshHandle)
         {
             RefCount = 1
@@ -167,7 +167,7 @@ public class MeshCacheService
             cacheItem.RefCount--;
             if (cacheItem.RefCount <= 0)
             {
-                renderingFactory.DestroyMesh(cacheItem.MeshHandle);
+                renderQueue.DestroyMesh(cacheItem.MeshHandle);
                 cacheItems.Remove(index);
             }
         }

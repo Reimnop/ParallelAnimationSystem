@@ -16,9 +16,10 @@ public class AppCore(
     MeshService meshService,
     BeatmapService beatmapService,
     TextCacheService textCacheService,
-    MeshCacheService meshCacheService)
+    MeshCacheService meshCacheService,
+    IRenderQueue renderQueue)
 {
-    public void ProcessFrame(float time, DrawList drawList)
+    public void ProcessFrame(float time)
     {
         beatmapService.ProcessBeatmap(time, out var themeColorState, out var eventState, out var drawItems);
         
@@ -32,6 +33,9 @@ public class AppCore(
             MathF.Sin(time * MathF.PI * shakeFrequency + shakeMagic1) + MathF.Sin(time * shakeFrequency * 2.0f - shakeMagic1),
             MathF.Sin(time * MathF.PI * shakeFrequency - shakeMagic2) + MathF.Sin(time * shakeFrequency * 2.0f + shakeMagic2));
         shakeVector *= shake * 0.5f;
+        
+        // Get a draw list from the render queue
+        var drawList = renderQueue.GetDrawList();
         
         // Start queuing draw commands
         drawList.ClearColor = new ColorRgba(themeColorState.Background);
@@ -107,6 +111,9 @@ public class AppCore(
                 }
             }
         }
+        
+        // Submit the draw list to the render queue
+        renderQueue.SubmitDrawList(drawList);
     }
 
     private bool TryGetMesh(PlaybackObject playbackObject, int objectIndex, out MeshHandle meshHandle)

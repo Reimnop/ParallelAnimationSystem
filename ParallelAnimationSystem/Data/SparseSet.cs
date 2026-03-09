@@ -10,6 +10,10 @@ public class SparseSet<T> : IReadOnlyCollection<KeyValuePair<int, T>>
     private readonly List<T> items = [];
     
     public int Count => items.Count;
+    
+    public T this[int id] => !TryGet(id, out var item) 
+        ? throw new KeyNotFoundException($"ID '{id}' not found") 
+        : item;
 
     public virtual int Insert(T item)
     {
@@ -51,6 +55,17 @@ public class SparseSet<T> : IReadOnlyCollection<KeyValuePair<int, T>>
         // remove last item
         items.RemoveAt(lastIndex);
         return true;
+    }
+    
+    public bool TryGet(int id, [MaybeNullWhen(false)] out T item)
+    {
+        if (TryGetIndex(id, out var index))
+        {
+            item = items[index];
+            return true;
+        }
+        item = default;
+        return false;
     }
     
     public bool Contains(int id)

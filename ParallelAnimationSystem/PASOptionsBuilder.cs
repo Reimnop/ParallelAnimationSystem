@@ -16,6 +16,7 @@ public class PASOptionsBuilder(IServiceCollection services)
     private ServiceDefinition<IWindow>? windowDefinition;
     private ServiceDefinition<IRenderer>? rendererDefinition;
     private ServiceDefinition<IRenderingFactory>? renderingFactoryDefinition;
+    private ServiceDefinition<IRenderQueue>? renderQueueDefinition;
 
     public PASOptionsBuilder UseAppSettings(AppSettings settings)
     {
@@ -64,6 +65,16 @@ public class PASOptionsBuilder(IServiceCollection services)
     public PASOptionsBuilder UseRenderingFactory<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>()
         where T : IRenderingFactory
         => UseRenderingFactory(typeof(T));
+    
+    public PASOptionsBuilder UseRenderQueue(ServiceDefinition<IRenderQueue> definition)
+    {
+        renderQueueDefinition = definition;
+        return this;
+    }
+    
+    public PASOptionsBuilder UseRenderQueue<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>()
+        where T : IRenderQueue
+        => UseRenderQueue(typeof(T));
 
     public PASOptions Build()
     {
@@ -75,6 +86,8 @@ public class PASOptionsBuilder(IServiceCollection services)
             ThrowNotSet(nameof(rendererDefinition));
         if (renderingFactoryDefinition is null)
             ThrowNotSet(nameof(renderingFactoryDefinition));
+        if (renderQueueDefinition is null)
+            ThrowNotSet(nameof(renderQueueDefinition));
 
         return new PASOptions
         {
@@ -83,6 +96,7 @@ public class PASOptionsBuilder(IServiceCollection services)
             WindowDefinition = windowDefinition,
             RendererDefinition = rendererDefinition,
             RenderingFactoryDefinition = renderingFactoryDefinition,
+            RenderQueueDefinition = renderQueueDefinition
         };
     }
     

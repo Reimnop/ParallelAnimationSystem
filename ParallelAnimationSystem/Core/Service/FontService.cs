@@ -11,15 +11,15 @@ namespace ParallelAnimationSystem.Core.Service;
 public class FontService : IDisposable
 {
     private readonly ResourceLoader resourceLoader;
-    private readonly IRenderingFactory renderingFactory;
+    private readonly IRenderQueue renderQueue;
     
     private readonly Dictionary<string, FontStack> fontStacks = new();
     private readonly List<FontInfo?> fontInfos = [];
     
-    public FontService(ResourceLoader resourceLoader, IRenderingFactory renderingFactory)
+    public FontService(ResourceLoader resourceLoader, IRenderQueue renderQueue)
     {
         this.resourceLoader = resourceLoader;
-        this.renderingFactory = renderingFactory;
+        this.renderQueue = renderQueue;
         
         var inconsolata = LoadFont("Fonts/Inconsolata.tmpe");
         var arialuni = LoadFont("Fonts/Arialuni.tmpe");
@@ -43,7 +43,7 @@ public class FontService : IDisposable
         {
             var fontInfo = fontInfos[i];
             if (fontInfo is not null)
-                renderingFactory.DestroyFont(new FontHandle(i));
+                renderQueue.DestroyFont(new FontHandle(i));
         }
     }
     
@@ -70,7 +70,7 @@ public class FontService : IDisposable
         var tmpFile = TmpRead.Read(stream);
         var atlas = tmpFile.Atlas;
         
-        var fontHandle = renderingFactory.CreateFont(atlas.Width, atlas.Height, MemoryMarshal.AsBytes(atlas.Data));
+        var fontHandle = renderQueue.CreateFont(atlas.Width, atlas.Height, MemoryMarshal.AsBytes(atlas.Data));
         var id = fontHandle.Id;
         
         fontInfos.EnsureCount(id + 1);

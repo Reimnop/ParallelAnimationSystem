@@ -1,5 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.Handle;
 
@@ -7,54 +6,54 @@ namespace ParallelAnimationSystem.Core.Service;
 
 public class MeshService : IDisposable
 {
-    private readonly IRenderingFactory renderingFactory;
+    private readonly IRenderQueue renderQueue;
     private readonly List<List<MeshHandle>> meshes = [];
 
-    public MeshService(IRenderingFactory renderingFactory, ILogger<MeshService> logger)
+    public MeshService(IRenderQueue renderQueue, ILogger<MeshService> logger)
     {
-        this.renderingFactory = renderingFactory;
+        this.renderQueue = renderQueue;
         
         logger.LogInformation("Registering meshes");
         
         meshes.Add([
-            renderingFactory.CreateMesh(PaAssets.SquareFilledVertices, PaAssets.SquareFilledIndices),
-            renderingFactory.CreateMesh(PaAssets.SquareOutlineVertices, PaAssets.SquareOutlineIndices),
-            renderingFactory.CreateMesh(PaAssets.SquareOutlineThinVertices, PaAssets.SquareOutlineThinIndices),
+            renderQueue.CreateMesh(PaAssets.SquareFilledVertices, PaAssets.SquareFilledIndices),
+            renderQueue.CreateMesh(PaAssets.SquareOutlineVertices, PaAssets.SquareOutlineIndices),
+            renderQueue.CreateMesh(PaAssets.SquareOutlineThinVertices, PaAssets.SquareOutlineThinIndices),
         ]);
 
         meshes.Add([
-            renderingFactory.CreateMesh(PaAssets.CircleFilledVertices, PaAssets.CircleFilledIndices),
-            renderingFactory.CreateMesh(PaAssets.CircleOutlineVertices, PaAssets.CircleOutlineIndices),
-            renderingFactory.CreateMesh(PaAssets.CircleHalfVertices, PaAssets.CircleHalfIndices),
-            renderingFactory.CreateMesh(PaAssets.CircleHalfOutlineVertices, PaAssets.CircleHalfOutlineIndices),
-            renderingFactory.CreateMesh(PaAssets.CircleOutlineThinVertices, PaAssets.CircleOutlineThinIndices),
-            renderingFactory.CreateMesh(PaAssets.CircleQuarterVertices, PaAssets.CircleQuarterIndices),
-            renderingFactory.CreateMesh(PaAssets.CircleQuarterOutlineVertices, PaAssets.CircleQuarterOutlineIndices),
-            renderingFactory.CreateMesh(PaAssets.CircleHalfQuarterVertices, PaAssets.CircleHalfQuarterIndices),
-            renderingFactory.CreateMesh(PaAssets.CircleHalfQuarterOutlineVertices, PaAssets.CircleHalfQuarterOutlineIndices),
+            renderQueue.CreateMesh(PaAssets.CircleFilledVertices, PaAssets.CircleFilledIndices),
+            renderQueue.CreateMesh(PaAssets.CircleOutlineVertices, PaAssets.CircleOutlineIndices),
+            renderQueue.CreateMesh(PaAssets.CircleHalfVertices, PaAssets.CircleHalfIndices),
+            renderQueue.CreateMesh(PaAssets.CircleHalfOutlineVertices, PaAssets.CircleHalfOutlineIndices),
+            renderQueue.CreateMesh(PaAssets.CircleOutlineThinVertices, PaAssets.CircleOutlineThinIndices),
+            renderQueue.CreateMesh(PaAssets.CircleQuarterVertices, PaAssets.CircleQuarterIndices),
+            renderQueue.CreateMesh(PaAssets.CircleQuarterOutlineVertices, PaAssets.CircleQuarterOutlineIndices),
+            renderQueue.CreateMesh(PaAssets.CircleHalfQuarterVertices, PaAssets.CircleHalfQuarterIndices),
+            renderQueue.CreateMesh(PaAssets.CircleHalfQuarterOutlineVertices, PaAssets.CircleHalfQuarterOutlineIndices),
         ]);
 
         meshes.Add([
-            renderingFactory.CreateMesh(PaAssets.TriangleFilledVertices, PaAssets.TriangleFilledIndices),
-            renderingFactory.CreateMesh(PaAssets.TriangleOutlineVertices, PaAssets.TriangleOutlineIndices),
-            renderingFactory.CreateMesh(PaAssets.TriangleRightFilledVertices, PaAssets.TriangleRightFilledIndices),
-            renderingFactory.CreateMesh(PaAssets.TriangleRightOutlineVertices, PaAssets.TriangleRightOutlineIndices),
+            renderQueue.CreateMesh(PaAssets.TriangleFilledVertices, PaAssets.TriangleFilledIndices),
+            renderQueue.CreateMesh(PaAssets.TriangleOutlineVertices, PaAssets.TriangleOutlineIndices),
+            renderQueue.CreateMesh(PaAssets.TriangleRightFilledVertices, PaAssets.TriangleRightFilledIndices),
+            renderQueue.CreateMesh(PaAssets.TriangleRightOutlineVertices, PaAssets.TriangleRightOutlineIndices),
         ]);
 
         meshes.Add([
-            renderingFactory.CreateMesh(PaAssets.ArrowVertices, PaAssets.ArrowIndices),
-            renderingFactory.CreateMesh(PaAssets.ArrowHeadVertices, PaAssets.ArrowHeadIndices),
+            renderQueue.CreateMesh(PaAssets.ArrowVertices, PaAssets.ArrowIndices),
+            renderQueue.CreateMesh(PaAssets.ArrowHeadVertices, PaAssets.ArrowHeadIndices),
         ]);
 
         meshes.Add([]);
 
         meshes.Add([
-            renderingFactory.CreateMesh(PaAssets.HexagonFilledVertices, PaAssets.HexagonFilledIndices),
-            renderingFactory.CreateMesh(PaAssets.HexagonOutlineVertices, PaAssets.HexagonOutlineIndices),
-            renderingFactory.CreateMesh(PaAssets.HexagonOutlineThinVertices, PaAssets.HexagonOutlineThinIndices),
-            renderingFactory.CreateMesh(PaAssets.HexagonHalfVertices, PaAssets.HexagonHalfIndices),
-            renderingFactory.CreateMesh(PaAssets.HexagonHalfOutlineVertices, PaAssets.HexagonHalfOutlineIndices),
-            renderingFactory.CreateMesh(PaAssets.HexagonHalfOutlineThinVertices, PaAssets.HexagonHalfOutlineThinIndices),
+            renderQueue.CreateMesh(PaAssets.HexagonFilledVertices, PaAssets.HexagonFilledIndices),
+            renderQueue.CreateMesh(PaAssets.HexagonOutlineVertices, PaAssets.HexagonOutlineIndices),
+            renderQueue.CreateMesh(PaAssets.HexagonOutlineThinVertices, PaAssets.HexagonOutlineThinIndices),
+            renderQueue.CreateMesh(PaAssets.HexagonHalfVertices, PaAssets.HexagonHalfIndices),
+            renderQueue.CreateMesh(PaAssets.HexagonHalfOutlineVertices, PaAssets.HexagonHalfOutlineIndices),
+            renderQueue.CreateMesh(PaAssets.HexagonHalfOutlineThinVertices, PaAssets.HexagonHalfOutlineThinIndices),
         ]);
     }
 
@@ -76,7 +75,7 @@ public class MeshService : IDisposable
         {
             foreach (var mesh in meshList)
             {
-                renderingFactory.DestroyMesh(mesh);
+                renderQueue.DestroyMesh(mesh);
             }
         }
     }

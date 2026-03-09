@@ -12,4 +12,5 @@ public class PASOptions
     public required ServiceDefinition<IWindow> WindowDefinition { get; init; }
     public required ServiceDefinition<IRenderer> RendererDefinition { get; init; }
     public required ServiceDefinition<IRenderingFactory> RenderingFactoryDefinition { get; init; }
+    public required ServiceDefinition<IRenderQueue> RenderQueueDefinition { get; init; }
 }

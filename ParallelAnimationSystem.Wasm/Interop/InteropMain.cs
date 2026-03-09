@@ -36,6 +36,7 @@ public static class InteropMain
         {
             builder.UseAppSettings(appSettings);
             builder.UseWindow<WasmWindow>();
+            builder.UseRenderQueue<RenderQueue>();
             builder.UseOpenGLESRenderer();
         });
 

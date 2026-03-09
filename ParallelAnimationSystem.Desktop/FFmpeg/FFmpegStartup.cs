@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Mathematics;
+using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Desktop.FFmpeg;
@@ -37,7 +38,7 @@ public static class FFmpegStartup
         });
 
         services
-            .AddPlatform<FFmpegWindow, FFmpegGlfwService>(
+            .AddPlatform<FFmpegWindow, FFmpegGlfwService, RenderQueue>(
                 backend,
                 false,
                 enablePostProcessing, enableTextRendering)

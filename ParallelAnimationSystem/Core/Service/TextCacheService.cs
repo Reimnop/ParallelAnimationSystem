@@ -8,14 +8,14 @@ namespace ParallelAnimationSystem.Core.Service;
 
 public class TextCacheService : IDisposable
 {
-    private readonly IRenderingFactory renderingFactory;
+    private readonly IRenderQueue renderQueue;
     private readonly PlaybackObjectContainer playbackObjects;
 
     private readonly List<TextHandle?> textHandles = [];
 
-    public TextCacheService(IRenderingFactory renderingFactory, PlaybackObjectContainer playbackObjects)
+    public TextCacheService(IRenderQueue renderQueue, PlaybackObjectContainer playbackObjects)
     {
-        this.renderingFactory = renderingFactory;
+        this.renderQueue = renderQueue;
         this.playbackObjects = playbackObjects;
 
         foreach (var entry in playbackObjects)
@@ -62,7 +62,7 @@ public class TextCacheService : IDisposable
         if (playbackObject.Text is not null)
         {
             textHandles.EnsureCount(entry.Index + 1);
-            textHandles[entry.Index] = renderingFactory.CreateText(playbackObject.Text);
+            textHandles[entry.Index] = renderQueue.CreateText(playbackObject.Text);
         }
     }
     
@@ -74,7 +74,7 @@ public class TextCacheService : IDisposable
             var textHandle = textHandles[entry.Index];
             if (textHandle.HasValue)
             {
-                renderingFactory.DestroyText(textHandle.Value);
+                renderQueue.DestroyText(textHandle.Value);
                 textHandles[entry.Index] = null;
             }
         }
@@ -102,14 +102,14 @@ public class TextCacheService : IDisposable
                     {
                         var oldTextHandle = textHandles[index];
                         if (oldTextHandle.HasValue)
-                            renderingFactory.DestroyText(oldTextHandle.Value);
+                            renderQueue.DestroyText(oldTextHandle.Value);
                         textHandles[index] = null;
                     }
 
                     if (playbackObject.Text is not null)
                     {
                         textHandles.EnsureCount(index + 1);
-                        textHandles[index] = renderingFactory.CreateText(playbackObject.Text);
+                        textHandles[index] = renderQueue.CreateText(playbackObject.Text);
                     }
                 }
                 break;

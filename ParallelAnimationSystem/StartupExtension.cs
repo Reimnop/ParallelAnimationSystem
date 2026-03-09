@@ -27,6 +27,7 @@ public static class StartupExtension
             
             // Everything related to resources are singletons
             options.RenderingFactoryDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);
+            options.RenderQueueDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);
             
             // Add resource loader with all resource source factories
             services.AddSingleton(_ => new ResourceLoader(options.ResourceSourceFactories
