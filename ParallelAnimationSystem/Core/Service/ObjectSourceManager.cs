@@ -1,14 +1,15 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics;
 using ParallelAnimationSystem.Core.Model;
+using ParallelAnimationSystem.Core.Text;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Core.Service;
 
-public class ObjectSourceManager(FontService fontService, PlaybackObjectContainer playbackObjects, RandomSeedService seedService) : IDisposable
+public class ObjectSourceManager(TextShaper textShaper, PlaybackObjectContainer playbackObjects, RandomSeedService seedService) : IDisposable
 {
-    private readonly MainObjectSource mainObjectSource = new(fontService, playbackObjects, seedService);
+    private readonly MainObjectSource mainObjectSource = new(textShaper, playbackObjects, seedService);
     private readonly CameraObjectSource cameraObjectSource = new(playbackObjects);
     
     private readonly Dictionary<string, PrefabInstanceObjectSource> prefabInstanceObjectSources = [];
@@ -39,7 +40,7 @@ public class ObjectSourceManager(FontService fontService, PlaybackObjectContaine
         // initialize prefab instance object sources
         foreach (var (_, instance) in beatmapData.PrefabInstances)
         {
-            var prefabInstanceObjectSource = new PrefabInstanceObjectSource(instance.Id, fontService, playbackObjects, seedService)
+            var prefabInstanceObjectSource = new PrefabInstanceObjectSource(instance.Id, textShaper, playbackObjects, seedService)
             {
                 StartTime = instance.StartTime,
                 Position = instance.Position,
@@ -99,7 +100,7 @@ public class ObjectSourceManager(FontService fontService, PlaybackObjectContaine
 
     private void OnPrefabInstanceInserted(object? sender, BeatmapPrefabInstance e)
     {
-        var prefabInstanceObjectSource = new PrefabInstanceObjectSource(e.Id, fontService, playbackObjects, seedService)
+        var prefabInstanceObjectSource = new PrefabInstanceObjectSource(e.Id, textShaper, playbackObjects, seedService)
         {
             StartTime = e.StartTime,
             Position = e.Position,

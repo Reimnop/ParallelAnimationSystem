@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Rendering;
@@ -7,23 +6,10 @@ using ParallelAnimationSystem.Windowing;
 
 namespace ParallelAnimationSystem.Desktop;
 
-public sealed class DesktopApp
+public sealed class DesktopApp(IServiceProvider serviceProvider)
 {
-    private readonly ConcurrentQueue<IDrawList> drawListPool = [];
-    private readonly ConcurrentQueue<IDrawList> queuedDrawLists = [];
-
-    private readonly IServiceProvider serviceProvider;
-
-    private volatile bool running = true;
-
-    public DesktopApp(IServiceProvider serviceProvider, IRenderingFactory renderingFactory)
-    {
-        this.serviceProvider = serviceProvider;
-
-        for (var i = 0; i < 3; i++)
-            drawListPool.Enqueue(renderingFactory.CreateDrawList());
-    }
-
+    private volatile bool appRunning = true;
+    
     public void StartApp(string beatmapPath, string audioPath)
     {
         using var scope = serviceProvider.CreateScope();
@@ -45,26 +31,15 @@ public sealed class DesktopApp
         var renderThread = new Thread(StartRenderThread);
         renderThread.Start();
         
-        // Start the main thread
-        while (running)
-        {
-            // Get a draw list from the pool
-            IDrawList? drawList;
-            while (!drawListPool.TryDequeue(out drawList))
-                Thread.Yield();
-            
-            // Populate the draw list
-            appCore.ProcessFrame((float) audioPlayer.Position, drawList);
-            
-            // Enqueue the draw list for rendering
-            queuedDrawLists.Enqueue(drawList);
-        }
-        
-        // Wait for render thread to finish
-        renderThread.Join();
+        // Start the main loop
+        while (appRunning)
+            appCore.ProcessFrame((float) audioPlayer.Position);
         
         // Stop audio
         audioPlayer.Stop();
+        
+        // Wait for the render thread to finish
+        renderThread.Join();
     }
 
     private void StartRenderThread()
@@ -72,27 +47,22 @@ public sealed class DesktopApp
         using var scope = serviceProvider.CreateScope();
         var sp = scope.ServiceProvider;
         
-        // Initialize renderer
+        var renderQueue = (AsyncRenderQueue) sp.GetRequiredService<IRenderQueue>();
         var renderer = sp.GetRequiredService<IRenderer>();
         var window = sp.GetRequiredService<IWindow>();
-
+        
+        // Start the render loop
         while (!window.ShouldClose)
         {
             window.PollEvents();
 
-            // Get a draw list from the queue
-            IDrawList? drawList;
-            while (!queuedDrawLists.TryDequeue(out drawList))
+            while (renderQueue.QueuedFrames == 0)
                 Thread.Yield();
             
-            // Process the frame
-            renderer.ProcessFrame(drawList);
-            
-            // Return the draw list to the pool
-            drawList.Clear();
-            drawListPool.Enqueue(drawList);
+            renderQueue.FlushOneFrame(renderer);
         }
-
-        running = false;
+        
+        // Signal the main thread to stop
+        appRunning = false;
     }
 }

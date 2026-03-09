@@ -5,6 +5,8 @@ using System.Numerics;
 using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Core.Model;
+using ParallelAnimationSystem.Core.Shape;
+using ParallelAnimationSystem.Core.Text;
 using ParallelAnimationSystem.Rendering.Data;
 using ParallelAnimationSystem.Util;
 
@@ -84,14 +86,14 @@ public class PrefabInstanceObjectSource : IDisposable
     private BeatmapPrefab? attachedPrefab;
     
     private readonly Identifier instanceId;
-    private readonly FontService fontService;
+    private readonly TextShaper textShaper;
     private readonly PlaybackObjectContainer playbackObjects;
     private readonly RandomSeedService seedService;
 
-    public PrefabInstanceObjectSource(Identifier instanceId, FontService fontService, PlaybackObjectContainer playbackObjects, RandomSeedService seedService)
+    public PrefabInstanceObjectSource(Identifier instanceId, TextShaper textShaper, PlaybackObjectContainer playbackObjects, RandomSeedService seedService)
     {
         this.instanceId = instanceId;
-        this.fontService = fontService;
+        this.textShaper = textShaper;
         this.playbackObjects = playbackObjects;
         this.seedService = seedService;
 
@@ -264,8 +266,9 @@ public class PrefabInstanceObjectSource : IDisposable
             RenderDepth = beatmapObject.RenderDepth,
             Shape = beatmapObject.Shape,
             Text = beatmapObject.Text is not null 
-                ? fontService.ShapeText(beatmapObject.Text, beatmapObject.Origin)
-                : null
+                ? textShaper.ShapeText(beatmapObject.Text, beatmapObject.Origin)
+                : null,
+            CustomShapeInfo = beatmapObject.CustomShapeInfo
         };
 
         // populate sequences
@@ -550,7 +553,7 @@ public class PrefabInstanceObjectSource : IDisposable
             case nameof(BeatmapObject.Origin):
                 playbackObject.Origin = beatmapObject.Origin;
                 playbackObject.Text = beatmapObject.Text is not null 
-                    ? fontService.ShapeText(beatmapObject.Text, beatmapObject.Origin)
+                    ? textShaper.ShapeText(beatmapObject.Text, beatmapObject.Origin)
                     : null;
                 break;
             case nameof(BeatmapObject.RenderDepth):
@@ -561,8 +564,11 @@ public class PrefabInstanceObjectSource : IDisposable
                 break;
             case nameof(BeatmapObject.Text):
                 playbackObject.Text = beatmapObject.Text is not null 
-                    ? fontService.ShapeText(beatmapObject.Text, beatmapObject.Origin)
+                    ? textShaper.ShapeText(beatmapObject.Text, beatmapObject.Origin)
                     : null;
+                break;
+            case nameof(BeatmapObject.CustomShapeInfo):
+                playbackObject.CustomShapeInfo = beatmapObject.CustomShapeInfo;
                 break;
         }
     }

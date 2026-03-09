@@ -1,11 +1,13 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.OpenGL;
 using ParallelAnimationSystem.Rendering.OpenGLES;
 using ParallelAnimationSystem.Windowing;
 
 #if DEBUG
+using ParallelAnimationSystem.DebugStuff;
 using ParallelAnimationSystem.Desktop.DebugStuff;
 #endif
 
@@ -15,7 +17,8 @@ public static class Extension
 {
     public static IServiceCollection AddPlatform<
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TWindow,
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TGlfw>(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TGlfw,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRenderQueue>(
         this IServiceCollection services,
         RenderingBackend backend,
         bool lockAspectRatio,
@@ -23,6 +26,7 @@ public static class Extension
         bool enableTextRendering) 
         where TWindow : IWindow
         where TGlfw : GlfwService
+        where TRenderQueue : IRenderQueue
     {
         var appSettings = new AppSettings
         {
@@ -43,6 +47,7 @@ public static class Extension
         {
             builder.UseAppSettings(appSettings);
             builder.UseWindow<TWindow>();
+            builder.UseRenderQueue<TRenderQueue>();
             switch (backend)
             {
                 case RenderingBackend.OpenGL:

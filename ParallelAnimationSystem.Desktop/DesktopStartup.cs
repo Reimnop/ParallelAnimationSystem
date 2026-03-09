@@ -1,9 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Mathematics;
-using ParallelAnimationSystem.Rendering.OpenGL;
-using ParallelAnimationSystem.Rendering.OpenGLES;
+using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Util;
 
 #if DEBUG
@@ -38,7 +36,7 @@ public static class DesktopStartup
         });
 
         services
-            .AddPlatform<DesktopWindow, GlfwService>(
+            .AddPlatform<DesktopWindow, GlfwService, AsyncRenderQueue>(
                 backend,
                 lockAspectRatio,
                 enablePostProcessing, enableTextRendering)

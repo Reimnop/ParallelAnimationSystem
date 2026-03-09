@@ -12,12 +12,9 @@ namespace ParallelAnimationSystem.Desktop.FFmpeg;
 
 public class FFmpegFrameGenerator(
     IServiceProvider serviceProvider,
-    IRenderingFactory renderingFactory,
     FFmpegSettings settings,
     ILogger<FFmpegFrameGenerator> logger) : IDisposable
 {
-    private readonly IDrawList drawList = renderingFactory.CreateDrawList();
-    
     private readonly StreamWriter ffmpegLogWriter = new("ffmpeg_output.log");
     
     public void Dispose()
@@ -38,6 +35,7 @@ public class FFmpegFrameGenerator(
         
         // Initialize renderer
         var renderer = sp.GetRequiredService<IRenderer>();
+        var renderQueue = (RenderQueue)sp.GetRequiredService<IRenderQueue>();
         var window = (FFmpegWindow)sp.GetRequiredService<IWindow>();
         
         var windowSize = window.FramebufferSize;
@@ -110,8 +108,8 @@ public class FFmpegFrameGenerator(
         for (var i = 0; i < frameCount; i++)
         {
             var time = i / (float)framerate;
-            appCore.ProcessFrame(time, drawList);
-            renderer.ProcessFrame(drawList);
+            appCore.ProcessFrame(time);
+            renderQueue.ProcessFrame(renderer);
 
             var frameData = window.FrameData;
             ffmpegProcess.StandardInput.BaseStream.Write(frameData);

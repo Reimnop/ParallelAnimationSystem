@@ -48,7 +48,4 @@ public struct ColorRgba(float r, float g, float b, float a)
 
     public override int GetHashCode()
         => HashCode.Combine(R, G, B, A);
-
-    public Vector4 ToVector()
-        => new(R, G, B, A);
 }

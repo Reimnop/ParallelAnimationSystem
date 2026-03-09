@@ -3,8 +3,9 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core.Data;
+using ParallelAnimationSystem.Core.Shape;
+using ParallelAnimationSystem.Core.Text;
 using ParallelAnimationSystem.Rendering.Data;
-using ParallelAnimationSystem.Text;
 
 namespace ParallelAnimationSystem.Core.Service;
 
@@ -69,6 +70,12 @@ public class PlaybackObject(Identifier id) : IIdentifiable, INotifyPropertyChang
     }
     
     public ShapedRichText? Text 
+    {
+        get;
+        set => SetField(ref field, value);
+    }
+    
+    public VGShapeInfo? CustomShapeInfo 
     {
         get;
         set => SetField(ref field, value);

@@ -3,6 +3,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core.Data;
+using ParallelAnimationSystem.Core.Shape;
 
 namespace ParallelAnimationSystem.Core.Model;
 
@@ -12,7 +13,7 @@ public class BeatmapObject : IStringIdentifiable, INotifyPropertyChanged
     public event EventHandler<KeyframeList<RandomizableKeyframe<Vector2>>>? PositionKeyframesChanged;
     public event EventHandler<KeyframeList<RandomizableKeyframe<Vector2>>>? ScaleKeyframesChanged;
     public event EventHandler<KeyframeList<RandomizableKeyframe<float>>>? RotationKeyframesChanged;
-    public event EventHandler<KeyframeList<Keyframe<BeatmapObjectIndexedColor>>>? ColorKeyframesChanged;
+    public event EventHandler<KeyframeList<Data.Keyframe<BeatmapObjectIndexedColor>>>? ColorKeyframesChanged;
 
     public string Id { get; }
 
@@ -94,6 +95,12 @@ public class BeatmapObject : IStringIdentifiable, INotifyPropertyChanged
         set => SetField(ref field, value);
     }
     
+    public VGShapeInfo? CustomShapeInfo
+    {
+        get;
+        set => SetField(ref field, value);
+    }
+    
     public float Duration => Math.Max(PositionKeyframes.Duration,
         Math.Max(ScaleKeyframes.Duration,
             Math.Max(RotationKeyframes.Duration,
@@ -102,7 +109,7 @@ public class BeatmapObject : IStringIdentifiable, INotifyPropertyChanged
     public KeyframeList<RandomizableKeyframe<Vector2>> PositionKeyframes { get; } = [];
     public KeyframeList<RandomizableKeyframe<Vector2>> ScaleKeyframes { get; } = [];
     public KeyframeList<RandomizableKeyframe<float>> RotationKeyframes { get; } = [];
-    public KeyframeList<Keyframe<BeatmapObjectIndexedColor>> ColorKeyframes { get; } = [];
+    public KeyframeList<Data.Keyframe<BeatmapObjectIndexedColor>> ColorKeyframes { get; } = [];
 
     public BeatmapObject(string id)
     {

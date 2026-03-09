@@ -14,6 +14,20 @@ public static class NumberUtil
             return SplitMix64(seed);
         };
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong Mix(params ReadOnlySpan<ulong> values)
+    {
+        var h = 0x9E3779B97F4A7C15UL;
+        foreach (var v in values)
+        {
+            h ^= v;
+            h += 0x9E3779B97F4A7C15UL;
+            h = SplitMix64(h);
+        }
+
+        return h;
+    }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ulong Mix(ulong a, ulong b)
@@ -72,5 +86,27 @@ public static class NumberUtil
         }
 
         return h;
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong ComputeHash(ReadOnlySpan<byte> data)
+    {
+        // FNV-1a hash
+        var h = 1469598103934665603UL;
+        foreach (var b in data)
+        {
+            h ^= b;
+            h *= 1099511628211UL;
+        }
+
+        return h;
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe ulong ComputeHash<T>(T data) where T : unmanaged
+    {
+        var ptr = (byte*)&data;
+        var dataSpan = new ReadOnlySpan<byte>(ptr, sizeof(T));
+        return ComputeHash(dataSpan);
     }
 }

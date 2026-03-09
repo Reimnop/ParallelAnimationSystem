@@ -25,8 +25,8 @@
   
   <ItemGroup>
     <ProjectReference Include="../ParallelAnimationSystem/ParallelAnimationSystem.csproj" />
-    <ProjectReference Include="../ParallelAnimationSystem.Rendering.OpenGLES/ParallelAnimationSystem.Rendering.OpenGLES.csproj" />
     <ProjectReference Include="../ParallelAnimationSystem.Rendering.OpenGL/ParallelAnimationSystem.Rendering.OpenGL.csproj" />
+    <ProjectReference Include="../ParallelAnimationSystem.Rendering.OpenGLES/ParallelAnimationSystem.Rendering.OpenGLES.csproj" />
   </ItemGroup>
   
   <ItemGroup Condition="'$(Configuration)' != 'Debug'">

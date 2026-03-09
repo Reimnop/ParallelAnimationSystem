@@ -1,5 +1,4 @@
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using Pamx.Common;
 using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core.Data;
@@ -7,7 +6,7 @@ using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering.Data;
-using ParallelAnimationSystem.Text;
+using ParallelAnimationSystem.Rendering.Handle;
 
 namespace ParallelAnimationSystem.Core;
 
@@ -16,11 +15,11 @@ public class AppCore(
     PlaybackObjectContainer playbackObjects,
     MeshService meshService,
     BeatmapService beatmapService,
-    IRenderingFactory renderingFactory)
+    TextCacheService textCacheService,
+    MeshCacheService meshCacheService,
+    IRenderQueue renderQueue)
 {
-    private readonly ConditionalWeakTable<ShapedRichText, IText> loadedTexts = [];
-
-    public void ProcessFrame(float time, IDrawList drawList)
+    public void ProcessFrame(float time)
     {
         beatmapService.ProcessBeatmap(time, out var themeColorState, out var eventState, out var drawItems);
         
@@ -35,9 +34,10 @@ public class AppCore(
             MathF.Sin(time * MathF.PI * shakeFrequency - shakeMagic2) + MathF.Sin(time * shakeFrequency * 2.0f + shakeMagic2));
         shakeVector *= shake * 0.5f;
         
+        // Get a draw list from the render queue
+        var drawList = renderQueue.GetDrawList();
+        
         // Start queuing draw commands
-        drawList.Clear();
-
         drawList.ClearColor = new ColorRgba(themeColorState.Background);
         drawList.CameraData = new CameraData(
             eventState.CameraPosition + shakeVector,
@@ -89,9 +89,7 @@ public class AppCore(
             
             if (playbackObject.Shape != ObjectShape.Text)
             {
-                playbackObject.Shape.ToSeparate(out var shapeIndex, out var shapeOptionIndex);
-
-                if (meshService.TryGetMeshForShape(shapeIndex, shapeOptionIndex, out var mesh))
+                if (TryGetMesh(playbackObject, drawItem.ObjectIndex, out var mesh))
                 {
                     var renderMode = playbackObject.RenderMode;
                         
@@ -105,20 +103,39 @@ public class AppCore(
             }
             else if (appSettings.EnableTextRendering)
             {
-                if (playbackObject.Text is not null)
+                if (textCacheService.TryGetText(drawItem.ObjectIndex, out var textHandle))
                 {
-                    if (!loadedTexts.TryGetValue(playbackObject.Text, out var text))
-                    {
-                        text = renderingFactory.CreateText(playbackObject.Text);
-                        loadedTexts.Add(playbackObject.Text, text);
-                    }
-                    
                     var color1 = drawItem.Color1;
                     var color1Rgba = new ColorRgba(color1, drawItem.Opacity);
-                    drawList.AddText(text, transform, color1Rgba);
+                    drawList.AddText(textHandle, transform, color1Rgba);
                 }
             }
         }
+        
+        // Submit the draw list to the render queue
+        renderQueue.SubmitDrawList(drawList);
+    }
+
+    private bool TryGetMesh(PlaybackObject playbackObject, int objectIndex, out MeshHandle meshHandle)
+    {
+        playbackObject.Shape.ToSeparate(out var shapeIndex, out var shapeOptionIndex);
+        
+        // look in main mesh service first
+        if (meshService.TryGetMeshForShape(shapeIndex, shapeOptionIndex, out meshHandle))
+            return true;
+        
+        // then look in mesh cache if shape is custom
+        if (playbackObject.Shape 
+            is ObjectShape.SquareCustom 
+            or ObjectShape.CircleCustom
+            or ObjectShape.TriangleCustom
+            or ObjectShape.Custom
+            or ObjectShape.HexagonCustom)
+            if (meshCacheService.TryGetMesh(objectIndex, out meshHandle))
+                return true;
+        
+        meshHandle = default;
+        return false;
     }
     
     private static HueShiftPostProcessingData CreateHueShiftData(float hue)

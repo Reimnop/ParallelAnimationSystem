@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../ParallelAnimationSystem/ParallelAnimationSystem.csproj" />
+    <ProjectReference Include="../ParallelAnimationSystem.Rendering.Common/ParallelAnimationSystem.Rendering.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)' != 'Debug'">
