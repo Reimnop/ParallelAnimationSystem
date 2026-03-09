@@ -7,16 +7,6 @@ namespace ParallelAnimationSystem.Rendering;
 
 public class DrawList : IDrawDataProvider
 {
-    public DrawData DrawData => new()
-    {
-        CameraData = CameraData,
-        PostProcessingData = PostProcessingData,
-        ClearColor = ClearColor,
-        MeshDrawItems = meshDrawItems.AsSpan(0, meshDrawItemCount),
-        TextDrawItems = textDrawItems.AsSpan(0, textDrawItemCount),
-        DrawCommands = drawCommands.AsSpan(0, drawCommandCount)
-    };
-    
     public CameraData CameraData { get; set; } = new(Vector2.Zero, 10.0f, 0.0f);
     public PostProcessingData PostProcessingData { get; set; }
     public ColorRgba ClearColor { get; set; } = new(0.0f, 0.0f, 0.0f, 1.0f);
@@ -75,6 +65,17 @@ public class DrawList : IDrawDataProvider
         textDrawItemCount = 0;
         drawCommandCount = 0;
     }
+    
+    public DrawData CreateDrawData() 
+        => new()
+        {
+            CameraData = CameraData,
+            PostProcessingData = PostProcessingData,
+            ClearColor = ClearColor,
+            MeshDrawItems = meshDrawItems.AsSpan(0, meshDrawItemCount),
+            TextDrawItems = textDrawItems.AsSpan(0, textDrawItemCount),
+            DrawCommands = drawCommands.AsSpan(0, drawCommandCount)
+        };
 
     private static void EnsureIndexExists<T>(ref T[] drawItems, int index) where T : struct
     {

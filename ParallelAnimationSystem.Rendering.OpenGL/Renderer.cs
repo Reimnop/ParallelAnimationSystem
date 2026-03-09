@@ -372,8 +372,7 @@ public class Renderer : IRenderer, IDisposable
         // Update OpenGL data
         UpdateOpenGlData(renderSize);
         
-        // Get draw data
-        var drawData = drawDataProvider.DrawData;
+        var drawData = drawDataProvider.CreateDrawData();
         
         // Split draw list into opaque and transparent
         opaqueDrawCommands.Clear();

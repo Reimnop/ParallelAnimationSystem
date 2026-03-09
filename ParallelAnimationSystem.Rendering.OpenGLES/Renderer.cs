@@ -420,8 +420,7 @@ public class Renderer : IRenderer, IDisposable
         // Update OpenGL data
         UpdateOpenGlData(renderSize);
         
-        // Get draw data
-        var drawData = drawDataProvider.DrawData;
+        var drawData = drawDataProvider.CreateDrawData();
         
         // Get camera matrix (view and projection)
         var camera = RenderUtil.GetCameraMatrix(drawData.CameraData, renderSize);

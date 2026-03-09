@@ -45,5 +45,5 @@ public ref struct DrawData
 
 public interface IDrawDataProvider
 {
-    DrawData DrawData { get; }
+    DrawData CreateDrawData();
 }
