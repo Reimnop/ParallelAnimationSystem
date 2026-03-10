@@ -1,5 +1,6 @@
 using OpenTK.Graphics.OpenGLES2;
 using ParallelAnimationSystem.Core;
+using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Mathematics;
 
 namespace ParallelAnimationSystem.Rendering.OpenGLES.PostProcessing;
@@ -13,7 +14,7 @@ public class LegacyBloom : IDisposable
         prefilterThresholdUniformLocation,
         prefilterCurveUniformLocation,
         upsampleSampleScaleUniformLocation,
-        combineIntensityUniformLocation;
+        combineTintUniformLocation;
     
     private readonly int textureSampler;
     private readonly int framebuffer;
@@ -33,7 +34,7 @@ public class LegacyBloom : IDisposable
         prefilterThresholdUniformLocation = GL.GetUniformLocation(prefilterProgram, "uThreshold");
         prefilterCurveUniformLocation = GL.GetUniformLocation(prefilterProgram, "uCurve");
         upsampleSampleScaleUniformLocation = GL.GetUniformLocation(upsampleProgram, "uSampleScale");
-        combineIntensityUniformLocation = GL.GetUniformLocation(combineProgram, "uIntensity");
+        combineTintUniformLocation = GL.GetUniformLocation(combineProgram, "uIntensity");
         
         var combineSourceSamplerUniformLocation = GL.GetUniformLocation(combineProgram, "uSourceSampler");
         var combineBloomSamplerUniformLocation = GL.GetUniformLocation(combineProgram, "uBloomSampler");
@@ -53,7 +54,7 @@ public class LegacyBloom : IDisposable
         vaoHandle = GL.GenVertexArray();
     }
 
-    public bool Process(Vector2i size, float intensity, float diffusion, int inputTexture, int outputTexture)
+    public bool Process(Vector2i size, float intensity, float diffusion, ColorRgb color, int inputTexture, int outputTexture)
     {
         if (intensity == 0.0f)
             return false;
@@ -168,7 +169,8 @@ public class LegacyBloom : IDisposable
         
         GL.UseProgram(combineProgram);
         
-        GL.Uniform1f(combineIntensityUniformLocation, intensity);
+        var tint = color * intensity;
+        GL.Uniform3f(combineTintUniformLocation, tint.R, tint.G, tint.B);
         
         GL.BindTexture(TextureTarget.Texture2d, inputTexture);
         

@@ -62,14 +62,16 @@ public class AppCore(
                     ? new BloomEffectState
                     {
                         Intensity = eventState.Bloom.Intensity,
-                        Diffusion = 7f
+                        Diffusion = 7f,
+                        Color = new ColorRgb(1f, 1f, 1f)
                     }
                     : default,
                 UniversalBloom = beatmapService.BeatmapFormat == BeatmapFormat.Vgd
                     ? new BloomEffectState
                     {
                         Intensity = eventState.Bloom.Intensity,
-                        Diffusion = MathUtil.MapRange(eventState.Bloom.Diffusion, 5f, 30f, 0f, 1f)
+                        Diffusion = MathUtil.MapRange(eventState.Bloom.Diffusion, 5f, 30f, 0f, 1f),
+                        Color = eventState.Bloom.Color
                     }
                     : default,
                 Vignette = new VignetteEffectState

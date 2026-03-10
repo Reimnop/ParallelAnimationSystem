@@ -631,10 +631,10 @@ public class Renderer : IRenderer, IDisposable
         GL.Disable(EnableCap.DepthTest);
         GL.Disable(EnableCap.Blend);
         
-        if (legacyBloom.Process(currentFboSize, state.LegacyBloom.Intensity, state.LegacyBloom.Diffusion, texture1, texture2))
+        if (legacyBloom.Process(currentFboSize, state.LegacyBloom.Intensity, state.LegacyBloom.Diffusion, state.LegacyBloom.Color, texture1, texture2))
             Swap(ref texture1, ref texture2);
         
-        if (universalBloom.Process(currentFboSize, state.UniversalBloom.Intensity, state.UniversalBloom.Diffusion, texture1, texture2))
+        if (universalBloom.Process(currentFboSize, state.UniversalBloom.Intensity, state.UniversalBloom.Diffusion, state.UniversalBloom.Color, texture1, texture2))
             Swap(ref texture1, ref texture2);
         
         if (glitch.Process(currentFboSize, state.Time, state.Glitch.Speed, state.Glitch.Intensity, state.Glitch.Amount, state.Glitch.StretchMultiplier, texture1, texture2))

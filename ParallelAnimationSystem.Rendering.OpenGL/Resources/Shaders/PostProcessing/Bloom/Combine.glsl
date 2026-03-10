@@ -7,7 +7,7 @@ layout(rgba16f, binding = 0) uniform image2D uOutputImage;
 uniform sampler2D uSourceSampler;
 uniform sampler2D uBloomSampler;
 
-uniform float uIntensity;
+uniform vec3 uTint;
 
 void main() {
     ivec2 coords = ivec2(gl_GlobalInvocationID.xy);
@@ -25,7 +25,7 @@ void main() {
     vec3 bloomColor = texture(uBloomSampler, uv).rgb;
     
     // Combine them
-    vec3 color = srcColor + bloomColor * uIntensity;
+    vec3 color = srcColor + bloomColor * uTint;
     
     // Store result
     imageStore(uOutputImage, coords, vec4(color, 1.0));

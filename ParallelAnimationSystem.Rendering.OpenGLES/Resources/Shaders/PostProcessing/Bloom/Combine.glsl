@@ -7,7 +7,7 @@ layout(location = 0) out highp vec4 oFragColor;
 uniform sampler2D uSourceSampler;
 uniform sampler2D uBloomSampler;
 
-uniform highp float uIntensity;
+uniform highp vec3 uTint;
 
 in highp vec2 vUv;
 
@@ -17,7 +17,7 @@ void main() {
     vec3 bloomColor = texture(uBloomSampler, vUv).rgb;
     
     // Mix
-    vec3 color = srcColor + bloomColor * uIntensity;
+    vec3 color = srcColor + bloomColor * uTint;
     
     // Store result
     oFragColor = vec4(color, 1.0);

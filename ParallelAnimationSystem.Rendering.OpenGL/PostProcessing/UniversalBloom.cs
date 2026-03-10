@@ -1,6 +1,7 @@
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using ParallelAnimationSystem.Core;
+using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Mathematics;
 using Vector2i = ParallelAnimationSystem.Mathematics.Vector2i;
 
@@ -16,7 +17,7 @@ public class UniversalBloom : IDisposable
         prefilterCurveUniformLocation,
         blurIsVerticalUniformLocation,
         upsampleScatterUniformLocation,
-        combineIntensityUniformLocation;
+        combineTintUniformLocation;
     
     private readonly int textureSampler;
 
@@ -34,7 +35,7 @@ public class UniversalBloom : IDisposable
         prefilterCurveUniformLocation = GL.GetUniformLocation(prefilterProgram, "uCurve");
         blurIsVerticalUniformLocation = GL.GetUniformLocation(blurProgram, "uIsVertical");
         upsampleScatterUniformLocation = GL.GetUniformLocation(upsampleProgram, "uScatter");
-        combineIntensityUniformLocation = GL.GetUniformLocation(combineProgram, "uIntensity");
+        combineTintUniformLocation = GL.GetUniformLocation(combineProgram, "uTint");
         
         var combineSourceSamplerUniformLocation = GL.GetUniformLocation(combineProgram, "uSourceSampler");
         var combineBloomSamplerUniformLocation = GL.GetUniformLocation(combineProgram, "uBloomSampler");
@@ -51,7 +52,7 @@ public class UniversalBloom : IDisposable
         GL.SamplerParameteri(textureSampler, SamplerParameterI.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
     }
 
-    public bool Process(Vector2i size, float intensity, float diffusion, int inputTexture, int outputTexture)
+    public bool Process(Vector2i size, float intensity, float diffusion, ColorRgb color, int inputTexture, int outputTexture)
     {
         if (intensity == 0.0f)
             return false;
@@ -165,7 +166,8 @@ public class UniversalBloom : IDisposable
         GL.BindTextureUnit(0, inputTexture);
         GL.BindTextureUnit(1, mip0.Handle);
         
-        GL.Uniform1f(combineIntensityUniformLocation, intensity);
+        var tint = color * intensity;
+        GL.Uniform3f(combineTintUniformLocation, tint.R, tint.G, tint.B);
         
         GL.DispatchCompute(
            (uint)MathUtil.DivideCeil(size.X, 8), 

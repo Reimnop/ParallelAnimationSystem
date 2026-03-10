@@ -13,6 +13,7 @@ public struct BloomEffectState
 {
     public float Intensity;
     public float Diffusion;
+    public ColorRgb Color;
 }
 
 public struct LensDistortionEffectState
