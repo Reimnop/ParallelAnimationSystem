@@ -96,7 +96,7 @@ public class UniversalBloom : IDisposable
         GL.UseProgram(prefilterProgram);
         
         // Set knee and threshold uniforms
-        var threshold = 1.0f; // TODO: expose as parameter
+        var threshold = 0.9f; // TODO: expose as parameter
         var softKnee = 0.5f;
         
         var knee = threshold * softKnee + 1e-5f;

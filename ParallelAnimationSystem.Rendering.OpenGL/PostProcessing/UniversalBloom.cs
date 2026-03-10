@@ -84,7 +84,7 @@ public class UniversalBloom : IDisposable
         GL.BindTextureUnit(0, inputTexture); // Bind input texture
         
         // Set knee and threshold uniforms
-        var threshold = 1f; // TODO: expose as parameter
+        var threshold = 0.9f; // TODO: expose as parameter
         var softKnee = 0.5f;
         
         var knee = threshold * softKnee + 1e-5f;
