@@ -85,6 +85,7 @@ public class Renderer : IRenderer, IDisposable
     // Post-processing
     private readonly LegacyBloom legacyBloom;
     private readonly UniversalBloom universalBloom;
+    private readonly Glitch glitch;
     private readonly UberPost uberPost;
     
     // Temporary draw data lists
@@ -281,6 +282,7 @@ public class Renderer : IRenderer, IDisposable
 
             legacyBloom = new LegacyBloom(loader, vertexShader);
             universalBloom = new UniversalBloom(loader, vertexShader);
+            glitch = new Glitch(loader, vertexShader);
             uberPost = new UberPost(loader, vertexShader);
 
             // Clean up
@@ -350,6 +352,7 @@ public class Renderer : IRenderer, IDisposable
         
         legacyBloom.Dispose();
         universalBloom.Dispose();
+        glitch.Dispose();
         uberPost.Dispose();
     }
     
@@ -625,15 +628,16 @@ public class Renderer : IRenderer, IDisposable
         if (universalBloom.Process(currentFboSize, state.UniversalBloom.Intensity, state.UniversalBloom.Diffusion, texture1, texture2))
             Swap(ref texture1, ref texture2);
         
+        if (glitch.Process(currentFboSize, state.Time, state.Glitch.Speed, state.Glitch.Intensity, state.Glitch.Amount, state.Glitch.StretchMultiplier, texture1, texture2))
+            Swap(ref texture1, ref texture2);
+        
         if (uberPost.Process(
                 currentFboSize,
-                state.Time,
                 state.HueShift.Angle,
                 state.LensDistortion.Intensity, state.LensDistortion.Center,
                 state.ChromaticAberration.Intensity,
                 state.Vignette.Center, state.Vignette.Intensity, state.Vignette.Rounded, state.Vignette.Roundness, state.Vignette.Smoothness, state.Vignette.Color,
                 state.Gradient.Color1, state.Gradient.Color2, state.Gradient.Intensity, state.Gradient.Rotation, state.Gradient.Mode,
-                state.Glitch.Intensity, state.Glitch.Speed, state.Glitch.Width,
                 texture1, texture2))
             Swap(ref texture1, ref texture2);
         

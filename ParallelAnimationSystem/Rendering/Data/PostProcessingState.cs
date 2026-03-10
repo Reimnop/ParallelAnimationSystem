@@ -47,9 +47,10 @@ public struct GradientEffectState
 
 public struct GlitchEffectState
 {
-    public float Intensity;
     public float Speed;
-    public float Width;
+    public float Intensity;
+    public float Amount;
+    public float StretchMultiplier;
 }
 
 public struct PostProcessingState

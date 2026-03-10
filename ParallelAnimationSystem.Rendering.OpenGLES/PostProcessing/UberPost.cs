@@ -11,8 +11,6 @@ public class UberPost : IDisposable
 {
     private readonly int program;
     
-    private readonly int timeUniformLocation;
-    
     private readonly int hueShiftAngleUniformLocation;
     
     private readonly int lensDistortionIntensityUniformLocation;
@@ -33,10 +31,6 @@ public class UberPost : IDisposable
     private readonly int gradientRotationUniformLocation;
     private readonly int gradientModeUniformLocation;
     
-    private readonly int glitchIntensityUniformLocation;
-    private readonly int glitchSpeedUniformLocation;
-    private readonly int glitchSizeUniformLocation;
-    
     private readonly int framebuffer;
 
     private readonly int vaoHandle;
@@ -44,8 +38,6 @@ public class UberPost : IDisposable
     public UberPost(ResourceLoader loader, int vertexShader)
     {
         program = LoaderUtil.LoadPostProcessingProgram(loader, "UberPost", vertexShader);
-        
-        timeUniformLocation = GL.GetUniformLocation(program, "uTime");
         
         hueShiftAngleUniformLocation = GL.GetUniformLocation(program, "uHueShiftAngle");
         
@@ -67,10 +59,6 @@ public class UberPost : IDisposable
         gradientRotationUniformLocation = GL.GetUniformLocation(program, "uGradientRotation");
         gradientModeUniformLocation = GL.GetUniformLocation(program, "uGradientMode");
         
-        glitchIntensityUniformLocation = GL.GetUniformLocation(program, "uGlitchIntensity");
-        glitchSpeedUniformLocation = GL.GetUniformLocation(program, "uGlitchSpeed");
-        glitchSizeUniformLocation = GL.GetUniformLocation(program, "uGlitchSize");
-        
         // Initialize framebuffer
         framebuffer = GL.GenFramebuffer();
         
@@ -80,14 +68,12 @@ public class UberPost : IDisposable
     
     public bool Process(
         Vector2i size,
-        float time,
         float hueShiftAngle,
         float lensDistortionIntensity,
         Vector2 lensDistortionCenter, 
         float chromaticAberrationIntensity,
         Vector2 vignetteCenter, float vignetteIntensity, bool vignetteRounded, float vignetteRoundness, float vignetteSmoothness, ColorRgb vignetteColor,
         ColorRgb gradientColor1, ColorRgb gradientColor2, float gradientIntensity, float gradientRotation, GradientOverlayMode gradientMode,
-        float glitchIntensity, float glitchSpeed, float glitchWidth,
         int inputTexture, int outputTexture)
     {
         // Attach output texture to framebuffer
@@ -100,8 +86,6 @@ public class UberPost : IDisposable
         
         GL.ActiveTexture(TextureUnit.Texture0);
         GL.BindTexture(TextureTarget.Texture2d, inputTexture);
-        
-        GL.Uniform1f(timeUniformLocation, time);
         
         GL.Uniform1f(hueShiftAngleUniformLocation, hueShiftAngle);
         
@@ -132,11 +116,6 @@ public class UberPost : IDisposable
         }
         
         GL.Uniform1i(gradientModeUniformLocation, (int) gradientMode);
-        
-        // TODO: Properly implement glitch effect
-        GL.Uniform1f(glitchIntensityUniformLocation, 0f);
-        GL.Uniform1f(glitchSpeedUniformLocation, 0f);
-        GL.Uniform2f(glitchSizeUniformLocation, 0f, 0f);
         
         GL.BindVertexArray(vaoHandle);
         GL.DrawArrays(PrimitiveType.Triangles, 0, 3);

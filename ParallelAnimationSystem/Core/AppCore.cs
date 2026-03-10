@@ -100,9 +100,10 @@ public class AppCore(
                 },
                 Glitch = new GlitchEffectState
                 {
-                    Intensity = eventState.Glitch.Intensity,
                     Speed = eventState.Glitch.Speed,
-                    Width = eventState.Glitch.Width
+                    Intensity = 1f,
+                    Amount = eventState.Glitch.Intensity,
+                    StretchMultiplier = eventState.Glitch.Width
                 }
             };
         }

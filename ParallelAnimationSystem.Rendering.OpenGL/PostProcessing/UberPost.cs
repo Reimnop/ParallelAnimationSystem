@@ -11,8 +11,6 @@ public class UberPost : IDisposable
 {
     private readonly int program;
     
-    private readonly int timeUniformLocation;
-    
     private readonly int hueShiftAngleUniformLocation;
     
     private readonly int lensDistortionIntensityUniformLocation;
@@ -33,10 +31,6 @@ public class UberPost : IDisposable
     private readonly int gradientRotationUniformLocation;
     private readonly int gradientModeUniformLocation;
     
-    private readonly int glitchIntensityUniformLocation;
-    private readonly int glitchSpeedUniformLocation;
-    private readonly int glitchSizeUniformLocation;
-    
     private readonly int sampler;
 
     public UberPost(ResourceLoader loader)
@@ -44,8 +38,6 @@ public class UberPost : IDisposable
         program = LoaderUtil.LoadComputeProgram(loader, "PostProcessing/UberPost");
         
         // Get uniform locations
-        timeUniformLocation = GL.GetUniformLocation(program, "uTime");
-        
         hueShiftAngleUniformLocation = GL.GetUniformLocation(program, "uHueShiftAngle");
         
         lensDistortionIntensityUniformLocation = GL.GetUniformLocation(program, "uLensDistortionIntensity");
@@ -66,10 +58,6 @@ public class UberPost : IDisposable
         gradientRotationUniformLocation = GL.GetUniformLocation(program, "uGradientRotation");
         gradientModeUniformLocation = GL.GetUniformLocation(program, "uGradientMode");
         
-        glitchIntensityUniformLocation = GL.GetUniformLocation(program, "uGlitchIntensity");
-        glitchSpeedUniformLocation = GL.GetUniformLocation(program, "uGlitchSpeed");
-        glitchSizeUniformLocation = GL.GetUniformLocation(program, "uGlitchSize");
-        
         // Initialize sampler
         sampler = GL.CreateSampler();
         GL.SamplerParameteri(sampler, SamplerParameterI.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
@@ -80,13 +68,11 @@ public class UberPost : IDisposable
     
     public bool Process(
         Vector2i size,
-        float time,
         float hueShiftAngle,
         float lensDistortionIntensity, Vector2 lensDistortionCenter,
         float chromaticAberrationIntensity,
         Vector2 vignetteCenter, float vignetteIntensity, bool vignetteRounded, float vignetteRoundness, float vignetteSmoothness, ColorRgb vignetteColor,
         ColorRgb gradientColor1, ColorRgb gradientColor2, float gradientIntensity, float gradientRotation, GradientOverlayMode gradientMode,
-        float glitchIntensity, float glitchSpeed, float glitchWidth,
         int inputTexture, int outputTexture)
     {
         GL.UseProgram(program);
@@ -94,8 +80,6 @@ public class UberPost : IDisposable
         GL.BindImageTexture(0, outputTexture, 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f);
         GL.BindTextureUnit(0, inputTexture);
         GL.BindSampler(0, sampler);
-        
-        GL.Uniform1f(timeUniformLocation, time);
         
         GL.Uniform1f(hueShiftAngleUniformLocation, hueShiftAngle);
         
@@ -126,11 +110,6 @@ public class UberPost : IDisposable
         }
         
         GL.Uniform1i(gradientModeUniformLocation, (int) gradientMode);
-        
-        // TODO: Properly implement glitch
-        GL.Uniform1f(glitchIntensityUniformLocation, 0f);
-        GL.Uniform1f(glitchSpeedUniformLocation, 0f);
-        GL.Uniform2f(glitchSizeUniformLocation, 0f, 0f);
         
         GL.DispatchCompute(
             (uint)MathUtil.DivideCeil(size.X, 8), 
