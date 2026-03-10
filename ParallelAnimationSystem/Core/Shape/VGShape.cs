@@ -97,8 +97,8 @@ public static class VGShape
             var nextCorner = cornerPositions[(i + 1) % cornerCount];
 
             // Calculate control points for rounded corner
-            var toPrev = Vector2.Normalize(prevCorner - corner) * (radius * cornerRoundness);
-            var toNext = Vector2.Normalize(nextCorner - corner) * (radius * cornerRoundness);
+            var toPrev = SafeNormalize(prevCorner - corner) * (radius * cornerRoundness);
+            var toNext = SafeNormalize(nextCorner - corner) * (radius * cornerRoundness);
             var p1 = corner + toPrev; // Changed minus to plus
             var p2 = corner;
             var p3 = corner + toNext; // Changed minus to plus
@@ -222,8 +222,8 @@ public static class VGShape
             var prevCorner = outerCorners[(i - 1 + cornerCount) % cornerCount];
             var nextCorner = outerCorners[(i + 1) % cornerCount];
 
-            var toPrev = Vector2.Normalize(prevCorner - corner) * (radius * cornerRoundness);
-            var toNext = Vector2.Normalize(nextCorner - corner) * (radius * cornerRoundness);
+            var toPrev = SafeNormalize(prevCorner - corner) * (radius * cornerRoundness);
+            var toNext = SafeNormalize(nextCorner - corner) * (radius * cornerRoundness);
             var p1 = corner + toPrev;
             var p2 = corner;
             var p3 = corner + toNext;
@@ -244,8 +244,8 @@ public static class VGShape
             var prevCorner = innerCorners[(i - 1 + cornerCount) % cornerCount];
             var nextCorner = innerCorners[(i + 1) % cornerCount];
 
-            var toPrev = Vector2.Normalize(prevCorner - corner) * insideRadius;
-            var toNext = Vector2.Normalize(nextCorner - corner) * insideRadius;
+            var toPrev = SafeNormalize(prevCorner - corner) * insideRadius;
+            var toNext = SafeNormalize(nextCorner - corner) * insideRadius;
             var p1 = corner + toPrev;
             var p2 = corner;
             var p3 = corner + toNext;
@@ -357,8 +357,8 @@ public static class VGShape
                 var prevCorner = i == 0 ? corner : outerCorners[i - 1];
                 var nextCorner = outerCorners[i + 1];
 
-                var toPrev = Vector2.Normalize(prevCorner - corner) * (radius * cornerRoundness);
-                var toNext = Vector2.Normalize(nextCorner - corner) * (radius * cornerRoundness);
+                var toPrev = SafeNormalize(prevCorner - corner) * (radius * cornerRoundness);
+                var toNext = SafeNormalize(nextCorner - corner) * (radius * cornerRoundness);
                 var p1 = corner + toPrev;
                 var p2 = corner;
                 var p3 = corner + toNext;
@@ -390,8 +390,8 @@ public static class VGShape
                 var prevCorner = i == 0 ? corner : innerCorners[i - 1];
                 var nextCorner = innerCorners[i + 1];
 
-                var toPrev = Vector2.Normalize(prevCorner - corner) * insideRadius;
-                var toNext = Vector2.Normalize(nextCorner - corner) * insideRadius;
+                var toPrev = SafeNormalize(prevCorner - corner) * insideRadius;
+                var toNext = SafeNormalize(nextCorner - corner) * insideRadius;
                 var p1 = corner + toPrev;
                 var p2 = corner;
                 var p3 = corner + toNext;
@@ -405,7 +405,7 @@ public static class VGShape
         }
 
         // Add final vertex for inner end cap
-        vertices[currentVertex] = innerCorners[sliceCount];
+        vertices[currentVertex++] = innerCorners[sliceCount];
 
         // Generate triangles connecting inner and outer rings
         var indices = new int[(verticesPerRing - 1) * 6];
@@ -433,5 +433,11 @@ public static class VGShape
     {
         var u = 1f - t;
         return u * u * p1 + 2f * u * t * p2 + t * t * p3;
+    }
+    
+    private static Vector2 SafeNormalize(Vector2 v)
+    {
+        var len = v.Length();
+        return len > 0 ? v / len : Vector2.Zero;
     }
 }
