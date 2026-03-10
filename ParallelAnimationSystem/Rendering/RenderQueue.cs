@@ -22,7 +22,7 @@ public class RenderQueue(IRenderingFactory renderingFactory) : IRenderQueue
         private int textDrawItemCount;
         private int drawCommandCount;
 
-        public void AddMesh(MeshHandle mesh, Matrix3x2 transform, ColorRgba color1, ColorRgba color2, RenderMode renderMode)
+        public void AddMesh(MeshHandle mesh, Matrix3x2 transform, ColorRgba color1, ColorRgba color2, RenderMode renderMode, float gradientRotation, float gradientScale)
         {
             EnsureIndexExists(ref meshDrawItems, meshDrawItemCount);
             ref var drawItem = ref meshDrawItems[meshDrawItemCount];
@@ -31,6 +31,8 @@ public class RenderQueue(IRenderingFactory renderingFactory) : IRenderQueue
             drawItem.Color1 = color1;
             drawItem.Color2 = color2;
             drawItem.RenderMode = renderMode;
+            drawItem.GradientRotation = gradientRotation;
+            drawItem.GradientScale = gradientScale;
 
             EnsureIndexExists(ref drawCommands, drawCommandCount);
             ref var drawCommand = ref drawCommands[drawCommandCount];

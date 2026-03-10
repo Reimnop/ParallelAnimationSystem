@@ -61,4 +61,6 @@ void main() {
     } else {
         oFragColor = getColor(vColor1, vColor2, vRenderMode, vUv);
     }
+    
+    oFragColor = clamp(oFragColor, 0.0, 1.0);
 }

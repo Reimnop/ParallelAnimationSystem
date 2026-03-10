@@ -235,6 +235,8 @@ public static class BeatmapImporter
             ParentType = obj.ParentType,
             ParentOffset = obj.ParentOffset,
             RenderType = obj.RenderType,
+            GradientRotation = obj.GradientRotation,
+            GradientScale = obj.GradientScale,
             Origin = obj.Origin,
             RenderDepth = obj.RenderDepth,
             StartTime = obj.StartTime,

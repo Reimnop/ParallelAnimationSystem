@@ -58,7 +58,14 @@ public class Renderer : IRenderer, IDisposable
     private readonly List<TextInfo> textInfos = [];
     
     private readonly int programHandle;
-    private readonly int mvpUniformLocation, zUniformLocation, renderModeUniformLocation, color1UniformLocation, color2UniformLocation;
+    private readonly int 
+        mvpUniformLocation, 
+        zUniformLocation, 
+        gradientRotationUniformLocation, 
+        gradientScaleUniformLocation, 
+        renderModeUniformLocation, 
+        color1UniformLocation, 
+        color2UniformLocation;
     private readonly int glyphProgramHandle;
     private readonly int glyphMvpUniformLocation, glyphZUniformLocation, glyphBaseColorUniformLocation;
     
@@ -142,6 +149,8 @@ public class Renderer : IRenderer, IDisposable
             // Get uniform locations
             mvpUniformLocation = GL.GetUniformLocation(programHandle, "uMvp");
             zUniformLocation = GL.GetUniformLocation(programHandle, "uZ");
+            gradientRotationUniformLocation = GL.GetUniformLocation(programHandle, "uGradientRotation");
+            gradientScaleUniformLocation = GL.GetUniformLocation(programHandle, "uGradientScale");
             renderModeUniformLocation = GL.GetUniformLocation(programHandle, "uRenderMode");
             color1UniformLocation = GL.GetUniformLocation(programHandle, "uColor1");
             color2UniformLocation = GL.GetUniformLocation(programHandle, "uColor2");
@@ -670,6 +679,8 @@ public class Renderer : IRenderer, IDisposable
                     }
             
                     GL.Uniform1f(zUniformLocation, drawCommand.Depth);
+                    GL.Uniform1f(gradientRotationUniformLocation, meshDrawItem.GradientRotation);
+                    GL.Uniform1f(gradientScaleUniformLocation, meshDrawItem.GradientScale);
                     GL.Uniform1i(renderModeUniformLocation, (int) meshDrawItem.RenderMode);
                     GL.Uniform4f(color1UniformLocation, meshDrawItem.Color1.R, meshDrawItem.Color1.G, meshDrawItem.Color1.B, meshDrawItem.Color1.A);
                     GL.Uniform4f(color2UniformLocation, meshDrawItem.Color2.R, meshDrawItem.Color2.G, meshDrawItem.Color2.B, meshDrawItem.Color2.A);

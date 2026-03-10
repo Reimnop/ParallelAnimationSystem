@@ -7,6 +7,7 @@ using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Core.Model;
 using ParallelAnimationSystem.Core.Shape;
 using ParallelAnimationSystem.Core.Text;
+using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering.Data;
 using ParallelAnimationSystem.Util;
 
@@ -262,6 +263,8 @@ public class PrefabInstanceObjectSource : IDisposable
             ParentType = beatmapObject.ParentType,
             ParentOffset = beatmapObject.ParentOffset,
             RenderMode = (RenderMode)beatmapObject.RenderType,
+            GradientRotation = -MathUtil.DegreesToRadians(beatmapObject.GradientRotation),
+            GradientScale = beatmapObject.GradientScale,
             Origin = beatmapObject.Origin,
             RenderDepth = beatmapObject.RenderDepth,
             Shape = beatmapObject.Shape,
@@ -549,6 +552,12 @@ public class PrefabInstanceObjectSource : IDisposable
                 break;
             case nameof(BeatmapObject.RenderType):
                 playbackObject.RenderMode = (RenderMode)beatmapObject.RenderType;
+                break;
+            case nameof(BeatmapObject.GradientRotation):
+                playbackObject.GradientRotation = -MathUtil.DegreesToRadians(beatmapObject.GradientRotation);
+                break;
+            case nameof(BeatmapObject.GradientScale):
+                playbackObject.GradientScale = beatmapObject.GradientScale;
                 break;
             case nameof(BeatmapObject.Origin):
                 playbackObject.Origin = beatmapObject.Origin;

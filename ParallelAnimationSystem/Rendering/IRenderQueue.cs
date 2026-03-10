@@ -12,7 +12,7 @@ public interface IDrawList
     PostProcessingState PostProcessingState { get; set; }
     ColorRgba ClearColor { get; set; }
     
-    void AddMesh(MeshHandle mesh, Matrix3x2 transform, ColorRgba color1, ColorRgba color2, RenderMode renderMode);
+    void AddMesh(MeshHandle mesh, Matrix3x2 transform, ColorRgba color1, ColorRgba color2, RenderMode renderMode, float gradientRotation, float gradientScale);
     void AddText(TextHandle text, Matrix3x2 transform, ColorRgba color);
 }
 

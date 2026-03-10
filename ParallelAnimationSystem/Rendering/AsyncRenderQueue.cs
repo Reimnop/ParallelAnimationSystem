@@ -25,6 +25,8 @@ public class AsyncRenderQueue : IRenderQueue
             public ColorRgba Color1;
             public ColorRgba Color2;
             public RenderMode RenderMode;
+            public float GradientRotation;
+            public float GradientScale;
         }
 
         private struct RefTextDrawItem
@@ -49,7 +51,7 @@ public class AsyncRenderQueue : IRenderQueue
         private int textDrawItemCount;
         private int drawCommandCount;
         
-        public void AddMesh(MeshHandle mesh, Matrix3x2 transform, ColorRgba color1, ColorRgba color2, RenderMode renderMode)
+        public void AddMesh(MeshHandle mesh, Matrix3x2 transform, ColorRgba color1, ColorRgba color2, RenderMode renderMode, float gradientRotation, float gradientScale)
         {
             EnsureCount(ref meshDrawItems, meshDrawItemCount + 1);
             ref var drawItem = ref meshDrawItems[meshDrawItemCount];
@@ -58,6 +60,8 @@ public class AsyncRenderQueue : IRenderQueue
             drawItem.Color1 = color1;
             drawItem.Color2 = color2;
             drawItem.RenderMode = renderMode;
+            drawItem.GradientRotation = gradientRotation;
+            drawItem.GradientScale = gradientScale;
         
             EnsureCount(ref drawCommands, drawCommandCount + 1);
             ref var drawCommand = ref drawCommands[drawCommandCount];
@@ -111,6 +115,8 @@ public class AsyncRenderQueue : IRenderQueue
                 cachedItem.Color1 = refItem.Color1;
                 cachedItem.Color2 = refItem.Color2;
                 cachedItem.RenderMode = refItem.RenderMode;
+                cachedItem.GradientRotation = refItem.GradientRotation;
+                cachedItem.GradientScale = refItem.GradientScale;
             }
             
             EnsureCount(ref cachedTextDrawItems, textDrawItemCount);

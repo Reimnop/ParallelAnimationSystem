@@ -33,5 +33,5 @@ vec4 getColor(vec4 color1, vec4 color2, int mode, vec2 uv) {
 }
 
 void main() {
-    oFragColor = getColor(uColor1, uColor2, uRenderMode, vUv);
+    oFragColor = clamp(getColor(uColor1, uColor2, uRenderMode, vUv), 0.0, 1.0);
 }

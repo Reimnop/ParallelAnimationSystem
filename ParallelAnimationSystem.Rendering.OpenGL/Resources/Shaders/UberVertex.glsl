@@ -19,6 +19,8 @@ struct MultiDrawItem {
     int renderMode;
     int renderType;
     int glyphOffset;
+    float gradientRotation;
+    float gradientScale;
 };
 
 struct RenderGlyph {
@@ -68,10 +70,12 @@ void main() {
 
         gl_Position = vec4(vec2(item.mvp * vec3(pos, 1.0)), item.z, 1.0);
     } else {
-        // Since aPos is always in the range [-0.5, 0.5],
-        // we can use it to directly calculate UVs,
-        // without wasting space in the vertex buffer
-        vUv = aPos + vec2(0.5);
+        // rotate UV
+        float c = cos(item.gradientRotation) * item.gradientScale;
+        float s = sin(item.gradientRotation) * item.gradientScale;
+        mat2 uvTransform = mat2(c, -s, s, c);
+        
+        vUv = uvTransform * aPos + vec2(0.5);
         vUvNormalized = vUv;
 
         // Pass the data to the fragment shader

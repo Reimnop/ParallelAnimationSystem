@@ -24,6 +24,8 @@ public struct MeshDrawItem
     public ColorRgba Color1;
     public ColorRgba Color2;
     public RenderMode RenderMode;
+    public float GradientRotation;
+    public float GradientScale;
 }
 
 public struct TextDrawItem

@@ -52,6 +52,18 @@ public class BeatmapObject : IStringIdentifiable, INotifyPropertyChanged
         get;
         set => SetField(ref field, value);
     }
+    
+    public float GradientRotation
+    {
+        get;
+        set => SetField(ref field, value);
+    }
+    
+    public float GradientScale
+    {
+        get;
+        set => SetField(ref field, value);
+    }
 
     public Vector2 Origin
     {
@@ -109,7 +121,7 @@ public class BeatmapObject : IStringIdentifiable, INotifyPropertyChanged
     public KeyframeList<RandomizableKeyframe<Vector2>> PositionKeyframes { get; } = [];
     public KeyframeList<RandomizableKeyframe<Vector2>> ScaleKeyframes { get; } = [];
     public KeyframeList<RandomizableKeyframe<float>> RotationKeyframes { get; } = [];
-    public KeyframeList<Data.Keyframe<BeatmapObjectIndexedColor>> ColorKeyframes { get; } = [];
+    public KeyframeList<Keyframe<BeatmapObjectIndexedColor>> ColorKeyframes { get; } = [];
 
     public BeatmapObject(string id)
     {

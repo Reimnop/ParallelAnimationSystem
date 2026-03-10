@@ -86,7 +86,7 @@ public class AppCore(
                     Color1 = eventState.Gradient.Color1,
                     Color2 = eventState.Gradient.Color2,
                     Intensity = eventState.Gradient.Intensity,
-                    Rotation = eventState.Gradient.Rotation,
+                    Rotation = eventState.Gradient.Rotation * MathF.Tau,
                     Mode = eventState.Gradient.Mode
                 },
                 HueShift = new HueShiftEffectState
@@ -137,7 +137,7 @@ public class AppCore(
                         ? new ColorRgba(drawItem.Color2, 0.0f)
                         : new ColorRgba(drawItem.Color2, drawItem.Opacity);
             
-                    drawList.AddMesh(mesh, transform, color1Rgba, color2Rgba, renderMode);
+                    drawList.AddMesh(mesh, transform, color1Rgba, color2Rgba, renderMode, playbackObject.GradientRotation, playbackObject.GradientScale);
                 }
             }
             else if (appSettings.EnableTextRendering)

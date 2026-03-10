@@ -103,8 +103,8 @@ public class UberPost : IDisposable
         {
             var rotationMatrix = stackalloc float[4];
             rotationMatrix[0] = MathF.Cos(gradientRotation);
-            rotationMatrix[1] = MathF.Sin(gradientRotation);
-            rotationMatrix[2] = -MathF.Sin(gradientRotation);
+            rotationMatrix[1] = -MathF.Sin(gradientRotation);
+            rotationMatrix[2] = MathF.Sin(gradientRotation);
             rotationMatrix[3] = MathF.Cos(gradientRotation);
             GL.UniformMatrix2fv(gradientRotationUniformLocation, 1, false, rotationMatrix);
         }

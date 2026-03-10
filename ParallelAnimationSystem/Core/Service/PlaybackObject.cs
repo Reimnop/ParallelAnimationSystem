@@ -50,6 +50,18 @@ public class PlaybackObject(Identifier id) : IIdentifiable, INotifyPropertyChang
         get;
         set => SetField(ref field, value);
     }
+    
+    public float GradientRotation
+    {
+        get;
+        set => SetField(ref field, value);
+    }
+    
+    public float GradientScale
+    {
+        get;
+        set => SetField(ref field, value);
+    }
 
     public Vector2 Origin
     {

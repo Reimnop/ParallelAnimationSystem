@@ -592,7 +592,9 @@ public class Renderer : IRenderer, IDisposable
                         Z = drawCommand.Depth,
                         RenderMode = (int) meshDrawItem.RenderMode,
                         RenderType = 0, // 0 is mesh
-                        GlyphOffset = 0
+                        GlyphOffset = 0,
+                        GradientRotation = meshDrawItem.GradientRotation,
+                        GradientScale = meshDrawItem.GradientScale
                     });
                     
                     multiDrawIndirectBuffer.Append(new DrawElementsIndirectCommand
