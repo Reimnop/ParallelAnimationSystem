@@ -276,7 +276,7 @@ public static class BeatmapImporter
         => new(
             keyframe.Time, keyframe.Ease, keyframe.Value,
             keyframe.RandomMode, keyframe.RandomValue, keyframe.RandomInterval,
-            true);
+            keyframe.IsRelative);
 
     private static Data.Keyframe<BeatmapObjectIndexedColor> CreateColorKeyframe(FixedKeyframe<ThemeColor> keyframe)
         => new(
