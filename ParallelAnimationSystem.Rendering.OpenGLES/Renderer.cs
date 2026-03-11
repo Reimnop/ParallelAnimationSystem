@@ -451,7 +451,7 @@ public class Renderer : IRenderer, IDisposable
                 {
                     DrawType = drawCommand.DrawType,
                     DrawId = drawCommand.DrawId,
-                    Depth = currentDepthInt / (float)(1 << 24)
+                    Depth = currentDepthInt / (float)(1 << 23)
                 });
             }
             else
@@ -460,7 +460,7 @@ public class Renderer : IRenderer, IDisposable
                 {
                     DrawType = drawCommand.DrawType,
                     DrawId = drawCommand.DrawId,
-                    Depth = currentDepthInt / (float)(1 << 24)
+                    Depth = currentDepthInt / (float)(1 << 23)
                 });
             }
 
