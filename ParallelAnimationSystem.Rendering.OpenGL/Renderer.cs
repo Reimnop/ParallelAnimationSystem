@@ -282,6 +282,7 @@ public class Renderer : IRenderer, IDisposable
         GL.DeleteBuffer(vertexBufferHandle);
         GL.DeleteBuffer(indexBufferHandle);
         GL.DeleteVertexArray(vertexArrayHandle);
+        GL.DeleteBuffer(glyphStorageBufferHandle);
         
         GL.DeleteBuffer(multiDrawIndirectBufferHandle);
         GL.DeleteBuffer(multiDrawStorageBufferHandle);
@@ -407,7 +408,7 @@ public class Renderer : IRenderer, IDisposable
         }
         
         // Reverse opaque draw data list so that it is drawn
-        // from back to front to avoid overdraw
+        // from front to back to avoid overdraw
         opaqueDrawCommands.Reverse();
         
         // Get camera matrix (view and projection)
@@ -505,6 +506,9 @@ public class Renderer : IRenderer, IDisposable
                 
                 overlayTexture = GL.CreateTexture(TextureTarget.Texture2d);
                 GL.TextureStorage2D(overlayTexture, 1, SizedInternalFormat.Rgba16f, size.X, size.Y);
+                
+                // Reattach texture to framebuffer
+                GL.NamedFramebufferTexture(overlayFramebufferHandle, FramebufferAttachment.ColorAttachment0, overlayTexture, 0);
             }
             
             Span<int> overlayTextures = stackalloc int[MaxOverlays];
@@ -553,9 +557,6 @@ public class Renderer : IRenderer, IDisposable
                 1);
             GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit);
         }
-        
-        // Bind overlay texture to overlay fbo
-        GL.NamedFramebufferTexture(overlayFramebufferHandle, FramebufferAttachment.ColorAttachment0, overlayTexture, 0);
         
         // Present to window
         window.Present(overlayFramebufferHandle, Vector4.Zero, size, Vector2i.Zero);
@@ -735,7 +736,7 @@ public class Renderer : IRenderer, IDisposable
         {
             var maxId = renderingFactory.Meshes.Select(x => x.Key).Max();
             meshInfos.EnsureCount(maxId + 1);
-        
+            
             var meshInfosSpan = CollectionsMarshal.AsSpan(meshInfos);
             foreach (var (id, mesh) in renderingFactory.Meshes)
             {
@@ -747,11 +748,13 @@ public class Renderer : IRenderer, IDisposable
                 vertexBuffer.Append(mesh.Vertices);
                 indexBuffer.Append(mesh.Indices);
             }
-
-            // Update our buffers with the new data
-            GL.NamedBufferData(vertexBufferHandle, vertexBuffer.LengthInBytes, vertexBuffer.Data, VertexBufferObjectUsage.DynamicDraw);
-            GL.NamedBufferData(indexBufferHandle, indexBuffer.LengthInBytes, indexBuffer.Data, VertexBufferObjectUsage.DynamicDraw);
         }
+
+        // Update our buffers with the new data
+        // There is always data to upload, due to the base font quad
+        // So this is outside of the if statement
+        GL.NamedBufferData(vertexBufferHandle, vertexBuffer.LengthInBytes, vertexBuffer.Data, VertexBufferObjectUsage.DynamicDraw);
+        GL.NamedBufferData(indexBufferHandle, indexBuffer.LengthInBytes, indexBuffer.Data, VertexBufferObjectUsage.DynamicDraw);
         
         logger.LogInformation("Mesh buffer updated, registered {VertexCount} vertices and {IndexCount} indices", 
             vertexBuffer.Length,
