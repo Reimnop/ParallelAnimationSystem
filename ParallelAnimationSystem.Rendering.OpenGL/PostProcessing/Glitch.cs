@@ -132,7 +132,7 @@ public class Glitch : IDisposable
         }
         
         // Upload data to GPU
-        GL.PixelStorei(PixelStoreParameter.PackAlignment, 1);
+        GL.PixelStorei(PixelStoreParameter.UnpackAlignment, 1);
         GL.TextureSubImage2D(noiseTexture, 0, 0, 0, NoiseTextureWidth, NoiseTextureHeight, PixelFormat.Rgb, PixelType.UnsignedByte, noiseBuffer);
     }
 

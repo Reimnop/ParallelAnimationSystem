@@ -13,7 +13,7 @@ uniform highp float uColorIntensity;
 in highp vec2 vUv;
 
 void main() {
-    vec4 glitch = texture(uNoiseTexture, vUv);
+    vec3 glitch = texture(uNoiseTexture, vUv).rgb;
     float activeAmount = pow(uIntensity, 1.8); 
     float thresh = 1.0 - activeAmount;
     float w_c = step(thresh * 0.99, glitch.z); 
