@@ -106,7 +106,7 @@ public class AppCore(
                 Glitch = new GlitchEffectState
                 {
                     Speed = eventState.Glitch.Speed,
-                    Intensity = 1f,
+                    Intensity = 1.25f,
                     Amount = eventState.Glitch.Intensity,
                     StretchMultiplier = eventState.Glitch.Width
                 }

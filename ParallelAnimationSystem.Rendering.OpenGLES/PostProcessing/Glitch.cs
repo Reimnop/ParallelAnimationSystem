@@ -26,7 +26,7 @@ public class Glitch : IDisposable
     private readonly int framebuffer;
     private readonly int vaoHandle;
     
-    private readonly byte[] noiseBuffer = new byte[NoiseTextureWidth * NoiseTextureHeight * 3];
+    private readonly byte[] noiseBuffer = new byte[NoiseTextureWidth * NoiseTextureHeight * 4];
 
     public Glitch(ResourceLoader loader, int vertexShader)
     {
@@ -47,7 +47,7 @@ public class Glitch : IDisposable
         // Create noise texture
         noiseTexture = GL.GenTexture();
         GL.BindTexture(TextureTarget.Texture2d, noiseTexture);
-        GL.TexStorage2D(TextureTarget.Texture2d, 1, SizedInternalFormat.Rgb8, NoiseTextureWidth, NoiseTextureHeight);
+        GL.TexStorage2D(TextureTarget.Texture2d, 1, SizedInternalFormat.Rgba8, NoiseTextureWidth, NoiseTextureHeight);
         
         // Create noise sampler
         noiseTextureSampler = GL.GenSampler();
@@ -86,7 +86,7 @@ public class Glitch : IDisposable
     {
         if (intensity == 0f || amount == 0f)
             return false;
-        
+
         var updateFrequency = (0.1f + 0.4f * speed) * 60f; // assume 60 FPS as base
         var step = (int)MathF.Floor(time * updateFrequency); // snap time to intervals
 
@@ -125,38 +125,38 @@ public class Glitch : IDisposable
 
     private void FillNoiseTexture(PseudoRng rng, float stretchMultiplier)
     {
-        GetRandomRgb(rng, out var colorR, out var colorG, out var colorB);
-        for (var y = 0; y < NoiseTextureHeight; y++)
-        {
-            for (var x = 0; x < NoiseTextureWidth; x++)
-            {
-                if (GetRandomFloat(rng) > stretchMultiplier)
-                    GetRandomRgb(rng, out colorR, out colorG, out colorB);
-                
-                var offset = (y * NoiseTextureWidth + x) * 3;
-                noiseBuffer[offset] = colorR;
-                noiseBuffer[offset + 1] = colorG;
-                noiseBuffer[offset + 2] = colorB;
+        GetRandomRgba(rng, out var r, out var g, out var b, out var a);
+        for (var y = 0; y < NoiseTextureHeight; y++) {
+            for (var x = 0; x < NoiseTextureWidth; x++) {
+                // This 'if' creates the horizontal blocks
+                if (GetRandomFloat(rng) > stretchMultiplier) {
+                    GetRandomRgba(rng, out r, out g, out b, out a);
+                }
+            
+                var offset = (y * NoiseTextureWidth + x) * 4;
+                noiseBuffer[offset] = r;     // Offset X
+                noiseBuffer[offset + 1] = g; // Offset Y
+                noiseBuffer[offset + 2] = b; // Threshold Trigger
+                noiseBuffer[offset + 3] = a; // Unused
             }
         }
-        
-        // Upload data to GPU
-        GL.PixelStorei(PixelStoreParameter.PackAlignment, 1);
+    
+        GL.PixelStorei(PixelStoreParameter.UnpackAlignment, 1);
         GL.BindTexture(TextureTarget.Texture2d, noiseTexture);
-        GL.TexSubImage2D(TextureTarget.Texture2d, 0, 0, 0, NoiseTextureWidth, NoiseTextureHeight, PixelFormat.Rgb, PixelType.UnsignedByte, noiseBuffer);
+        GL.TexSubImage2D(TextureTarget.Texture2d, 0, 0, 0, NoiseTextureWidth, NoiseTextureHeight, PixelFormat.Rgba, PixelType.UnsignedByte, noiseBuffer);
     }
 
     private static float GetRandomFloat(PseudoRng rng)
         => NumberUtil.UlongToFloat01(rng());
 
-    private static void GetRandomRgb(PseudoRng rng, out byte r, out byte g, out byte b)
+    private static void GetRandomRgba(PseudoRng rng, out byte r, out byte g, out byte b, out byte a)
     {
-        unchecked
-        {
-            var value = rng();
-            r = (byte)(value & 0xFF);
-            g = (byte)((value >> 8) & 0xFF);
-            b = (byte)((value >> 16) & 0xFF);
+        unchecked {
+            var v = rng();
+            r = (byte)(v & 0xFF);
+            g = (byte)((v >> 8) & 0xFF);
+            b = (byte)((v >> 16) & 0xFF);
+            a = (byte)((v >> 24) & 0xFF);
         }
     }
 }
