@@ -189,6 +189,7 @@ public class Renderer : IRenderer, IDisposable
             GL.EnableVertexAttribArray(4);
             GL.EnableVertexAttribArray(5);
             GL.EnableVertexAttribArray(6);
+            GL.EnableVertexAttribArray(7);
 
             // Divisors
             GL.VertexAttribDivisor(0, 1);
@@ -198,6 +199,7 @@ public class Renderer : IRenderer, IDisposable
             GL.VertexAttribDivisor(4, 1);
             GL.VertexAttribDivisor(5, 1);
             GL.VertexAttribDivisor(6, 1);
+            GL.VertexAttribDivisor(7, 1);
 
             // Initialize FBO
             fboColorBufferHandle = GL.GenRenderbuffer();
@@ -725,8 +727,9 @@ public class Renderer : IRenderer, IDisposable
                     GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, renderGlyphSize, instanceOffset + 16); // MinUV
                     GL.VertexAttribPointer(3, 2, VertexAttribPointerType.Float, false, renderGlyphSize, instanceOffset + 24); // MaxUV
                     GL.VertexAttribPointer(4, 4, VertexAttribPointerType.Float, false, renderGlyphSize, instanceOffset + 32); // Color
-                    GL.VertexAttribIPointer(5, 1, VertexAttribIType.Int, renderGlyphSize, instanceOffset + 48); // BoldItalic
-                    GL.VertexAttribIPointer(6, 1, VertexAttribIType.Int, renderGlyphSize, instanceOffset + 52); // FontId
+                    GL.VertexAttribPointer(5, 1, VertexAttribPointerType.Float, false, renderGlyphSize, instanceOffset + 48); // Rotation
+                    GL.VertexAttribIPointer(6, 1, VertexAttribIType.Int, renderGlyphSize, instanceOffset + 52); // BoldItalic
+                    GL.VertexAttribIPointer(7, 1, VertexAttribIType.Int, renderGlyphSize, instanceOffset + 56); // FontId
                     
                     // Draw
                     GL.DrawArraysInstanced(PrimitiveType.Triangles, 0, 6, textInfo.GlyphCount);

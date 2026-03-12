@@ -1,5 +1,6 @@
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Core.Service;
+using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.Handle;
 using TmpIO;
@@ -9,7 +10,7 @@ namespace ParallelAnimationSystem.Core.Text;
 
 public class TextShaper(FontService fontService)
 {
-    private record ShapedGlyph(float Position, float YOffset, FontHandle Font, TmpGlyph Glyph, float Size, Style Style);
+    private record ShapedGlyph(float Position, float YOffset, FontHandle Font, TmpGlyph Glyph, float Size, float Rotation, Style Style);
     
     private record Line(
         float Ascender,
@@ -30,6 +31,7 @@ public class TextShaper(FontService fontService)
         public Measurement? CurrentLineHeight { get; set; }
         public HorizontalAlignment? CurrentAlignment { get; set; }
         public ColorAlpha CurrentMarkColor { get; set; }
+        public float CurrentRotation { get; set; }
         public required FontStack CurrentFontStack { get; set; }
     }
 
@@ -162,7 +164,7 @@ public class TextShaper(FontService fontService)
                     yield return new ShapedTextGlyph(
                         minX, minY, maxX, maxY,
                         glyph.MinX, glyph.MinY, glyph.MaxX, glyph.MaxY,
-                        color, boldItalic, shapedGlyph.Font);
+                        color, MathUtil.DegreesToRadians(shapedGlyph.Rotation), boldItalic, shapedGlyph.Font);
                 }
             }
 
@@ -191,7 +193,7 @@ public class TextShaper(FontService fontService)
                 yield return new ShapedTextGlyph(
                     minX, minY, maxX, maxY,
                     0.0f, 0.0f, 0.0f, 0.0f,
-                    color, BoldItalic.None, null); }
+                    color, 0f, BoldItalic.None, null); }
             
             // Bring y to the BASELINE of the next line
             if (i + 1 < linesOfShapedGlyphs.Count)
@@ -248,7 +250,7 @@ public class TextShaper(FontService fontService)
                         fontMetadata.LineHeight / fontMetadata.Size * currentSize);
                     
                     var glyphPosition = x;
-                    var shapedGlyph = new ShapedGlyph(glyphPosition, currentVOffset, font, glyph, currentSize * sizeMultiplier, state.CurrentStyle);
+                    var shapedGlyph = new ShapedGlyph(glyphPosition, currentVOffset, font, glyph, currentSize * sizeMultiplier, state.CurrentRotation, state.CurrentStyle);
                     glyphs.Add(shapedGlyph);
                     
                     // Calculate advance
@@ -335,6 +337,11 @@ public class TextShaper(FontService fontService)
             if (element is LineHeightElement lineHeightElement)
             {
                 state.CurrentLineHeight = lineHeightElement.Value;
+            }
+            
+            if (element is RotateElement rotateElement)
+            {
+                state.CurrentRotation = rotateElement.Angle;
             }
 
             if (element is MarkElement markElement)

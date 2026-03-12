@@ -16,8 +16,9 @@ layout(location = 1) in highp vec2 aMax;
 layout(location = 2) in highp vec2 aMinUv;
 layout(location = 3) in highp vec2 aMaxUv;
 layout(location = 4) in highp vec4 aColor;
-layout(location = 5) in highp int aBoldItalic;
-layout(location = 6) in highp int aFontIndex;
+layout(location = 5) in highp float aRotation;
+layout(location = 6) in highp int aBoldItalic;
+layout(location = 7) in highp int aFontIndex;
 
 out highp vec2 vUvNormalized;
 out highp vec2 vUv;
@@ -47,8 +48,15 @@ void main() {
     vFontIndex = aFontIndex;
     
     bool italic = (aBoldItalic & 2) != 0;
+
+    float c = cos(aRotation);
+    float s = sin(aRotation);
+    mat2 posTransform = mat2(c, -s, s, c);
     
-    vec2 pos = mix(aMin, aMax, vertPos);
+    vec2 tempPos = vertPos - vec2(0.5);
+    tempPos = posTransform * tempPos + vec2(0.5);
+    
+    vec2 pos = mix(aMin, aMax, tempPos);
     pos.x += italic ? (pos.y - aMin.y) * 0.2 : 0.0;
 
     gl_Position = vec4(vec2(uMvp * vec3(pos, 1.0)), uZ, 1.0);

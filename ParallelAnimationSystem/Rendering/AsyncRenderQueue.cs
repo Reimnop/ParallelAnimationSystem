@@ -328,5 +328,5 @@ public class AsyncRenderQueue : IRenderQueue
     }
     
     private static ShapedTextGlyph CopyShapedTextGlyph(ShapedTextGlyph glyph)
-        => new(glyph.Min, glyph.Max, glyph.MinUV, glyph.MaxUV, glyph.Color, glyph.BoldItalic, glyph.Font);
+        => new(glyph.Min, glyph.Max, glyph.MinUV, glyph.MaxUV, glyph.Color, glyph.Rotation, glyph.BoldItalic, glyph.Font);
 }

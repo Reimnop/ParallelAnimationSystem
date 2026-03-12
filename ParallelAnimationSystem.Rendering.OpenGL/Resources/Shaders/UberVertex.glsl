@@ -27,6 +27,7 @@ struct RenderGlyph {
     vec4 minMax;
     vec4 uv;
     vec4 color; // NaN = inherit
+    float rotation;
     int boldItalic;
     int fontIndex;
 };
@@ -62,10 +63,17 @@ void main() {
         vFontIndex = glyph.fontIndex;
 
         bool italic = (glyph.boldItalic & 2) != 0;
+        
+        float c = cos(glyph.rotation);
+        float s = sin(glyph.rotation);
+        mat2 posTransform = mat2(c, -s, s, c);
+
+        vec2 tempPos = aPos - vec2(0.5);
+        tempPos = posTransform * tempPos + vec2(0.5);
 
         vec2 min = glyph.minMax.xy;
         vec2 max = glyph.minMax.zw;
-        vec2 pos = mix(min, max, aPos);
+        vec2 pos = mix(min, max, tempPos);
         pos.x += italic ? (pos.y - min.y) * 0.2 : 0.0;
 
         gl_Position = vec4(vec2(item.mvp * vec3(pos, 1.0)), item.z, 1.0);
