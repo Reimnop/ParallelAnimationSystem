@@ -38,6 +38,8 @@ public class MeshService : IDisposable
             renderQueue.CreateMesh(PaAssets.TriangleOutlineVertices, PaAssets.TriangleOutlineIndices),
             renderQueue.CreateMesh(PaAssets.TriangleRightFilledVertices, PaAssets.TriangleRightFilledIndices),
             renderQueue.CreateMesh(PaAssets.TriangleRightOutlineVertices, PaAssets.TriangleRightOutlineIndices),
+            renderQueue.CreateMesh(PaAssets.TriangleFilledBottomOriginVertices, PaAssets.TriangleFilledBottomOriginIndices),
+            renderQueue.CreateMesh(PaAssets.TriangleOutlineBottomOriginVertices, PaAssets.TriangleOutlineBottomOriginIndices),
         ]);
 
         meshes.Add([
