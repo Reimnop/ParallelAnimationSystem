@@ -62,6 +62,12 @@ var textRenderingOption = new Option<bool>(
     getDefaultValue: () => true
 );
 
+var startTimeOption = new Option<float>(
+    aliases: ["--start-time"],
+    description: "Sets the playback start time",
+    getDefaultValue: () => 0.0f
+);
+
 void AddCommonOptions(Command command)
 {
     command.AddOption(beatmapOption);
@@ -73,6 +79,7 @@ void AddCommonOptions(Command command)
     command.AddOption(backendOption);
     command.AddOption(postProcessingOption);
     command.AddOption(textRenderingOption);
+    command.AddOption(startTimeOption);
 }
 
 var rootCommand = new RootCommand("Parallel Animation System");
@@ -95,9 +102,9 @@ var rootCommand = new RootCommand("Parallel Animation System");
     AddCommonOptions(runSubcommand);
     runSubcommand.AddOption(vsyncOption);
     runSubcommand.AddOption(lockAspectOption);
-    
+
     rootCommand.AddCommand(runSubcommand);
-    
+
     runSubcommand.SetHandler(context =>
     {
         var beatmapPath = context.ParseResult.GetValueForOption(beatmapOption)!;
@@ -111,7 +118,8 @@ var rootCommand = new RootCommand("Parallel Animation System");
         var lockAspectRatio = context.ParseResult.GetValueForOption(lockAspectOption);
         var enablePostProcessing = context.ParseResult.GetValueForOption(postProcessingOption);
         var enableTextRendering = context.ParseResult.GetValueForOption(textRenderingOption);
-        
+        var startTime = context.ParseResult.GetValueForOption(startTimeOption);
+
         DesktopStartup.ConsumeOptions(
             beatmapPath,
             audioPath,
@@ -123,7 +131,8 @@ var rootCommand = new RootCommand("Parallel Animation System");
             backend,
             lockAspectRatio,
             enablePostProcessing,
-            enableTextRendering);
+            enableTextRendering,
+            startTime);
     });
 }
 
@@ -146,17 +155,18 @@ var rootCommand = new RootCommand("Parallel Animation System");
     var ffmpegArgsOption = new Option<string>(
         aliases: ["--ffmpeg-args"],
         description: "Output arguments to pass to FFmpeg",
-        getDefaultValue: () => "-c:v libx264 -pix_fmt yuv420p -preset slow -c:a aac -b:a 192k -ac 2 -channel_layout stereo"
+        getDefaultValue: () =>
+            "-c:v libx264 -pix_fmt yuv420p -preset slow -c:a aac -b:a 192k -ac 2 -channel_layout stereo"
     );
-    
+
     var ffmpegSubcommand = new Command("render", "Render the beatmap to a video file using FFmpeg");
     AddCommonOptions(ffmpegSubcommand);
     ffmpegSubcommand.AddOption(ffmpegPathOption);
     ffmpegSubcommand.AddOption(outputPathOption);
     ffmpegSubcommand.AddOption(ffmpegArgsOption);
-    
+
     rootCommand.AddCommand(ffmpegSubcommand);
-    
+
     ffmpegSubcommand.SetHandler(context =>
     {
         var beatmapPath = context.ParseResult.GetValueForOption(beatmapOption)!;
@@ -171,8 +181,8 @@ var rootCommand = new RootCommand("Parallel Animation System");
         var ffmpegPath = context.ParseResult.GetValueForOption(ffmpegPathOption)!;
         var outputPath = context.ParseResult.GetValueForOption(outputPathOption)!;
         var ffmpegArgs = context.ParseResult.GetValueForOption(ffmpegArgsOption)!;
-        
-        FFmpegStartup.ConsumeOptions(   
+
+        FFmpegStartup.ConsumeOptions(
             beatmapPath,
             audioPath,
             width,
@@ -200,5 +210,5 @@ var parser = new CommandLineBuilder(rootCommand)
     // .UseExceptionHandler()
     .CancelOnProcessTermination()
     .Build();
-    
+
 return parser.Invoke(args);

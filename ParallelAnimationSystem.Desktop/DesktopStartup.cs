@@ -24,7 +24,8 @@ public static class DesktopStartup
         RenderingBackend backend,
         bool lockAspectRatio,
         bool enablePostProcessing,
-        bool enableTextRendering)
+        bool enableTextRendering,
+        float startTime)
     {
         var services = new ServiceCollection();
         
@@ -51,6 +52,6 @@ public static class DesktopStartup
         
         // Start the app
         var app = serviceProvider.GetRequiredService<DesktopApp>();
-        app.StartApp(beatmapPath, audioPath);
+        app.StartApp(beatmapPath, audioPath, startTime);
     }
 }

@@ -10,7 +10,7 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
 {
     private volatile bool appRunning = true;
     
-    public void StartApp(string beatmapPath, string audioPath)
+    public void StartApp(string beatmapPath, string audioPath, float startTime = 0.0f)
     {
         using var scope = serviceProvider.CreateScope();
         var sp = scope.ServiceProvider;
@@ -25,6 +25,7 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
         
         // Play audio
         using var audioPlayer = AudioPlayer.Load(audioPath);
+        audioPlayer.Position = startTime;
         audioPlayer.Play();
         
         // Start render thread
