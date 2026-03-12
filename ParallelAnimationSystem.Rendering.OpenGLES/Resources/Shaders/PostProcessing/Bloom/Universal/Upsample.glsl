@@ -20,5 +20,5 @@ void main() {
     vec3 color = mix(highMipColor, lowMipColor, uScatter);
     
     // Store result
-    oFragColor = vec4(color, uScatter);
+    oFragColor = vec4(color, 1.0);
 }
