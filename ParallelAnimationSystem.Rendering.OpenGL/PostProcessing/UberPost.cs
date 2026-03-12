@@ -4,6 +4,7 @@ using Pamx.Common.Enum;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Mathematics;
+using ParallelAnimationSystem.Rendering.Data;
 
 namespace ParallelAnimationSystem.Rendering.OpenGL.PostProcessing;
 
@@ -20,7 +21,6 @@ public class UberPost : IDisposable
     
     private readonly int vignetteCenterUniformLocation;
     private readonly int vignetteIntensityUniformLocation;
-    private readonly int vignetteRoundedUniformLocation;
     private readonly int vignetteRoundnessUniformLocation;
     private readonly int vignetteSmoothnessUniformLocation;
     private readonly int vignetteColorUniformLocation;
@@ -47,7 +47,6 @@ public class UberPost : IDisposable
         
         vignetteCenterUniformLocation = GL.GetUniformLocation(program, "uVignetteCenter");
         vignetteIntensityUniformLocation = GL.GetUniformLocation(program, "uVignetteIntensity");
-        vignetteRoundedUniformLocation = GL.GetUniformLocation(program, "uVignetteRounded");
         vignetteRoundnessUniformLocation = GL.GetUniformLocation(program, "uVignetteRoundness");
         vignetteSmoothnessUniformLocation = GL.GetUniformLocation(program, "uVignetteSmoothness");
         vignetteColorUniformLocation = GL.GetUniformLocation(program, "uVignetteColor");
@@ -71,7 +70,7 @@ public class UberPost : IDisposable
         float hueShiftAngle,
         float lensDistortionIntensity, Vector2 lensDistortionCenter,
         float chromaticAberrationIntensity,
-        Vector2 vignetteCenter, float vignetteIntensity, bool vignetteRounded, float vignetteRoundness, float vignetteSmoothness, ColorRgb vignetteColor,
+        Vector2 vignetteCenter, float vignetteIntensity, bool vignetteRounded, float vignetteRoundness, float vignetteSmoothness, ColorRgb vignetteColor, VignetteMode vignetteMode,
         ColorRgb gradientColor1, ColorRgb gradientColor2, float gradientIntensity, float gradientRotation, GradientOverlayMode gradientMode,
         int inputTexture, int outputTexture)
     {
@@ -88,11 +87,20 @@ public class UberPost : IDisposable
         
         GL.Uniform1f(chromaticAberrationIntensityUniformLocation, chromaticAberrationIntensity);
         
-        GL.Uniform2f(vignetteCenterUniformLocation, 1, vignetteCenter);
-        GL.Uniform1f(vignetteIntensityUniformLocation, vignetteIntensity * 3.0f);
-        GL.Uniform1f(vignetteRoundedUniformLocation, vignetteRounded ? 1.0f : 0.0f);
-        GL.Uniform1f(vignetteRoundnessUniformLocation, (1.0f - vignetteRoundness) * 6.0f + vignetteRoundness);
-        GL.Uniform1f(vignetteSmoothnessUniformLocation, vignetteSmoothness * 5.0f);
+        GL.Uniform2f(vignetteCenterUniformLocation, vignetteCenter.X, vignetteCenter.Y);
+        GL.Uniform1f(vignetteIntensityUniformLocation, vignetteIntensity * 3);
+        
+        if (vignetteMode == VignetteMode.UseRoundness)
+        {
+            var roundness = (1f - vignetteRoundness) * 6f + vignetteRoundness;
+            GL.Uniform1f(vignetteRoundnessUniformLocation, roundness);
+        }
+        else
+        {
+            GL.Uniform1f(vignetteRoundnessUniformLocation, vignetteRounded ? size.X / (float) size.Y : 1f);
+        }
+        
+        GL.Uniform1f(vignetteSmoothnessUniformLocation, vignetteSmoothness * 5f);
         GL.Uniform3f(vignetteColorUniformLocation, vignetteColor.R, vignetteColor.G, vignetteColor.B);
         
         GL.Uniform3f(gradientColor1UniformLocation, gradientColor1.R, gradientColor1.G, gradientColor1.B);

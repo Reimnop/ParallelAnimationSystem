@@ -17,16 +17,10 @@ void main() {
     if (coords.x >= size.x || coords.y >= size.y)
         return;
     
-    // Calculate uv
     vec2 uv = vec2(coords.x + 0.5, coords.y + 0.5) / vec2(size);
-    
-    // Load colors
     vec3 srcColor = texture(uSourceSampler, uv).rgb;
     vec3 bloomColor = texture(uBloomSampler, uv).rgb;
-    
-    // Combine them
     vec3 color = srcColor + bloomColor * uTint;
     
-    // Store result
     imageStore(uOutputImage, coords, vec4(color, 1.0));
 }

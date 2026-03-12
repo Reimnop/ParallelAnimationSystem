@@ -9,20 +9,15 @@ layout(rgba16f, binding = 0) uniform image2D uOutputImage;
 uniform sampler2D uSourceSampler;
 
 uniform float uThreshold;
-uniform vec3 uCurve;
+uniform float uKnee;
 
 // "Borrowed" from Unity URP
-// curve = (threshold - knee, knee * 2, 0.25 / knee)
-vec3 quadraticThreshold(vec3 color, float threshold, vec3 curve) {
-    float br = max(color.r, max(color.g, color.b));
-
-    // Under-threshold part: quadratic curve
-    float rq = clamp(br - curve.x, 0.0, curve.y);
-    rq = curve.z * rq * rq;
-
-    // Combine and apply the brightness response curve.
-    color *= max(rq, br - threshold) / max(br, EPSILON);
-    
+vec3 applyThreshold(vec3 color, float threshold, float knee) {
+    float brightness = max(max(color.r, color.g), color.b);
+    float softness = clamp(brightness - threshold + knee, 0.0, 2.0 * knee);
+    softness = softness * softness / (4.0 * knee + EPSILON);
+    float multiplier = max(brightness - threshold, softness) / max(brightness, EPSILON);
+    color *= multiplier;
     return color;
 }
 
@@ -34,15 +29,9 @@ void main() {
     if (coords.x >= size.x || coords.y >= size.y)
         return;
     
-    // Calculate uv
     vec2 uv = vec2(coords.x + 0.5, coords.y + 0.5) / vec2(size);
-    
-    // Load color
     vec3 color = texture(uSourceSampler, uv).rgb;
+    color = applyThreshold(color, uThreshold, uKnee);
     
-    // Apply threshold
-    color = quadraticThreshold(color, uThreshold, uCurve);
-    
-    // Store result
     imageStore(uOutputImage, coords, vec4(color, 1.0));
 }

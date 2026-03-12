@@ -35,6 +35,7 @@ public struct VignetteEffectState
     public float Roundness;
     public float Smoothness;
     public ColorRgb Color;
+    public VignetteMode Mode;
 }
 
 public struct GradientEffectState

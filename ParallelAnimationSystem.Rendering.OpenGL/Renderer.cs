@@ -691,7 +691,7 @@ public class Renderer : IRenderer, IDisposable
                 state.HueShift.Angle,
                 state.LensDistortion.Intensity, state.LensDistortion.Center,
                 state.ChromaticAberration.Intensity,
-                state.Vignette.Center, state.Vignette.Intensity, state.Vignette.Rounded, state.Vignette.Roundness, state.Vignette.Smoothness, state.Vignette.Color,
+                state.Vignette.Center, state.Vignette.Intensity, state.Vignette.Rounded, state.Vignette.Roundness, state.Vignette.Smoothness, state.Vignette.Color, state.Vignette.Mode,
                 state.Gradient.Color1, state.Gradient.Color2, state.Gradient.Intensity, state.Gradient.Rotation, state.Gradient.Mode,
                 texture1, texture2))
             Swap(ref texture1, ref texture2);

@@ -37,12 +37,13 @@ public static class EventHelper
 
     public static BloomEffectState ResolveBloomData(BloomData bloomData, ThemeColorState tcs)
     {
-        var colorIndex = Math.Clamp(bloomData.Color, 0, tcs.Effect.Length - 1);
         return new BloomEffectState
         {
             Intensity = bloomData.Intensity,
             Diffusion = bloomData.Diffusion,
-            Color = tcs.Effect[colorIndex]
+            Color = bloomData.Color >= 0 && bloomData.Color < tcs.Effect.Length 
+                ? tcs.Effect[bloomData.Color] 
+                : new ColorRgb(1f, 1f, 1f)
         };
     }
     
@@ -52,7 +53,9 @@ public static class EventHelper
             Intensity = vignetteData.Intensity,
             Smoothness = vignetteData.Smoothness,
             Color = vignetteData.Color.HasValue 
-                ? tcs.Effect[Math.Clamp(vignetteData.Color.Value, 0, tcs.Effect.Length - 1)]
+                ? vignetteData.Color.Value >= 0 && vignetteData.Color.Value < tcs.Effect.Length 
+                    ? tcs.Effect[vignetteData.Color.Value]
+                    : default
                 : default,
             Rounded = vignetteData.Rounded,
             Roundness = vignetteData.Roundness ?? 1f,

@@ -9,12 +9,12 @@ namespace ParallelAnimationSystem.Rendering.OpenGL.PostProcessing;
 
 public class UniversalBloom : IDisposable
 {
-    private record struct Mip(int Handle, int Handle2, Vector2i Size);
+    private record struct Mip(int Down, int Up, Vector2i Size);
     
     private readonly int prefilterProgram, blurProgram, upsampleProgram, combineProgram;
     private readonly int
         prefilterThresholdUniformLocation,
-        prefilterCurveUniformLocation,
+        prefilterKneeUniformLocation,
         blurIsVerticalUniformLocation,
         upsampleScatterUniformLocation,
         combineTintUniformLocation;
@@ -32,15 +32,21 @@ public class UniversalBloom : IDisposable
         combineProgram = LoaderUtil.LoadComputeProgram(loader, "PostProcessing/Bloom/Combine");
         
         prefilterThresholdUniformLocation = GL.GetUniformLocation(prefilterProgram, "uThreshold");
-        prefilterCurveUniformLocation = GL.GetUniformLocation(prefilterProgram, "uCurve");
+        prefilterKneeUniformLocation = GL.GetUniformLocation(prefilterProgram, "uKnee");
         blurIsVerticalUniformLocation = GL.GetUniformLocation(blurProgram, "uIsVertical");
         upsampleScatterUniformLocation = GL.GetUniformLocation(upsampleProgram, "uScatter");
         combineTintUniformLocation = GL.GetUniformLocation(combineProgram, "uTint");
         
+        var upsampleLowMipSamplerUniformLocation = GL.GetUniformLocation(upsampleProgram, "uLowMipSampler");
+        var upsampleHighMipSamplerUniformLocation = GL.GetUniformLocation(upsampleProgram, "uHighMipSampler");
         var combineSourceSamplerUniformLocation = GL.GetUniformLocation(combineProgram, "uSourceSampler");
         var combineBloomSamplerUniformLocation = GL.GetUniformLocation(combineProgram, "uBloomSampler");
         
         // Set sampler uniform binding
+        GL.UseProgram(upsampleProgram);
+        GL.Uniform1i(upsampleLowMipSamplerUniformLocation, 0);
+        GL.Uniform1i(upsampleHighMipSamplerUniformLocation, 1);
+        
         GL.UseProgram(combineProgram);
         GL.Uniform1i(combineSourceSamplerUniformLocation, 0);
         GL.Uniform1i(combineBloomSamplerUniformLocation, 1);
@@ -62,12 +68,12 @@ public class UniversalBloom : IDisposable
         {
             currentSize = size;
             
-            var s = MathF.Max(size.X, size.Y);
+            var s = MathF.Max(size.X, size.Y) * 0.5f;
             var iterations = (int) MathF.Log2(s);
             UpdateMipChain(size, iterations);
         }
         
-        if (mipChain.Count == 0)
+        if (mipChain.Count < 2)
             return false;
         
         // Get mip 0
@@ -80,20 +86,15 @@ public class UniversalBloom : IDisposable
         // Prefilter to mip 0
         GL.UseProgram(prefilterProgram);
         
-        GL.BindImageTexture(0, mip0.Handle, 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f); // Bind output image
+        GL.BindImageTexture(0, mip0.Down, 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f); // Bind output image
         GL.BindTextureUnit(0, inputTexture); // Bind input texture
         
         // Set knee and threshold uniforms
-        var threshold = 0.9f; // TODO: expose as parameter
-        var softKnee = 0.5f;
-        
-        var knee = threshold * softKnee + 1e-5f;
-        var curve0 = threshold - knee;
-        var curve1 = knee * 2.0f;
-        var curve2 = 0.25f / knee;
+        var threshold = 0.81f; // TODO: expose as parameter
+        var knee = 0.5f;
         
         GL.Uniform1f(prefilterThresholdUniformLocation, threshold);
-        GL.Uniform3f(prefilterCurveUniformLocation, curve0, curve1, curve2);
+        GL.Uniform1f(prefilterKneeUniformLocation, threshold * knee);
         
         GL.DispatchCompute(
             (uint)MathUtil.DivideCeil(mip0.Size.X, 8), 
@@ -112,8 +113,9 @@ public class UniversalBloom : IDisposable
             // Downsample pass (mip[i - 1] -> mip[i])
             
             // Horizontal blur
-            GL.BindImageTexture(0, targetMip.Handle2, 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f); // Bind output image
-            GL.BindTextureUnit(0, sourceMip.Handle); // Bind input texture
+            // Use up mip as our target to save memory
+            GL.BindImageTexture(0, targetMip.Up, 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f); // Bind output image
+            GL.BindTextureUnit(0, sourceMip.Down); // Bind input texture
             
             GL.Uniform1i(blurIsVerticalUniformLocation, 0);
             
@@ -124,8 +126,8 @@ public class UniversalBloom : IDisposable
             GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit);
             
             // Vertical blur
-            GL.BindImageTexture(0, targetMip.Handle, 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f); // Bind output image
-            GL.BindTextureUnit(0, targetMip.Handle2); // Bind input texture
+            GL.BindImageTexture(0, targetMip.Down, 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f); // Bind output image
+            GL.BindTextureUnit(0, targetMip.Up); // Bind input texture
             
             GL.Uniform1i(blurIsVerticalUniformLocation, 1);
             
@@ -145,12 +147,16 @@ public class UniversalBloom : IDisposable
         
         for (var i = mipChain.Count - 2; i >= 0; i--)
         {
-            var sourceMip = mipChain[i + 1];
-            var targetMip = mipChain[i];
+            var lowMip = i == mipChain.Count - 2 ? mipChain[i + 1].Down : mipChain[i + 1].Up;
+            var highMip = mipChain[i].Down;
+            var targetMip = mipChain[i]; // Up direction
             
             // Upsample pass (mip[i + 1] -> mip[i])
-            GL.BindImageTexture(0, targetMip.Handle, 0, false, 0, BufferAccess.ReadWrite, InternalFormat.Rgba16f); // Bind output image
-            GL.BindTextureUnit(0, sourceMip.Handle); // Bind input texture
+            GL.BindImageTexture(0, targetMip.Up, 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f); // Bind output image
+            
+            // Bind low and high mip textures
+            GL.BindTextureUnit(0, lowMip);
+            GL.BindTextureUnit(1, highMip);
             
             GL.DispatchCompute(
                 (uint)MathUtil.DivideCeil(targetMip.Size.X, 8), 
@@ -164,7 +170,7 @@ public class UniversalBloom : IDisposable
         GL.BindImageTexture(0, outputTexture, 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f); // Bind output image
         
         GL.BindTextureUnit(0, inputTexture);
-        GL.BindTextureUnit(1, mip0.Handle);
+        GL.BindTextureUnit(1, mip0.Up);
         
         var tint = color * intensity;
         GL.Uniform3f(combineTintUniformLocation, tint.R, tint.G, tint.B);
@@ -180,12 +186,13 @@ public class UniversalBloom : IDisposable
 
     private void UpdateMipChain(Vector2i size, int levels)
     {
+        size = new Vector2i(size.X >> 1, size.Y >> 1); // Start from half resolution
+        
         // Clean up old mip chain
         foreach (var mip in mipChain)
         {
-            GL.DeleteTexture(mip.Handle);
-            if (mip.Handle2 != 0)
-                GL.DeleteTexture(mip.Handle2);
+            GL.DeleteTexture(mip.Down);
+            GL.DeleteTexture(mip.Up);
         }
         
         mipChain.Clear();
@@ -193,19 +200,20 @@ public class UniversalBloom : IDisposable
         // Create new mip chain
         for (var i = 0; i < levels; i++)
         {
-            var mipSize = new Vector2i(size.X >> i, size.Y >> i);
+            var mipSize = new Vector2i(
+                Math.Max(size.X >> i, 1),
+                Math.Max(size.Y >> i, 1));
             
-            var mipHandle = GL.CreateTexture(TextureTarget.Texture2d);
-            GL.TextureStorage2D(mipHandle, 1, SizedInternalFormat.Rgba16f, mipSize.X, mipSize.Y);
+            var down = GL.CreateTexture(TextureTarget.Texture2d);
+            GL.TextureStorage2D(down, 1, SizedInternalFormat.Rgba16f, mipSize.X, mipSize.Y);
             
-            var mipHandle2 = 0;
-            if (i != 0)
-            {
-                mipHandle2 = GL.CreateTexture(TextureTarget.Texture2d);
-                GL.TextureStorage2D(mipHandle2, 1, SizedInternalFormat.Rgba16f, mipSize.X, mipSize.Y);
-            }
+            var up = GL.CreateTexture(TextureTarget.Texture2d);
+            GL.TextureStorage2D(up, 1, SizedInternalFormat.Rgba16f, mipSize.X, mipSize.Y);
             
-            mipChain.Add(new Mip(mipHandle, mipHandle2, mipSize));
+            mipChain.Add(new Mip(down, up, mipSize));
+            
+            if (mipSize is { X: 1, Y: 1 })
+                break; // Stop if we've reached 1x1
         }
     }
 
@@ -220,9 +228,8 @@ public class UniversalBloom : IDisposable
 
         foreach (var mip in mipChain)
         {
-            GL.DeleteTexture(mip.Handle);
-            if (mip.Handle2 != 0)
-                GL.DeleteTexture(mip.Handle2);
+            GL.DeleteTexture(mip.Down);
+            GL.DeleteTexture(mip.Up);
         }
     }
 }

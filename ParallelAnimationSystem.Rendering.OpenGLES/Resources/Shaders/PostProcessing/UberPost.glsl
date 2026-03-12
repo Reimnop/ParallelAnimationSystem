@@ -17,7 +17,6 @@ uniform highp float uChromaticAberrationIntensity;
 
 uniform highp vec2 uVignetteCenter;
 uniform highp float uVignetteIntensity;
-uniform highp float uVignetteRounded;
 uniform highp float uVignetteRoundness;
 uniform highp float uVignetteSmoothness;
 uniform highp vec3 uVignetteColor;
@@ -28,8 +27,28 @@ uniform highp float uGradientIntensity;
 uniform highp mat2 uGradientRotation;
 uniform highp int uGradientMode;
 
-
 in highp vec2 vUv;
+
+// color utils
+float srgbToLinear(float c) {
+    float linearRGBLo = c / 12.92;
+    float linearRGBHi = pow((c + 0.055) / 1.055, 2.4);
+    return (c <= 0.04045) ? linearRGBLo : linearRGBHi;
+}
+
+float linearToSrgb(float c) {
+    float srgbLo = c * 12.92;
+    float srgbHi = 1.055 * pow(c, 1.0 / 2.4) - 0.055;
+    return (c <= 0.0031308) ? srgbLo : srgbHi;
+}
+
+vec3 srgbToLinear(vec3 c) {
+    return vec3(srgbToLinear(c.r), srgbToLinear(c.g), srgbToLinear(c.b));
+}
+
+vec3 linearToSrgb(vec3 c) {
+    return vec3(linearToSrgb(c.r), linearToSrgb(c.g), linearToSrgb(c.b));
+}
 
 // "Borrowed" from https://gist.github.com/mairod/a75e7b44f68110e1576d77419d608786
 vec3 hueShift(vec3 color, float hueAdjust) {
@@ -84,10 +103,9 @@ vec2 distortLens(vec2 uv) {
     return uv;
 }
 
-vec3 vignette(vec3 color, vec2 uv, vec2 center, float aspect, float intensity, float rounded, float roundness, float smoothness, vec3 vignetteColor) {
+vec3 applyVignette(vec3 color, vec2 uv, vec2 center, float intensity, float roundness, float smoothness, vec3 vignetteColor) {
     vec2 dist = abs(uv - center) * intensity;
-    dist.x *= mix(1.0, aspect, rounded);
-    dist = pow(clamp(dist, 0.0, 1.0), vec2(roundness));
+    dist.x *= roundness;
     float vFactor = pow(clamp(1.0 - dot(dist, dist), 0.0, 1.0), smoothness);
     return color * mix(vignetteColor, vec3(1.0), vFactor);
 }
@@ -116,6 +134,9 @@ vec3 applyGradient(vec3 color, vec2 uv, vec3 color1, vec3 color2, float intensit
 vec3 sampleTexture(sampler2D tex, vec2 uv) {
     vec3 color = texture(tex, uv).rgb;
     color = applyGradient(color, uv, uGradientColor1, uGradientColor2, uGradientIntensity, uGradientRotation, uGradientMode);
+
+    // gradient should be processed in gamma space, other effects in linear
+    color = srgbToLinear(color);
     return color;
 }
 
@@ -144,13 +165,16 @@ void main() {
 
     // Apply vignette
     if (uVignetteIntensity != 0.0) {
-        color = vignette(color, uvDistorted, uVignetteCenter, float(size.x) / float(size.y), uVignetteIntensity, uVignetteRounded, uVignetteRoundness, uVignetteSmoothness, uVignetteColor);
+        color = applyVignette(color, uvDistorted, uVignetteCenter, uVignetteIntensity, uVignetteRoundness, uVignetteSmoothness, uVignetteColor);
     }
 
     // Hue shift
     if (uHueShiftAngle != 0.0) {
         color = hueShift(color, uHueShiftAngle);
     }
+    
+    // Convert back to sRGB for output
+    color = linearToSrgb(color);
     
     // Clamp final color
     color = clamp(color, 0.0, 1.0);

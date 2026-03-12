@@ -12,11 +12,8 @@ uniform highp vec3 uTint;
 in highp vec2 vUv;
 
 void main() {
-    // Fetch colors
     vec3 srcColor = texture(uSourceSampler, vUv).rgb;
     vec3 bloomColor = texture(uBloomSampler, vUv).rgb;
-    
-    // Mix
     vec3 color = srcColor + bloomColor * uTint;
     
     // Store result

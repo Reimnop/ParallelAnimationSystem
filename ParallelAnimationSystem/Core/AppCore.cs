@@ -81,7 +81,10 @@ public class AppCore(
                     Rounded = eventState.Vignette.Rounded,
                     Roundness = eventState.Vignette.Roundness,
                     Smoothness = eventState.Vignette.Smoothness,
-                    Color = eventState.Vignette.Color
+                    Color = eventState.Vignette.Color,
+                    Mode = beatmapService.BeatmapFormat == BeatmapFormat.Lsb 
+                        ? VignetteMode.UseRoundness 
+                        : VignetteMode.UseRounded
                 },
                 Gradient = new GradientEffectState
                 {
