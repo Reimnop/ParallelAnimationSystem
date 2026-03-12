@@ -248,6 +248,7 @@ public class AsyncRenderQueue : IRenderQueue
     public TextHandle CreateText(ShapedRichText richText)
     {
         // copy data
+        // TODO: Remap font handles in glyphs to new font handles created on render thread
         var shapedRichTextCopy = CopyShapedRichText(richText);
         
         // create new ref
