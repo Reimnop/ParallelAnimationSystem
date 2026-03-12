@@ -12,20 +12,18 @@ uniform highp float uColorIntensity;
 
 in highp vec2 vUv;
 
-vec4 glitch(sampler2D tex, sampler2D noiseTex, vec2 uv, float intensity, float colorIntensity) {
-    vec3 glitch = texture(noiseTex, uv).xyz;
-    float thresh = 1.001 - intensity * 1.001;
-    float w_d = step(thresh * colorIntensity, pow(abs(glitch.z), 2.5));
-    float w_c = step(thresh, pow(abs(glitch.z), 3.5));
-    vec2 uv2 = fract(uv + glitch.xy * w_d);
-    vec4 source = texture(tex, uv2);
+void main() {
+    vec4 glitch = texture(uNoiseTexture, vUv);
+    float activeAmount = pow(uIntensity, 1.8); 
+    float thresh = 1.0 - activeAmount;
+    float w_c = step(thresh * 0.99, glitch.z); 
+    float w_d = step(thresh, glitch.z);
+    float scrambleScale = mix(0.04, 0.30, uIntensity);
+    vec2 offset = (glitch.xy - 0.5) * scrambleScale;
+    vec2 uv = fract(vUv + offset * w_d);
+    vec4 source = texture(uTexture, uv);
     vec3 color = source.rgb;
     vec3 neg = clamp(color.grb + (1.0 - dot(color, vec3(1.0))) * 0.1, 0.0, 1.0);
     color = mix(color, neg, w_c);
-    return vec4(color, source.a);
-}
-
-void main() {
-    vec2 uv = vUv;
-    oFragColor = glitch(uTexture, uNoiseTexture, uv, uIntensity, uColorIntensity);
+    oFragColor = vec4(color, source.a);
 }
