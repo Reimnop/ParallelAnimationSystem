@@ -31,5 +31,5 @@ void main() {
     color = applyThreshold(color, uThreshold, uKnee);
     
     // Store result
-    oFragColor = vec4(sqrt(color), 1.0);
+    oFragColor = vec4(color, 1.0);
 }
