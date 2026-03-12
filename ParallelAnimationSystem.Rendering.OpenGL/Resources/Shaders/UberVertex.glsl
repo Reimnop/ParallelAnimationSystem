@@ -63,18 +63,21 @@ void main() {
         vFontIndex = glyph.fontIndex;
 
         bool italic = (glyph.boldItalic & 2) != 0;
-        
-        float c = cos(glyph.rotation);
-        float s = sin(glyph.rotation);
-        mat2 posTransform = mat2(c, -s, s, c);
-
-        vec2 tempPos = aPos - vec2(0.5);
-        tempPos = posTransform * tempPos + vec2(0.5);
 
         vec2 min = glyph.minMax.xy;
         vec2 max = glyph.minMax.zw;
-        vec2 pos = mix(min, max, tempPos);
-        pos.x += italic ? (pos.y - min.y) * 0.2 : 0.0;
+        float sx = max.x - min.x;
+        float sy = max.y - min.y;
+        
+        float c = cos(glyph.rotation);
+        float s = sin(glyph.rotation);
+        mat2 scaleM = mat2(sx, 0.0, 0.0, sy);
+        mat2 rotateM = mat2(c, s, -s, c);
+        mat2 italicM = mat2(1.0, 0.0, italic ? 0.3 : 0.0, 1.0);
+        mat2 transform = rotateM * italicM * scaleM;
+
+        vec2 pos = aPos - vec2(0.5);
+        pos = transform * pos + (min + max) * 0.5;
 
         gl_Position = vec4(vec2(item.mvp * vec3(pos, 1.0)), item.z, 1.0);
     } else {

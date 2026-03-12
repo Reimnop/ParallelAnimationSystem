@@ -48,16 +48,20 @@ void main() {
     vFontIndex = aFontIndex;
     
     bool italic = (aBoldItalic & 2) != 0;
+    
+    float sx = aMax.x - aMin.x;
+    float sy = aMax.y - aMin.y;
 
     float c = cos(aRotation);
     float s = sin(aRotation);
-    mat2 posTransform = mat2(c, -s, s, c);
     
-    vec2 tempPos = vertPos - vec2(0.5);
-    tempPos = posTransform * tempPos + vec2(0.5);
-    
-    vec2 pos = mix(aMin, aMax, tempPos);
-    pos.x += italic ? (pos.y - aMin.y) * 0.2 : 0.0;
+    mat2 scaleM = mat2(sx, 0.0, 0.0, sy);
+    mat2 rotateM = mat2(c, s, -s, c);
+    mat2 italicM = mat2(1.0, 0.0, italic ? 0.3 : 0.0, 1.0);
+    mat2 transform = rotateM * italicM * scaleM;
+
+    vec2 pos = vertPos - vec2(0.5);
+    pos = transform * pos + (aMin + aMax) * 0.5;
 
     gl_Position = vec4(vec2(uMvp * vec3(pos, 1.0)), uZ, 1.0);
 }

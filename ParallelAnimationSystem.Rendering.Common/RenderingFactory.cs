@@ -53,6 +53,7 @@ public class RenderingFactory : IRenderingFactory
             MinUV = x.MinUV,
             MaxUV = x.MaxUV,
             Color = x.Color,
+            Rotation = x.Rotation,
             BoldItalic = x.BoldItalic,
             AtlasIndex = x.Font?.Id ?? -1
         });
