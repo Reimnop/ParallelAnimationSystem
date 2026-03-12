@@ -20,6 +20,7 @@ uniform highp float uVignetteIntensity;
 uniform highp float uVignetteRoundness;
 uniform highp float uVignetteSmoothness;
 uniform highp vec3 uVignetteColor;
+uniform int uVignetteMode; // 0 = rounded, 1 = roundness
 
 uniform highp vec3 uGradientColor1;
 uniform highp vec3 uGradientColor2;
@@ -103,9 +104,16 @@ vec2 distortLens(vec2 uv) {
     return uv;
 }
 
-vec3 applyVignette(vec3 color, vec2 uv, vec2 center, float intensity, float roundness, float smoothness, vec3 vignetteColor) {
+vec3 applyVignetteRounded(vec3 color, vec2 uv, vec2 center, float aspect, float intensity, float roundedness, float smoothness, vec3 vignetteColor) {
     vec2 dist = abs(uv - center) * intensity;
-    dist.x *= roundness;
+    dist.x *= mix(1.0, aspect, roundedness);
+    float vFactor = pow(clamp(1.0 - dot(dist, dist), 0.0, 1.0), smoothness);
+    return color * mix(vignetteColor, vec3(1.0), vFactor);
+}
+
+vec3 applyVignetteRoundness(vec3 color, vec2 uv, vec2 center, float intensity, float roundness, float smoothness, vec3 vignetteColor) {
+    vec2 dist = abs(uv - center) * intensity;
+    dist = pow(clamp(dist, 0.0, 1.0), vec2(roundness));
     float vFactor = pow(clamp(1.0 - dot(dist, dist), 0.0, 1.0), smoothness);
     return color * mix(vignetteColor, vec3(1.0), vFactor);
 }
@@ -165,7 +173,11 @@ void main() {
 
     // Apply vignette
     if (uVignetteIntensity != 0.0) {
-        color = applyVignette(color, uvDistorted, uVignetteCenter, uVignetteIntensity, uVignetteRoundness, uVignetteSmoothness, uVignetteColor);
+        if (uVignetteMode == 0) {
+            color = applyVignetteRounded(color, uvDistorted, uVignetteCenter, float(size.x) / float(size.y), uVignetteIntensity, uVignetteRoundness, uVignetteSmoothness, uVignetteColor);
+        } else if (uVignetteMode == 1) { 
+            color = applyVignetteRoundness(color, uvDistorted, uVignetteCenter, uVignetteIntensity, uVignetteRoundness, uVignetteSmoothness, uVignetteColor);
+        }
     }
 
     // Hue shift

@@ -24,6 +24,7 @@ public class UberPost : IDisposable
     private readonly int vignetteRoundnessUniformLocation;
     private readonly int vignetteSmoothnessUniformLocation;
     private readonly int vignetteColorUniformLocation;
+    private readonly int vignetteModeUniformLocation;
     
     private readonly int gradientColor1UniformLocation;
     private readonly int gradientColor2UniformLocation;
@@ -51,6 +52,7 @@ public class UberPost : IDisposable
         vignetteRoundnessUniformLocation = GL.GetUniformLocation(program, "uVignetteRoundness");
         vignetteSmoothnessUniformLocation = GL.GetUniformLocation(program, "uVignetteSmoothness");
         vignetteColorUniformLocation = GL.GetUniformLocation(program, "uVignetteColor");
+        vignetteModeUniformLocation = GL.GetUniformLocation(program, "uVignetteMode");
         
         gradientColor1UniformLocation = GL.GetUniformLocation(program, "uGradientColor1");
         gradientColor2UniformLocation = GL.GetUniformLocation(program, "uGradientColor2");
@@ -96,14 +98,16 @@ public class UberPost : IDisposable
         GL.Uniform2f(vignetteCenterUniformLocation, 1, vignetteCenter);
         GL.Uniform1f(vignetteIntensityUniformLocation, vignetteIntensity * 3.0f);
         
-        if (vignetteMode == VignetteMode.UseRoundness)
+        if (vignetteMode == VignetteMode.UseRounded)
         {
-            var roundness = (1f - vignetteRoundness) * 6f + vignetteRoundness;
-            GL.Uniform1f(vignetteRoundnessUniformLocation, roundness);
+            GL.Uniform1f(vignetteRoundnessUniformLocation, vignetteRounded ? 1f : 0f);
+            GL.Uniform1i(vignetteModeUniformLocation, 0);
         }
         else
         {
-            GL.Uniform1f(vignetteRoundnessUniformLocation, vignetteRounded ? size.X / (float) size.Y : 1f);
+            var roundness = (1f - vignetteRoundness) * 6f + vignetteRoundness;
+            GL.Uniform1f(vignetteRoundnessUniformLocation, roundness);
+            GL.Uniform1i(vignetteModeUniformLocation, 1);
         }
         
         GL.Uniform1f(vignetteSmoothnessUniformLocation, vignetteSmoothness * 5.0f);
