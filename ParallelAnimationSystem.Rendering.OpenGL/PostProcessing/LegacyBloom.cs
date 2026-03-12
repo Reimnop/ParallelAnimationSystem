@@ -57,7 +57,7 @@ public class LegacyBloom : IDisposable
         intensity = MathF.Pow(2.0f, intensity / 10.0f) - 1.0f;
         
         // Determine iteration count
-        var s = MathF.Max(size.X, size.Y) * 0.5f;
+        var s = MathF.Max(size.X, size.Y);
         var logS = MathF.Log2(s) + MathF.Min(diffusion, 10f) - 10f; // Use 10 as base
         var logSFloored = MathF.Floor(logS);
         var iterations = (int) Math.Clamp(logSFloored, 1, 16); // Limit to 16 levels
@@ -165,8 +165,6 @@ public class LegacyBloom : IDisposable
 
     private void UpdateMipChain(Vector2i size, int levels)
     {
-        size = new Vector2i(size.X >> 1, size.Y >> 1);
-        
         // Clean up old mip chain
         foreach (var mip in mipChain)
             GL.DeleteTexture(mip.Handle);

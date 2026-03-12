@@ -68,7 +68,7 @@ public class UniversalBloom : IDisposable
         {
             currentSize = size;
             
-            var s = MathF.Max(size.X, size.Y) * 0.5f;
+            var s = MathF.Max(size.X, size.Y);
             var iterations = (int) MathF.Log2(s);
             UpdateMipChain(size, iterations);
         }
@@ -189,8 +189,6 @@ public class UniversalBloom : IDisposable
 
     private void UpdateMipChain(Vector2i size, int levels)
     {
-        size = new Vector2i(size.X >> 1, size.Y >> 1); // Start from half resolution
-        
         // Clean up old mip chain
         foreach (var mip in mipChain)
         {
