@@ -26,6 +26,8 @@ vec3 applyThreshold(vec3 color, float threshold, float knee) {
 void main() {
     // Load color
     vec3 color = texture(uSourceSampler, vUv).rgb;
+
+    color *= color; // Convert to linear space
     
     // Apply threshold
     color = applyThreshold(color, uThreshold, uKnee);

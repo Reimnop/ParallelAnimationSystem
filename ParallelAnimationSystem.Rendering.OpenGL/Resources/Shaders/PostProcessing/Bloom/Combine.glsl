@@ -18,9 +18,16 @@ void main() {
         return;
     
     vec2 uv = vec2(coords.x + 0.5, coords.y + 0.5) / vec2(size);
+    
     vec3 srcColor = texture(uSourceSampler, uv).rgb;
+    srcColor *= srcColor; // Convert to linear space
+    
     vec3 bloomColor = texture(uBloomSampler, uv).rgb;
+    
     vec3 color = srcColor + bloomColor * uTint;
+    
+    // Convert back to gamma space
+    color = sqrt(color);
     
     imageStore(uOutputImage, coords, vec4(color, 1.0));
 }

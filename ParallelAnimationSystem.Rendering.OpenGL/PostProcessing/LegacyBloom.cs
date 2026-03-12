@@ -148,7 +148,10 @@ public class LegacyBloom : IDisposable
         GL.BindTextureUnit(0, inputTexture);
         GL.BindTextureUnit(1, mip0.Handle);
 
-        var tint = color * intensity;
+        var colorLinear = new ColorRgb(color.R * color.R, color.G * color.G, color.B * color.B);
+        var colorLuminance = 0.2126f * colorLinear.R + 0.7152f * colorLinear.G + 0.0722f * colorLinear.B;
+        colorLinear = colorLuminance > 0f ? colorLinear * (1f / colorLuminance) : new ColorRgb(1f, 1f, 1f);
+        var tint = colorLinear * intensity;
         GL.Uniform3f(combineTintUniformLocation, tint.R, tint.G, tint.B);
         
         GL.DispatchCompute(
