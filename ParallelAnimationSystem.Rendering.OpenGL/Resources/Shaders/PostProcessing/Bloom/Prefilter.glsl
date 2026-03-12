@@ -32,7 +32,6 @@ void main() {
     vec2 uv = vec2(coords.x + 0.5, coords.y + 0.5) / vec2(size);
     
     vec3 color = texture(uSourceSampler, uv).rgb;
-    color *= color; // Convert to linear space
     color = applyThreshold(color, uThreshold, uKnee);
     
     imageStore(uOutputImage, coords, vec4(color, 1.0));
