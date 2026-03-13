@@ -150,6 +150,18 @@ public class AsyncRenderQueue : IRenderQueue
             Array.Resize(ref drawItems, newSize);
         }
     }
+    
+    private struct RefShapedTextGlyph
+    {
+        public Vector2 Min;
+        public Vector2 Max;
+        public Vector2 MinUV;
+        public Vector2 MaxUV;
+        public ColorRgba Color;
+        public float Rotation;
+        public BoldItalic BoldItalic;
+        public Ref<FontHandle>? Font;
+    }
 
     private const int RenderAheadLimit = 3;
 
@@ -248,8 +260,7 @@ public class AsyncRenderQueue : IRenderQueue
     public TextHandle CreateText(ShapedRichText richText)
     {
         // copy data
-        // TODO: Remap font handles in glyphs to new font handles created on render thread
-        var shapedRichTextCopy = CopyShapedRichText(richText);
+        var shapedRichTextRef = MapShapedRichText(richText);
         
         // create new ref
         var textRef = new Ref<TextHandle>(new TextHandle(-1));
@@ -261,7 +272,8 @@ public class AsyncRenderQueue : IRenderQueue
         renderThreadActions.Enqueue((_ =>
         {
             // create text on render thread
-            textRef.Value = renderingFactory.CreateText(shapedRichTextCopy);
+            var shapedRichTextUnmapped = UnmapShapedRichText(shapedRichTextRef);
+            textRef.Value = renderingFactory.CreateText(shapedRichTextUnmapped);
         }, false));
         
         return new TextHandle(id);
@@ -319,14 +331,51 @@ public class AsyncRenderQueue : IRenderQueue
             action.Action(renderer);
     }
 
-    private static ShapedRichText CopyShapedRichText(ShapedRichText shapedRichText)
+    private RefShapedTextGlyph[] MapShapedRichText(ShapedRichText shapedRichText)
     {
-        var newShapedRichText = new ShapedRichText();
-        newShapedRichText.Glyphs.EnsureCapacity(shapedRichText.Glyphs.Count);
-        newShapedRichText.Glyphs.AddRange(shapedRichText.Glyphs.Select(CopyShapedTextGlyph));
-        return newShapedRichText;
+        var glyphsCopy = new RefShapedTextGlyph[shapedRichText.Glyphs.Count];
+        for (var i = 0; i < shapedRichText.Glyphs.Count; i++)
+            glyphsCopy[i] = MapShapedTextGlyph(shapedRichText.Glyphs[i]);
+        return glyphsCopy;
+    }
+
+    private RefShapedTextGlyph MapShapedTextGlyph(ShapedTextGlyph glyph)
+    {
+        var newGlyph = new RefShapedTextGlyph
+        {
+            Min = glyph.Min,
+            Max = glyph.Max,
+            MinUV = glyph.MinUV,
+            MaxUV = glyph.MaxUV,
+            Color = glyph.Color,
+            Rotation = glyph.Rotation,
+            BoldItalic = glyph.BoldItalic
+        };
+        
+        if (glyph.Font.HasValue)
+        {
+            var fontHandle = glyph.Font.Value;
+            newGlyph.Font = fonts[fontHandle.Id];
+        }
+        
+        return newGlyph;
     }
     
-    private static ShapedTextGlyph CopyShapedTextGlyph(ShapedTextGlyph glyph)
-        => new(glyph.Min, glyph.Max, glyph.MinUV, glyph.MaxUV, glyph.Color, glyph.Rotation, glyph.BoldItalic, glyph.Font);
+    private ShapedRichText UnmapShapedRichText(RefShapedTextGlyph[] refShapedRichText)
+    {
+        var glyphsCopy = new List<ShapedTextGlyph>(refShapedRichText.Length);
+        foreach (ref var refGlyph in refShapedRichText.AsSpan())
+        {
+            var glyph = UnmapShapedTextGlyph(refGlyph);
+            glyphsCopy.Add(glyph);
+        }
+
+        return new ShapedRichText
+        {
+            Glyphs = glyphsCopy
+        };
+    }
+
+    private ShapedTextGlyph UnmapShapedTextGlyph(in RefShapedTextGlyph arg)
+        => new(arg.Min, arg.Max, arg.MinUV, arg.MaxUV, arg.Color, arg.Rotation, arg.BoldItalic, arg.Font?.Value);
 }
