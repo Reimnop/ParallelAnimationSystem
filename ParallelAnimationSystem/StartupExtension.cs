@@ -42,7 +42,7 @@ public static class StartupExtension
             options.RendererDefinition.RegisterToServiceCollection(services, ServiceLifetime.Scoped);
         
             // Add main services
-            services.AddScoped<AppCore>();
+            services.AddScoped<AppDirector>();
             services.AddScoped<AnimationPipeline>();
             services.AddScoped<PlaybackObjectSortingService>();
             services.AddScoped<Timeline>();

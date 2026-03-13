@@ -13,7 +13,7 @@ public class WasmApp : IDisposable
     private readonly ServiceProvider sp;
     
     private readonly IServiceScope scope;
-    private readonly AppCore appCore;
+    private readonly AppDirector appDirector;
     private readonly IRenderer renderer;
 
     private readonly RenderQueue renderQueue;
@@ -26,14 +26,14 @@ public class WasmApp : IDisposable
         
         RandomSeedService = scope.ServiceProvider.GetRequiredService<RandomSeedService>();
         BeatmapService = scope.ServiceProvider.GetRequiredService<BeatmapService>();
-        appCore = scope.ServiceProvider.GetRequiredService<AppCore>();
+        appDirector = scope.ServiceProvider.GetRequiredService<AppDirector>();
         renderer = scope.ServiceProvider.GetRequiredService<IRenderer>();
         renderQueue = (RenderQueue)scope.ServiceProvider.GetRequiredService<IRenderQueue>();
     }
     
     public void ProcessFrame(float time)
     {
-        appCore.ProcessFrame(time);
+        appDirector.ProcessFrame(time);
         renderQueue.ProcessFrame(renderer);
     }
 

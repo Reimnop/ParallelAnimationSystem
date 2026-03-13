@@ -21,7 +21,7 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
         beatmapService.LoadBeatmap(beatmapData, beatmapFormat);
         
         // Initialize core service
-        var appCore = sp.GetRequiredService<AppCore>();
+        var appDirector = sp.GetRequiredService<AppDirector>();
         
         // Play audio
         using var audioPlayer = AudioPlayer.Load(audioPath);
@@ -34,7 +34,7 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
         
         // Start the main loop
         while (appRunning)
-            appCore.ProcessFrame((float) audioPlayer.Position);
+            appDirector.ProcessFrame((float) audioPlayer.Position);
         
         // Stop audio
         audioPlayer.Stop();

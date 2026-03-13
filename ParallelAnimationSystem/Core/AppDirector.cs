@@ -13,7 +13,7 @@ using VignetteEffectState = ParallelAnimationSystem.Rendering.Data.VignetteEffec
 
 namespace ParallelAnimationSystem.Core;
 
-public class AppCore(
+public class AppDirector(
     AppSettings appSettings,
     PlaybackObjectContainer playbackObjects,
     MeshService meshService,

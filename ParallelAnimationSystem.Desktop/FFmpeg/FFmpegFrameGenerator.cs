@@ -97,7 +97,7 @@ public class FFmpegFrameGenerator(
         // Generate frames
         logger.LogInformation("Rendering video to {OutputPath}", outputPath);
         
-        var appCore = sp.GetRequiredService<AppCore>();
+        var appDirector = sp.GetRequiredService<AppDirector>();
         
         // Load audio
         using var audioPlayer = AudioPlayer.Load(audioPath);
@@ -108,7 +108,7 @@ public class FFmpegFrameGenerator(
         for (var i = 0; i < frameCount; i++)
         {
             var time = i / (float)framerate;
-            appCore.ProcessFrame(time);
+            appDirector.ProcessFrame(time);
             renderQueue.ProcessFrame(renderer);
 
             var frameData = window.FrameData;
