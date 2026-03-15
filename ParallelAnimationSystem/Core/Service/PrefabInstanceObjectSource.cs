@@ -2,14 +2,15 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
-using Pamx.Common.Enum;
+using Pamx.Keyframes;
+using Pamx.Objects;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Core.Model;
-using ParallelAnimationSystem.Core.Shape;
 using ParallelAnimationSystem.Core.Text;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering.Data;
 using ParallelAnimationSystem.Util;
+using BeatmapObject = ParallelAnimationSystem.Core.Model.BeatmapObject;
 
 namespace ParallelAnimationSystem.Core.Service;
 

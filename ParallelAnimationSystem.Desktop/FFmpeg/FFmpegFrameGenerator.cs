@@ -2,7 +2,6 @@ using System.CommandLine.Parsing;
 using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Pamx.Common.Implementation;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Rendering;
@@ -49,27 +48,30 @@ public class FFmpegFrameGenerator(
             RedirectStandardError = true,
             CreateNoWindow = true
         };
-        
-        processStartInfo.ArgumentList.AddRange([
+
+        var processStartArgs = new List<string> {
             "-y",
-            
+
             // input video args
             "-f", "rawvideo",
             "-pix_fmt", "rgba",
             "-s", $"{windowSize.X}x{windowSize.Y}",
             "-r", framerate.ToString(),
             "-i", "pipe:0",
-            
+
             // input audio args
             "-c:a", "libvorbis",
             "-i", audioPath,
-            
+
             // video filter
             "-vf", "vflip"
-        ]);
+        };
 
-        var outputArgs = CommandLineStringSplitter.Instance.Split(settings.Args);
-        processStartInfo.ArgumentList.AddRange(outputArgs);
+        foreach (var arg in processStartArgs)
+            processStartInfo.ArgumentList.Add(arg);
+
+        foreach (var arg in CommandLineStringSplitter.Instance.Split(settings.Args))
+            processStartInfo.ArgumentList.Add(arg);
         processStartInfo.ArgumentList.Add(outputPath);
         
         using var ffmpegProcess = Process.Start(processStartInfo);
@@ -130,7 +132,7 @@ public class FFmpegFrameGenerator(
 
         var bar = $"[{new string('#', (int)(frame / (float)totalFrames * barWidth)),-barWidth}] " +
                   $"{frame}/{totalFrames} " +
-                  $"({(frame / (float)totalFrames * 100):0.00}%)";
+                  $"({frame / (float)totalFrames * 100:0.00}%)";
 
         // Clear + redraw
         Console.Write("\e[2K");

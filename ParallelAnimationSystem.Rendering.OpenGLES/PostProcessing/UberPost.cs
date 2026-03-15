@@ -1,6 +1,6 @@
 using OpenTK.Graphics.OpenGLES2;
 using System.Numerics;
-using Pamx.Common.Enum;
+using Pamx.Events;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Mathematics;

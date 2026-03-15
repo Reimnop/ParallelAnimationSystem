@@ -1,9 +1,9 @@
 ﻿using System.Diagnostics;
-using System.Text.Json.Nodes;
+using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Pamx.Ls;
-using Pamx.Vg;
+using Pamx;
+using Pamx.Serialization;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Core.Model;
 
@@ -64,19 +64,12 @@ public class BeatmapService : IDisposable
             BeatmapData.Clear();
             logger.LogInformation("Clearing existing beatmap data took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
 
-            // Parse beatmap
-            sw.Restart();
-            var beatmapJson = JsonNode.Parse(data);
-            if (beatmapJson is not JsonObject beatmapJsonObject)
-                throw new InvalidDataException("Invalid beatmap JSON");
-            logger.LogInformation("Parsing beatmap took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
-
             // Deserialize beatmap
             sw.Restart();
             var beatmap = format switch
             {
-                BeatmapFormat.Lsb => LsDeserialization.DeserializeBeatmap(beatmapJsonObject),
-                BeatmapFormat.Vgd => VgDeserialization.DeserializeBeatmap(beatmapJsonObject),
+                BeatmapFormat.Lsb => JsonSerializer.Deserialize<Beatmap>(data, PamxSerialization.LegacyOptions)!,
+                BeatmapFormat.Vgd => JsonSerializer.Deserialize<Beatmap>(data, PamxSerialization.Options)!,
                 _ => throw new NotSupportedException($"Unsupported beatmap format '{format}'"),
             };
             logger.LogInformation("Deserializing beatmap took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);

@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using Pamx.Common.Enum;
+using Pamx.Objects;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Core.Shape;
 using ParallelAnimationSystem.Core.Text;

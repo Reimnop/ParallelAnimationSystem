@@ -1,7 +1,6 @@
 ﻿using System.Numerics;
-using Pamx.Common.Enum;
+using Pamx.Keyframes;
 using ParallelAnimationSystem.Core.Data;
-using ParallelAnimationSystem.Core.Model;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Util;
 

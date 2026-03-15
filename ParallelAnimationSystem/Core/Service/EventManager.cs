@@ -1,5 +1,5 @@
 ﻿using System.Numerics;
-using Pamx.Common.Data;
+using Pamx.Events;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Core.Model;
 
@@ -12,21 +12,21 @@ public class EventManager
     private readonly Sequence<float> cameraScaleSequence = new(float.Lerp, () => 20f);
     private readonly Sequence<float> cameraShakeSequence = new(float.Lerp, () => 0f);
     private readonly Sequence<float> chromaSequence = new(float.Lerp, () => 0f);
-    private readonly IndirectSequence<BloomData, BloomEffectState, ThemeColorState> bloomSequence = new(
+    private readonly IndirectSequence<BloomValue, BloomEffectState, ThemeColorState> bloomSequence = new(
         EventHelper.ResolveBloomData,
         BloomEffectState.Lerp,
         _ => default);
-    private readonly IndirectSequence<VignetteData, VignetteEffectState, ThemeColorState> vignetteSequence = new(
+    private readonly IndirectSequence<VignetteValue, VignetteEffectState, ThemeColorState> vignetteSequence = new(
         EventHelper.ResolveVignetteData,
         VignetteEffectState.Lerp,
         _ => default);
-    private readonly Sequence<LensDistortionData> lensDistortionSequence = new(EventHelper.LerpLensDistortionData, () => default);
-    private readonly Sequence<GrainData> grainSequence = new(EventHelper.LerpGrainData, () => default);
-    private readonly IndirectSequence<GradientData, GradientEffectState, ThemeColorState> gradientSequence = new(
+    private readonly Sequence<LensDistortionValue> lensDistortionSequence = new(EventHelper.LerpLensDistortionData, () => default);
+    private readonly Sequence<GrainValue> grainSequence = new(EventHelper.LerpGrainData, () => default);
+    private readonly IndirectSequence<GradientValue, GradientEffectState, ThemeColorState> gradientSequence = new(
         EventHelper.ResolveGradientData,
         GradientEffectState.Lerp,
         _ => default);
-    private readonly Sequence<GlitchData> glitchSequence = new(EventHelper.LerpGlitchData, () => default);
+    private readonly Sequence<GlitchValue> glitchSequence = new(EventHelper.LerpGlitchData, () => default);
     private readonly Sequence<float> hueSequence = new(float.Lerp, () => 0f);
 
     private readonly EventState state = new();
@@ -122,62 +122,62 @@ public class EventManager
         return state;
     }
 
-    private void OnEventsCameraPositionKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<Vector2>> e)
+    private void OnEventsCameraPositionKeyframesChanged(object? sender, KeyframeList<Keyframe<Vector2>> e)
     {
         cameraPositionSequence.LoadKeyframes(EventHelper.ResolveGenericKeyframes(e));
     }
 
-    private void OnEventsCameraRotationKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<float>> e)
+    private void OnEventsCameraRotationKeyframesChanged(object? sender, KeyframeList<Keyframe<float>> e)
     {
         cameraRotationSequence.LoadKeyframes(EventHelper.ResolveRotationKeyframes(e));
     }
 
-    private void OnEventsCameraScaleKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<float>> e)
+    private void OnEventsCameraScaleKeyframesChanged(object? sender, KeyframeList<Keyframe<float>> e)
     {
         cameraScaleSequence.LoadKeyframes(EventHelper.ResolveGenericKeyframes(e));
     }
     
-    private void OnEventsCameraShakeKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<float>> e)
+    private void OnEventsCameraShakeKeyframesChanged(object? sender, KeyframeList<Keyframe<float>> e)
     {
         cameraShakeSequence.LoadKeyframes(EventHelper.ResolveGenericKeyframes(e));
     }
     
-    private void OnEventsChromaKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<float>> e)
+    private void OnEventsChromaKeyframesChanged(object? sender, KeyframeList<Keyframe<float>> e)
     {
         chromaSequence.LoadKeyframes(EventHelper.ResolveGenericKeyframes(e));
     }
     
-    private void OnBloomKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<BloomData>> e)
+    private void OnBloomKeyframesChanged(object? sender, KeyframeList<Keyframe<BloomValue>> e)
     {
         bloomSequence.LoadKeyframes(EventHelper.ResolveGenericKeyframes(e));
     }
     
-    private void OnVignetteKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<VignetteData>> e)
+    private void OnVignetteKeyframesChanged(object? sender, KeyframeList<Keyframe<VignetteValue>> e)
     {
         vignetteSequence.LoadKeyframes(EventHelper.ResolveGenericKeyframes(e));
     }
     
-    private void OnLensDistortionKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<LensDistortionData>> e)
+    private void OnLensDistortionKeyframesChanged(object? sender, KeyframeList<Keyframe<LensDistortionValue>> e)
     {
         lensDistortionSequence.LoadKeyframes(EventHelper.ResolveGenericKeyframes(e));
     }
     
-    private void OnGrainKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<GrainData>> e)
+    private void OnGrainKeyframesChanged(object? sender, KeyframeList<Keyframe<GrainValue>> e)
     {
         grainSequence.LoadKeyframes(EventHelper.ResolveGenericKeyframes(e));
     }
     
-    private void OnGradientKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<GradientData>> e)
+    private void OnGradientKeyframesChanged(object? sender, KeyframeList<Keyframe<GradientValue>> e)
     {
         gradientSequence.LoadKeyframes(EventHelper.ResolveGenericKeyframes(e));
     }
     
-    private void OnGlitchKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<GlitchData>> e)
+    private void OnGlitchKeyframesChanged(object? sender, KeyframeList<Keyframe<GlitchValue>> e)
     {
         glitchSequence.LoadKeyframes(EventHelper.ResolveGenericKeyframes(e));
     }
     
-    private void OnHueKeyframesChanged(object? sender, KeyframeList<Data.Keyframe<float>> e)
+    private void OnHueKeyframesChanged(object? sender, KeyframeList<Keyframe<float>> e)
     {
         hueSequence.LoadKeyframes(EventHelper.ResolveRotationKeyframes(e));
     }

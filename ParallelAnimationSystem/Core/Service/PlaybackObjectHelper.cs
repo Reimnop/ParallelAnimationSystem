@@ -1,4 +1,4 @@
-﻿using Pamx.Common.Enum;
+﻿using Pamx.Objects;
 using ParallelAnimationSystem.Core.Data;
 
 namespace ParallelAnimationSystem.Core.Service;

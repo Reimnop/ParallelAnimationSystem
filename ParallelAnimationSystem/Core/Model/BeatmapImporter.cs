@@ -1,7 +1,8 @@
 ﻿using System.Numerics;
-using Pamx.Common;
-using Pamx.Common.Data;
-using Pamx.Common.Enum;
+using Pamx;
+using Pamx.Events;
+using Pamx.Keyframes;
+using Pamx.Objects;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Core.Shape;
 
@@ -9,7 +10,7 @@ namespace ParallelAnimationSystem.Core.Model;
 
 public static class BeatmapImporter
 {
-    public static void Import(IBeatmap beatmap, BeatmapData beatmapData)
+    public static void Import(Beatmap beatmap, BeatmapData beatmapData)
     {
         ParseObjects(beatmap, beatmapData.Objects);
         ParsePrefabInstances(beatmap, beatmapData.PrefabInstances);
@@ -19,16 +20,14 @@ public static class BeatmapImporter
         ParseThemeKeyframes(beatmap, beatmapData.Events.Theme);
     }
 
-    private static void ParsePrefabInstances(IBeatmap beatmap, IdContainer<BeatmapPrefabInstance> beatmapDataPrefabInstances)
+    private static void ParsePrefabInstances(Beatmap beatmap, IdContainer<BeatmapPrefabInstance> beatmapDataPrefabInstances)
     {
         foreach (var prefabObject in beatmap.PrefabObjects)
         {
-            var id = ((IIdentifiable<string>)prefabObject).Id;
-
-            var bmPrefabInstance = new BeatmapPrefabInstance(id)
+            var bmPrefabInstance = new BeatmapPrefabInstance(prefabObject.Id)
             {
-                PrefabId = prefabObject.Prefab is IIdentifiable<string> prefabIdentifiable ? prefabIdentifiable.Id : null,
-                StartTime = prefabObject.Time,
+                PrefabId = prefabObject.PrefabId,
+                StartTime = prefabObject.StartTime,
                 Position = prefabObject.Position,
                 Scale = prefabObject.Scale,
                 Rotation = prefabObject.Rotation
@@ -38,54 +37,52 @@ public static class BeatmapImporter
         }
     }
 
-    private static void ParsePrefabs(IBeatmap beatmap, IdContainer<BeatmapPrefab> beatmapDataPrefabs)
+    private static void ParsePrefabs(Beatmap beatmap, IdContainer<BeatmapPrefab> beatmapDataPrefabs)
     {
         foreach (var prefab in beatmap.Prefabs)
         {
-            var id = ((IIdentifiable<string>)prefab).Id;
-
-            var bmPrefab = new BeatmapPrefab(id)
+            var bmPrefab = new BeatmapPrefab(prefab.Id)
             {
                 Name = prefab.Name,
                 Offset = prefab.Offset
             };
             
-            foreach (var obj in prefab.BeatmapObjects)
+            foreach (var obj in prefab.Objects)
                 bmPrefab.Objects.Insert(CreateBeatmapObject(obj));
             
             beatmapDataPrefabs.Insert(bmPrefab);
         }
     }
 
-    private static void ParseEvents(IBeatmap beatmap, BeatmapEvents events)
+    private static void ParseEvents(Beatmap beatmap, BeatmapEvents events)
     {
-        var cameraPositionKeyframes = beatmap.Events.Movement
+        var cameraPositionKeyframes = beatmap.Events.Move
             .Select(positionKeyframe 
-                => new Data.Keyframe<Vector2>(positionKeyframe.Time, positionKeyframe.Ease, positionKeyframe.Value));
+                => new Keyframe<Vector2>(positionKeyframe.Time, positionKeyframe.Ease, positionKeyframe.Value));
         events.CameraPosition.Load(cameraPositionKeyframes);
 
         var cameraScaleKeyframes = beatmap.Events.Zoom
             .Select(scaleKeyframe
-                => new Data.Keyframe<float>(scaleKeyframe.Time, scaleKeyframe.Ease, scaleKeyframe.Value));
+                => new Keyframe<float>(scaleKeyframe.Time, scaleKeyframe.Ease, scaleKeyframe.Value));
         events.CameraScale.Load(cameraScaleKeyframes);
 
-        var cameraRotationKeyframes = beatmap.Events.Rotation
+        var cameraRotationKeyframes = beatmap.Events.Rotate
             .Select(rotationKeyframe
-                => new Data.Keyframe<float>(rotationKeyframe.Time, rotationKeyframe.Ease, rotationKeyframe.Value));
+                => new Keyframe<float>(rotationKeyframe.Time, rotationKeyframe.Ease, rotationKeyframe.Value));
         events.CameraRotation.Load(cameraRotationKeyframes);
 
         var cameraShakeKeyframes = beatmap.Events.Shake
-            .Select(shakeKeyframe => new Data.Keyframe<float>(shakeKeyframe.Time, shakeKeyframe.Ease, shakeKeyframe.Value));
+            .Select(shakeKeyframe => new Keyframe<float>(shakeKeyframe.Time, shakeKeyframe.Ease, shakeKeyframe.Value));
         events.CameraShake.Load(cameraShakeKeyframes);
 
-        var chromaKeyframes = beatmap.Events.Chroma
+        var chromaKeyframes = beatmap.Events.Chromatic
             .Select(chromaKeyframe
-                => new Data.Keyframe<float>(chromaKeyframe.Time, chromaKeyframe.Ease, chromaKeyframe.Value));
+                => new Keyframe<float>(chromaKeyframe.Time, chromaKeyframe.Ease, chromaKeyframe.Value));
         events.Chroma.Load(chromaKeyframes);
 
         var bloomKeyframes = beatmap.Events.Bloom
             .Select(bloomKeyframe
-                => new Data.Keyframe<BloomData>(bloomKeyframe.Time, bloomKeyframe.Ease, new BloomData
+                => new Keyframe<BloomValue>(bloomKeyframe.Time, bloomKeyframe.Ease, new BloomValue
                 {
                     Intensity = bloomKeyframe.Value.Intensity,
                     Diffusion = bloomKeyframe.Value.Diffusion,
@@ -95,11 +92,11 @@ public static class BeatmapImporter
 
         var vignetteKeyframes = beatmap.Events.Vignette
             .Select(vignetteKeyframe 
-                => new Data.Keyframe<VignetteData>(vignetteKeyframe.Time, vignetteKeyframe.Ease, new VignetteData
+                => new Keyframe<VignetteValue>(vignetteKeyframe.Time, vignetteKeyframe.Ease, new VignetteValue
                 {
                     Intensity = vignetteKeyframe.Value.Intensity,
                     Smoothness = vignetteKeyframe.Value.Smoothness,
-                    Rounded = vignetteKeyframe.Value.Rounded,
+                    IsRounded = vignetteKeyframe.Value.IsRounded,
                     Roundness = vignetteKeyframe.Value.Roundness,
                     Color = vignetteKeyframe.Value.Color,
                     Center = vignetteKeyframe.Value.Center
@@ -108,7 +105,7 @@ public static class BeatmapImporter
         
         var lensDistortionKeyframes = beatmap.Events.LensDistortion
             .Select(lensDistortionKeyframe 
-                => new Data.Keyframe<LensDistortionData>(lensDistortionKeyframe.Time, lensDistortionKeyframe.Ease, new LensDistortionData
+                => new Keyframe<LensDistortionValue>(lensDistortionKeyframe.Time, lensDistortionKeyframe.Ease, new LensDistortionValue
                 {
                     Intensity = lensDistortionKeyframe.Value.Intensity,
                     Center = lensDistortionKeyframe.Value.Center
@@ -117,30 +114,30 @@ public static class BeatmapImporter
         
         var grainKeyframes = beatmap.Events.Grain
             .Select(grainKeyframe 
-                => new Data.Keyframe<GrainData>(grainKeyframe.Time, grainKeyframe.Ease, new GrainData
+                => new Keyframe<GrainValue>(grainKeyframe.Time, grainKeyframe.Ease, new GrainValue
                 {
                     Intensity = grainKeyframe.Value.Intensity,
                     Size = grainKeyframe.Value.Size,
                     Mix = grainKeyframe.Value.Mix,
-                    Colored = grainKeyframe.Value.Colored
+                    IsColored = grainKeyframe.Value.IsColored
                 }));
         events.Grain.Load(grainKeyframes);
         
         var gradientKeyframes = beatmap.Events.Gradient
             .Select(gradientKeyframe 
-                => new Data.Keyframe<GradientData>(gradientKeyframe.Time, gradientKeyframe.Ease, new GradientData
+                => new Keyframe<GradientValue>(gradientKeyframe.Time, gradientKeyframe.Ease, new GradientValue
                 {
                     Intensity = gradientKeyframe.Value.Intensity,
                     Rotation = gradientKeyframe.Value.Rotation,
-                    ColorA = gradientKeyframe.Value.ColorA,
-                    ColorB = gradientKeyframe.Value.ColorB,
+                    StartColor = gradientKeyframe.Value.StartColor,
+                    EndColor = gradientKeyframe.Value.EndColor,
                     Mode = gradientKeyframe.Value.Mode
                 }));
         events.Gradient.Load(gradientKeyframes);
         
         var glitchKeyframes = beatmap.Events.Glitch
             .Select(glitchKeyframe 
-                => new Data.Keyframe<GlitchData>(glitchKeyframe.Time, glitchKeyframe.Ease, new GlitchData
+                => new Keyframe<GlitchValue>(glitchKeyframe.Time, glitchKeyframe.Ease, new GlitchValue
                 {
                     Intensity = glitchKeyframe.Value.Intensity,
                     Speed = glitchKeyframe.Value.Speed,
@@ -150,41 +147,23 @@ public static class BeatmapImporter
         
         var hueKeyframes = beatmap.Events.Hue
             .Select(hueKeyframe 
-                => new Data.Keyframe<float>(hueKeyframe.Time, hueKeyframe.Ease, hueKeyframe.Value));
+                => new Keyframe<float>(hueKeyframe.Time, hueKeyframe.Ease, hueKeyframe.Value));
         events.Hue.Load(hueKeyframes);
     }
 
-    private static void ParseThemeKeyframes(IBeatmap beatmap, KeyframeList<Data.Keyframe<string>> eventsTheme)
+    private static void ParseThemeKeyframes(Beatmap beatmap, KeyframeList<Keyframe<string>> eventsTheme)
     {
-        var themeKeyframes = new List<Data.Keyframe<string>>();
+        var themeKeyframes = new List<Keyframe<string>>();
         foreach (var themeKeyframe in beatmap.Events.Theme)
-        {
-            string themeId;
-            if (themeKeyframe.Value is IIdentifiable<string> stringIdentifiable)
-                themeId = stringIdentifiable.Id;
-            else if (themeKeyframe.Value is IIdentifiable<int> intIdentifiable)
-                themeId = intIdentifiable.Id.ToString();
-            else
-                throw new InvalidOperationException("Theme does not have a valid identifier");
-            
-            themeKeyframes.Add(new Data.Keyframe<string>(themeKeyframe.Time, themeKeyframe.Ease, themeId));
-        }
+            themeKeyframes.Add(new Keyframe<string>(themeKeyframe.Time, themeKeyframe.Ease, themeKeyframe.Value));
         eventsTheme.Load(themeKeyframes);
     }
 
-    private static void ParseThemes(IBeatmap beatmap, IdContainer<BeatmapTheme> beatmapThemes)
+    private static void ParseThemes(Beatmap beatmap, IdContainer<BeatmapTheme> beatmapThemes)
     {
         foreach (var theme in beatmap.Themes)
         {
-            string id;
-            if (theme is IIdentifiable<string> stringIdentifiable)
-                id = stringIdentifiable.Id;
-            else if (theme is IIdentifiable<int> intIdentifiable)
-                id = intIdentifiable.Id.ToString();
-            else
-                throw new InvalidOperationException("Theme does not have a valid identifier");
-
-            var bmTheme = new BeatmapTheme(id)
+            var bmTheme = new BeatmapTheme(theme.Id)
             {
                 Name = theme.Name,
                 BackgroundColor = new ColorRgb(theme.Background.R, theme.Background.G, theme.Background.B),
@@ -192,36 +171,34 @@ public static class BeatmapImporter
                 GuiAccentColor = new ColorRgb(theme.GuiAccent.R, theme.GuiAccent.G, theme.GuiAccent.B),
             };
             
-            for (var i = 0; i < Math.Min(4, theme.Player.Count); i++)
-                bmTheme.PlayerColors[i] = new ColorRgb(theme.Player[i].R, theme.Player[i].G, theme.Player[i].B);
+            for (var i = 0; i < Math.Min(4, theme.Players.Count); i++)
+                bmTheme.PlayerColors[i] = new ColorRgb(theme.Players[i].R, theme.Players[i].G, theme.Players[i].B);
             
-            for (var i = 0; i < Math.Min(9, theme.Object.Count); i++)
-                bmTheme.ObjectColors[i] = new ColorRgb(theme.Object[i].R, theme.Object[i].G, theme.Object[i].B);
+            for (var i = 0; i < Math.Min(9, theme.Objects.Count); i++)
+                bmTheme.ObjectColors[i] = new ColorRgb(theme.Objects[i].R, theme.Objects[i].G, theme.Objects[i].B);
             
-            for (var i = 0; i < Math.Min(9, theme.Effect.Count); i++)
-                bmTheme.EffectColors[i] = new ColorRgb(theme.Effect[i].R, theme.Effect[i].G, theme.Effect[i].B);
+            for (var i = 0; i < Math.Min(9, theme.Effects.Count); i++)
+                bmTheme.EffectColors[i] = new ColorRgb(theme.Effects[i].R, theme.Effects[i].G, theme.Effects[i].B);
             
-            for (var i = 0; i < Math.Min(9, theme.ParallaxObject.Count); i++)
-                bmTheme.ParallaxObjectColors[i] = new ColorRgb(theme.ParallaxObject[i].R, theme.ParallaxObject[i].G, theme.ParallaxObject[i].B);
+            for (var i = 0; i < Math.Min(9, theme.ParallaxObjects.Count); i++)
+                bmTheme.ParallaxObjectColors[i] = new ColorRgb(theme.ParallaxObjects[i].R, theme.ParallaxObjects[i].G, theme.ParallaxObjects[i].B);
             
             beatmapThemes.Insert(bmTheme);
         }
     }
 
-    private static void ParseObjects(IBeatmap beatmap, IdContainer<BeatmapObject> beatmapObjects)
+    private static void ParseObjects(Beatmap beatmap, IdContainer<BeatmapObject> beatmapObjects)
     {
         foreach (var obj in beatmap.Objects)
             beatmapObjects.Insert(CreateBeatmapObject(obj));
     }
 
-    private static BeatmapObject CreateBeatmapObject(IObject obj)
+    private static BeatmapObject CreateBeatmapObject(Pamx.Objects.BeatmapObject obj)
     {
-        var id = ((IIdentifiable<string>)obj).Id;
-
-        var bmObj = new BeatmapObject(id)
+        var bmObj = new BeatmapObject(obj.Id)
         {
             Name = obj.Name,
-            ParentId = obj.Parent is IIdentifiable<string> parentIdentifiable ? parentIdentifiable.Id : null,
+            ParentId = obj.ParentId,
             Type = obj.Type switch
             {
                 ObjectType.LegacyNormal => BeatmapObjectType.Hit,
@@ -234,9 +211,9 @@ public static class BeatmapImporter
             },
             ParentType = obj.ParentType,
             ParentOffset = obj.ParentOffset,
-            RenderType = obj.RenderType,
-            GradientRotation = obj.GradientRotation,
-            GradientScale = obj.GradientScale,
+            RenderType = obj.Gradient.Type,
+            GradientRotation = obj.Gradient.Rotation,
+            GradientScale = obj.Gradient.Scale,
             Origin = obj.Origin,
             RenderDepth = obj.RenderDepth,
             StartTime = obj.StartTime,
@@ -244,12 +221,17 @@ public static class BeatmapImporter
             AutoKillOffset = obj.AutoKillOffset,
             Shape = obj.Shape,
             Text = obj.Text,
-            CustomShapeInfo = obj.CustomShapeParams.HasValue 
+            CustomShapeInfo = obj.CustomShapeParams is not null &&
+                              obj.Shape is ObjectShape.SquareCustom
+                                  or ObjectShape.CircleCustom
+                                  or ObjectShape.TriangleCustom
+                                  or ObjectShape.Custom
+                                  or ObjectShape.HexagonCustom
                 ? new VGShapeInfo(
-                    obj.CustomShapeParams.Value.Sides,
-                    obj.CustomShapeParams.Value.Roundness,
-                    obj.CustomShapeParams.Value.Thickness,
-                    obj.CustomShapeParams.Value.Slices)
+                    obj.CustomShapeParams.Sides,
+                    obj.CustomShapeParams.Roundness,
+                    obj.CustomShapeParams.Thickness,
+                    obj.CustomShapeParams.Slices)
                 : null
         };
 
@@ -268,19 +250,19 @@ public static class BeatmapImporter
         return bmObj;
     }
 
-    private static RandomizableKeyframe<Vector2> CreateVector2Keyframe(Pamx.Common.Data.Keyframe<Vector2> keyframe)
+    private static RandomizableKeyframe<Vector2> CreateVector2Keyframe(RandomKeyframe<Vector2> keyframe)
         => new(
             keyframe.Time, keyframe.Ease, keyframe.Value, 
             keyframe.RandomMode, keyframe.RandomValue, keyframe.RandomInterval, 
             false);
 
-    private static RandomizableKeyframe<float> CreateRotationKeyframe(Pamx.Common.Data.Keyframe<float> keyframe)
+    private static RandomizableKeyframe<float> CreateRotationKeyframe(ObjectRotationKeyframe keyframe)
         => new(
             keyframe.Time, keyframe.Ease, keyframe.Value,
             keyframe.RandomMode, keyframe.RandomValue, keyframe.RandomInterval,
-            keyframe.IsRelative);
+            !keyframe.IsAbsolute);
 
-    private static Data.Keyframe<BeatmapObjectIndexedColor> CreateColorKeyframe(FixedKeyframe<ThemeColor> keyframe)
+    private static Keyframe<BeatmapObjectIndexedColor> CreateColorKeyframe(FixedKeyframe<ObjectColorValue> keyframe)
         => new(
             keyframe.Time, keyframe.Ease, new BeatmapObjectIndexedColor
             {

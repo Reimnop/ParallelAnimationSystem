@@ -1,38 +1,38 @@
 ﻿using System.Numerics;
-using Pamx.Common.Data;
+using Pamx.Events;
 using ParallelAnimationSystem.Core.Data;
 
 namespace ParallelAnimationSystem.Core.Model;
 
 public class BeatmapEvents
 {
-    public event EventHandler<KeyframeList<Data.Keyframe<Vector2>>>? CameraPositionKeyframesChanged;
-    public event EventHandler<KeyframeList<Data.Keyframe<float>>>? CameraScaleKeyframesChanged;
-    public event EventHandler<KeyframeList<Data.Keyframe<float>>>? CameraRotationKeyframesChanged;
-    public event EventHandler<KeyframeList<Data.Keyframe<float>>>? CameraShakeKeyframesChanged;
-    public event EventHandler<KeyframeList<Data.Keyframe<string>>>? ThemeKeyframesChanged;
-    public event EventHandler<KeyframeList<Data.Keyframe<float>>>? ChromaKeyframesChanged;
-    public event EventHandler<KeyframeList<Data.Keyframe<BloomData>>>? BloomKeyframesChanged;
-    public event EventHandler<KeyframeList<Data.Keyframe<VignetteData>>>? VignetteKeyframesChanged;
-    public event EventHandler<KeyframeList<Data.Keyframe<LensDistortionData>>>? LensDistortionKeyframesChanged;
-    public event EventHandler<KeyframeList<Data.Keyframe<GrainData>>>? GrainKeyframesChanged;
-    public event EventHandler<KeyframeList<Data.Keyframe<GradientData>>>? GradientKeyframesChanged;
-    public event EventHandler<KeyframeList<Data.Keyframe<GlitchData>>>? GlitchKeyframesChanged;
-    public event EventHandler<KeyframeList<Data.Keyframe<float>>>? HueKeyframesChanged;
+    public event EventHandler<KeyframeList<Keyframe<Vector2>>>? CameraPositionKeyframesChanged;
+    public event EventHandler<KeyframeList<Keyframe<float>>>? CameraScaleKeyframesChanged;
+    public event EventHandler<KeyframeList<Keyframe<float>>>? CameraRotationKeyframesChanged;
+    public event EventHandler<KeyframeList<Keyframe<float>>>? CameraShakeKeyframesChanged;
+    public event EventHandler<KeyframeList<Keyframe<string>>>? ThemeKeyframesChanged;
+    public event EventHandler<KeyframeList<Keyframe<float>>>? ChromaKeyframesChanged;
+    public event EventHandler<KeyframeList<Keyframe<BloomValue>>>? BloomKeyframesChanged;
+    public event EventHandler<KeyframeList<Keyframe<VignetteValue>>>? VignetteKeyframesChanged;
+    public event EventHandler<KeyframeList<Keyframe<LensDistortionValue>>>? LensDistortionKeyframesChanged;
+    public event EventHandler<KeyframeList<Keyframe<GrainValue>>>? GrainKeyframesChanged;
+    public event EventHandler<KeyframeList<Keyframe<GradientValue>>>? GradientKeyframesChanged;
+    public event EventHandler<KeyframeList<Keyframe<GlitchValue>>>? GlitchKeyframesChanged;
+    public event EventHandler<KeyframeList<Keyframe<float>>>? HueKeyframesChanged;
     
-    public KeyframeList<Data.Keyframe<Vector2>> CameraPosition { get; } = [];
-    public KeyframeList<Data.Keyframe<float>> CameraScale { get; } = [];
-    public KeyframeList<Data.Keyframe<float>> CameraRotation { get; } = [];
-    public KeyframeList<Data.Keyframe<float>> CameraShake { get; } = [];
-    public KeyframeList<Data.Keyframe<string>> Theme { get; } = [];
-    public KeyframeList<Data.Keyframe<float>> Chroma { get; } = [];
-    public KeyframeList<Data.Keyframe<BloomData>> Bloom { get; } = [];
-    public KeyframeList<Data.Keyframe<VignetteData>> Vignette { get; } = [];
-    public KeyframeList<Data.Keyframe<LensDistortionData>> LensDistortion { get; } = [];
-    public KeyframeList<Data.Keyframe<GrainData>> Grain { get; } = [];
-    public KeyframeList<Data.Keyframe<GradientData>> Gradient { get; } = [];
-    public KeyframeList<Data.Keyframe<GlitchData>> Glitch { get; } = [];
-    public KeyframeList<Data.Keyframe<float>> Hue { get; } = [];
+    public KeyframeList<Keyframe<Vector2>> CameraPosition { get; } = [];
+    public KeyframeList<Keyframe<float>> CameraScale { get; } = [];
+    public KeyframeList<Keyframe<float>> CameraRotation { get; } = [];
+    public KeyframeList<Keyframe<float>> CameraShake { get; } = [];
+    public KeyframeList<Keyframe<string>> Theme { get; } = [];
+    public KeyframeList<Keyframe<float>> Chroma { get; } = [];
+    public KeyframeList<Keyframe<BloomValue>> Bloom { get; } = [];
+    public KeyframeList<Keyframe<VignetteValue>> Vignette { get; } = [];
+    public KeyframeList<Keyframe<LensDistortionValue>> LensDistortion { get; } = [];
+    public KeyframeList<Keyframe<GrainValue>> Grain { get; } = [];
+    public KeyframeList<Keyframe<GradientValue>> Gradient { get; } = [];
+    public KeyframeList<Keyframe<GlitchValue>> Glitch { get; } = [];
+    public KeyframeList<Keyframe<float>> Hue { get; } = [];
 
     public BeatmapEvents()
     {

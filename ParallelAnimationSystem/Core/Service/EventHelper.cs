@@ -1,5 +1,5 @@
 ﻿using System.Numerics;
-using Pamx.Common.Data;
+using Pamx.Events;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Mathematics;
 
@@ -19,23 +19,23 @@ public static class EventHelper
             yield return new BakedKeyframe<float>(eventKeyframe.Time, eventKeyframe.Ease, MathUtil.DegreesToRadians(eventKeyframe.Value));
     }
 
-    public static LensDistortionData LerpLensDistortionData(LensDistortionData a, LensDistortionData b, float t)
+    public static LensDistortionValue LerpLensDistortionData(LensDistortionValue a, LensDistortionValue b, float t)
         => new()
         {
             Intensity = float.Lerp(a.Intensity, b.Intensity, t),
             Center = Vector2.Lerp(a.Center, b.Center, t)
         };
 
-    public static GrainData LerpGrainData(GrainData a, GrainData b, float t)
+    public static GrainValue LerpGrainData(GrainValue a, GrainValue b, float t)
         => new()
         {
             Intensity = float.Lerp(a.Intensity, b.Intensity, t),
             Size = float.Lerp(a.Size, b.Size, t),
             Mix = float.Lerp(a.Mix, b.Mix, t),
-            Colored = a.Colored // zero order hold, can't lerp booleans
+            IsColored = a.IsColored // zero order hold, can't lerp booleans
         };
 
-    public static BloomEffectState ResolveBloomData(BloomData bloomData, ThemeColorState tcs)
+    public static BloomEffectState ResolveBloomData(BloomValue bloomData, ThemeColorState tcs)
     {
         return new BloomEffectState
         {
@@ -47,25 +47,23 @@ public static class EventHelper
         };
     }
     
-    public static VignetteEffectState ResolveVignetteData(VignetteData vignetteData, ThemeColorState tcs)
+    public static VignetteEffectState ResolveVignetteData(VignetteValue vignetteData, ThemeColorState tcs)
         => new()
         {
             Intensity = vignetteData.Intensity,
             Smoothness = vignetteData.Smoothness,
-            Color = vignetteData.Color.HasValue 
-                ? vignetteData.Color.Value >= 0 && vignetteData.Color.Value < tcs.Effect.Length 
-                    ? tcs.Effect[vignetteData.Color.Value]
-                    : default
+            Color = vignetteData.Color >= 0 && vignetteData.Color < tcs.Effect.Length
+                ? tcs.Effect[vignetteData.Color]
                 : default,
-            Rounded = vignetteData.Rounded,
-            Roundness = vignetteData.Roundness ?? 1f,
+            Rounded = vignetteData.IsRounded,
+            Roundness = vignetteData.Roundness,
             Center = vignetteData.Center
         };
 
-    public static GradientEffectState ResolveGradientData(GradientData gradientData, ThemeColorState tcs)
+    public static GradientEffectState ResolveGradientData(GradientValue gradientData, ThemeColorState tcs)
     {
-        var colorAIndex = Math.Clamp(gradientData.ColorA, 0, tcs.Effect.Length - 1);
-        var colorBIndex = Math.Clamp(gradientData.ColorB, 0, tcs.Effect.Length - 1);
+        var colorAIndex = Math.Clamp(gradientData.StartColor, 0, tcs.Effect.Length - 1);
+        var colorBIndex = Math.Clamp(gradientData.EndColor, 0, tcs.Effect.Length - 1);
         return new GradientEffectState
         {
             Color1 = tcs.Effect[colorAIndex],
@@ -76,7 +74,7 @@ public static class EventHelper
         };
     }
 
-    public static GlitchData LerpGlitchData(GlitchData a, GlitchData b, float t)
+    public static GlitchValue LerpGlitchData(GlitchValue a, GlitchValue b, float t)
         => new()
         {
             Intensity = float.Lerp(a.Intensity, b.Intensity, t),

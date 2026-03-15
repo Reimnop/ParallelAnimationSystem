@@ -1,5 +1,5 @@
 using System.Numerics;
-using Pamx.Common.Enum;
+using Pamx.Events;
 using ParallelAnimationSystem.Core.Data;
 
 namespace ParallelAnimationSystem.Rendering.Data;
