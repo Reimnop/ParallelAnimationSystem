@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Pamx.Common.Enum;
+using Pamx.Keyframes;
 using ParallelAnimationSystem.Core.Data;
 
 namespace ParallelAnimationSystem.Wasm.Interop.Data;
