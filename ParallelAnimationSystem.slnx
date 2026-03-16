@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/Pamx/">
+    <Project Path="Pamx/Pamx/Pamx.csproj" />
+  </Folder>
+  <Folder Name="/TmpEmulation/">
+    <Project Path="TmpEmulation/TmpIO/TmpIO.csproj" />
+    <Project Path="TmpEmulation/TmpParser/TmpParser.csproj" />
+  </Folder>
+  <Project Path="ParallelAnimationSystem.Android/ParallelAnimationSystem.Android.csproj">
+    <Deploy />
+  </Project>
+  <Project Path="ParallelAnimationSystem.Desktop/ParallelAnimationSystem.Desktop.csproj" />
+  <Project Path="ParallelAnimationSystem.Mathematics/ParallelAnimationSystem.Mathematics.csproj" />
+  <Project Path="ParallelAnimationSystem.Redist/ParallelAnimationSystem.Redist.csproj" />
+  <Project Path="ParallelAnimationSystem.Rendering.Common/ParallelAnimationSystem.Rendering.Common.csproj" />
+  <Project Path="ParallelAnimationSystem.Rendering.OpenGL/ParallelAnimationSystem.Rendering.OpenGL.csproj" />
+  <Project Path="ParallelAnimationSystem.Rendering.OpenGLES/ParallelAnimationSystem.Rendering.OpenGLES.csproj" />
+  <Project Path="ParallelAnimationSystem.Wasm/ParallelAnimationSystem.Wasm.csproj" />
+  <Project Path="ParallelAnimationSystem/ParallelAnimationSystem.csproj" />
+</Solution>
