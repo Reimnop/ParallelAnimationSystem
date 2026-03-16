@@ -28,9 +28,10 @@ public class FFmpegFrameGenerator(
         var sp = scope.ServiceProvider;
         
         // Load beatmap
-        BeatmapHelper.ReadBeatmap(beatmapPath, out var beatmapData, out var beatmapFormat);
+        // BeatmapHelper.ReadBeatmap(beatmapPath, out var beatmapData, out var beatmapFormat);
         var beatmapService = sp.GetRequiredService<BeatmapService>();
-        beatmapService.LoadBeatmap(beatmapData, beatmapFormat);
+        // beatmapService.LoadBeatmap(beatmapData, beatmapFormat);
+        beatmapService.LoadBeatmap(beatmapPath);
         
         // Initialize renderer
         var renderer = sp.GetRequiredService<IRenderer>();

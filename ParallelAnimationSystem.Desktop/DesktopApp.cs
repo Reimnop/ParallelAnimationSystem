@@ -16,9 +16,10 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
         var sp = scope.ServiceProvider;
         
         // Load beatmap
-        BeatmapHelper.ReadBeatmap(beatmapPath, out var beatmapData, out var beatmapFormat);
+        // BeatmapHelper.ReadBeatmap(beatmapPath, out var beatmapData, out var beatmapFormat);
         var beatmapService = sp.GetRequiredService<BeatmapService>();
-        beatmapService.LoadBeatmap(beatmapData, beatmapFormat);
+        // beatmapService.LoadBeatmap(beatmapData, beatmapFormat);
+        beatmapService.LoadBeatmap(beatmapPath);
         
         // Initialize core service
         var appDirector = sp.GetRequiredService<AppDirector>();
