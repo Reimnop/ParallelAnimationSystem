@@ -98,7 +98,7 @@ public class LegacyBloom : IDisposable
             (uint)MathUtil.DivideCeil(mip0.Size.X, 8), 
             (uint)MathUtil.DivideCeil(mip0.Size.Y, 8), 
             1);
-        GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit);
+        GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit | MemoryBarrierMask.TextureFetchBarrierBit);
         
         // Downsample
         GL.UseProgram(downsampleProgram);
@@ -116,7 +116,7 @@ public class LegacyBloom : IDisposable
                 (uint)MathUtil.DivideCeil(targetMip.Size.X, 8), 
                 (uint)MathUtil.DivideCeil(targetMip.Size.Y, 8), 
                 1);
-            GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit);
+            GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit | MemoryBarrierMask.TextureFetchBarrierBit);
         }
         
         // Upsample back up the chain
@@ -138,7 +138,7 @@ public class LegacyBloom : IDisposable
                 (uint)MathUtil.DivideCeil(targetMip.Size.X, 8), 
                 (uint)MathUtil.DivideCeil(targetMip.Size.Y, 8), 
                 1);
-            GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit);
+            GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit | MemoryBarrierMask.TextureFetchBarrierBit);
         }
         
         // Combine result with input
@@ -158,7 +158,7 @@ public class LegacyBloom : IDisposable
            (uint)MathUtil.DivideCeil(size.X, 8), 
            (uint)MathUtil.DivideCeil(size.Y, 8), 
             1);
-        GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit);
+        GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit | MemoryBarrierMask.TextureFetchBarrierBit);
         
         return true;
     }

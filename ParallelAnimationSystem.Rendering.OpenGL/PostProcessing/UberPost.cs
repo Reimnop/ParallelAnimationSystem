@@ -127,7 +127,7 @@ public class UberPost : IDisposable
             (uint)MathUtil.DivideCeil(size.X, 8), 
             (uint)MathUtil.DivideCeil(size.Y, 8), 
             1);
-        GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit);
+        GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit | MemoryBarrierMask.TextureFetchBarrierBit);
         
         return true;
     }

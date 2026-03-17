@@ -108,6 +108,13 @@ public class AppDirector(
                     Intensity = 1.25f,
                     Amount = eventState.Glitch.Intensity,
                     StretchMultiplier = eventState.Glitch.Width
+                },
+                Grain = new GrainEffectState
+                {
+                    Colored = eventState.Grain.IsColored,
+                    Intensity = eventState.Grain.Intensity,
+                    Size = eventState.Grain.Size,
+                    LuminanceContribution = 0.8f
                 }
             };
         }

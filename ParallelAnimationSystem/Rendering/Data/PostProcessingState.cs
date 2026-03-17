@@ -55,6 +55,14 @@ public struct GlitchEffectState
     public float StretchMultiplier;
 }
 
+public struct GrainEffectState
+{
+    public bool Colored;
+    public float Intensity;
+    public float Size;
+    public float LuminanceContribution;
+}
+
 public struct PostProcessingState
 {
     public float Time;
@@ -66,4 +74,5 @@ public struct PostProcessingState
     public VignetteEffectState Vignette;
     public GradientEffectState Gradient;
     public GlitchEffectState Glitch;
+    public GrainEffectState Grain;
 }

@@ -100,7 +100,7 @@ public class UniversalBloom : IDisposable
             (uint)MathUtil.DivideCeil(mip0.Size.X, 8), 
             (uint)MathUtil.DivideCeil(mip0.Size.Y, 8), 
             1);
-        GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit);
+        GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit | MemoryBarrierMask.TextureFetchBarrierBit);
         
         // Downsample and blur down the chain
         GL.UseProgram(blurProgram);
@@ -123,7 +123,7 @@ public class UniversalBloom : IDisposable
                 (uint)MathUtil.DivideCeil(targetMip.Size.X, 8), 
                 (uint)MathUtil.DivideCeil(targetMip.Size.Y, 8), 
                 1);
-            GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit);
+            GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit | MemoryBarrierMask.TextureFetchBarrierBit);
             
             // Vertical blur
             GL.BindImageTexture(0, targetMip.Down, 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f); // Bind output image
@@ -135,7 +135,7 @@ public class UniversalBloom : IDisposable
                 (uint)MathUtil.DivideCeil(targetMip.Size.X, 8), 
                 (uint)MathUtil.DivideCeil(targetMip.Size.Y, 8), 
                 1);
-            GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit);
+            GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit | MemoryBarrierMask.TextureFetchBarrierBit);
         }
         
         // Upsample back up the chain
@@ -162,7 +162,7 @@ public class UniversalBloom : IDisposable
                 (uint)MathUtil.DivideCeil(targetMip.Size.X, 8), 
                 (uint)MathUtil.DivideCeil(targetMip.Size.Y, 8), 
                 1);
-            GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit);
+            GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit | MemoryBarrierMask.TextureFetchBarrierBit);
         }
         
         // Combine result with input
@@ -182,7 +182,7 @@ public class UniversalBloom : IDisposable
            (uint)MathUtil.DivideCeil(size.X, 8), 
            (uint)MathUtil.DivideCeil(size.Y, 8), 
             1);
-        GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit);
+        GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit | MemoryBarrierMask.TextureFetchBarrierBit);
         
         return true;
     }

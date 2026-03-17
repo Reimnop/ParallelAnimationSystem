@@ -60,6 +60,7 @@ public class Renderer : IRenderer, IDisposable
     private readonly LegacyBloom legacyBloom;
     private readonly UniversalBloom universalBloom;
     private readonly Glitch glitch;
+    private readonly Grain grain;
     private readonly UberPost uberPost;
     
     // Graphics data
@@ -243,6 +244,7 @@ public class Renderer : IRenderer, IDisposable
             legacyBloom = new LegacyBloom(loader);
             universalBloom = new UniversalBloom(loader);
             glitch = new Glitch(loader);
+            grain = new Grain(loader);
             uberPost = new UberPost(loader);
         }
 
@@ -310,6 +312,7 @@ public class Renderer : IRenderer, IDisposable
         legacyBloom.Dispose();
         universalBloom.Dispose();
         glitch.Dispose();
+        grain.Dispose();
         uberPost.Dispose();
     }
     
@@ -555,7 +558,7 @@ public class Renderer : IRenderer, IDisposable
                 (uint)MathUtil.DivideCeil(size.X, 8),
                 (uint)MathUtil.DivideCeil(size.Y, 8),
                 1);
-            GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit);
+            GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit | MemoryBarrierMask.TextureFetchBarrierBit);
         }
         
         // Present to window
@@ -684,6 +687,9 @@ public class Renderer : IRenderer, IDisposable
             Swap(ref texture1, ref texture2);
         
         if (glitch.Process(currentFboSize, state.Time, state.Glitch.Speed, state.Glitch.Intensity, state.Glitch.Amount, state.Glitch.StretchMultiplier, texture1, texture2))
+            Swap(ref texture1, ref texture2);
+        
+        if (grain.Process(currentFboSize, state.Time, state.Grain.Colored, state.Grain.Intensity, state.Grain.Size, state.Grain.LuminanceContribution, texture1, texture2))
             Swap(ref texture1, ref texture2);
         
         if (uberPost.Process(
