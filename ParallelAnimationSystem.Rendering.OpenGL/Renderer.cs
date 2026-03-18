@@ -355,23 +355,7 @@ public class Renderer : IRenderer, IDisposable
     public void ProcessFrame(IDrawDataProvider drawDataProvider)
     {
         var size = window.FramebufferSize;
-        var renderWidth = size.X;
-        var renderHeight = size.Y;
-        
-        if (appSettings.AspectRatio.HasValue)
-        {
-            var targetAspectRatio = appSettings.AspectRatio.Value;
-            var screenAspectRatio = size.X / (float) size.Y;
-            if (targetAspectRatio < screenAspectRatio)
-            {
-                renderWidth = (int) (size.Y * targetAspectRatio);
-            }
-            else
-            {
-                renderHeight = (int) (size.X / targetAspectRatio);
-            }
-        }
-        var renderSize = new Vector2i(renderWidth, renderHeight);
+        RenderUtil.GetRenderSize(size, appSettings.AspectRatio, out var renderSize, out var renderOffset);
         
         // Set context
         window.MakeContextCurrent();
@@ -540,16 +524,8 @@ public class Renderer : IRenderer, IDisposable
             GL.UseProgram(overlayProgram);
             
             // Set scale and offset of first overlay
-            var offsetXInt = (size.X - renderSize.X) / 2;
-            var offsetYInt = (size.Y - renderSize.Y) / 2;
-            var offsetX = offsetXInt / (float) size.X;
-            var offsetY = offsetYInt / (float) size.Y;
-            
-            var scaleX = renderSize.X / (float) size.X;
-            var scaleY = renderSize.Y / (float) size.Y;
-            
-            GL.Uniform2f(overlaySourceOffsetsUniformLocation, offsetX, offsetY);
-            GL.Uniform2f(overlaySourceScalesUniformLocation, scaleX, scaleY);
+            GL.Uniform2f(overlaySourceOffsetsUniformLocation, renderOffset.X / (float)size.X, renderOffset.Y / (float)size.Y);
+            GL.Uniform2f(overlaySourceScalesUniformLocation, renderSize.X / (float)size.X, renderSize.Y / (float)size.Y);
             
             // Set overlay count
             GL.Uniform1i(overlaySourceCountUniformLocation, overlayCount);

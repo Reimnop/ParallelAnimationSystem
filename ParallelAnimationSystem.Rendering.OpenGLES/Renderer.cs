@@ -413,23 +413,7 @@ public class Renderer : IRenderer, IDisposable
     public void ProcessFrame(IDrawDataProvider drawDataProvider)
     {
         var size = window.FramebufferSize;
-        var renderWidth = size.X;
-        var renderHeight = size.Y;
-
-        if (appSettings.AspectRatio.HasValue)
-        {
-            var targetAspectRatio = appSettings.AspectRatio.Value;
-            var screenAspectRatio = size.X / (float) size.Y;
-            if (targetAspectRatio < screenAspectRatio)
-            {
-                renderWidth = (int) (size.Y * targetAspectRatio);
-            }
-            else
-            {
-                renderHeight = (int) (size.X / targetAspectRatio);
-            }
-        }
-        var renderSize = new Vector2i(renderWidth, renderHeight);
+        RenderUtil.GetRenderSize(size, appSettings.AspectRatio, out var renderSize, out var renderOffset);
         
         // Set context
         window.MakeContextCurrent();
@@ -544,19 +528,11 @@ public class Renderer : IRenderer, IDisposable
         var finalTexture = HandlePostProcessing(drawData.PostProcessingState, postProcessTextureHandle1, postProcessTextureHandle2);
         
         // Render overlays
-        var firstOverlayOffsetXInt = (size.X - renderSize.X) / 2;
-        var firstOverlayOffsetYInt = (size.Y - renderSize.Y) / 2;
-        var firstOverlayOffsetX = firstOverlayOffsetXInt / (float) size.X;
-        var firstOverlayOffsetY = firstOverlayOffsetYInt / (float) size.Y;
-        
-        var firstOverlayScaleX = renderSize.X / (float) size.X;
-        var firstOverlayScaleY = renderSize.Y / (float) size.Y;
-        
         Span<Vector2> overlayOffsets = stackalloc Vector2[MaxOverlays];
-        overlayOffsets[0] = new Vector2(firstOverlayOffsetX, firstOverlayOffsetY);
+        overlayOffsets[0] = new Vector2(renderOffset.X / (float)size.X, renderOffset.Y / (float)size.Y);
         
         Span<Vector2> overlayScales = stackalloc Vector2[MaxOverlays];
-        overlayScales[0] = new Vector2(firstOverlayScaleX, firstOverlayScaleY);
+        overlayScales[0] = new Vector2(renderSize.X / (float)size.X, renderSize.Y / (float)size.Y);
         
         Span<int> overlayTextures = stackalloc int[MaxOverlays];
         overlayTextures[0] = finalTexture;

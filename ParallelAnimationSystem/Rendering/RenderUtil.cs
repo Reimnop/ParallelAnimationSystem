@@ -7,6 +7,29 @@ namespace ParallelAnimationSystem.Rendering;
 
 public static class RenderUtil
 {
+    public static void GetRenderSize(Vector2i size, float? aspectRatio, out Vector2i renderSize, out Vector2i renderOffset)
+    {
+        var newSize = size;
+        if (aspectRatio.HasValue)
+        {
+            var targetAspectRatio = aspectRatio.Value;
+            var screenAspectRatio = size.X / (float) size.Y;
+            if (targetAspectRatio < screenAspectRatio)
+            {
+                newSize.X = (int)MathF.Ceiling(size.Y * targetAspectRatio);
+            }
+            else
+            {
+                newSize.Y = (int)MathF.Ceiling(size.X / targetAspectRatio);
+            }
+        }
+
+        renderSize = new Vector2i(
+            Math.Min(size.X, newSize.X),
+            Math.Min(size.Y, newSize.Y));
+        renderOffset = (size - renderSize) / 2;
+    }
+    
     public static Matrix3x2 GetCameraMatrix(in CameraState camera, Vector2i size)
     {
         if (camera.Scale == 0.0f)
