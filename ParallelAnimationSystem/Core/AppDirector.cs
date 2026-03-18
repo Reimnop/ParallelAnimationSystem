@@ -113,7 +113,7 @@ public class AppDirector(
                 {
                     Colored = eventState.Grain.IsColored,
                     Intensity = eventState.Grain.Intensity,
-                    Size = eventState.Grain.Size,
+                    Size = eventState.Grain.Size + 1f,
                     LuminanceContribution = 0.8f
                 }
             };
