@@ -1,9 +1,7 @@
 using OpenTK.Graphics.OpenGL;
-using OpenTK.Mathematics;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Mathematics;
-using Vector2i = ParallelAnimationSystem.Mathematics.Vector2i;
 
 namespace ParallelAnimationSystem.Rendering.OpenGL.PostProcessing;
 
@@ -142,7 +140,7 @@ public class UniversalBloom : IDisposable
         GL.UseProgram(upsampleProgram);
         
         // Set scatter uniform
-        var scatter = MathHelper.MapRange(diffusion, 0.0f, 1.0f, 0.05f, 0.95f);
+        var scatter = MathUtil.MapRange(diffusion, 0.0f, 1.0f, 0.05f, 0.95f);
         GL.Uniform1f(upsampleScatterUniformLocation, scatter);
         
         for (var i = mipChain.Count - 2; i >= 0; i--)

@@ -93,6 +93,7 @@ public class Renderer : IRenderer, IDisposable
     private readonly LegacyBloom legacyBloom;
     private readonly UniversalBloom universalBloom;
     private readonly Glitch glitch;
+    private readonly Grain grain;
     private readonly UberPost uberPost;
     
     // Temporary draw data lists
@@ -294,6 +295,7 @@ public class Renderer : IRenderer, IDisposable
             legacyBloom = new LegacyBloom(loader, vertexShader);
             universalBloom = new UniversalBloom(loader, vertexShader);
             glitch = new Glitch(loader, vertexShader);
+            grain = new Grain(loader, vertexShader);
             uberPost = new UberPost(loader, vertexShader);
 
             // Clean up
@@ -364,6 +366,7 @@ public class Renderer : IRenderer, IDisposable
         legacyBloom.Dispose();
         universalBloom.Dispose();
         glitch.Dispose();
+        grain.Dispose();
         uberPost.Dispose();
     }
     
@@ -640,6 +643,9 @@ public class Renderer : IRenderer, IDisposable
             Swap(ref texture1, ref texture2);
         
         if (glitch.Process(currentFboSize, state.Time, state.Glitch.Speed, state.Glitch.Intensity, state.Glitch.Amount, state.Glitch.StretchMultiplier, texture1, texture2))
+            Swap(ref texture1, ref texture2);
+        
+        if (grain.Process(currentFboSize, state.Time, state.Grain.Colored, state.Grain.Intensity, state.Grain.Size, state.Grain.LuminanceContribution, texture1, texture2))
             Swap(ref texture1, ref texture2);
         
         if (uberPost.Process(

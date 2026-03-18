@@ -1,12 +1,14 @@
-#version 460 core
+#version 300 es
 
-layout(local_size_x = 8, local_size_y = 8) in;
+precision highp float;
 
-layout(r16f, binding = 0) uniform image2D uOutputImage;
+layout(location = 0) out highp vec4 oFragColor;
 
 uniform sampler2D uSourceSampler;
 
-uniform vec2 uParams; // x = b, y = c
+uniform highp vec2 uParams; // x = b, y = c
+
+in highp vec2 vUv;
 
 float applyFilter(vec2 uv, vec2 texelSize, float b, float c) {
     return (1.0 / (4.0 + b * 4.0 + abs(c))) * (
@@ -23,16 +25,8 @@ float applyFilter(vec2 uv, vec2 texelSize, float b, float c) {
 }
 
 void main() {
-    ivec2 coords = ivec2(gl_GlobalInvocationID.xy);
-    ivec2 size = imageSize(uOutputImage);
-
-    // Skip if out of bounds
-    if (coords.x >= size.x || coords.y >= size.y)
-        return;
-
-    vec2 uv = vec2(coords.x + 0.5, coords.y + 0.5) / vec2(size);
     vec2 texelSize = 1.0 / vec2(textureSize(uSourceSampler, 0));
-    float n = applyFilter(uv, texelSize, uParams.x, uParams.y);
+    float n = applyFilter(vUv, texelSize, uParams.x, uParams.y);
 
-    imageStore(uOutputImage, coords, vec4(vec3(n), 1.0));
+    oFragColor = vec4(vec3(n), 1.0);
 }
