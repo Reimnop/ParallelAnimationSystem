@@ -132,7 +132,7 @@ public class Grain : IDisposable
         GL.UseProgram(compositeProgram);
         GL.Uniform1i(compositeColoredUniformLocation, colored ? 1 : 0);
         GL.Uniform1f(compositeLuminanceContributionUniformLocation, luminanceContribution);
-        GL.Uniform1f(compositeIntensityUniformLocation, intensity * 20f);
+        GL.Uniform1f(compositeIntensityUniformLocation, intensity * 4f);
         GL.Uniform2f(compositeScaleUniformLocation, 
             size.X / (float)NoiseTextureWidth / grainSize, 
             size.Y / (float)NoiseTextureHeight / grainSize);
