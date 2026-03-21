@@ -12,23 +12,25 @@ namespace ParallelAnimationSystem.Rendering.OpenGLES;
 
 public static class PASOptionsBuilderExtension
 {
-    public static PASOptionsBuilder UseOpenGLESRenderer(this PASOptionsBuilder builder)
+    public static PASBuilder UseOpenGLESRenderer(this PASBuilder builder)
     {
-        builder
-            .UseRenderer<Renderer>()
-            .UseRenderingFactory<RenderingFactory>()
-            .AddResourceSource(new EmbeddedResourceSource(typeof(PASOptionsBuilderExtension).Assembly));
+        var services = builder.Services;
+        
+        services.AddSingleton<IRenderingFactory, RenderingFactory>();
+        services.AddScoped<IRenderer, Renderer>();
 
-        builder.Services.AddSingleton(new OpenGLSettings
+        services.AddSingleton(new OpenGLSettings
         {
-            MajorVersion = 3,
-            MinorVersion = 0,
-            IsES = true,
+            MajorVersion = 4,
+            MinorVersion = 6,
+            IsES = false
         });
+        
+        builder.UseResourceSourceFactory(() => new EmbeddedResourceSource(typeof(PASOptionsBuilderExtension).Assembly));
         
 #if DEBUG
         // Add ImGui renderer backend
-        builder.Services.AddScoped<IImGuiRendererBackend, ImGuiRendererBackend>();
+        services.AddScoped<IImGuiRendererBackend, ImGuiRendererBackend>();
 #endif
         
         return builder;

@@ -32,13 +32,11 @@ public static class InteropMain
             builder.AddProvider(new WasmLoggerProvider());
         });
         
-        services.AddPAS(builder =>
-        {
-            builder.UseAppSettings(appSettings);
-            builder.UseWindow<WasmWindow>();
-            builder.UseRenderQueue<RenderQueue>();
-            builder.UseOpenGLESRenderer();
-        });
+        services.AddPAS()
+            .UseAppSettings(appSettings)
+            .UseWindow<WasmWindow>()
+            .UseRenderQueue<RenderQueue>()
+            .UseOpenGLESRenderer();
 
         var sp = services.BuildServiceProvider();
         app = new WasmApp(sp);

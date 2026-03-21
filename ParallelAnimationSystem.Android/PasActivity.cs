@@ -101,13 +101,11 @@ public class PasActivity : Activity
         });
         
         // Register PAS services
-        services.AddPAS(builder =>
-        {
-            builder.UseAppSettings(appSettings);
-            builder.UseWindow<AndroidWindow>();
-            builder.UseRenderQueue<RenderQueue>();
-            builder.UseOpenGLESRenderer();
-        });
+        services.AddPAS()
+            .UseAppSettings(appSettings)
+            .UseWindow<AndroidWindow>()
+            .UseRenderQueue<RenderQueue>()
+            .UseOpenGLESRenderer();
         
         // Initialize PAS services
         using var serviceProvider = services.BuildServiceProvider();
