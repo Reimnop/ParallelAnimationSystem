@@ -3,7 +3,7 @@
 namespace ParallelAnimationSystem.Desktop;
 
 [CliCommand(
-    Description = "Root command for running the application",
+    Description = "Common options for all commands",
     ShortFormAutoGenerate = CliNameAutoGenerate.None,
     Children = [typeof(RunCliCommand), typeof(RenderCliCommand)])]
 public class RootCliCommand
