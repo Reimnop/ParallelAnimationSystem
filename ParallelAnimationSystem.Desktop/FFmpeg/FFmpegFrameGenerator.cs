@@ -71,7 +71,7 @@ public class FFmpegFrameGenerator(
         foreach (var arg in processStartArgs)
             processStartInfo.ArgumentList.Add(arg);
 
-        foreach (var arg in CommandLineStringSplitter.Instance.Split(settings.Args))
+        foreach (var arg in CommandLineParser.SplitCommandLine(settings.Args))
             processStartInfo.ArgumentList.Add(arg);
         processStartInfo.ArgumentList.Add(outputPath);
         
