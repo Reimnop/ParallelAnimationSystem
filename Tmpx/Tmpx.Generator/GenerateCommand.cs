@@ -3,9 +3,9 @@ using DotMake.CommandLine;
 using SharpFont;
 using SimpleStructuredBinaryFormat;
 using Tmpx.Common;
+using Glyph = Tmpx.Common.Glyph;
 
 namespace Tmpx.Generator;
-
 
 [CliCommand(
     Description = "Generates a TMPX font file from a FreeType-compatible font file.",
@@ -55,7 +55,7 @@ public class GenerateCommand
         
         // extract glyphs
         var glyphPacker = new GlyphPacker();
-        var glyphMap = new Dictionary<char, int>();
+        var glyphMap = new Dictionary<char, Glyph>();
 
         foreach (var codepoint in characterRanges.SelectMany(x => x.Enumerate()))
         {
@@ -78,12 +78,14 @@ public class GenerateCommand
                 (glyphMetrics.HorizontalBearingX + glyphMetrics.Width).Value / unitsPerEm,
                 glyphMetrics.HorizontalBearingY.Value / unitsPerEm);
             var advanceWidth = glyphMetrics.HorizontalAdvance.Value / unitsPerEm;
-
-            int index;
+            
             if (glyph.Outline.ContoursCount == 0)
             {
-                index = glyphPacker.AddGlyph([], [], [], [], advanceWidth, Vector2.Zero, Vector2.Zero, GlyphColor.White);
-                glyphMap[codepoint] = index;
+                glyphMap[codepoint] = new Glyph
+                {
+                    AdvanceWidth = advanceWidth,
+                    ShapeEntryIndex = -1
+                };
                 continue;
             }
             
@@ -97,15 +99,14 @@ public class GenerateCommand
                 out var glyphHorizontalBandEntries,
                 out var glyphVerticalBandEntries);
             
-            index = glyphPacker.AddGlyph(
+            glyphMap[codepoint] = glyphPacker.AddGlyph(
                 glyphCurves, 
                 glyphCurveIndices, 
                 glyphHorizontalBandEntries, 
                 glyphVerticalBandEntries, 
                 advanceWidth,
                 min, max,
-                GlyphColor.White);
-            glyphMap[codepoint] = index;
+                ShapeColor.White);
         }
         
         // write to file
@@ -120,10 +121,10 @@ public class GenerateCommand
                 LineHeight = face.Height / unitsPerEm,
             },
             GlyphMap = glyphMap,
-            Glyphs = glyphPacker.Glyphs.ToArray(),
             Curves = glyphPacker.Curves.ToArray(),
             CurveIndices = glyphPacker.CurveIndices.ToArray(),
-            BandEntries = glyphPacker.Bands.ToArray()
+            BandEntries = glyphPacker.BandEntries.ToArray(),
+            ShapeEntries = glyphPacker.ShapeEntries.ToArray()
         };
         
         var obj = TmpxWriter.Write(font);

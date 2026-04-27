@@ -7,16 +7,16 @@ public class GlyphPacker
 {
     public List<QuadraticCurve> Curves { get; } = [];
     public List<int> CurveIndices { get; } = [];
-    public List<BandEntry> Bands { get; } = [];
-    public List<Glyph> Glyphs { get; } = [];
+    public List<BandEntry> BandEntries { get; } = [];
+    public List<ShapeEntry> ShapeEntries { get; } = [];
 
-    public int AddGlyph(
+    public Glyph AddGlyph(
         List<QuadraticCurve> curves,
         List<int> curveIndices,
         List<BandEntry> horizontalBandEntries,
         List<BandEntry> verticalBandEntries,
         float advanceWidth, Vector2 min, Vector2 max,
-        GlyphColor color)
+        ShapeColor color)
     {
         var curveBaseIndex = Curves.Count;
         Curves.AddRange(curves);
@@ -24,11 +24,11 @@ public class GlyphPacker
         var curveIndexBaseIndex = CurveIndices.Count;
         CurveIndices.AddRange(curveIndices.Select(i => i + curveBaseIndex));
         
-        var horizontalBandBaseIndex = Bands.Count;
-        Bands.AddRange(horizontalBandEntries.Select(x => x with { CurveIndexBaseIndex = x.CurveIndexBaseIndex + curveIndexBaseIndex }));
+        var horizontalBandBaseIndex = BandEntries.Count;
+        BandEntries.AddRange(horizontalBandEntries.Select(x => x with { CurveIndexBaseIndex = x.CurveIndexBaseIndex + curveIndexBaseIndex }));
         
-        var verticalBandBaseIndex = Bands.Count;
-        Bands.AddRange(verticalBandEntries.Select(x => x with { CurveIndexBaseIndex = x.CurveIndexBaseIndex + curveIndexBaseIndex }));
+        var verticalBandBaseIndex = BandEntries.Count;
+        BandEntries.AddRange(verticalBandEntries.Select(x => x with { CurveIndexBaseIndex = x.CurveIndexBaseIndex + curveIndexBaseIndex }));
         
         var horizontalBandCount = horizontalBandEntries.Count;
         var verticalBandCount = verticalBandEntries.Count;
@@ -39,7 +39,7 @@ public class GlyphPacker
         var horizontalBandOffset = -min.Y * (horizontalBandCount / (max.Y - min.Y));
         var verticalBandOffset = -min.X * (verticalBandCount / (max.X - min.X));
 
-        var bands = new GlyphBands
+        var shapeEntry = new ShapeEntry
         {
             HorizontalBandEntryBaseIndex = horizontalBandBaseIndex,
             HorizontalBandEntryCount = horizontalBandCount,
@@ -50,23 +50,20 @@ public class GlyphPacker
             VerticalBandEntryCount = verticalBandCount,
             VerticalBandScale = verticalBandScale,
             VerticalBandOffset = verticalBandOffset,
-        };
-        
-        var metrics = new GlyphMetrics
-        {
-            AdvanceWidth = advanceWidth,
+            
             Min = min,
-            Max = max
+            Max = max,
+            
+            Color = color
         };
+        var shapeEntryIndex = ShapeEntries.Count;
+        ShapeEntries.Add(shapeEntry);
         
         var glyph = new Glyph
         {
-            Bands = bands,
-            Metrics = metrics,
-            Color = color
+            AdvanceWidth = advanceWidth,
+            ShapeEntryIndex = shapeEntryIndex
         };
-        var index = Glyphs.Count;
-        Glyphs.Add(glyph);
-        return index;
+        return glyph;
     }
 }

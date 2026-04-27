@@ -11,13 +11,14 @@ public static class TmpxWriter
         obj["familyName"] = font.FamilyName;
         obj["styleName"] = font.StyleName;
         obj["metrics"] = WriteMetrics(font.Metrics);
+        obj["spriteMap"] = WriteSpriteMap(font.SpriteMap);
         obj["glyphMap"] = WriteGlyphMap(font.GlyphMap);
         obj["kerning"] = WriteKerning(font.Kerning);
-        obj["sprites"] = WriteSprites(font.Sprites);
-        obj["glyphs"] = WriteBuffer(font.Glyphs);
+        
         obj["curves"] = WriteBuffer(font.Curves);
         obj["curveIndices"] = WriteBuffer(font.CurveIndices);
         obj["bandEntries"] = WriteBuffer(font.BandEntries);
+        obj["shapeEntries"] = WriteBuffer(font.ShapeEntries);
         return obj;
     }
 
@@ -32,17 +33,34 @@ public static class TmpxWriter
         return obj;
     }
     
-    private static SsbfArray WriteGlyphMap(Dictionary<char, int> glyphMap)
+    private static SsbfArray WriteSpriteMap(Dictionary<string, Sprite> sprites)
+    {
+        var arr = new SsbfArray();
+        foreach (var kvp in sprites)
+        {
+            var entryObj = new SsbfObject
+            {
+                ["name"] = kvp.Key,
+                ["advanceWidth"] = kvp.Value.AdvanceWidth,
+                ["shapeEntryIndices"] = WriteShapeEntryIndices(kvp.Value.ShapeEntryIndices)
+            };
+            arr.Add(entryObj);
+        }
+        return arr;
+    }
+    
+    private static SsbfArray WriteGlyphMap(Dictionary<char, Glyph> glyphMap)
     {
         var arr = new SsbfArray();
         foreach (var kvp in glyphMap)
         {
-            var entryArr = new SsbfArray
+            var entryObj = new SsbfObject
             {
-                (ushort)kvp.Key,
-                kvp.Value
+                ["codepoint"] = (ushort)kvp.Key,
+                ["advanceWidth"] = kvp.Value.AdvanceWidth,
+                ["shapeEntryIndex"] = kvp.Value.ShapeEntryIndex
             };
-            arr.Add(entryArr);
+            arr.Add(entryObj);
         }
         return arr;
     }
@@ -62,27 +80,11 @@ public static class TmpxWriter
         }
         return arr;
     }
-    
-    private static SsbfArray WriteSprites(Dictionary<string, Sprite> sprites)
-    {
-        var arr = new SsbfArray();
-        foreach (var kvp in sprites)
-        {
-            var entryObj = new SsbfObject
-            {
-                ["name"] = kvp.Key,
-                ["advanceWidth"] = kvp.Value.AdvanceWidth,
-                ["glyphIndices"] = WriteGlyphIndices(kvp.Value.GlyphIndices)
-            };
-            arr.Add(entryObj);
-        }
-        return arr;
-    }
 
-    private static SsbfArray WriteGlyphIndices(List<int> glyphIndices)
+    private static SsbfArray WriteShapeEntryIndices(List<int> shapeEntryIndices)
     {
         var arr = new SsbfArray();
-        foreach (var index in glyphIndices)
+        foreach (var index in shapeEntryIndices)
             arr.Add(index);
         return arr;
     }

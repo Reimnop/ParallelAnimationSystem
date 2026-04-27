@@ -10,26 +10,28 @@ public static class TmpxReader
         var familyName = obj["familyName"]?.Get<string>() ?? string.Empty;
         var styleName = obj["styleName"]?.Get<string>() ?? string.Empty;
         var metrics = ReadMetrics(obj["metrics"]?.Get<SsbfObject>() ?? new SsbfObject());
+        var spriteMap = ReadSpriteMap(obj["spriteMap"]?.Get<SsbfArray>() ?? new SsbfArray());
         var glyphMap = ReadGlyphMap(obj["glyphMap"]?.Get<SsbfArray>() ?? new SsbfArray());
         var kerning = ReadKerning(obj["kerning"]?.Get<SsbfArray>() ?? new SsbfArray());
-        var sprites = ReadSprites(obj["sprites"]?.Get<SsbfArray>() ?? new SsbfArray());
-        var glyphs = ReadBuffer<Glyph>(obj["glyphs"]?.Get<SsbfByteArray>() ?? new SsbfByteArray([]));
+        
+        
         var curves = ReadBuffer<QuadraticCurve>(obj["curves"]?.Get<SsbfByteArray>() ?? new SsbfByteArray([]));
         var curveIndices = ReadBuffer<int>(obj["curveIndices"]?.Get<SsbfByteArray>() ?? new SsbfByteArray([]));
         var bandEntries = ReadBuffer<BandEntry>(obj["bandEntries"]?.Get<SsbfByteArray>() ?? new SsbfByteArray([]));
+        var shapeEntries = ReadBuffer<ShapeEntry>(obj["shapeEntries"]?.Get<SsbfByteArray>() ?? new SsbfByteArray([]));
         
         return new Font
         {
             FamilyName = familyName,
             StyleName = styleName,
             Metrics = metrics,
+            SpriteMap = spriteMap,
             GlyphMap = glyphMap,
             Kerning = kerning,
-            Sprites = sprites,
-            Glyphs = glyphs,
             Curves = curves,
             CurveIndices = curveIndices,
-            BandEntries = bandEntries
+            BandEntries = bandEntries,
+            ShapeEntries = shapeEntries
         };
     }
     
@@ -46,15 +48,20 @@ public static class TmpxReader
         };
     }
     
-    private static Dictionary<char, int> ReadGlyphMap(SsbfArray arr)
+    private static Dictionary<char, Glyph> ReadGlyphMap(SsbfArray arr)
     {
-        var glyphMap = new Dictionary<char, int>();
+        var glyphMap = new Dictionary<char, Glyph>();
         foreach (var entry in arr)
         {
-            var entryArr = entry?.Get<SsbfArray>() ?? new SsbfArray();
-            var codepoint = (char)(entryArr.Count > 0 ? entryArr[0]?.Get<ushort>() ?? 0 : 0);
-            var glyphIndex = entryArr.Count > 1 ? entryArr[1]?.Get<int>() ?? 0 : 0;
-            glyphMap[codepoint] = glyphIndex;
+            var entryObj = entry?.Get<SsbfObject>() ?? new SsbfObject();
+            var codepoint = (char)(entryObj["codepoint"]?.Get<ushort>() ?? 0);
+            var advanceWidth = entryObj["advanceWidth"]?.Get<float>() ?? 0f;
+            var shapeEntryIndex = entryObj["shapeEntryIndex"]?.Get<int>() ?? 0;
+            glyphMap[codepoint] = new Glyph
+            {
+                AdvanceWidth = advanceWidth,
+                ShapeEntryIndex = shapeEntryIndex
+            };
         }
         return glyphMap;
     }
@@ -73,7 +80,7 @@ public static class TmpxReader
         return kerning;
     }
     
-    private static Dictionary<string, Sprite> ReadSprites(SsbfArray arr)
+    private static Dictionary<string, Sprite> ReadSpriteMap(SsbfArray arr)
     {
         var sprites = new Dictionary<string, Sprite>();
         foreach (var entry in arr)
@@ -81,26 +88,26 @@ public static class TmpxReader
             var entryObj = entry?.Get<SsbfObject>() ?? new SsbfObject();
             var name = entryObj["name"]?.Get<string>() ?? string.Empty;
             var advanceWidth = entryObj["advanceWidth"]?.Get<float>() ?? 0f;
-            var glyphIndices = ReadGlyphIndices(entryObj["glyphIndices"]?.Get<SsbfArray>() ?? new SsbfArray());
+            var shapeEntryIndices = ReadShapeEntryIndices(entryObj["shapeEntryIndices"]?.Get<SsbfArray>() ?? new SsbfArray());
             var sprite = new Sprite
             {
                 AdvanceWidth = advanceWidth,
-                GlyphIndices = glyphIndices
+                ShapeEntryIndices = shapeEntryIndices
             };
             sprites[name] = sprite;
         }
         return sprites;
     }
     
-    private static List<int> ReadGlyphIndices(SsbfArray arr)
+    private static List<int> ReadShapeEntryIndices(SsbfArray arr)
     {
-        var glyphIndices = new List<int>(arr.Count);
+        var shapeEntryIndices = new List<int>(arr.Count);
         foreach (var entry in arr)
         {
             var index = entry?.Get<int>() ?? 0;
-            glyphIndices.Add(index);
+            shapeEntryIndices.Add(index);
         }
-        return glyphIndices;
+        return shapeEntryIndices;
     }
     
     private static T[] ReadBuffer<T>(SsbfByteArray arr) where T : unmanaged

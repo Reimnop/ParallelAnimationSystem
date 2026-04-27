@@ -1,11 +1,7 @@
-﻿using System.Runtime.InteropServices;
+﻿namespace Tmpx.Common;
 
-namespace Tmpx.Common;
-
-[StructLayout(LayoutKind.Sequential)]
-public struct Glyph
+public class Glyph
 {
-    public GlyphBands Bands; 
-    public GlyphMetrics Metrics;
-    public GlyphColor Color;
+    public float AdvanceWidth { get; set; }
+    public int ShapeEntryIndex { get; set; }
 }

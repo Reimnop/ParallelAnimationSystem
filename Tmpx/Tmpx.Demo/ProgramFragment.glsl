@@ -2,7 +2,7 @@
 
 layout(location = 0) out vec4 oFragColor;
 
-struct Glyph {
+struct ShapeEntry {
     int horizontalBandEntryBaseIndex;
     int horizontalBandEntryCount;
     float horizontalBandScale;
@@ -27,13 +27,13 @@ struct BandEntry {
     int curveIndexCount;
 };
 
-layout(std430, binding = 0) readonly buffer GlyphBuffer { Glyph glyphs[]; };
-layout(std430, binding = 1) readonly buffer CurveBuffer { QuadraticCurve curves[]; };
-layout(std430, binding = 2) readonly buffer CurveIndexBuffer { int curveIndices[]; };
-layout(std430, binding = 3) readonly buffer BandEntryBuffer { BandEntry bandEntries[]; };
+layout(std430, binding = 0) readonly buffer CurveBuffer { QuadraticCurve curves[]; };
+layout(std430, binding = 1) readonly buffer CurveIndexBuffer { int curveIndices[]; };
+layout(std430, binding = 2) readonly buffer BandEntryBuffer { BandEntry bandEntries[]; };
+layout(std430, binding = 3) readonly buffer ShapeEntryBuffer { ShapeEntry shapeEntries[]; };
 
 in vec2 vTexCoord;
-flat in uint vGlyphIndex;
+flat in uint vShapeIndex;
 
 uint calcRootCode(float y1, float y2, float y3) {
     uint i1 = floatBitsToUint(y1) >> 31u;
@@ -82,19 +82,19 @@ float calcCoverage(float xcov, float ycov, float xwgt, float ywgt) {
 }
 
 void main() {
-    Glyph glyph = glyphs[vGlyphIndex];
+    ShapeEntry shapeEntry = shapeEntries[vShapeIndex];
 
     vec2 emsPerPixel = fwidth(vTexCoord);
     vec2 pixelsPerEm = 1.0 / emsPerPixel;
 
-    int bandX = clamp(int(vTexCoord.x * glyph.verticalBandScale   + glyph.verticalBandOffset),   0, int(glyph.verticalBandEntryCount)   - 1);
-    int bandY = clamp(int(vTexCoord.y * glyph.horizontalBandScale + glyph.horizontalBandOffset), 0, int(glyph.horizontalBandEntryCount) - 1);
+    int bandX = clamp(int(vTexCoord.x * shapeEntry.verticalBandScale   + shapeEntry.verticalBandOffset),   0, int(shapeEntry.verticalBandEntryCount)   - 1);
+    int bandY = clamp(int(vTexCoord.y * shapeEntry.horizontalBandScale + shapeEntry.horizontalBandOffset), 0, int(shapeEntry.horizontalBandEntryCount) - 1);
     
     float xcov = 0.0;
     float xwgt = 0.0;
 
     // horizontal bands, cast rays in X, indexed by Y band
-    BandEntry hband = bandEntries[glyph.horizontalBandEntryBaseIndex + bandY];
+    BandEntry hband = bandEntries[shapeEntry.horizontalBandEntryBaseIndex + bandY];
     for (int i = 0; i < hband.curveIndexCount; i++) {
         int curveIdx = curveIndices[hband.curveIndexBaseIndex + i];
         QuadraticCurve c = curves[curveIdx];
@@ -129,7 +129,7 @@ void main() {
     float ywgt = 0.0;
 
     // vertical bands, cast rays in Y, indexed by X band
-    BandEntry vband = bandEntries[glyph.verticalBandEntryBaseIndex + bandX];
+    BandEntry vband = bandEntries[shapeEntry.verticalBandEntryBaseIndex + bandX];
     for (int i = 0; i < vband.curveIndexCount; i++) {
         int curveIdx = curveIndices[vband.curveIndexBaseIndex + i];
         QuadraticCurve c = curves[curveIdx];
@@ -158,10 +158,10 @@ void main() {
 
     // unpack color
     vec4 color = vec4(
-        float((glyph.color >> 24u) & 0xFFu) / 255.0,
-        float((glyph.color >> 16u) & 0xFFu) / 255.0,
-        float((glyph.color >>  8u) & 0xFFu) / 255.0,
-        float((glyph.color       ) & 0xFFu) / 255.0);
+        float((shapeEntry.color >> 24u) & 0xFFu) / 255.0,
+        float((shapeEntry.color >> 16u) & 0xFFu) / 255.0,
+        float((shapeEntry.color >>  8u) & 0xFFu) / 255.0,
+        float((shapeEntry.color       ) & 0xFFu) / 255.0);
     
     oFragColor = vec4(1.0, 1.0, 1.0, coverage) * color;
 }

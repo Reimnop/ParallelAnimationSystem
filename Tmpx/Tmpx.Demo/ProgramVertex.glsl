@@ -1,9 +1,9 @@
 ﻿#version 460 core
 
 layout(location = 0) in vec2 aPos;
-layout(location = 1) in uint aGlyphIndex;
+layout(location = 1) in uint aShapeIndex;
 
-struct Glyph {
+struct ShapeEntry {
     int horizontalBandEntryBaseIndex;
     int horizontalBandEntryCount;
     float horizontalBandScale;
@@ -28,26 +28,26 @@ struct BandEntry {
     int curveIndexCount;
 };
 
-layout(std430, binding = 0) readonly buffer GlyphBuffer { Glyph glyphs[]; };
-layout(std430, binding = 1) readonly buffer CurveBuffer { QuadraticCurve curves[]; };
-layout(std430, binding = 2) readonly buffer CurveIndexBuffer { int curveIndices[]; };
-layout(std430, binding = 3) readonly buffer BandEntryBuffer { BandEntry bandEntries[]; };
+layout(std430, binding = 0) readonly buffer CurveBuffer { QuadraticCurve curves[]; };
+layout(std430, binding = 1) readonly buffer CurveIndexBuffer { int curveIndices[]; };
+layout(std430, binding = 2) readonly buffer BandEntryBuffer { BandEntry bandEntries[]; };
+layout(std430, binding = 3) readonly buffer ShapeEntryBuffer { ShapeEntry shapeEntries[]; };
 
 layout(location = 0) uniform mat3x2 mvp;
 
 out vec2 vTexCoord;
-flat out uint vGlyphIndex;
+flat out uint vShapeIndex;
 
 void main() {
-    vGlyphIndex = aGlyphIndex;
+    vShapeIndex = aShapeIndex;
     
-    Glyph glyph = glyphs[aGlyphIndex];
+    ShapeEntry shapeEntry = shapeEntries[aShapeIndex];
 
     vec2 corner = vec2(
         float(gl_VertexID & 1),
         float((gl_VertexID >> 1) & 1));
 
-    vec2 localPos = mix(glyph.min, glyph.max, corner);
+    vec2 localPos = mix(shapeEntry.min, shapeEntry.max, corner);
     vTexCoord = localPos;
     
     vec2 worldPos = mvp * vec3(aPos + localPos, 1.0);

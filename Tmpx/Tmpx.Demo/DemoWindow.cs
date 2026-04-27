@@ -20,7 +20,7 @@ public class DemoWindow() : GameWindow(GameWindowSettings, NativeWindowSettings)
 
     private Font font = null!;
     
-    private int glyphBuffer, curveBuffer, curveIndexBuffer, bandEntryBuffer, instanceBuffer, vao;
+    private int shapeEntryBuffer, curveBuffer, curveIndexBuffer, bandEntryBuffer, instanceBuffer, vao;
     private int program;
 
     private int instanceCount;
@@ -31,23 +31,23 @@ public class DemoWindow() : GameWindow(GameWindowSettings, NativeWindowSettings)
 
         font = ReadFont("LiberationSans-Regular.tmpx");
         
-        var gpuGlyphs = font.Glyphs.Select(x => new GpuGlyph
+        var gpuShapeEntries = font.ShapeEntries.Select(x => new GpuShapeEntry
         {
-            HorizontalBandEntryBaseIndex = x.Bands.HorizontalBandEntryBaseIndex,
-            HorizontalBandEntryCount = x.Bands.HorizontalBandEntryCount,
-            HorizontalBandScale = x.Bands.HorizontalBandScale,
-            HorizontalBandOffset = x.Bands.HorizontalBandOffset,
-            VerticalBandEntryBaseIndex = x.Bands.VerticalBandEntryBaseIndex,
-            VerticalBandEntryCount = x.Bands.VerticalBandEntryCount,
-            VerticalBandScale = x.Bands.VerticalBandScale,
-            VerticalBandOffset = x.Bands.VerticalBandOffset,
-            Min = x.Metrics.Min,
-            Max = x.Metrics.Max,
+            HorizontalBandEntryBaseIndex = x.HorizontalBandEntryBaseIndex,
+            HorizontalBandEntryCount = x.HorizontalBandEntryCount,
+            HorizontalBandScale = x.HorizontalBandScale,
+            HorizontalBandOffset = x.HorizontalBandOffset,
+            VerticalBandEntryBaseIndex = x.VerticalBandEntryBaseIndex,
+            VerticalBandEntryCount = x.VerticalBandEntryCount,
+            VerticalBandScale = x.VerticalBandScale,
+            VerticalBandOffset = x.VerticalBandOffset,
+            Min = x.Min,
+            Max = x.Max,
             Color = x.Color
         }).ToArray();
         
-        glyphBuffer = GL.CreateBuffer();
-        GL.NamedBufferData(glyphBuffer, gpuGlyphs.Length * Unsafe.SizeOf<GpuGlyph>(), gpuGlyphs, VertexBufferObjectUsage.StaticDraw);
+        shapeEntryBuffer = GL.CreateBuffer();
+        GL.NamedBufferData(shapeEntryBuffer, gpuShapeEntries.Length * Unsafe.SizeOf<GpuShapeEntry>(), gpuShapeEntries, VertexBufferObjectUsage.StaticDraw);
         
         curveBuffer = GL.CreateBuffer();
         GL.NamedBufferData(curveBuffer, font.Curves.Length * Unsafe.SizeOf<QuadraticCurve>(), font.Curves, VertexBufferObjectUsage.StaticDraw);
@@ -58,7 +58,7 @@ public class DemoWindow() : GameWindow(GameWindowSettings, NativeWindowSettings)
         bandEntryBuffer = GL.CreateBuffer();
         GL.NamedBufferData(bandEntryBuffer, font.BandEntries.Length * Unsafe.SizeOf<BandEntry>(), font.BandEntries, VertexBufferObjectUsage.StaticDraw);
 
-        var instanceData = ShapeText("Hello, World!", font);
+        var instanceData = ShapeText("enchy wenchy uwu~!!!", font);
         instanceCount = instanceData.Length;
         
         instanceBuffer = GL.CreateBuffer();
@@ -86,7 +86,7 @@ public class DemoWindow() : GameWindow(GameWindowSettings, NativeWindowSettings)
         base.OnRenderFrame(args);
         
         var dpi = 96f;
-        var pointSize = 64f;
+        var pointSize = 96f;
         var pixelsPerEm = pointSize * dpi / 72f;
         
         var modelMatrix = FastMatrix.GetScaleMatrix(pixelsPerEm, pixelsPerEm);
@@ -101,10 +101,10 @@ public class DemoWindow() : GameWindow(GameWindowSettings, NativeWindowSettings)
         
         GL.UseProgram(program);
         GL.BindVertexArray(vao);
-        GL.BindBufferBase(BufferTarget.ShaderStorageBuffer, 0, glyphBuffer);
-        GL.BindBufferBase(BufferTarget.ShaderStorageBuffer, 1, curveBuffer);
-        GL.BindBufferBase(BufferTarget.ShaderStorageBuffer, 2, curveIndexBuffer);
-        GL.BindBufferBase(BufferTarget.ShaderStorageBuffer, 3, bandEntryBuffer);
+        GL.BindBufferBase(BufferTarget.ShaderStorageBuffer, 0, curveBuffer);
+        GL.BindBufferBase(BufferTarget.ShaderStorageBuffer, 1, curveIndexBuffer);
+        GL.BindBufferBase(BufferTarget.ShaderStorageBuffer, 2, bandEntryBuffer);
+        GL.BindBufferBase(BufferTarget.ShaderStorageBuffer, 3, shapeEntryBuffer);
         GL.UniformMatrix3x2f(0, 1, false, in mvp);
         
         GL.DrawArraysInstanced(PrimitiveType.TriangleStrip, 0, 4, instanceCount);
@@ -181,19 +181,17 @@ public class DemoWindow() : GameWindow(GameWindowSettings, NativeWindowSettings)
     
         foreach (var c in text)
         {
-            if (!font.GlyphMap.TryGetValue(c, out var glyphIndex))
-                glyphIndex = font.GlyphMap['?'];
+            if (!font.GlyphMap.TryGetValue(c, out var glyph))
+                glyph = font.GlyphMap['?'];
         
-            var glyph = font.Glyphs[glyphIndex];
-        
-            if (glyph.Bands.HorizontalBandEntryCount > 0 || glyph.Bands.VerticalBandEntryCount > 0)
+            if (glyph.ShapeEntryIndex >= 0)
                 instances.Add(new InstanceItem
                 {
                     Position = new Vector2(x, 0f),
-                    GlyphIndex = glyphIndex
+                    ShapeEntryIndex = glyph.ShapeEntryIndex
                 });
         
-            x += glyph.Metrics.AdvanceWidth;
+            x += glyph.AdvanceWidth;
         }
     
         var totalWidth = x;

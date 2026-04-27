@@ -7,5 +7,5 @@ namespace Tmpx.Demo;
 public struct InstanceItem
 {
     public Vector2 Position;
-    public int GlyphIndex;
+    public int ShapeEntryIndex;
 }
