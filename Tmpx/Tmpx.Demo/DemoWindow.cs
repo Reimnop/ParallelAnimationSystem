@@ -29,7 +29,7 @@ public class DemoWindow() : GameWindow(GameWindowSettings, NativeWindowSettings)
     {
         base.OnLoad();
 
-        font = ReadFont("LiberationSans-Regular.tmpx");
+        font = ReadFont("Geist-Regular.tmpx");
         
         var gpuShapeEntries = font.ShapeEntries.Select(x => new GpuShapeEntry
         {
@@ -58,7 +58,7 @@ public class DemoWindow() : GameWindow(GameWindowSettings, NativeWindowSettings)
         bandEntryBuffer = GL.CreateBuffer();
         GL.NamedBufferData(bandEntryBuffer, font.BandEntries.Length * Unsafe.SizeOf<BandEntry>(), font.BandEntries, VertexBufferObjectUsage.StaticDraw);
 
-        var instanceData = ShapeText("TMPX", font);
+        var instanceData = ShapeText("послебит", font);
         instanceCount = instanceData.Length;
         
         instanceBuffer = GL.CreateBuffer();
@@ -94,7 +94,7 @@ public class DemoWindow() : GameWindow(GameWindowSettings, NativeWindowSettings)
         base.OnRenderFrame(args);
         
         var dpi = 96f;
-        var pointSize = 384f;
+        var pointSize = 128f;
         var pixelsPerEm = pointSize * dpi / 72f;
         
         var modelMatrix = FastMatrix.GetScaleMatrix(pixelsPerEm, pixelsPerEm);
@@ -200,10 +200,7 @@ public class DemoWindow() : GameWindow(GameWindowSettings, NativeWindowSettings)
                 
                 instances.Add(new InstanceItem
                 {
-                    Transform = FastMatrix.GetTranslationMatrix(-center.X, -center.Y) * 
-                                FastMatrix.GetRotationMatrix(MathF.PI / 6f) * 
-                                FastMatrix.GetTranslationMatrix(center.X, center.Y) *
-                                FastMatrix.GetTranslationMatrix(x, 0f),
+                    Transform = FastMatrix.GetTranslationMatrix(x, 0f),
                     ShapeEntryIndex = glyph.ShapeEntryIndex
                 });
             }
