@@ -1,5 +1,19 @@
 ﻿#version 460 core
 
+const vec2 CORNERS[] = vec2[](
+    vec2(0.0, 0.0),
+    vec2(0.0, 1.0),
+    vec2(1.0, 0.0),
+    vec2(1.0, 1.0)
+);
+
+const vec2 NORMALS[] = vec2[](
+    vec2(-1.0, -1.0),
+    vec2(-1.0,  1.0),
+    vec2( 1.0, -1.0),
+    vec2( 1.0,  1.0)
+);
+
 layout(location = 0) in vec2 aTransformRow0;
 layout(location = 1) in vec2 aTransformRow1;
 layout(location = 2) in vec2 aTransformRow2;
@@ -36,12 +50,29 @@ layout(std430, binding = 2) readonly buffer BandEntryBuffer { BandEntry bandEntr
 layout(std430, binding = 3) readonly buffer ShapeEntryBuffer { ShapeEntry shapeEntries[]; };
 
 layout(location = 0) uniform mat3x2 uMvp;
+layout(location = 1) uniform vec2 uViewportSize;
 
 out vec2 vTexCoord;
 flat out uint vShapeIndex;
 
-vec2 applyTransform(mat3x2 transform, vec2 pos) {
-    return vec2(transform * vec3(pos, 1.0));
+mat3x2 mult3x2(mat3x2 a, mat3x2 b) {
+    return mat3x2(
+        a[0] * b[0].x + a[1] * b[0].y,
+        a[0] * b[1].x + a[1] * b[1].y,
+        a[0] * b[2].x + a[1] * b[2].y + a[2]);
+}
+
+mat2 jacobian(mat2 m) {
+    float det = determinant(m);
+    
+    if (abs(det) < 1.0/65536.0) {
+        return mat2(1.0);
+    }
+    
+    mat2 j = mat2(
+         m[1][1], -m[0][1],
+        -m[1][0],  m[0][0]) / det;
+    return j;
 }
 
 void main() {
@@ -49,20 +80,27 @@ void main() {
     
     ShapeEntry shapeEntry = shapeEntries[aShapeIndex];
 
-    vec2 corner = vec2(
-        float(gl_VertexID & 1),
-        float((gl_VertexID >> 1) & 1));
+    vec2 corner = CORNERS[gl_VertexID % 4];
+    vec2 normal = NORMALS[gl_VertexID % 4];
 
     vec2 localPos = mix(shapeEntry.min, shapeEntry.max, corner);
-    vTexCoord = localPos;
     
     mat3x2 transform = mat3x2(
         aTransformRow0,
         aTransformRow1,
         aTransformRow2);
     
-    vec2 worldPos = applyTransform(transform, localPos);
-    worldPos = applyTransform(uMvp, worldPos);
+    mat3x2 mvp = mult3x2(uMvp, transform);
+    mat2 linear = mat2(mvp[0], mvp[1]);
+    vec2 clipNormal = normalize(linear * normal);
     
+    vec2 pixelSize = 2.0 / uViewportSize;
+    vec2 dilation = clipNormal * pixelSize * 0.5;
+    
+    vec2 worldPos = vec2(mvp * vec3(localPos, 1.0));
+    worldPos += dilation;
+
+    mat2 j = jacobian(linear);
+    vTexCoord = localPos + j * dilation;
     gl_Position = vec4(worldPos, 0.0, 1.0);
 }

@@ -94,7 +94,7 @@ public class DemoWindow() : GameWindow(GameWindowSettings, NativeWindowSettings)
         base.OnRenderFrame(args);
         
         var dpi = 96f;
-        var pointSize = 512f;
+        var pointSize = 384f;
         var pixelsPerEm = pointSize * dpi / 72f;
         
         var modelMatrix = FastMatrix.GetScaleMatrix(pixelsPerEm, pixelsPerEm);
@@ -114,6 +114,7 @@ public class DemoWindow() : GameWindow(GameWindowSettings, NativeWindowSettings)
         GL.BindBufferBase(BufferTarget.ShaderStorageBuffer, 2, bandEntryBuffer);
         GL.BindBufferBase(BufferTarget.ShaderStorageBuffer, 3, shapeEntryBuffer);
         GL.UniformMatrix3x2f(0, 1, false, in mvp);
+        GL.Uniform2f(1, Size.X, Size.Y);
         
         GL.DrawArraysInstanced(PrimitiveType.TriangleStrip, 0, 4, instanceCount);
         
@@ -191,20 +192,28 @@ public class DemoWindow() : GameWindow(GameWindowSettings, NativeWindowSettings)
         {
             if (!font.GlyphMap.TryGetValue(c, out var glyph))
                 glyph = font.GlyphMap['?'];
-        
+
             if (glyph.ShapeEntryIndex >= 0)
+            {
+                var shapeEntry = font.ShapeEntries[glyph.ShapeEntryIndex];
+                var center = (shapeEntry.Min + shapeEntry.Max) * 0.5f;
+                
                 instances.Add(new InstanceItem
                 {
-                    Transform = FastMatrix.GetTranslationMatrix(x, 0f),
+                    Transform = FastMatrix.GetTranslationMatrix(-center.X, -center.Y) * 
+                                FastMatrix.GetRotationMatrix(MathF.PI / 6f) * 
+                                FastMatrix.GetTranslationMatrix(center.X, center.Y) *
+                                FastMatrix.GetTranslationMatrix(x, 0f),
                     ShapeEntryIndex = glyph.ShapeEntryIndex
                 });
+            }
         
             x += glyph.AdvanceWidth;
         }
 
         var totalWidth = x;
         for (var i = 0; i < instances.Count; i++)
-            instances[i] = instances[i] with { Transform = FastMatrix.GetTranslationMatrix(-totalWidth * 0.5f, 0f) * instances[i].Transform };
+            instances[i] = instances[i] with { Transform = instances[i].Transform * FastMatrix.GetTranslationMatrix(-totalWidth * 0.5f, 0f) };
     
         return instances.ToArray();
     }
