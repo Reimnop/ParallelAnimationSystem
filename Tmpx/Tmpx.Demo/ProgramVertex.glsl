@@ -1,7 +1,9 @@
 ﻿#version 460 core
 
-layout(location = 0) in vec2 aPos;
-layout(location = 1) in uint aShapeIndex;
+layout(location = 0) in vec2 aTransformRow0;
+layout(location = 1) in vec2 aTransformRow1;
+layout(location = 2) in vec2 aTransformRow2;
+layout(location = 3) in uint aShapeIndex;
 
 struct ShapeEntry {
     int horizontalBandEntryBaseIndex;
@@ -33,10 +35,14 @@ layout(std430, binding = 1) readonly buffer CurveIndexBuffer { int curveIndices[
 layout(std430, binding = 2) readonly buffer BandEntryBuffer { BandEntry bandEntries[]; };
 layout(std430, binding = 3) readonly buffer ShapeEntryBuffer { ShapeEntry shapeEntries[]; };
 
-layout(location = 0) uniform mat3x2 mvp;
+layout(location = 0) uniform mat3x2 uMvp;
 
 out vec2 vTexCoord;
 flat out uint vShapeIndex;
+
+vec2 applyTransform(mat3x2 transform, vec2 pos) {
+    return vec2(transform * vec3(pos, 1.0));
+}
 
 void main() {
     vShapeIndex = aShapeIndex;
@@ -50,7 +56,13 @@ void main() {
     vec2 localPos = mix(shapeEntry.min, shapeEntry.max, corner);
     vTexCoord = localPos;
     
-    vec2 worldPos = mvp * vec3(aPos + localPos, 1.0);
+    mat3x2 transform = mat3x2(
+        aTransformRow0,
+        aTransformRow1,
+        aTransformRow2);
+    
+    vec2 worldPos = applyTransform(transform, localPos);
+    worldPos = applyTransform(uMvp, worldPos);
     
     gl_Position = vec4(worldPos, 0.0, 1.0);
 }

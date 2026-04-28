@@ -88,10 +88,14 @@ public static class TmpxReader
             var entryObj = entry?.Get<SsbfObject>() ?? new SsbfObject();
             var name = entryObj["name"]?.Get<string>() ?? string.Empty;
             var advanceWidth = entryObj["advanceWidth"]?.Get<float>() ?? 0f;
+            var ascender = entryObj["ascender"]?.Get<float>() ?? 0f;
+            var descender = entryObj["descender"]?.Get<float>() ?? 0f;
             var shapeEntryIndices = ReadShapeEntryIndices(entryObj["shapeEntryIndices"]?.Get<SsbfArray>() ?? new SsbfArray());
             var sprite = new Sprite
             {
                 AdvanceWidth = advanceWidth,
+                Ascender = ascender,
+                Descender = descender,
                 ShapeEntryIndices = shapeEntryIndices
             };
             sprites[name] = sprite;

@@ -58,7 +58,7 @@ public class DemoWindow() : GameWindow(GameWindowSettings, NativeWindowSettings)
         bandEntryBuffer = GL.CreateBuffer();
         GL.NamedBufferData(bandEntryBuffer, font.BandEntries.Length * Unsafe.SizeOf<BandEntry>(), font.BandEntries, VertexBufferObjectUsage.StaticDraw);
 
-        var instanceData = ShapeText("enchy wenchy uwu~!!!", font);
+        var instanceData = ShapeText("TMPX", font);
         instanceCount = instanceData.Length;
         
         instanceBuffer = GL.CreateBuffer();
@@ -72,9 +72,17 @@ public class DemoWindow() : GameWindow(GameWindowSettings, NativeWindowSettings)
         GL.VertexArrayAttribBinding(vao, 0, 0);
         GL.EnableVertexArrayAttrib(vao, 0);
         
-        GL.VertexArrayAttribIFormat(vao, 1, 1, VertexAttribIType.Int, (uint)Unsafe.SizeOf<Vector2>());
+        GL.VertexArrayAttribFormat(vao, 1, 2, VertexAttribType.Float, false, 2 * sizeof(float));
         GL.VertexArrayAttribBinding(vao, 1, 0);
         GL.EnableVertexArrayAttrib(vao, 1);
+        
+        GL.VertexArrayAttribFormat(vao, 2, 2, VertexAttribType.Float, false, 4 * sizeof(float));
+        GL.VertexArrayAttribBinding(vao, 2, 0);
+        GL.EnableVertexArrayAttrib(vao, 2);
+        
+        GL.VertexArrayAttribIFormat(vao, 3, 1, VertexAttribIType.Int, 6 * sizeof(float));
+        GL.VertexArrayAttribBinding(vao, 3, 0);
+        GL.EnableVertexArrayAttrib(vao, 3);
         
         GL.VertexArrayBindingDivisor(vao, 0, 1);
         
@@ -86,7 +94,7 @@ public class DemoWindow() : GameWindow(GameWindowSettings, NativeWindowSettings)
         base.OnRenderFrame(args);
         
         var dpi = 96f;
-        var pointSize = 96f;
+        var pointSize = 512f;
         var pixelsPerEm = pointSize * dpi / 72f;
         
         var modelMatrix = FastMatrix.GetScaleMatrix(pixelsPerEm, pixelsPerEm);
@@ -187,16 +195,16 @@ public class DemoWindow() : GameWindow(GameWindowSettings, NativeWindowSettings)
             if (glyph.ShapeEntryIndex >= 0)
                 instances.Add(new InstanceItem
                 {
-                    Position = new Vector2(x, 0f),
+                    Transform = FastMatrix.GetTranslationMatrix(x, 0f),
                     ShapeEntryIndex = glyph.ShapeEntryIndex
                 });
         
             x += glyph.AdvanceWidth;
         }
-    
+
         var totalWidth = x;
         for (var i = 0; i < instances.Count; i++)
-            instances[i] = instances[i] with { Position = instances[i].Position - new Vector2(totalWidth * 0.5f, 0f) };
+            instances[i] = instances[i] with { Transform = FastMatrix.GetTranslationMatrix(-totalWidth * 0.5f, 0f) * instances[i].Transform };
     
         return instances.ToArray();
     }

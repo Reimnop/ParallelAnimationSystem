@@ -42,6 +42,8 @@ public static class TmpxWriter
             {
                 ["name"] = kvp.Key,
                 ["advanceWidth"] = kvp.Value.AdvanceWidth,
+                ["ascender"] = kvp.Value.Ascender,
+                ["descender"] = kvp.Value.Descender,
                 ["shapeEntryIndices"] = WriteShapeEntryIndices(kvp.Value.ShapeEntryIndices)
             };
             arr.Add(entryObj);

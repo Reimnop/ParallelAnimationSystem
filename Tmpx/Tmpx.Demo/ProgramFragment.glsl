@@ -76,8 +76,8 @@ vec2 solveVert(vec2 p0, vec2 p1, vec2 p2) {
 
 float calcCoverage(float xcov, float ycov, float xwgt, float ywgt) {
     float coverage = max(
-    abs(xcov * xwgt + ycov * ywgt) / max(xwgt + ywgt, 1.0/65536.0),
-    min(abs(xcov), abs(ycov)));
+        abs(xcov * xwgt + ycov * ywgt) / max(xwgt + ywgt, 1.0/65536.0),
+        min(abs(xcov), abs(ycov)));
     return clamp(coverage, 0.0, 1.0);
 }
 

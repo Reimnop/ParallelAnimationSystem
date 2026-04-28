@@ -6,6 +6,6 @@ namespace Tmpx.Demo;
 [StructLayout(LayoutKind.Sequential)]
 public struct InstanceItem
 {
-    public Vector2 Position;
+    public Matrix3x2 Transform;
     public int ShapeEntryIndex;
 }
