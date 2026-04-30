@@ -106,7 +106,7 @@ public class GenerateCommand
                 glyphVerticalBandEntries, 
                 advanceWidth,
                 min, max,
-                ShapeColor.White);
+                Color.White);
         }
         
         // write to file

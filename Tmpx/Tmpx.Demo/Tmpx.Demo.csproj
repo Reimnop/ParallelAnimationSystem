@@ -28,10 +28,20 @@
     <None Update="Geist-Regular.tmpx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="MajorMonoDisplay-Regular.tmpx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Inconsolata-Regular.tmpx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="NotoMono-Regular.tmpx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Tmpx.Common\Tmpx.Common.csproj" />
+    <ProjectReference Include="..\Tmpx\Tmpx.csproj" />
   </ItemGroup>
 
 </Project>

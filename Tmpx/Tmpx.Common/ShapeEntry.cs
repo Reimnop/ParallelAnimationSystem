@@ -19,5 +19,5 @@ public struct ShapeEntry
     public Vector2 Min;
     public Vector2 Max;
     
-    public ShapeColor Color;
+    public Color Color;
 }

@@ -10,6 +10,8 @@
     <Project Path="Tmpx/Tmpx.Common/Tmpx.Common.csproj" />
     <Project Path="Tmpx/Tmpx.Demo/Tmpx.Demo.csproj" />
     <Project Path="Tmpx/Tmpx.Generator/Tmpx.Generator.csproj" />
+    <Project Path="Tmpx/Tmpx.Tests/Tmpx.Tests.csproj" />
+    <Project Path="Tmpx/Tmpx/Tmpx.csproj" />
   </Folder>
   <Project Path="ParallelAnimationSystem.Android/ParallelAnimationSystem.Android.csproj">
     <Deploy />

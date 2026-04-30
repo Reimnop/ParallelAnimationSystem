@@ -6,6 +6,8 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using SimpleStructuredBinaryFormat;
 using Tmpx.Common;
+using Tmpx.Parsing;
+using Tmpx.Shaping;
 
 namespace Tmpx.Demo;
 
@@ -29,7 +31,7 @@ public class DemoWindow() : GameWindow(GameWindowSettings, NativeWindowSettings)
     {
         base.OnLoad();
 
-        font = ReadFont("Geist-Regular.tmpx");
+        font = ReadFont("NotoMono-Regular.tmpx");
         
         var gpuShapeEntries = font.ShapeEntries.Select(x => new GpuShapeEntry
         {
@@ -58,7 +60,22 @@ public class DemoWindow() : GameWindow(GameWindowSettings, NativeWindowSettings)
         bandEntryBuffer = GL.CreateBuffer();
         GL.NamedBufferData(bandEntryBuffer, font.BandEntries.Length * Unsafe.SizeOf<BandEntry>(), font.BandEntries, VertexBufferObjectUsage.StaticDraw);
 
-        var instanceData = ShapeText("послебит", font);
+        var shaper = new Shaper(new DemoFontResolver(font));
+        
+        var instanceItems = new List<InstanceItem>();
+        var text = "<mark=#ff2071> Leader ";
+        shaper.Shape(TextParser.Parse(text), TextHorizontalAlignment.Center, TextVerticalAlignment.Middle, "MajorMonoDisplay", (t, c, f, s) =>
+        {
+            instanceItems.Add(new InstanceItem
+            {
+                Transform = t,
+                Color = c,
+                ShapeEntryIndex = f != null ? s : -1,
+            });
+        });
+        
+        var instanceData = instanceItems.ToArray();
+        
         instanceCount = instanceData.Length;
         
         instanceBuffer = GL.CreateBuffer();
@@ -80,9 +97,13 @@ public class DemoWindow() : GameWindow(GameWindowSettings, NativeWindowSettings)
         GL.VertexArrayAttribBinding(vao, 2, 0);
         GL.EnableVertexArrayAttrib(vao, 2);
         
-        GL.VertexArrayAttribIFormat(vao, 3, 1, VertexAttribIType.Int, 6 * sizeof(float));
+        GL.VertexArrayAttribIFormat(vao, 3, 1, VertexAttribIType.UnsignedInt, 6 * sizeof(float));
         GL.VertexArrayAttribBinding(vao, 3, 0);
         GL.EnableVertexArrayAttrib(vao, 3);
+        
+        GL.VertexArrayAttribIFormat(vao, 4, 1, VertexAttribIType.Int, 6 * sizeof(float) + sizeof(uint));
+        GL.VertexArrayAttribBinding(vao, 4, 0);
+        GL.EnableVertexArrayAttrib(vao, 4);
         
         GL.VertexArrayBindingDivisor(vao, 0, 1);
         
@@ -94,7 +115,7 @@ public class DemoWindow() : GameWindow(GameWindowSettings, NativeWindowSettings)
         base.OnRenderFrame(args);
         
         var dpi = 96f;
-        var pointSize = 128f;
+        var pointSize = 48f;
         var pixelsPerEm = pointSize * dpi / 72f;
         
         var modelMatrix = FastMatrix.GetScaleMatrix(pixelsPerEm, pixelsPerEm);
@@ -181,37 +202,5 @@ public class DemoWindow() : GameWindow(GameWindowSettings, NativeWindowSettings)
         GL.DeleteShader(fragmentShader);
         
         return program;
-    }
-    
-    public static InstanceItem[] ShapeText(string text, Font font)
-    {
-        var instances = new List<InstanceItem>();
-        var x = 0f;
-    
-        foreach (var c in text)
-        {
-            if (!font.GlyphMap.TryGetValue(c, out var glyph))
-                glyph = font.GlyphMap['?'];
-
-            if (glyph.ShapeEntryIndex >= 0)
-            {
-                var shapeEntry = font.ShapeEntries[glyph.ShapeEntryIndex];
-                var center = (shapeEntry.Min + shapeEntry.Max) * 0.5f;
-                
-                instances.Add(new InstanceItem
-                {
-                    Transform = FastMatrix.GetTranslationMatrix(x, 0f),
-                    ShapeEntryIndex = glyph.ShapeEntryIndex
-                });
-            }
-        
-            x += glyph.AdvanceWidth;
-        }
-
-        var totalWidth = x;
-        for (var i = 0; i < instances.Count; i++)
-            instances[i] = instances[i] with { Transform = instances[i].Transform * FastMatrix.GetTranslationMatrix(-totalWidth * 0.5f, 0f) };
-    
-        return instances.ToArray();
     }
 }

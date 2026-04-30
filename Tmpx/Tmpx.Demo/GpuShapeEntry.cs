@@ -4,7 +4,7 @@ using Tmpx.Common;
 
 namespace Tmpx.Demo;
 
-[StructLayout(LayoutKind.Sequential, Size = 56)]
+[StructLayout(LayoutKind.Sequential, Size = 56)] // std430 aligns to largest member
 public struct GpuShapeEntry
 {
     // -- 0 - 32 (32 bytes) --
@@ -12,6 +12,7 @@ public struct GpuShapeEntry
     public int HorizontalBandEntryCount;
     public float HorizontalBandScale;
     public float HorizontalBandOffset;
+    
     public int VerticalBandEntryBaseIndex;
     public int VerticalBandEntryCount;
     public float VerticalBandScale;
@@ -21,5 +22,5 @@ public struct GpuShapeEntry
     public Vector2 Min; // 32 - 40 (8-byte aligned)
     public Vector2 Max; // 40 - 48
     
-    public ShapeColor Color; // 48 - 52
+    public Color Color; // 48 - 52
 }

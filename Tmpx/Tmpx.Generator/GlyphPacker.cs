@@ -16,7 +16,7 @@ public class GlyphPacker
         List<BandEntry> horizontalBandEntries,
         List<BandEntry> verticalBandEntries,
         float advanceWidth, Vector2 min, Vector2 max,
-        ShapeColor color)
+        Color color)
     {
         var curveBaseIndex = Curves.Count;
         Curves.AddRange(curves);
