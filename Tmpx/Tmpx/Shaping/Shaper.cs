@@ -9,6 +9,18 @@ public delegate void ShapeEmitter(Matrix3x2 transform, Color color, IFont? font,
 
 public class Shaper(IFontResolver resolver, float unitsPerEm = 16f)
 {
+    private static readonly Dictionary<string, Color> KnownColors = new()
+    {
+        ["black"] = Color.ParseHex("000000"),
+        ["blue"] = Color.ParseHex("0000FF"),
+        ["green"] = Color.ParseHex("00FF00"),
+        ["orange"] = Color.ParseHex("FFA500"),
+        ["purple"] = Color.ParseHex("800080"),
+        ["red"] = Color.ParseHex("FF0000"),
+        ["white"] = Color.ParseHex("FFFFFF"),
+        ["yellow"] = Color.ParseHex("FFFF00"),
+    };
+    
     private class PendingGlyph
     {
         public required Vector2 Position { get; set; }
@@ -37,6 +49,10 @@ public class Shaper(IFontResolver resolver, float unitsPerEm = 16f)
         string defaultFontName,
         ShapeEmitter emit)
     {
+        var tokenList = tokens.ToList();
+        if (tokenList.Count > 0 && tokenList[^1] is LineBreakToken)
+            tokenList.RemoveAt(tokenList.Count - 1);
+        
         var stack = new StyleStateStack(
             resolver,
             horizontalAlignment,
@@ -46,7 +62,7 @@ public class Shaper(IFontResolver resolver, float unitsPerEm = 16f)
         var collectedLines = new List<Line>();
         
         var line = new Line();
-        foreach (var token in tokens)
+        foreach (var token in tokenList)
         {
             switch (token)
             {
@@ -606,29 +622,35 @@ public class Shaper(IFontResolver resolver, float unitsPerEm = 16f)
         cursorY -= lineHeight;
     }
 
-    private static bool TryParseColor(string? value, out Color color)
+    private static bool TryParseColor(string hex, out Color color)
     {
         color = default;
-        if (value == null) 
+        
+        if (string.IsNullOrWhiteSpace(hex))
+            return false;
+        
+        if (KnownColors.TryGetValue(hex, out color))
+            return true;
+        
+        if (hex.StartsWith('#'))
+            hex = hex[1..];
+        
+        if (hex.Length != 3 && hex.Length != 4 && hex.Length != 6 && hex.Length != 8)
+            return false;
+        
+        if (hex.Length == 3 || hex.Length == 4)
+            hex = string.Concat(hex.Select(c => new string(c, 2)));
+        
+        if (!Color.TryParseHex(hex[..6], out color))
             return false;
 
-        if (value.StartsWith('#'))
+        if (hex.Length == 8)
         {
-            var hex = value[1..];
-            
-            if (hex.Length == 6 && uint.TryParse(hex, NumberStyles.HexNumber, null, out var rgb))
-            {
-                color = new Color((byte)(rgb >> 16), (byte)(rgb >> 8 & 0xFF), (byte)(rgb & 0xFF), 255);
-                return true;
-            }
-            
-            if (hex.Length == 8 && uint.TryParse(hex, NumberStyles.HexNumber, null, out var rgba))
-            {
-                color = new Color((byte)(rgba >> 24), (byte)(rgba >> 16 & 0xFF), (byte)(rgba >> 8 & 0xFF), (byte)(rgba & 0xFF));
-                return true;
-            }
+            if (!byte.TryParse(hex[6..8], NumberStyles.HexNumber, null, out var a))
+                return false;
+            color.A = a;
         }
-
-        return false;
+        
+        return true;
     }
 }

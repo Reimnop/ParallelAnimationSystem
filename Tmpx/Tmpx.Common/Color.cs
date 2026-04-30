@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Runtime.InteropServices;
 
 namespace Tmpx.Common;
@@ -48,5 +49,36 @@ public struct Color(byte r, byte g, byte b, byte a) : IEquatable<Color>
     public override int GetHashCode()
     {
         return HashCode.Combine(R, G, B, A);
+    }
+    
+    public static Color ParseHex(string hex)
+    {
+        return new Color(
+            byte.Parse(hex[..2], NumberStyles.HexNumber),
+            byte.Parse(hex[2..4], NumberStyles.HexNumber),
+            byte.Parse(hex[4..6], NumberStyles.HexNumber),
+            255
+        );
+    }
+    
+    public static bool TryParseHex(string hex, out Color color)
+    {
+        color = default;
+        
+        if (string.IsNullOrWhiteSpace(hex))
+            return false;
+        
+        if (hex.Length != 6)
+            return false;
+        
+        if (byte.TryParse(hex[..2], NumberStyles.HexNumber, null, out var r) &&
+            byte.TryParse(hex[2..4], NumberStyles.HexNumber, null, out var g) &&
+            byte.TryParse(hex[4..6], NumberStyles.HexNumber, null, out var b))
+        {
+            color = new Color(r, g, b, 255);
+            return true;
+        }
+        
+        return false;
     }
 }
