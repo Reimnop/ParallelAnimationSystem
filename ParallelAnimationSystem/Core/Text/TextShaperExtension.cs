@@ -1,5 +1,5 @@
 using System.Numerics;
-using TmpParser;
+using Tmpx.Shaping;
 
 namespace ParallelAnimationSystem.Core.Text;
 
@@ -11,14 +11,14 @@ public static class TextShaperExtension
             "NotoMono SDF",
             origin.X switch
             {
-                -0.5f => HorizontalAlignment.Right,
-                0.5f => HorizontalAlignment.Left,
-                _ => HorizontalAlignment.Center,
+                -0.5f => TextHorizontalAlignment.Right,
+                0.5f => TextHorizontalAlignment.Left,
+                _ => TextHorizontalAlignment.Center,
             },
             origin.Y switch
             {
-                -0.5f => VerticalAlignment.Top,
-                0.5f => VerticalAlignment.Bottom,
-                _ => VerticalAlignment.Center,
+                -0.5f => TextVerticalAlignment.Top,
+                0.5f => TextVerticalAlignment.Bottom,
+                _ => TextVerticalAlignment.Middle,
             });
 }

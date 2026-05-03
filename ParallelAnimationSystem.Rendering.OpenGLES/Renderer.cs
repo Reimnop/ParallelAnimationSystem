@@ -18,9 +18,10 @@ namespace ParallelAnimationSystem.Rendering.OpenGLES;
 
 public class Renderer : IRenderer, IDisposable
 {
-    private const int MaxFontsCount = 12;
     private const int MsaaSamples = 4;
     private const int MaxOverlays = 10;
+    
+    private const int FontTextureWidth = 2048;
 
     private struct MeshInfo
     {
@@ -28,17 +29,12 @@ public class Renderer : IRenderer, IDisposable
         public int IndexCount;
     }
 
-    private struct FontInfo
-    {
-        public int AtlasTextureHandle;
-    }
-    
     public struct TextInfo
     {
         public int GlyphOffset;
         public int GlyphCount;
     }
-    
+
     private struct DrawCommandWithDepth
     {
         public DrawType DrawType;
@@ -54,25 +50,26 @@ public class Renderer : IRenderer, IDisposable
     private readonly Buffer<RenderGlyph> glyphBuffer = new();
     
     private readonly List<MeshInfo> meshInfos = [];
-    private readonly FontInfo[] fontInfos = new FontInfo[MaxFontsCount];
     private readonly List<TextInfo> textInfos = [];
-    
+
     private readonly int programHandle;
-    private readonly int 
-        mvpUniformLocation, 
-        zUniformLocation, 
-        gradientRotationUniformLocation, 
-        gradientScaleUniformLocation, 
-        renderModeUniformLocation, 
-        color1UniformLocation, 
+    private readonly int
+        mvpUniformLocation,
+        zUniformLocation,
+        gradientRotationUniformLocation,
+        gradientScaleUniformLocation,
+        renderModeUniformLocation,
+        color1UniformLocation,
         color2UniformLocation;
     private readonly int glyphProgramHandle;
     private readonly int glyphMvpUniformLocation, glyphZUniformLocation, glyphBaseColorUniformLocation;
-    
-    private int mainVertexArrayHandle, mainVertexBufferHandle, mainIndexBufferHandle;
+    private readonly int glyphViewportSizeUniformLocation;
 
-    private readonly int textVertexArrayHandle, textAtlasSamplerHandle;
-    private int textInstanceBufferHandle;
+    // TMPX global font data as texture buffers (populated by UpdateFontData)
+    private int fontCurvesTextureHandle;
+    private int fontCurveIndicesTextureHandle;
+    private int fontBandEntriesTextureHandle;
+    private int fontShapeEntriesTextureHandle;
 
     private Vector2i currentFboSize;
     private int fboColorBufferHandle, fboDepthBufferHandle;
@@ -103,10 +100,15 @@ public class Renderer : IRenderer, IDisposable
     // Overlay renderers
     private readonly List<IOverlayRenderer> overlayRenderers = [];
     
+    private int mainVertexArrayHandle, mainVertexBufferHandle, mainIndexBufferHandle;
+
+    private readonly int textVertexArrayHandle;
+    private int textInstanceBufferHandle;
+
     // Dirty flags
     private bool meshBufferDirty = true;
-    private bool fontsDirty = true; // there is a way to not reload all fonts, but I'm lazy and this is not gonna be a bottleneck so who cares
     private bool textsDirty = true;
+    private bool fontBuffersDirty = true;
     
     // Injected dependencies
     private readonly AppSettings appSettings;
@@ -163,44 +165,36 @@ public class Renderer : IRenderer, IDisposable
             glyphMvpUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uMvp");
             glyphZUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uZ");
             glyphBaseColorUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uBaseColor");
-            
-            var glyphFontAtlasesUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uFontAtlases");
-            
-            // Set font atlas texture unit uniforms
-            GL.UseProgram(glyphProgramHandle);
-            for (var i = 0; i < MaxFontsCount; i++)
-                GL.Uniform1i(glyphFontAtlasesUniformLocation + i, i);
-            
-            // Create text atlas sampler
-            textAtlasSamplerHandle = GL.GenSampler();
-            GL.SamplerParameteri(textAtlasSamplerHandle, SamplerParameterI.TextureMinFilter, (int)TextureMinFilter.Linear);
-            GL.SamplerParameteri(textAtlasSamplerHandle, SamplerParameterI.TextureMagFilter, (int)TextureMagFilter.Linear);
-            GL.SamplerParameteri(textAtlasSamplerHandle, SamplerParameterI.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
-            GL.SamplerParameteri(textAtlasSamplerHandle, SamplerParameterI.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
+            glyphViewportSizeUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uViewportSize");
 
-            // Initialize text vertex array
+            // Bind texture sampler uniforms to fixed texture units
+            var curvesUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uCurves");
+            var curveIndicesUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uCurveIndices");
+            var bandEntriesUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uBandEntries");
+            var shapeEntriesUniformLocation = GL.GetUniformLocation(glyphProgramHandle, "uShapeEntries");
+
+            GL.UseProgram(glyphProgramHandle);
+            GL.Uniform1i(curvesUniformLocation, 0);
+            GL.Uniform1i(curveIndicesUniformLocation, 1);
+            GL.Uniform1i(bandEntriesUniformLocation, 2);
+            GL.Uniform1i(shapeEntriesUniformLocation, 3);
+
+            // Initialize text vertex array.
             textVertexArrayHandle = GL.GenVertexArray();
             GL.BindVertexArray(textVertexArrayHandle);
 
-            // Enable vertex attributes
-            GL.EnableVertexAttribArray(0);
-            GL.EnableVertexAttribArray(1);
-            GL.EnableVertexAttribArray(2);
-            GL.EnableVertexAttribArray(3);
-            GL.EnableVertexAttribArray(4);
-            GL.EnableVertexAttribArray(5);
-            GL.EnableVertexAttribArray(6);
-            GL.EnableVertexAttribArray(7);
+            // All attributes are per-instance (divisor=1); the 6 quad vertices come from gl_VertexID.
+            GL.EnableVertexAttribArray(0);  // transform col 0
+            GL.EnableVertexAttribArray(1);  // transform col 1
+            GL.EnableVertexAttribArray(2);  // transform col 2
+            GL.EnableVertexAttribArray(3);  // color
+            GL.EnableVertexAttribArray(4);  // shapeEntryIndex
 
-            // Divisors
             GL.VertexAttribDivisor(0, 1);
             GL.VertexAttribDivisor(1, 1);
             GL.VertexAttribDivisor(2, 1);
             GL.VertexAttribDivisor(3, 1);
             GL.VertexAttribDivisor(4, 1);
-            GL.VertexAttribDivisor(5, 1);
-            GL.VertexAttribDivisor(6, 1);
-            GL.VertexAttribDivisor(7, 1);
 
             // Initialize FBO
             fboColorBufferHandle = GL.GenRenderbuffer();
@@ -305,10 +299,9 @@ public class Renderer : IRenderer, IDisposable
         #endregion
         
         // Subscribe to events
+        this.renderingFactory.FontBuffersUpdated += OnFontBuffersUpdated;
         this.renderingFactory.Meshes.ItemInserted += OnMeshInserted;
         this.renderingFactory.Meshes.ItemRemoved += OnMeshRemoved;
-        this.renderingFactory.Fonts.ItemInserted += OnFontInserted;
-        this.renderingFactory.Fonts.ItemRemoved += OnFontRemoved;
         this.renderingFactory.Texts.ItemInserted += OnTextInserted;
         this.renderingFactory.Texts.ItemRemoved += OnTextRemoved;
     }
@@ -318,10 +311,9 @@ public class Renderer : IRenderer, IDisposable
         logger.LogInformation("Disposing OpenGL ES renderer");
         
         // Unsubscribe from events
+        renderingFactory.FontBuffersUpdated -= OnFontBuffersUpdated;
         renderingFactory.Meshes.ItemInserted -= OnMeshInserted;
         renderingFactory.Meshes.ItemRemoved -= OnMeshRemoved;
-        renderingFactory.Fonts.ItemInserted -= OnFontInserted;
-        renderingFactory.Fonts.ItemRemoved -= OnFontRemoved;
         renderingFactory.Texts.ItemInserted -= OnTextInserted;
         renderingFactory.Texts.ItemRemoved -= OnTextRemoved;
         
@@ -337,8 +329,12 @@ public class Renderer : IRenderer, IDisposable
         
         GL.DeleteBuffer(textInstanceBufferHandle);
         GL.DeleteVertexArray(textVertexArrayHandle);
-        GL.DeleteSampler(textAtlasSamplerHandle);
         
+        GL.DeleteTexture(fontCurvesTextureHandle);
+        GL.DeleteTexture(fontCurveIndicesTextureHandle);
+        GL.DeleteTexture(fontBandEntriesTextureHandle);
+        GL.DeleteTexture(fontShapeEntriesTextureHandle);
+
         GL.DeleteRenderbuffer(fboColorBufferHandle);
         GL.DeleteRenderbuffer(fboDepthBufferHandle);
         GL.DeleteFramebuffer(fboHandle);
@@ -346,15 +342,6 @@ public class Renderer : IRenderer, IDisposable
         GL.DeleteTexture(postProcessTextureHandle1);
         GL.DeleteTexture(postProcessTextureHandle2);
         GL.DeleteFramebuffer(postProcessFboHandle);
-        
-        // Delete font atlas textures
-        foreach (var fontInfo in fontInfos)
-        {
-            if (fontInfo.AtlasTextureHandle == 0)
-                continue;
-            
-            GL.DeleteTexture(fontInfo.AtlasTextureHandle);
-        }
         
         GL.DeleteSampler(overlaySampler);
         GL.DeleteTexture(overlayTexture);
@@ -369,7 +356,12 @@ public class Renderer : IRenderer, IDisposable
         grain.Dispose();
         uberPost.Dispose();
     }
-    
+
+    private void OnFontBuffersUpdated(object? sender, EventArgs e)
+    {
+        fontBuffersDirty = true;
+    }
+
     private void OnTextInserted(object? sender, ObservableSparseSetEventArgs<Text> e)
     {
         textsDirty = true;
@@ -378,16 +370,6 @@ public class Renderer : IRenderer, IDisposable
     private void OnTextRemoved(object? sender, ObservableSparseSetEventArgs<Text> e)
     {
         textsDirty = true;
-    }
-    
-    private void OnFontInserted(object? sender, ObservableSparseSetEventArgs<Font> e)
-    {
-        fontsDirty = true;
-    }
-    
-    private void OnFontRemoved(object? sender, ObservableSparseSetEventArgs<Font> e)
-    {
-        fontsDirty = true;
     }
     
     private void OnMeshInserted(object? sender, ObservableSparseSetEventArgs<Mesh> e)
@@ -463,17 +445,24 @@ public class Renderer : IRenderer, IDisposable
         // Bind FBO
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, fboHandle);
         
-        // Bind atlas texture
-        for (var i = 0; i < fontInfos.Length; i++)
-        {
-            ref var fontInfo = ref fontInfos[i];
-            if (fontInfo.AtlasTextureHandle == 0)
-                continue;
-            
-            GL.ActiveTexture((TextureUnit)((int) TextureUnit.Texture0 + i));
-            GL.BindTexture(TextureTarget.Texture2d, fontInfo.AtlasTextureHandle);
-            GL.BindSampler((uint) i, textAtlasSamplerHandle);
-        }
+        // Get rid of samplers
+        GL.BindSampler(0, 0);
+        GL.BindSampler(1, 0);
+        GL.BindSampler(2, 0);
+        GL.BindSampler(3, 0);
+        
+        // Bind the four TMPX texture buffers to texture units 0-3
+        GL.ActiveTexture(TextureUnit.Texture0);
+        GL.BindTexture(TextureTarget.Texture2d, fontCurvesTextureHandle);
+        
+        GL.ActiveTexture(TextureUnit.Texture1);
+        GL.BindTexture(TextureTarget.Texture2d, fontCurveIndicesTextureHandle);
+        
+        GL.ActiveTexture(TextureUnit.Texture2);
+        GL.BindTexture(TextureTarget.Texture2d, fontBandEntriesTextureHandle);
+        
+        GL.ActiveTexture(TextureUnit.Texture3);
+        GL.BindTexture(TextureTarget.Texture2d, fontShapeEntriesTextureHandle);
         
         // Clear the screen
         GL.Viewport(0, 0, renderSize.X, renderSize.Y);
@@ -681,39 +670,36 @@ public class Renderer : IRenderer, IDisposable
                 {
                     ref var textDrawItem = ref drawData.TextDrawItems[drawCommand.DrawId];
                     ref var textInfo = ref textInfosSpan[textDrawItem.TextHandle.Id];
-                    
+
+                    if (textInfo.GlyphCount == 0)
+                        break;
+
                     var mvp = textDrawItem.Transform * camera;
-                    
-                    // Use our program
+
                     GL.UseProgram(glyphProgramHandle);
-                    
+
                     unsafe
                     {
                         GL.UniformMatrix3x2fv(glyphMvpUniformLocation, 1, false, (float*)&mvp);
                     }
                     GL.Uniform1f(glyphZUniformLocation, drawCommand.Depth);
+                    GL.Uniform4f(glyphBaseColorUniformLocation,
+                        textDrawItem.Color.R, textDrawItem.Color.G,
+                        textDrawItem.Color.B, textDrawItem.Color.A);
+                    GL.Uniform2f(glyphViewportSizeUniformLocation, currentFboSize.X, currentFboSize.Y);
                     
-                    // Set color
-                    GL.Uniform4f(glyphBaseColorUniformLocation, textDrawItem.Color.R, textDrawItem.Color.G, textDrawItem.Color.B, textDrawItem.Color.A);
-                    
-                    // Bind our VAO
                     GL.BindVertexArray(textVertexArrayHandle);
-                    
-                    // Set instance offsets
                     GL.BindBuffer(BufferTarget.ArrayBuffer, textInstanceBufferHandle);
+
+                    var stride = Unsafe.SizeOf<RenderGlyph>();
+                    var baseOff = textInfo.GlyphOffset * stride;
+
+                    GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, stride, baseOff);
+                    GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, stride, baseOff + 8);
+                    GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, stride, baseOff + 16);
+                    GL.VertexAttribPointer(3, 4, VertexAttribPointerType.Float, false, stride, baseOff + 24);
+                    GL.VertexAttribIPointer(4, 1, VertexAttribIType.Int, stride, baseOff + 40);
                     
-                    var renderGlyphSize = Unsafe.SizeOf<RenderGlyph>();
-                    var instanceOffset = textInfo.GlyphOffset * renderGlyphSize;
-                    GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, renderGlyphSize, instanceOffset); // Min
-                    GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, renderGlyphSize, instanceOffset + 8); // Max
-                    GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, renderGlyphSize, instanceOffset + 16); // MinUV
-                    GL.VertexAttribPointer(3, 2, VertexAttribPointerType.Float, false, renderGlyphSize, instanceOffset + 24); // MaxUV
-                    GL.VertexAttribPointer(4, 4, VertexAttribPointerType.Float, false, renderGlyphSize, instanceOffset + 32); // Color
-                    GL.VertexAttribPointer(5, 1, VertexAttribPointerType.Float, false, renderGlyphSize, instanceOffset + 48); // Rotation
-                    GL.VertexAttribIPointer(6, 1, VertexAttribIType.Int, renderGlyphSize, instanceOffset + 52); // BoldItalic
-                    GL.VertexAttribIPointer(7, 1, VertexAttribIType.Int, renderGlyphSize, instanceOffset + 56); // FontId
-                    
-                    // Draw
                     GL.DrawArraysInstanced(PrimitiveType.Triangles, 0, 6, textInfo.GlyphCount);
                     break;
                 }
@@ -792,45 +778,128 @@ public class Renderer : IRenderer, IDisposable
     
     private void UpdateFontData()
     {
-        if (!fontsDirty)
+        if (!fontBuffersDirty)
             return;
         
-        fontsDirty = false;
+        fontBuffersDirty = false;
         
-        // Free all existing font atlas textures
-        foreach (ref var fontInfo in fontInfos.AsSpan())
+        // Upload curves buffer
+        if (fontCurvesTextureHandle != 0)
+            GL.DeleteTexture(fontCurvesTextureHandle);
+        
+        if (renderingFactory.FontCurves.Length > 0)
         {
-            if (fontInfo.AtlasTextureHandle == 0)
-                continue;
+            fontCurvesTextureHandle = GL.GenTexture();
+            GL.BindTexture(TextureTarget.Texture2d, fontCurvesTextureHandle);
             
-            GL.DeleteTexture(fontInfo.AtlasTextureHandle);
-            fontInfo.AtlasTextureHandle = 0;
+            // each curve takes exactly 3 texels
+            var texWidth = FontTextureWidth;
+            var texHeight = (renderingFactory.FontCurves.Length * 3 + FontTextureWidth - 1) / FontTextureWidth; // Round up division
+            GL.TexStorage2D(TextureTarget.Texture2d, 1, SizedInternalFormat.Rg32f, texWidth, texHeight);
+            GL.TexParameteri(TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameteri(TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+
+            var bufSize = texWidth * texHeight * 2 * sizeof(float);
+            var buf = new byte[bufSize];
+            var fontCurvesSpan = MemoryMarshal.AsBytes(renderingFactory.FontCurves);
+            fontCurvesSpan.CopyTo(buf);
+            
+            GL.TexSubImage2D(TextureTarget.Texture2d, 0, 0, 0, texWidth, texHeight, PixelFormat.Rg, PixelType.Float, buf); 
+        }
+        
+        // Upload curve indices buffer
+        if (fontCurveIndicesTextureHandle != 0)
+            GL.DeleteTexture(fontCurveIndicesTextureHandle);
+
+        if (renderingFactory.FontCurveIndices.Length > 0)
+        {
+            fontCurveIndicesTextureHandle = GL.GenTexture();
+            GL.BindTexture(TextureTarget.Texture2d, fontCurveIndicesTextureHandle);
+
+            // each curve index takes exactly 1 texel
+            var texWidth = FontTextureWidth;
+            var texHeight = (renderingFactory.FontCurveIndices.Length + FontTextureWidth - 1) / FontTextureWidth; // Round up division
+            GL.TexStorage2D(TextureTarget.Texture2d, 1, SizedInternalFormat.R32i, texWidth, texHeight);
+            GL.TexParameteri(TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameteri(TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+            
+            var bufSize = texWidth * texHeight * sizeof(int);
+            var buf = new byte[bufSize];
+            var fontCurveIndicesSpan = MemoryMarshal.AsBytes(renderingFactory.FontCurveIndices);
+            fontCurveIndicesSpan.CopyTo(buf);
+            
+            GL.TexSubImage2D(TextureTarget.Texture2d, 0, 0, 0, texWidth, texHeight, PixelFormat.RedInteger, PixelType.Int, buf);
+        }
+        
+        // Upload band entries buffer
+        if (fontBandEntriesTextureHandle != 0)
+            GL.DeleteTexture(fontBandEntriesTextureHandle);
+        
+        if (renderingFactory.FontBandEntries.Length > 0)
+        {
+            fontBandEntriesTextureHandle = GL.GenTexture();
+            GL.BindTexture(TextureTarget.Texture2d, fontBandEntriesTextureHandle);
+            
+            // each band entry takes exactly 1 texel
+            var texWidth = FontTextureWidth;
+            var texHeight = (renderingFactory.FontBandEntries.Length + FontTextureWidth - 1) / FontTextureWidth; // Round up division
+            GL.TexStorage2D(TextureTarget.Texture2d, 1, SizedInternalFormat.Rg32i, texWidth, texHeight);
+            GL.TexParameteri(TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameteri(TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+            
+            var bufSize = texWidth * texHeight * 2 * sizeof(int);
+            var buf = new byte[bufSize];
+            var fontBandEntriesSpan = MemoryMarshal.AsBytes(renderingFactory.FontBandEntries);
+            fontBandEntriesSpan.CopyTo(buf);
+            
+            GL.TexSubImage2D(TextureTarget.Texture2d, 0, 0, 0, texWidth, texHeight, PixelFormat.RgInteger, PixelType.Int, buf);
+        }
+        
+        // Upload shape entries buffer
+        if (fontShapeEntriesTextureHandle != 0)
+            GL.DeleteTexture(fontShapeEntriesTextureHandle);
+
+        if (renderingFactory.FontShapeEntries.Length > 0)
+        {
+            fontShapeEntriesTextureHandle = GL.GenTexture();
+            GL.BindTexture(TextureTarget.Texture2d, fontShapeEntriesTextureHandle);
+
+            // each shape entry takes exactly 4 texel
+            var texWidth = FontTextureWidth;
+            var texHeight = (renderingFactory.FontShapeEntries.Length * 4 + FontTextureWidth - 1) / FontTextureWidth; // Round up division
+            GL.TexStorage2D(TextureTarget.Texture2d, 1, SizedInternalFormat.Rgba32ui, texWidth, texHeight);
+            GL.TexParameteri(TextureTarget.Texture2d, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.Nearest);
+            GL.TexParameteri(TextureTarget.Texture2d, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Nearest);
+            
+            var gpuShapeEntries = renderingFactory.FontShapeEntries.Select(x => new GpuShapeEntry
+            {
+                HorizontalBandEntryBaseIndex = x.HorizontalBandEntryBaseIndex,
+                HorizontalBandEntryCount = x.HorizontalBandEntryCount,
+                HorizontalBandScale = x.HorizontalBandScale,
+                HorizontalBandOffset = x.HorizontalBandOffset,
+                VerticalBandEntryBaseIndex = x.VerticalBandEntryBaseIndex,
+                VerticalBandEntryCount = x.VerticalBandEntryCount,
+                VerticalBandScale = x.VerticalBandScale,
+                VerticalBandOffset = x.VerticalBandOffset,
+                Min = x.Min,
+                Max = x.Max,
+                Color = x.Color
+            }).ToArray();
+            
+            var bufSize = texWidth * texHeight * 4 * sizeof(uint);
+            var buf = new byte[bufSize];
+            var fontShapeEntriesSpan = MemoryMarshal.AsBytes(gpuShapeEntries);
+            fontShapeEntriesSpan.CopyTo(buf);
+            
+            GL.TexSubImage2D(TextureTarget.Texture2d, 0, 0, 0, texWidth, texHeight, PixelFormat.RgbaInteger, PixelType.UnsignedInt, buf);
         }
 
-        // Rebuild font atlases
-        if (renderingFactory.Fonts.Count > 0)
-        {
-            var maxId = renderingFactory.Fonts.Select(x => x.Key).Max();
-            if (maxId >= fontInfos.Length)
-                throw new InvalidOperationException($"Exceeded maximum number of fonts ({fontInfos.Length}) supported by the renderer");
-            
-            foreach (var (id, font) in renderingFactory.Fonts)
-            {
-                GL.PixelStorei(PixelStoreParameter.UnpackAlignment, 2);
-            
-                // Create texture
-                var atlasHandle = GL.GenTexture();
-                GL.BindTexture(TextureTarget.Texture2d, atlasHandle);
-                GL.TexStorage2D(TextureTarget.Texture2d, 1, SizedInternalFormat.Rgb16f, font.Width, font.Height);
-                GL.TexSubImage2D(TextureTarget.Texture2d, 0, 0, 0, font.Width, font.Height, PixelFormat.Rgb, PixelType.HalfFloat, font.Atlas);
-            
-                // Put it in our font info list
-                ref var fontInfo = ref fontInfos[id];
-                fontInfo.AtlasTextureHandle = atlasHandle;
-            }
-        }
-        
-        logger.LogInformation("Font atlases updated, registered {FontCount} fonts", renderingFactory.Fonts.Count);
+        logger.LogInformation(
+            "Font buffers updated, registered {Curves} curves, {CurveIndices} curve indices, {Bands} band entries, {Shapes} shape entries",
+            renderingFactory.FontCurves.Length,
+            renderingFactory.FontCurveIndices.Length,
+            renderingFactory.FontBandEntries.Length,
+            renderingFactory.FontShapeEntries.Length);
     }
 
     private void UpdateTextData()

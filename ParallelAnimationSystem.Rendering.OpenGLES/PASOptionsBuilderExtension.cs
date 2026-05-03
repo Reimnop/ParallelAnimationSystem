@@ -21,9 +21,9 @@ public static class PASOptionsBuilderExtension
 
         services.AddSingleton(new OpenGLSettings
         {
-            MajorVersion = 4,
-            MinorVersion = 6,
-            IsES = false
+            MajorVersion = 3,
+            MinorVersion = 0,
+            IsES = true
         });
         
         builder.UseResourceSourceFactory(() => new EmbeddedResourceSource(typeof(PASOptionsBuilderExtension).Assembly));

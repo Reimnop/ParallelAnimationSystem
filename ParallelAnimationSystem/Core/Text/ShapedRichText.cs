@@ -1,37 +1,20 @@
 ﻿using System.Numerics;
 using ParallelAnimationSystem.Core.Data;
-using ParallelAnimationSystem.Rendering;
-using ParallelAnimationSystem.Rendering.Handle;
 
 namespace ParallelAnimationSystem.Core.Text;
 
-public class ShapedTextGlyph(
-    Vector2 min, Vector2 max,
-    Vector2 minUV, Vector2 maxUV,
-    ColorRgba color, float rotation,
-    BoldItalic boldItalic,
-    FontHandle? font)
+/// <summary>
+/// One placed glyph (or mark rectangle when <see cref="ShapeEntryIndex"/> == -1) produced by the shaper.
+/// <see cref="ShapeEntryIndex"/> is already in global buffer space — FontService remaps per-font-local
+/// indices to global ones during shaping so the renderer never needs to know about fonts at all.
+/// </summary>
+public struct ShapedTextGlyph(Matrix3x2 transform, ColorRgba color, int shapeEntryIndex)
 {
-    public Vector2 Min { get; set; } = min;
-    public Vector2 Max { get; set; } = max;
-    public Vector2 MinUV { get; set; } = minUV;
-    public Vector2 MaxUV { get; set; } = maxUV;
-    public ColorRgba Color { get; set; } = color;
-    public float Rotation { get; set; } = rotation;
-    public BoldItalic BoldItalic { get; set; } = boldItalic;
-    public FontHandle? Font { get; set; } = font;
-    
-    public ShapedTextGlyph(
-        float minX, float minY, float maxX, float maxY,
-        float minU, float minV, float maxU, float maxV,
-        ColorRgba color, float rotation, BoldItalic boldItalic,
-        FontHandle? font)
-        : this(new Vector2(minX, minY), new Vector2(maxX, maxY), 
-            new Vector2(minU, minV), new Vector2(maxU, maxV), 
-            color, rotation, boldItalic,
-            font)
-    {
-    }
+    public Matrix3x2 Transform = transform;
+    public ColorRgba Color = color;
+
+    /// <summary>Global index into the renderer's shape-entry buffer. -1 = mark rectangle.</summary>
+    public int ShapeEntryIndex = shapeEntryIndex;
 }
 
 public class ShapedRichText

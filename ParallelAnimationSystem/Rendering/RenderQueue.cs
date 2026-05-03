@@ -3,6 +3,7 @@ using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Core.Text;
 using ParallelAnimationSystem.Rendering.Data;
 using ParallelAnimationSystem.Rendering.Handle;
+using Tmpx.Common;
 
 namespace ParallelAnimationSystem.Rendering;
 
@@ -62,13 +63,9 @@ public class RenderQueue(IRenderingFactory renderingFactory) : IRenderQueue
 
         public void Reset()
         {
-            CameraState = new CameraState
-            {
-                Scale = 10f
-            };
+            CameraState = new CameraState { Scale = 10f };
             PostProcessingState = default;
             ClearColor = new ColorRgba(0.0f, 0.0f, 0.0f, 1.0f);
-
             meshDrawItemCount = 0;
             textDrawItemCount = 0;
             drawCommandCount = 0;
@@ -87,46 +84,32 @@ public class RenderQueue(IRenderingFactory renderingFactory) : IRenderQueue
 
         private static void EnsureIndexExists<T>(ref T[] drawItems, int index) where T : struct
         {
-            if (index < drawItems.Length)
-                return;
-
-            // add new item if index exceeds current count
+            if (index < drawItems.Length) return;
             var newSize = Math.Max(drawItems.Length * 2, index + 1);
             Array.Resize(ref drawItems, newSize);
         }
     }
-    
+
     private readonly DrawList drawList = new();
 
     public MeshHandle CreateMesh(ReadOnlySpan<Vector2> vertices, ReadOnlySpan<int> indices)
-    {
-        return renderingFactory.CreateMesh(vertices, indices);
-    }
+        => renderingFactory.CreateMesh(vertices, indices);
 
     public void DestroyMesh(MeshHandle handle)
-    {
-        renderingFactory.DestroyMesh(handle);
-    }
+        => renderingFactory.DestroyMesh(handle);
 
-    public FontHandle CreateFont(int width, int height, ReadOnlySpan<byte> atlas)
-    {
-        return renderingFactory.CreateFont(width, height, atlas);
-    }
-
-    public void DestroyFont(FontHandle handle)
-    {
-        renderingFactory.DestroyFont(handle);
-    }
+    public void SetFontBuffers(
+        ReadOnlySpan<QuadraticCurve> curves,
+        ReadOnlySpan<int> curveIndices,
+        ReadOnlySpan<BandEntry> bandEntries,
+        ReadOnlySpan<ShapeEntry> shapeEntries)
+        => renderingFactory.SetFontBuffers(curves, curveIndices, bandEntries, shapeEntries);
 
     public TextHandle CreateText(ShapedRichText richText)
-    {
-        return renderingFactory.CreateText(richText);
-    }
+        => renderingFactory.CreateText(richText);
 
     public void DestroyText(TextHandle handle)
-    {
-        renderingFactory.DestroyText(handle);
-    }
+        => renderingFactory.DestroyText(handle);
 
     public IDrawList GetDrawList()
     {
@@ -134,13 +117,8 @@ public class RenderQueue(IRenderingFactory renderingFactory) : IRenderQueue
         return drawList;
     }
 
-    public void SubmitDrawList(IDrawList drawList)
-    {
-        // do nothing
-    }
+    public void SubmitDrawList(IDrawList drawList) { /* no-op for synchronous path */ }
 
     public void ProcessFrame(IRenderer renderer)
-    {
-        renderer.ProcessFrame(drawList);
-    }
+        => renderer.ProcessFrame(drawList);
 }

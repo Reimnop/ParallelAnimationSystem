@@ -4,8 +4,9 @@ namespace Tmpx.Shaping;
 
 public class StyleStateStack(
     IFontResolver fontResolver,
-    TextHorizontalAlignment defaultAlignment,
-    string defaultFontName)
+    FontFallbackChainRegistry fallbackChainRegistry,
+    string defaultFontName,
+    TextHorizontalAlignment defaultAlignment)
 {
     private readonly Stack<TextHorizontalAlignment> alignments = new();
     private readonly Stack<string> fontNames = new();
@@ -20,26 +21,24 @@ public class StyleStateStack(
     private int italicDepth;
     
     private GlyphTransform currentTransform = GlyphTransform.Identity;
-
-    public IFont CurrentFont
+    
+    public IReadOnlyList<IFont> CurrentFontChain
     {
         get
         {
-            if (cachedFont != null)
-                return cachedFont;
+            if (cachedFontChain != null)
+                return cachedFontChain; 
             
-            if (fontResolver.TryResolve(CurrentFontName, CurrentFontStyle, out var font) || 
-                fontResolver.TryResolve(CurrentFontName, FontStyle.Regular, out font) ||
-                fontResolver.TryResolve(defaultFontName, CurrentFontStyle, out font) ||
-                fontResolver.TryResolve(defaultFontName, FontStyle.Regular, out font))
-            {
-                cachedFont = font;
-                return font;
-            }
-
-            throw new InvalidOperationException($"Neither the current font '{CurrentFontName}' nor the default font '{defaultFontName}' could be resolved.");
+            var fontNames = fallbackChainRegistry.GetFontNames(CurrentFontName);
+            cachedFontChain = fontNames
+                .Select(family => ResolveFont(family, CurrentFontStyle))
+                .ToList();
+            
+            return cachedFontChain;
         }
     }
+    
+    public IFont CurrentFont => CurrentFontChain[0];
     
     public GlyphTransform CurrentTransform => currentTransform;
     public TextHorizontalAlignment CurrentAlignment => alignments.TryPeek(out var a) ? a : defaultAlignment;
@@ -67,9 +66,21 @@ public class StyleStateStack(
         (boldDepth   > 0 ? FontStyle.Bold   : FontStyle.Regular) |
         (italicDepth > 0 ? FontStyle.Italic : FontStyle.Regular);
 
-    private IFont? cachedFont;
+    private IReadOnlyList<IFont>? cachedFontChain;
     private float? lineHeight;
     private byte currentAlpha = 255;
+
+    private IFont ResolveFont(string family, FontStyle style)
+    {
+        if (fontResolver.TryResolve(family, style, out var font))
+            return font;
+        
+        // can't find font, find its regular style as a fallback
+        if (style != FontStyle.Regular && fontResolver.TryResolve(family, FontStyle.Regular, out font))
+            return font;
+        
+        throw new InvalidOperationException($"Could not resolve font '{family}'");
+    }
     
     public void SetTransform(GlyphTransform transform) 
         => currentTransform = transform;
@@ -89,27 +100,27 @@ public class StyleStateStack(
     public void PushBold()
     {
         boldDepth++;
-        cachedFont = null;
+        cachedFontChain = null;
     }
 
     public void PopBold()
     {
         if (boldDepth > 0)
             boldDepth--;
-        cachedFont = null;
+        cachedFontChain = null;
     }
 
     public void PushItalic()
     {
         italicDepth++;
-        cachedFont = null;
+        cachedFontChain = null;
     }
 
     public void PopItalic()
     {
         if (italicDepth > 0)
             italicDepth--;
-        cachedFont = null;
+        cachedFontChain = null;
     }
 
     public void PushColor(Color color) 
@@ -187,13 +198,13 @@ public class StyleStateStack(
     public void PushFontName(string fontName)
     {
         fontNames.Push(fontName);
-        cachedFont = null;
+        cachedFontChain = null;
     }
 
     public void PopFontName()
     {
         if (fontNames.Count > 0) 
             fontNames.Pop();
-        cachedFont = null;
+        cachedFontChain = null;
     }
 }

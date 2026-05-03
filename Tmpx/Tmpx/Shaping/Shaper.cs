@@ -7,7 +7,7 @@ namespace Tmpx.Shaping;
 
 public delegate void ShapeEmitter(Matrix3x2 transform, Color color, IFont? font, int shapeEntryIndex);
 
-public class Shaper(IFontResolver resolver, float unitsPerEm = 16f)
+public class Shaper(IFontResolver resolver, FontFallbackChainRegistry fallbackChainRegistry, float unitsPerEm = 16f)
 {
     private static readonly Dictionary<string, Color> KnownColors = new()
     {
@@ -55,8 +55,9 @@ public class Shaper(IFontResolver resolver, float unitsPerEm = 16f)
         
         var stack = new StyleStateStack(
             resolver,
-            horizontalAlignment,
-            defaultFontName);
+            fallbackChainRegistry,
+            defaultFontName,
+            horizontalAlignment);
         var cursorY = 0f;
         
         var collectedLines = new List<Line>();
@@ -178,7 +179,7 @@ public class Shaper(IFontResolver resolver, float unitsPerEm = 16f)
 
     private void ShapeText(string text, StyleStateStack stack, Line line)
     {
-        var font = stack.CurrentFont;
+        var fontChain = stack.CurrentFontChain;
         var size = stack.CurrentSize;
         var color = stack.CurrentColor;
 
@@ -192,12 +193,25 @@ public class Shaper(IFontResolver resolver, float unitsPerEm = 16f)
                 TextTransform.SmallCaps => char.ToUpper(c),
                 _ => c
             };
-            
+
             var smallCapsMultiplier = transform == TextTransform.SmallCaps && char.IsLower(c) ? 0.8f : 1f;
-            
-            if (!font.TryGetGlyph(lookupChar, out var glyph)) 
+
+            // Walk the fallback chain: use the first font in the chain that has a glyph for this character
+            IFont? font = null;
+            IGlyph? glyph = null;
+            foreach (var candidate in fontChain)
+            {
+                if (candidate.TryGetGlyph(lookupChar, out var candidateGlyph))
+                {
+                    font = candidate;
+                    glyph = candidateGlyph;
+                    break;
+                }
+            }
+
+            if (font is null || glyph is null)
                 continue;
-            
+
             var effectiveSize = size * smallCapsMultiplier;
             
             line.Glyphs.Add(new PendingGlyph
@@ -217,7 +231,7 @@ public class Shaper(IFontResolver resolver, float unitsPerEm = 16f)
             float advance;
             if (stack.CurrentMSpace is { } mspace)
             {
-                var monoAdvance = mspace / 2f - (glyph.AdvanceWidth / 2f + 0f) * effectiveSize; // center glyph in slot
+                var monoAdvance = mspace / 2f - glyph.AdvanceWidth / 2f * effectiveSize; // center glyph in slot
                 line.Glyphs[^1].Position += new Vector2(monoAdvance, 0f);  // shift glyph position
                 advance = mspace + stack.CurrentCSpace;
             }
@@ -247,6 +261,10 @@ public class Shaper(IFontResolver resolver, float unitsPerEm = 16f)
                 else 
                     stack.PushItalic();
                 return true;
+            case "u":
+                // Underline is recognized but not rendered. Consume the tag silently so it doesn't
+                // get echoed back as raw text by the fallback path in Shape().
+                return true;
             case "color":
                 if (tag.IsClosing)
                 {
@@ -272,8 +290,13 @@ public class Shaper(IFontResolver resolver, float unitsPerEm = 16f)
                     stack.PopMark(); 
                     return true;
                 }
+
+                if (string.IsNullOrWhiteSpace(tag.Value))
+                    return true;
+                
                 if (!TryParseColor(tag.Value, out var markColor)) 
                     return false;
+                
                 stack.PushMark(markColor);
                 return true;
             case "size":
@@ -295,6 +318,9 @@ public class Shaper(IFontResolver resolver, float unitsPerEm = 16f)
                 if (string.IsNullOrWhiteSpace(tag.Value)) 
                     return false;
                 stack.PushFontName(tag.Value);
+                return true;
+            case "material":
+                // boo boo bad material tag, consume, ignore
                 return true;
             case "align":
                 if (tag.IsClosing)

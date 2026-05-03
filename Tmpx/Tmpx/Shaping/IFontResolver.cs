@@ -5,5 +5,5 @@ namespace Tmpx.Shaping;
 
 public interface IFontResolver
 {
-    bool TryResolve(string family, FontStyle style, [MaybeNullWhen(false)] out IFont font);
+    bool TryResolve(string name, FontStyle style, [MaybeNullWhen(false)] out IFont font);
 }

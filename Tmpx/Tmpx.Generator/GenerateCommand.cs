@@ -27,12 +27,42 @@ public class GenerateCommand
     public required string OutputPath { get; set; }
     
     [CliOption(
-        Description = "Character range to include in the output font, in the format 'U+XXXX-U+YYYY' (inclusive). " +
-                      "Can be specified multiple times for multiple ranges.",
+        Description = "Character range(s) to include in the output font. " +
+                      "Each value can be a single codepoint ('U+0021'), an inclusive range ('U+0020-U+007E'), " +
+                      "or a comma-separated list of either ('U+0021,U+00A4-U+00FF,U+25A0-U+25E0'). " +
+                      "Can be specified multiple times.",
         Name = "character-range",
         Alias = "c",
         Required = true)]
     public List<string> CharacterRanges { get; set; } = [];
+    
+    [CliOption(
+        Description = "Whether to apply a fake italic transformation to the glyphs.",
+        Name = "fake-italic",
+        Alias = "fi",
+        Required = false)]
+    public bool FakeItalic { get; set; }
+    
+    [CliOption(
+        Description = "Whether to embolden the glyphs.",
+        Name = "fake-bold",
+        Alias = "fb",
+        Required = false)]
+    public bool FakeBold { get; set; }
+    
+    [CliOption(
+        Description = "Family name of the generated font, set to override the name in the input font file.",
+        Name = "family-name",
+        Alias = "fn",
+        Required = false)]
+    public string? FamilyName { get; set; }
+    
+    [CliOption(
+        Description = "Style name of the generated font, set to override the style name in the input font file.",
+        Name = "style-name",
+        Alias = "sn",
+        Required = false)]
+    public string? StyleName { get; set; }
     
     [CliOption(
         Description = "Amount of horizontal and vertical bands to split each glyph into. " +
@@ -44,8 +74,8 @@ public class GenerateCommand
 
     public void Run()
     {
-        // parse character ranges
-        var characterRanges = CharacterRanges.Select(CharacterRange.FromString).ToList();
+        // parse character ranges (each entry may itself be a comma-separated list)
+        var characterRanges = CharacterRanges.SelectMany(CharacterRange.ParseList).ToList();
         
         // load freetype
         var library = new Library();
@@ -69,17 +99,39 @@ public class GenerateCommand
             face.LoadGlyph(glyphIndex, LoadFlags.NoScale | LoadFlags.NoHinting, LoadTarget.Normal);
             
             var glyph = face.Glyph;
+            
+            var outline = glyph.Outline;
+            
+            if (FakeItalic)
+            {
+                outline.Transform(new FTMatrix
+                {
+                    XX = Fixed16Dot16.FromSingle(1f),
+                    XY = Fixed16Dot16.FromSingle(0.21f),
+                    YX = Fixed16Dot16.FromSingle(0f),
+                    YY = Fixed16Dot16.FromSingle(1f)
+                });
+            }
+            
+            if (FakeBold)
+            {
+                outline.Embolden(Fixed26Dot6.FromRawValue((int)(unitsPerEm * 0.03f)));
+            }
+            
             var glyphMetrics = glyph.Metrics;
+
+            var bbox = outline.GetBBox();
             
             var min = new Vector2(
-                glyphMetrics.HorizontalBearingX.Value / unitsPerEm,
-                (glyphMetrics.HorizontalBearingY - glyphMetrics.Height).Value / unitsPerEm);
+                bbox.Left / unitsPerEm,
+                bbox.Bottom / unitsPerEm);
             var max = new Vector2(
-                (glyphMetrics.HorizontalBearingX + glyphMetrics.Width).Value / unitsPerEm,
-                glyphMetrics.HorizontalBearingY.Value / unitsPerEm);
+                bbox.Right / unitsPerEm,
+                bbox.Top / unitsPerEm);
+            
             var advanceWidth = glyphMetrics.HorizontalAdvance.Value / unitsPerEm;
             
-            if (glyph.Outline.ContoursCount == 0)
+            if (outline.ContoursCount == 0)
             {
                 glyphMap[codepoint] = new Glyph
                 {
@@ -89,7 +141,6 @@ public class GenerateCommand
                 continue;
             }
             
-            var outline = glyph.Outline;
             var glyphCurves = CurveExtractor.FromOutline(outline, unitsPerEm);
             BandAccelerator.Process(
                 glyphCurves, 
@@ -112,8 +163,8 @@ public class GenerateCommand
         // write to file
         var font = new Font
         {
-            FamilyName = face.FamilyName,
-            StyleName = face.StyleName,
+            FamilyName = FamilyName ?? face.FamilyName,
+            StyleName = StyleName ?? face.StyleName,
             Metrics = new FontMetrics
             {
                 Ascender = face.Ascender / unitsPerEm,

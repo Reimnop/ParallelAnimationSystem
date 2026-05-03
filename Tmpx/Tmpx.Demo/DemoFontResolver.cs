@@ -5,7 +5,7 @@ namespace Tmpx.Demo;
 
 public class DemoFontResolver(Font font) : IFontResolver
 {
-    public bool TryResolve(string family, FontStyle style, out IFont font1)
+    public bool TryResolve(string name, FontStyle style, out IFont font1)
     {
         font1 = font;
         return true;

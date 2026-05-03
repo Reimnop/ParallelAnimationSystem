@@ -2,10 +2,6 @@
   <Folder Name="/Pamx/">
     <Project Path="Pamx/Pamx/Pamx.csproj" />
   </Folder>
-  <Folder Name="/TmpEmulation/">
-    <Project Path="TmpEmulation/TmpIO/TmpIO.csproj" />
-    <Project Path="TmpEmulation/TmpParser/TmpParser.csproj" />
-  </Folder>
   <Folder Name="/Tmpx/">
     <Project Path="Tmpx/Tmpx.Common/Tmpx.Common.csproj" />
     <Project Path="Tmpx/Tmpx.Demo/Tmpx.Demo.csproj" />

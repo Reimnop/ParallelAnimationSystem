@@ -10,9 +10,6 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
 {
     private static readonly Comparison<ObjectDrawItem> sortRankComparison = static (x, y) => x.SortRank.CompareTo(y.SortRank);
     
-    private const float TextScaleFactor = 3.0f / 32.0f;
-    private static readonly Matrix3x2 TextScaleMatrix = FastMatrix.GetScaleMatrix(TextScaleFactor, TextScaleFactor);
-    
     private const int InitialCacheCapacity = 1000;
     
     private ObjectDrawItem[] drawItemCache = new ObjectDrawItem[InitialCacheCapacity];
@@ -57,11 +54,6 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
         var originMatrix = playbackObject.Shape == ObjectShape.Text 
             ? Matrix3x2.Identity 
             : Matrix3x2.CreateTranslation(playbackObject.Origin);
-        
-        // apply text scale if the shape is text
-        var textScale = playbackObject.Shape == ObjectShape.Text 
-            ? TextScaleMatrix 
-            : Matrix3x2.Identity;
 
         Debug.Assert(currentThemeColorState is not null);
         var color = playbackObject.ColorSequence.ComputeValueAt(currentTime - playbackObject.StartTime, currentThemeColorState);
@@ -70,7 +62,7 @@ public class AnimationPipeline(Timeline timeline, PlaybackObjectContainer playba
         ref var drawItem = ref drawItemCache[cacheIndex];
         
         drawItem.SortRank = objectIndexToSortRank[objectIndex];
-        drawItem.Transform = originMatrix * textScale * transform;
+        drawItem.Transform = originMatrix * transform;
         drawItem.Color1 = color.Color1;
         drawItem.Color2 = color.Color2;
         drawItem.Opacity = color.Opacity;

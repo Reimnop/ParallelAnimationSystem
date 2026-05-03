@@ -19,6 +19,12 @@ public class CharacterRange(char from, char to)
         for (var c = From; c <= To; c++)
             yield return c;
     }
+    
+    public static IEnumerable<CharacterRange> ParseList(string s)
+    {
+        foreach (var entry in s.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            yield return FromString(entry);
+    }
 
     public static CharacterRange FromString(string s)
     {

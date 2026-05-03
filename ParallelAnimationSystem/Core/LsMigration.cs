@@ -56,7 +56,7 @@ public class LsMigration(ResourceLoader loader)
             if (o.Shape == ObjectShape.Text)
             {
                 // Since legacy uses a different font, we need to change the font here
-                o.Text = $"<font=\"Inconsolata SDF\">{o.Text}";
+                o.Text = $"<font=Inconsolata>{o.Text}";
             }
         }
         

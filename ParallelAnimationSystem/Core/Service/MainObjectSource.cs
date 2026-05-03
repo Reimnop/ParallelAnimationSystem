@@ -1,12 +1,14 @@
 ﻿using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using Pamx.Objects;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Core.Model;
 using ParallelAnimationSystem.Core.Text;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering.Data;
 using ParallelAnimationSystem.Util;
+using BeatmapObject = ParallelAnimationSystem.Core.Model.BeatmapObject;
 
 namespace ParallelAnimationSystem.Core.Service;
 
@@ -160,7 +162,7 @@ public class MainObjectSource : IDisposable
             Origin = beatmapObject.Origin,
             RenderDepth = beatmapObject.RenderDepth,
             Shape = beatmapObject.Shape,
-            Text = beatmapObject.Text is not null 
+            Text = beatmapObject.Text is not null && beatmapObject.Shape == ObjectShape.Text
                 ? textShaper.ShapeText(beatmapObject.Text, beatmapObject.Origin) 
                 : null,
             CustomShapeInfo = beatmapObject.CustomShapeInfo
@@ -272,7 +274,7 @@ public class MainObjectSource : IDisposable
                 break;
             case nameof(BeatmapObject.Origin):
                 playbackObject.Origin = beatmapObject.Origin;
-                playbackObject.Text = beatmapObject.Text is not null 
+                playbackObject.Text = beatmapObject.Text is not null && beatmapObject.Shape == ObjectShape.Text
                     ? textShaper.ShapeText(beatmapObject.Text, beatmapObject.Origin)
                     : null;
                 break;
@@ -281,9 +283,12 @@ public class MainObjectSource : IDisposable
                 break;
             case nameof(BeatmapObject.Shape):
                 playbackObject.Shape = beatmapObject.Shape;
+                playbackObject.Text = beatmapObject.Text is not null && beatmapObject.Shape == ObjectShape.Text
+                    ? textShaper.ShapeText(beatmapObject.Text, beatmapObject.Origin)
+                    : null;
                 break;
             case nameof(BeatmapObject.Text):
-                playbackObject.Text = beatmapObject.Text is not null 
+                playbackObject.Text = beatmapObject.Text is not null && beatmapObject.Shape == ObjectShape.Text
                     ? textShaper.ShapeText(beatmapObject.Text, beatmapObject.Origin)
                     : null;
                 break;

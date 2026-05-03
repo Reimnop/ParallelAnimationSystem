@@ -28,8 +28,8 @@
   
   <ItemGroup>
     <ProjectReference Include="../Pamx/Pamx/Pamx.csproj" />
-    <ProjectReference Include="../TmpEmulation/TmpIO/TmpIO.csproj" />
-    <ProjectReference Include="../TmpEmulation/TmpParser/TmpParser.csproj" />
+    <ProjectReference Include="../Tmpx/Tmpx/Tmpx.csproj" />
+    <ProjectReference Include="../Tmpx/Tmpx.Common/Tmpx.Common.csproj" />
     <ProjectReference Include="../ParallelAnimationSystem.Mathematics/ParallelAnimationSystem.Mathematics.csproj" />
   </ItemGroup>
 
