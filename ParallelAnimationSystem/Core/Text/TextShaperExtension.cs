@@ -8,7 +8,7 @@ public static class TextShaperExtension
     public static ShapedRichText ShapeText(this TextShaper textShaper, string text, Vector2 origin)
         => textShaper.ShapeText(
             text,
-            "NotoMono SDF",
+            "NotoSans",
             origin.X switch
             {
                 -0.5f => TextHorizontalAlignment.Right,

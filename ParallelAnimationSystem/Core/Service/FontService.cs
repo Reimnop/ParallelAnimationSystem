@@ -12,7 +12,7 @@ public class FontService : IDisposable, IFontResolver
     // Map from Tmpx IFont → FontInfo (holds GlobalShapeEntryBase for index remapping)
     private readonly Dictionary<IFont, FontInfo> infoByFont = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<(string Name, FontStyle Style), IFont> fontByNameAndStyle = new();
-    private readonly FontFallbackChainRegistry fallbackChainRegistry = new("NotoMono");
+    private readonly FontFallbackChainRegistry fallbackChainRegistry = new("NotoSans");
 
     private readonly ResourceLoader resourceLoader;
     private readonly IRenderQueue renderQueue;
@@ -40,11 +40,17 @@ public class FontService : IDisposable, IFontResolver
         LoadFont("Fonts/NotoMono-Italic.tmpx", FontStyle.Italic);
         LoadFont("Fonts/NotoMono-BoldItalic.tmpx", FontStyle.Bold | FontStyle.Italic);
         
+        var notoSans = LoadFont("Fonts/NotoSans-Regular.tmpx", FontStyle.Regular);
+        LoadFont("Fonts/NotoSans-Bold.tmpx", FontStyle.Bold);
+        LoadFont("Fonts/NotoSans-Italic.tmpx", FontStyle.Italic);
+        LoadFont("Fonts/NotoSans-BoldItalic.tmpx", FontStyle.Bold | FontStyle.Italic);
+        
         var arialuni = LoadFont("Fonts/Arialuni-Regular.tmpx", FontStyle.Regular);
         var seguisym = LoadFont("Fonts/Seguisym-Regular.tmpx", FontStyle.Regular);
         var code2000 = LoadFont("Fonts/Code2000-Regular.tmpx", FontStyle.Regular);
 
         // Register fallback stacks
+        RegisterFontChain("NotoSans", [notoSans, arialuni, seguisym, code2000]);
         RegisterFontChain("NotoMono", [notoMono, arialuni, seguisym, code2000]);
         RegisterFontChain("LiberationSans", [liberationSans, arialuni, seguisym, code2000]);
         RegisterFontChain("Inconsolata", [inconsolata, arialuni, seguisym, code2000]);

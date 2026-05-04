@@ -9,7 +9,7 @@ namespace ParallelAnimationSystem.Core.Text;
 
 public class TextShaper(FontService fontService)
 {
-    private const float WorldUnitsPerEm = 1.5f;
+    private const float WorldUnitsPerEm = 1.6f;
 
     public ShapedRichText ShapeText(
         string text,
