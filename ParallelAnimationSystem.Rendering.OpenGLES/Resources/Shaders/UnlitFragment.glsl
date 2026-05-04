@@ -24,10 +24,10 @@ vec4 getColor(vec4 color1, vec4 color2, int mode, vec2 uv) {
         return mix(color1, color2, uv.x);
     } else if (mode == 3) {
         float dist = min(distance(uv, vec2(0.5)) * 2.0, 1.0);
-        return mix(color1, color2, dist);
+        return mix(color2, color1, dist);
     } else if (mode == 4) {
         float dist = min(distance(uv, vec2(0.5)) * 2.0, 1.0);
-        return mix(color2, color1, dist);
+        return mix(color1, color2, dist);
     }
     return color1;
 }
