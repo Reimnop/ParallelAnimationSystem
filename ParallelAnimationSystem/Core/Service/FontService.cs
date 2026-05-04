@@ -35,6 +35,21 @@ public class FontService : IDisposable, IFontResolver
         LoadFont("Fonts/LiberationSans-Italic.tmpx", FontStyle.Italic);
         LoadFont("Fonts/LiberationSans-BoldItalic.tmpx", FontStyle.Bold | FontStyle.Italic);
         
+        var majorMonoDisplay = LoadFont("Fonts/MajorMonoDisplay-Regular.tmpx", FontStyle.Regular);
+        LoadFont("Fonts/MajorMonoDisplay-Bold.tmpx", FontStyle.Bold);
+        LoadFont("Fonts/MajorMonoDisplay-Italic.tmpx", FontStyle.Italic);
+        LoadFont("Fonts/MajorMonoDisplay-BoldItalic.tmpx", FontStyle.Bold | FontStyle.Italic);
+        
+        var poorStory = LoadFont("Fonts/PoorStory-Regular.tmpx", FontStyle.Regular);
+        LoadFont("Fonts/PoorStory-Bold.tmpx", FontStyle.Bold);
+        LoadFont("Fonts/PoorStory-Italic.tmpx", FontStyle.Italic);
+        LoadFont("Fonts/PoorStory-BoldItalic.tmpx", FontStyle.Bold | FontStyle.Italic);
+        
+        var hellovetica = LoadFont("Fonts/Hellovetica-Regular.tmpx", FontStyle.Regular);
+        LoadFont("Fonts/Hellovetica-Bold.tmpx", FontStyle.Bold);
+        LoadFont("Fonts/Hellovetica-Italic.tmpx", FontStyle.Italic);
+        LoadFont("Fonts/Hellovetica-BoldItalic.tmpx", FontStyle.Bold | FontStyle.Italic);
+        
         var notoMono = LoadFont("Fonts/NotoMono-Regular.tmpx", FontStyle.Regular);
         LoadFont("Fonts/NotoMono-Bold.tmpx", FontStyle.Bold);
         LoadFont("Fonts/NotoMono-Italic.tmpx", FontStyle.Italic);
@@ -53,6 +68,9 @@ public class FontService : IDisposable, IFontResolver
         RegisterFontChain("NotoSans", [notoSans, arialuni, seguisym, code2000]);
         RegisterFontChain("NotoMono", [notoMono, arialuni, seguisym, code2000]);
         RegisterFontChain("LiberationSans", [liberationSans, arialuni, seguisym, code2000]);
+        RegisterFontChain("MajorMonoDisplay", [majorMonoDisplay, arialuni, seguisym, code2000]);
+        RegisterFontChain("PoorStory", [poorStory, arialuni, seguisym, code2000]);
+        RegisterFontChain("Hellovetica", [hellovetica, arialuni, seguisym, code2000]);
         RegisterFontChain("Inconsolata", [inconsolata, arialuni, seguisym, code2000]);
 
         // Concatenate buffers, assign global bases, upload
