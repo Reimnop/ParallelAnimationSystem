@@ -35,6 +35,7 @@ public class Shaper(IFontResolver resolver, FontFallbackChainRegistry fallbackCh
     private class Line
     {
         public List<PendingGlyph> Glyphs { get; } = [];
+        public float BaselineY { get; set; }
         public float MaxAscender { get; set; } = float.NegativeInfinity;
         public float MaxDescender { get; set; } = float.PositiveInfinity;
         public float CursorX { get; set; }
@@ -87,8 +88,14 @@ public class Shaper(IFontResolver resolver, FontFallbackChainRegistry fallbackCh
         FinishLine(stack, line, ref cursorY);
         collectedLines.Add(line);
         
-        var textHeight = -cursorY;
-        var offsetY = float.Lerp(0f, textHeight, (int)verticalAlignment * 0.5f); // in case we need fractional alignment later...
+        var firstLine = collectedLines.FirstOrDefault();
+        var lastLine  = collectedLines.LastOrDefault();
+        
+        var firstLineAscender = firstLine != null ? firstLine.MaxAscender + firstLine.BaselineY : 0f;
+        var lastLineDescender = lastLine != null ? lastLine.MaxDescender + lastLine.BaselineY : 0f;
+        var textHeight = firstLineAscender - lastLineDescender;
+        
+        var offsetY = float.Lerp(textHeight, 0f, (int)verticalAlignment * 0.5f); // in case we need fractional alignment later...
         
         foreach (var l in collectedLines)
         {
@@ -278,10 +285,16 @@ public class Shaper(IFontResolver resolver, FontFallbackChainRegistry fallbackCh
             case "alpha":
                 if (tag.IsClosing) 
                     return true; // </alpha> silently consumed
-                if (tag.Value is not ['#', _, _]) 
+                if (string.IsNullOrWhiteSpace(tag.Value))
                     return false;
-                if (!byte.TryParse(tag.Value[1..], NumberStyles.HexNumber, null, out var a)) 
+                
+                var hexValue = tag.Value;
+                if (hexValue.StartsWith('#'))
+                    hexValue = hexValue[1..];
+                
+                if (!byte.TryParse(hexValue, NumberStyles.HexNumber, null, out var a)) 
                     return false;
+                
                 stack.SetAlpha(a);
                 return true;
             case "mark":
@@ -631,11 +644,14 @@ public class Shaper(IFontResolver resolver, FontFallbackChainRegistry fallbackCh
         if (line.Glyphs.Count == 0)
         {
             lineHeight = stack.CurrentFont.Metrics.LineHeight * stack.CurrentSize;
+            line.MaxAscender = stack.CurrentFont.Metrics.Ascender * stack.CurrentSize;
+            line.MaxDescender = stack.CurrentFont.Metrics.Descender * stack.CurrentSize;
+            line.BaselineY = cursorY;
             cursorY -= lineHeight;
             return;
         }
         
-        lineHeight = line.LastLineHeight ?? line.MaxAscender - line.MaxDescender;
+        lineHeight = line.LastLineHeight ?? GetNaturalLineHeight(line);
         var lineWidth = line.CursorX - stack.CurrentCSpace;
 
         var offsetX = float.Lerp(0f, -lineWidth, (int)line.LastAlignment * 0.5f); // in case we need fractional alignment later...
@@ -644,8 +660,23 @@ public class Shaper(IFontResolver resolver, FontFallbackChainRegistry fallbackCh
 
         foreach (var g in line.Glyphs)
             g.Position += new Vector2(offsetX, baseline);
-
+        
+        line.BaselineY = baseline;
         cursorY -= lineHeight;
+    }
+    
+    private static float GetNaturalLineHeight(Line line)
+    {
+        if (line.Glyphs.Count == 0)
+            return 0f;
+    
+        var dominant = line.Glyphs.MaxBy(g => g.Size)!;
+        var metrics = dominant.Font.Metrics;
+        var size = dominant.Size;
+    
+        var lineGap = metrics.LineHeight * size - (metrics.Ascender - metrics.Descender) * size;
+    
+        return line.MaxAscender - line.MaxDescender + lineGap;
     }
 
     private static bool TryParseColor(string hex, out Color color)

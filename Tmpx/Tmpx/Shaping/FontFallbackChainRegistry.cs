@@ -3,6 +3,7 @@
 public class FontFallbackChainRegistry(string defaultName)
 {
     private readonly Dictionary<string, string[]> fallbackChains = new();
+    private readonly string defaultName = defaultName.ToLowerInvariant().Trim();
     
     public void RegisterFallbackChain(string name, params IEnumerable<string> fallbackFamilies)
     {
