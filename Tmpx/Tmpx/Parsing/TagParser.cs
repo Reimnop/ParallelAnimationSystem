@@ -16,7 +16,21 @@ public static class TagParser
         if (tokens.Count == 0) return new ParsedTag(isClosing, "", null, raw, []);
     
         // first token is always the name, optionally with a value
-        var (name, primaryValue) = SplitOnFirst(tokens[0], '=');
+        string? primaryValue = null;
+        var eq = tokens[0].IndexOf('=');
+        string name;
+        if (eq == -1)
+        {
+            name = tokens[0];
+            
+            // next token with no key is the primary value
+            if (tokens.Count > 1 && !tokens[1].Contains('='))
+                primaryValue = tokens[1];
+        }
+        else
+        {
+            (name, primaryValue) = SplitOnFirst(tokens[0], '=');
+        }
     
         // remaining tokens are extra attributes
         var attrs = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);

@@ -9,6 +9,14 @@ public delegate void ShapeEmitter(Matrix3x2 transform, Color color, IFont? font,
 
 public class Shaper(IFontResolver resolver, FontFallbackChainRegistry fallbackChainRegistry, float unitsPerEm = 16f)
 {
+    private enum Unit
+    {
+        None, 
+        Px, 
+        Em, 
+        Percent
+    }
+    
     private static readonly Dictionary<string, Color> KnownColors = new()
     {
         ["black"] = Color.ParseHex("000000"),
@@ -350,73 +358,56 @@ public class Shaper(IFontResolver resolver, FontFallbackChainRegistry fallbackCh
                 if (tag.IsClosing)
                     return true; // </pos> does nothing, consumed
                 
-                if (string.IsNullOrWhiteSpace(tag.Value))
+                if (!TryParseUnitFloat(tag.Value, out var value, out var unit))
                     return false;
-                
-                if (tag.Value.EndsWith('%')) 
-                    return true; // % consumed but ignored
-                
-                if (tag.Value.EndsWith("em") && float.TryParse(tag.Value[..^2], out var em))
-                {
-                    line.CursorX = em * stack.CurrentSize; 
-                    return true;
-                }
 
-                if (tag.Value.EndsWith("px") && float.TryParse(tag.Value[..^2], out var px))
+                switch (unit)
                 {
-                    line.CursorX = ToEmSize(px); 
-                    return true;
+                    case Unit.Percent:
+                        return true; // consumed but ignored
+                    case Unit.Em:
+                        line.CursorX = value * stack.CurrentSize;
+                        return true;
+                    default:
+                        line.CursorX = ToEmSize(value);
+                        return true;
                 }
-
-                if (float.TryParse(tag.Value, out var abs))
-                {
-                    line.CursorX = ToEmSize(abs); 
-                    return true;
-                }
-        
-                return false;
             }
             case "space":
             {
                 if (tag.IsClosing)
                     return true; // consumed, does nothing
-                if (string.IsNullOrWhiteSpace(tag.Value))
+                
+                if (!TryParseUnitFloat(tag.Value, out var value, out var unit))
                     return false;
-                
-                if (tag.Value.EndsWith('%')) 
-                    return true; // % consumed but ignored
-                
-                if (tag.Value.EndsWith("em") && float.TryParse(tag.Value[..^2], out var em))
-                {
-                    line.CursorX += em * stack.CurrentSize; 
-                    return true;
-                }
 
-                if (tag.Value.EndsWith("px") && float.TryParse(tag.Value[..^2], out var px))
+                switch (unit)
                 {
-                    line.CursorX += ToEmSize(px); 
-                    return true;
+                    case Unit.Percent:
+                        return true; // consumed but ignored
+                    case Unit.Em:
+                        line.CursorX += value * stack.CurrentSize; 
+                        return true;
+                    default:
+                        line.CursorX += ToEmSize(value); 
+                        return true;
                 }
-
-                if (float.TryParse(tag.Value, out var abs))
-                {
-                    line.CursorX += ToEmSize(abs); 
-                    return true;
-                }
-        
-                return false;
             }
             case "rotate":
+            {
                 if (tag.IsClosing)
                 {
                     stack.ClearTransform();
                     return true;
                 }
-                if (!float.TryParse(tag.Value, out var angle)) 
+
+                if (!TryParseUnitFloat(tag.Value, out var value, out _))
                     return false;
-                var radians = MathF.PI * angle / 180f;
+                
+                var radians = MathF.PI * value / 180f;
                 stack.SetTransform(new GlyphTransform(1f, radians));
                 return true;
+            }
             case "cspace":
             {
                 if (tag.IsClosing)
@@ -426,28 +417,18 @@ public class Shaper(IFontResolver resolver, FontFallbackChainRegistry fallbackCh
                     return true;
                 }
                 
-                if (string.IsNullOrWhiteSpace(tag.Value))
+                if (!TryParseUnitFloat(tag.Value, out var value, out var unit))
                     return false;
 
-                if (tag.Value.EndsWith("em") && float.TryParse(tag.Value[..^2], out var em))
+                switch (unit)
                 {
-                    stack.PushCSpace(em);
-                    return true;
+                    case Unit.Em:
+                        stack.PushCSpace(value * stack.CurrentSize);
+                        return true;
+                    default:
+                        stack.PushCSpace(ToEmSize(value));
+                        return true;
                 }
-
-                if (tag.Value.EndsWith("px") && float.TryParse(tag.Value[..^2], out var px))
-                {
-                    stack.PushCSpace(ToEmSize(px));
-                    return true;
-                }
-
-                if (float.TryParse(tag.Value, out var abs))
-                {
-                    stack.PushCSpace(ToEmSize(abs));
-                    return true;
-                }
-
-                return false;
             }
             case "mspace":
             {
@@ -457,28 +438,18 @@ public class Shaper(IFontResolver resolver, FontFallbackChainRegistry fallbackCh
                     return true;
                 }
 
-                if (string.IsNullOrWhiteSpace(tag.Value))
+                if (!TryParseUnitFloat(tag.Value, out var value, out var unit))
                     return false;
 
-                if (tag.Value.EndsWith("em") && float.TryParse(tag.Value[..^2], out var em))
+                switch (unit)
                 {
-                    stack.PushMSpace(em * stack.CurrentSize);
-                    return true;
+                    case Unit.Em:
+                        stack.PushMSpace(value * stack.CurrentSize);
+                        return true;
+                    default:
+                        stack.PushMSpace(ToEmSize(value));
+                        return true;
                 }
-
-                if (tag.Value.EndsWith("px") && float.TryParse(tag.Value[..^2], out var px))
-                {
-                    stack.PushMSpace(ToEmSize(px));
-                    return true;
-                }
-
-                if (float.TryParse(tag.Value, out var abs))
-                {
-                    stack.PushMSpace(ToEmSize(abs));
-                    return true;
-                }
-
-                return false;
             }
             case "voffset":
             {
@@ -488,28 +459,18 @@ public class Shaper(IFontResolver resolver, FontFallbackChainRegistry fallbackCh
                     return true;
                 }
 
-                if (string.IsNullOrWhiteSpace(tag.Value)) 
+                if (!TryParseUnitFloat(tag.Value, out var value, out var unit))
                     return false;
-                        
-                if (tag.Value.EndsWith("em") && float.TryParse(tag.Value[..^2], out var em))
-                {
-                    stack.PushVOffset(em * stack.CurrentSize);
-                    return true;
-                }
 
-                if (tag.Value.EndsWith("px") && float.TryParse(tag.Value[..^2], out var px))
+                switch (unit)
                 {
-                    stack.PushVOffset(ToEmSize(px));
-                    return true;
+                    case Unit.Em:
+                        stack.PushVOffset(value * stack.CurrentSize);
+                        return true;
+                    default:
+                        stack.PushVOffset(ToEmSize(value));
+                        return true;
                 }
-
-                if (float.TryParse(tag.Value, out var abs))
-                {
-                    stack.PushVOffset(ToEmSize(abs));
-                    return true;
-                }
-
-                return false;
             }
             case "line-height":
             {
@@ -519,34 +480,21 @@ public class Shaper(IFontResolver resolver, FontFallbackChainRegistry fallbackCh
                     return true; 
                 }
                 
-                if (string.IsNullOrWhiteSpace(tag.Value)) 
+                if (!TryParseUnitFloat(tag.Value, out var value, out var unit))
                     return false;
 
-                if (tag.Value.EndsWith('%') && float.TryParse(tag.Value[..^1], out var pct))
+                switch (unit)
                 {
-                    stack.SetLineHeight(stack.CurrentFont.Metrics.LineHeight * stack.CurrentSize * (pct / 100f)); 
-                    return true; 
+                    case Unit.Percent:
+                        stack.SetLineHeight(stack.CurrentFont.Metrics.LineHeight * stack.CurrentSize * (value / 100f)); 
+                        return true;
+                    case Unit.Em:
+                        stack.SetLineHeight(value * stack.CurrentSize); 
+                        return true;
+                    default:
+                        stack.SetLineHeight(ToEmSize(value)); 
+                        return true;
                 }
-
-                if (tag.Value.EndsWith("em") && float.TryParse(tag.Value[..^2], out var em))
-                {
-                    stack.SetLineHeight(em * stack.CurrentSize); 
-                    return true; 
-                }
-
-                if (tag.Value.EndsWith("px") && float.TryParse(tag.Value[..^2], out var px))
-                {
-                    stack.SetLineHeight(ToEmSize(px)); 
-                    return true; 
-                }
-
-                if (float.TryParse(tag.Value, out var abs))
-                {
-                    stack.SetLineHeight(ToEmSize(abs));
-                    return true; 
-                }
-                
-                return false;
             }
             case "uppercase":
             case "allcaps":
@@ -708,6 +656,57 @@ public class Shaper(IFontResolver resolver, FontFallbackChainRegistry fallbackCh
             color.A = a;
         }
         
+        return true;
+    }
+    
+    private static bool TryParseUnitFloat(string? str, out float value, out Unit unit)
+    {
+        value = 0f;
+        unit = Unit.None;
+    
+        if (string.IsNullOrWhiteSpace(str))
+            return false;
+    
+        // find end of numeric part: optional sign, then digits/dot
+        var i = 0;
+        if (i < str.Length && (str[i] == '+' || str[i] == '-')) i++;
+        while (i < str.Length && (char.IsDigit(str[i]) || str[i] == '.')) i++;
+    
+        if (i == 0 || (i == 1 && (str[0] == '+' || str[0] == '-')))
+            return false; // no digits at all
+    
+        if (!float.TryParse(str[..i], NumberStyles.Float, CultureInfo.InvariantCulture, out value))
+            return false;
+    
+        // detect unit suffix
+        // TMP stops at first char of suffix, so 'e' alone = em, 'p' alone = px
+        if (i >= str.Length || str[i] == ' ')
+        {
+            unit = Unit.None;
+            return true;
+        } // default
+
+        if (str[i] == '%')
+        {
+            unit = Unit.Percent;
+            return true;
+        }
+
+        if (str[i] == 'e')
+        {
+            unit = Unit.Em;      
+            return true;
+        } // em or "en" or whatever
+
+        if (str[i] == 'p')
+        {
+            unit = Unit.Px;      
+            return true;
+        } // px or "pt" or...
+    
+        // unrecognized suffix
+        // still return the number with default unit, TMP ignores garbage
+        unit = Unit.None;
         return true;
     }
 }
