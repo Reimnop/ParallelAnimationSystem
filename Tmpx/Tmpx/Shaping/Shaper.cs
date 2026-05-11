@@ -45,7 +45,7 @@ public class Shaper(IFontResolver resolver, FontFallbackChainRegistry fallbackCh
         public List<PendingGlyph> Glyphs { get; } = [];
         public float BaselineY { get; set; }
         public float MaxAscender { get; set; } = float.NegativeInfinity;
-        public float MaxDescender { get; set; } = float.PositiveInfinity;
+        public float MinDescender { get; set; } = float.PositiveInfinity;
         public float CursorX { get; set; }
         public TextHorizontalAlignment LastAlignment { get; set; }
         public float DominantLineHeight { get; set; }
@@ -100,7 +100,7 @@ public class Shaper(IFontResolver resolver, FontFallbackChainRegistry fallbackCh
         var lastLine  = collectedLines.LastOrDefault();
         
         var firstLineAscender = firstLine != null ? firstLine.MaxAscender + firstLine.BaselineY : 0f;
-        var lastLineDescender = lastLine != null ? lastLine.MaxDescender + lastLine.BaselineY : 0f;
+        var lastLineDescender = lastLine != null ? lastLine.MinDescender + lastLine.BaselineY : 0f;
         var textHeight = firstLineAscender - lastLineDescender;
         
         var offsetY = float.Lerp(textHeight, 0f, (int)verticalAlignment * 0.5f); // in case we need fractional alignment later...
@@ -148,7 +148,7 @@ public class Shaper(IFontResolver resolver, FontFallbackChainRegistry fallbackCh
                         currentMarkColor = newColor;
                         runStartX = g.Position.X;
                         runEndX = g.Position.X + g.Glyph.AdvanceWidth * g.Size * g.Transform.ScaleX;
-                        runMinY = g.Position.Y + g.Font.Metrics.Descender * g.Size;
+                        runMinY = g.Position.Y + Math.Min(g.Font.Metrics.Descender * g.Size, g.Font.Metrics.Ascender * g.Size - line.DominantLineHeight);
                         runMaxY = g.Position.Y + g.Font.Metrics.Ascender * g.Size;
                     }
                     else
@@ -227,7 +227,7 @@ public class Shaper(IFontResolver resolver, FontFallbackChainRegistry fallbackCh
             if (font is null || glyph is null)
                 continue;
 
-            var effectiveSize = size * smallCapsMultiplier;
+            var renderSize = size * smallCapsMultiplier;
             
             line.Glyphs.Add(new PendingGlyph
             {
@@ -235,24 +235,24 @@ public class Shaper(IFontResolver resolver, FontFallbackChainRegistry fallbackCh
                 Color = color,
                 Font = font,
                 Glyph = glyph,
-                Size = effectiveSize,
+                Size = renderSize,
                 Transform = stack.CurrentTransform,
                 MarkColor = stack.CurrentMarkColor
             });
-            line.MaxAscender = Math.Max(line.MaxAscender, font.Metrics.Ascender * effectiveSize + stack.CurrentVOffset);
-            line.MaxDescender = Math.Min(line.MaxDescender, font.Metrics.Descender * effectiveSize + stack.CurrentVOffset);
+            line.MaxAscender = Math.Max(line.MaxAscender, font.Metrics.Ascender * size + stack.CurrentVOffset);
+            line.MinDescender = Math.Min(line.MinDescender, font.Metrics.Descender * size + stack.CurrentVOffset);
             line.LastAlignment = stack.CurrentAlignment;
 
             float advance;
             if (stack.CurrentMSpace is { } mspace)
             {
-                var monoAdvance = mspace / 2f - glyph.AdvanceWidth / 2f * effectiveSize; // center glyph in slot
+                var monoAdvance = mspace / 2f - glyph.AdvanceWidth / 2f * renderSize; // center glyph in slot
                 line.Glyphs[^1].Position += new Vector2(monoAdvance, 0f);  // shift glyph position
                 advance = mspace + stack.CurrentCSpace;
             }
             else
             {
-                advance = glyph.AdvanceWidth * effectiveSize * stack.CurrentTransform.ScaleX + stack.CurrentCSpace;
+                advance = glyph.AdvanceWidth * renderSize * stack.CurrentTransform.ScaleX + stack.CurrentCSpace;
             }
             line.CursorX += advance;
 
@@ -262,7 +262,7 @@ public class Shaper(IFontResolver resolver, FontFallbackChainRegistry fallbackCh
             }
             else
             {
-                line.DominantLineHeight = Math.Max(line.DominantLineHeight, font.Metrics.LineHeight * size);
+                line.DominantLineHeight = line.MaxAscender - line.MinDescender;
             }
         }
     }
@@ -600,13 +600,13 @@ public class Shaper(IFontResolver resolver, FontFallbackChainRegistry fallbackCh
         {
             lineHeight = stack.CurrentFont.Metrics.LineHeight * stack.CurrentSize;
             line.MaxAscender = stack.CurrentFont.Metrics.Ascender * stack.CurrentSize;
-            line.MaxDescender = stack.CurrentFont.Metrics.Descender * stack.CurrentSize;
-            line.BaselineY = cursorY;
+            line.MinDescender = stack.CurrentFont.Metrics.Descender * stack.CurrentSize;
+            line.BaselineY = cursorY - line.MaxAscender;
             cursorY -= lineHeight;
             return;
         }
         
-        lineHeight = line.DominantLineHeight > 0f ? line.DominantLineHeight : (line.MaxAscender - line.MaxDescender);
+        lineHeight = line.DominantLineHeight > 0f ? line.DominantLineHeight : (line.MaxAscender - line.MinDescender);
         var lineWidth = line.CursorX - stack.CurrentCSpace;
 
         var offsetX = float.Lerp(0f, -lineWidth, (int)line.LastAlignment * 0.5f); // in case we need fractional alignment later...
