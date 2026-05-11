@@ -262,7 +262,7 @@ public class Shaper(IFontResolver resolver, FontFallbackChainRegistry fallbackCh
             }
             else
             {
-                line.DominantLineHeight = Math.Max(line.DominantLineHeight, font.Metrics.LineHeight * effectiveSize);
+                line.DominantLineHeight = Math.Max(line.DominantLineHeight, font.Metrics.LineHeight * size);
             }
         }
     }
