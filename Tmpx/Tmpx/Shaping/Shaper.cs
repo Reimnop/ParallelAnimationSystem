@@ -48,7 +48,7 @@ public class Shaper(IFontResolver resolver, FontFallbackChainRegistry fallbackCh
         public float MaxDescender { get; set; } = float.PositiveInfinity;
         public float CursorX { get; set; }
         public TextHorizontalAlignment LastAlignment { get; set; }
-        public float? LastLineHeight { get; set; }
+        public float DominantLineHeight { get; set; }
     }
     
     public void Shape(
@@ -255,8 +255,15 @@ public class Shaper(IFontResolver resolver, FontFallbackChainRegistry fallbackCh
                 advance = glyph.AdvanceWidth * effectiveSize * stack.CurrentTransform.ScaleX + stack.CurrentCSpace;
             }
             line.CursorX += advance;
-            
-            line.LastLineHeight = stack.CurrentLineHeight;
+
+            if (stack.CurrentLineHeight is { } currentLineHeight)
+            {
+                line.DominantLineHeight = currentLineHeight;
+            }
+            else
+            {
+                line.DominantLineHeight = Math.Max(line.DominantLineHeight, font.Metrics.LineHeight * effectiveSize);
+            }
         }
     }
 
@@ -599,32 +606,18 @@ public class Shaper(IFontResolver resolver, FontFallbackChainRegistry fallbackCh
             return;
         }
         
-        lineHeight = line.LastLineHeight ?? GetNaturalLineHeight(line);
+        lineHeight = line.DominantLineHeight > 0f ? line.DominantLineHeight : (line.MaxAscender - line.MaxDescender);
         var lineWidth = line.CursorX - stack.CurrentCSpace;
 
         var offsetX = float.Lerp(0f, -lineWidth, (int)line.LastAlignment * 0.5f); // in case we need fractional alignment later...
 
         var baseline = cursorY - line.MaxAscender;
+        line.BaselineY = baseline;
 
         foreach (var g in line.Glyphs)
             g.Position += new Vector2(offsetX, baseline);
         
-        line.BaselineY = baseline;
         cursorY -= lineHeight;
-    }
-    
-    private static float GetNaturalLineHeight(Line line)
-    {
-        if (line.Glyphs.Count == 0)
-            return 0f;
-    
-        var dominant = line.Glyphs.MaxBy(g => g.Size)!;
-        var metrics = dominant.Font.Metrics;
-        var size = dominant.Size;
-    
-        var lineGap = metrics.LineHeight * size - (metrics.Ascender - metrics.Descender) * size;
-    
-        return line.MaxAscender - line.MaxDescender + lineGap;
     }
 
     private static bool TryParseColor(string hex, out Color color)
