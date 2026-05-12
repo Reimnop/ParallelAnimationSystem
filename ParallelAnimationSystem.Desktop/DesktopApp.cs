@@ -10,13 +10,14 @@ namespace ParallelAnimationSystem.Desktop;
 
 public sealed class DesktopApp(IServiceProvider serviceProvider)
 {
-    private enum SeekAction
+    private enum ButtonAction
     {
         None,
         Forward10,
         Backward10,
         Forward5,
-        Backward5
+        Backward5,
+        PlayPause
     }
     
     private struct FullscreenData
@@ -29,7 +30,7 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
     
     private volatile bool appRunning = true;
     
-    private SeekAction seekAction;
+    private ButtonAction buttonAction;
     private FullscreenData? fullscreenData;
     
     public void StartApp(string beatmapPath, string audioPath, float startTime = 0.0f)
@@ -58,25 +59,31 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
         // Start the main loop
         while (appRunning)
         {
-            if (seekAction != SeekAction.None)
+            if (buttonAction != ButtonAction.None)
             {
-                switch (seekAction)
+                switch (buttonAction)
                 {
-                    case SeekAction.Forward10:
+                    case ButtonAction.Forward10:
                         audioPlayer.Position += 10.0f;
                         break;
-                    case SeekAction.Backward10:
+                    case ButtonAction.Backward10:
                         audioPlayer.Position -= 10.0f;
                         break;
-                    case SeekAction.Forward5:
+                    case ButtonAction.Forward5:
                         audioPlayer.Position += 5.0f;
                         break;
-                    case SeekAction.Backward5:
+                    case ButtonAction.Backward5:
                         audioPlayer.Position -= 5.0f;
+                        break;
+                    case ButtonAction.PlayPause:
+                        if (audioPlayer.Playing)                            
+                            audioPlayer.Pause();
+                        else                            
+                            audioPlayer.Play();
                         break;
                 }
 
-                seekAction = SeekAction.None;
+                buttonAction = ButtonAction.None;
             }
             
             appDirector.ProcessFrame((float) audioPlayer.Position);
@@ -168,16 +175,19 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
                     break;
                 }
                 case Keys.J:
-                    seekAction = SeekAction.Backward10;
+                    buttonAction = ButtonAction.Backward10;
                     break;
                 case Keys.L:
-                    seekAction = SeekAction.Forward10;
+                    buttonAction = ButtonAction.Forward10;
                     break;
                 case Keys.Left:
-                    seekAction = SeekAction.Backward5;
+                    buttonAction = ButtonAction.Backward5;
                     break;
                 case Keys.Right:
-                    seekAction = SeekAction.Forward5;
+                    buttonAction = ButtonAction.Forward5;
+                    break;
+                case Keys.Space:
+                    buttonAction = ButtonAction.PlayPause;
                     break;
             }
         }
