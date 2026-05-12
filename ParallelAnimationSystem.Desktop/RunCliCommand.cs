@@ -39,12 +39,8 @@ public class RunCliCommand : RootCliCommand
         // Build service provider
         using var serviceProvider = services.BuildServiceProvider();
         
-        // Set random seed
-        var rss = serviceProvider.GetRequiredService<RandomSeedService>();
-        rss.Seed = Seed ?? NumberUtil.SplitMix64((ulong)DateTimeOffset.Now.ToUnixTimeSeconds());
-        
         // Start the app
         var app = serviceProvider.GetRequiredService<DesktopApp>();
-        app.StartApp(BeatmapPath, AudioPath, StartTime);
+        app.StartApp(BeatmapPath, AudioPath, StartTime, Seed);
     }
 }

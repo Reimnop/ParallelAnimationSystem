@@ -52,13 +52,9 @@ public class RenderCliCommand : RootCliCommand
         // Build service provider
         using var serviceProvider = services.BuildServiceProvider();
         
-        // Set random seed
-        var rss = serviceProvider.GetRequiredService<RandomSeedService>();
-        rss.Seed = Seed ?? NumberUtil.SplitMix64((ulong)DateTimeOffset.Now.ToUnixTimeSeconds());
-        
         // Start frame generator
         var frameGenerator = serviceProvider.GetRequiredService<FFmpegFrameGenerator>();
-        frameGenerator.GenerateFrames(BeatmapPath, AudioPath, Framerate, OutputPath);
+        frameGenerator.GenerateFrames(BeatmapPath, AudioPath, Framerate, OutputPath, Seed);
     }
 }
 

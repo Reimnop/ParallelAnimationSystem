@@ -4,6 +4,7 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Rendering;
+using ParallelAnimationSystem.Util;
 using ParallelAnimationSystem.Windowing;
 
 namespace ParallelAnimationSystem.Desktop;
@@ -17,7 +18,8 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
         Backward10,
         Forward5,
         Backward5,
-        PlayPause
+        PlayPause,
+        RandomizeSeed
     }
     
     private struct FullscreenData
@@ -33,7 +35,7 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
     private ButtonAction buttonAction;
     private FullscreenData? fullscreenData;
     
-    public void StartApp(string beatmapPath, string audioPath, float startTime = 0.0f)
+    public void StartApp(string beatmapPath, string audioPath, float startTime, ulong? randomSeed)
     {
         using var scope = serviceProvider.CreateScope();
         var sp = scope.ServiceProvider;
@@ -46,6 +48,10 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
         
         // Initialize core service
         var appDirector = sp.GetRequiredService<AppDirector>();
+        
+        // Get the random seed service
+        var rss = sp.GetRequiredService<RandomSeedService>();
+        rss.Seed = randomSeed ?? NumberUtil.SplitMix64((ulong)DateTimeOffset.Now.ToUnixTimeSeconds());
         
         // Play audio
         using var audioPlayer = AudioPlayer.Load(audioPath);
@@ -80,6 +86,9 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
                             audioPlayer.Pause();
                         else                            
                             audioPlayer.Play();
+                        break;
+                    case ButtonAction.RandomizeSeed:
+                        rss.Seed = NumberUtil.SplitMix64((ulong)DateTimeOffset.Now.ToUnixTimeSeconds());
                         break;
                 }
 
@@ -188,6 +197,9 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
                     break;
                 case Keys.Space:
                     buttonAction = ButtonAction.PlayPause;
+                    break;
+                case Keys.R:
+                    buttonAction = ButtonAction.RandomizeSeed;
                     break;
             }
         }

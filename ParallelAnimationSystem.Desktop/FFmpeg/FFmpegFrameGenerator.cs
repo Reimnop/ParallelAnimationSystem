@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Rendering;
+using ParallelAnimationSystem.Util;
 using ParallelAnimationSystem.Windowing;
 
 namespace ParallelAnimationSystem.Desktop.FFmpeg;
@@ -22,7 +23,7 @@ public class FFmpegFrameGenerator(
         ffmpegLogWriter.Dispose();
     }
 
-    public void GenerateFrames(string beatmapPath, string audioPath, int framerate, string outputPath)
+    public void GenerateFrames(string beatmapPath, string audioPath, int framerate, string outputPath, ulong? seed)
     {
         using var scope = serviceProvider.CreateScope();
         var sp = scope.ServiceProvider;
@@ -32,6 +33,10 @@ public class FFmpegFrameGenerator(
         var beatmapService = sp.GetRequiredService<BeatmapService>();
         // beatmapService.LoadBeatmap(beatmapData, beatmapFormat);
         beatmapService.LoadBeatmap(beatmapPath);
+        
+        // Set random seed
+        var rss = sp.GetRequiredService<RandomSeedService>();
+        rss.Seed = seed ?? NumberUtil.SplitMix64((ulong)DateTimeOffset.Now.ToUnixTimeSeconds());
         
         // Initialize renderer
         var renderer = sp.GetRequiredService<IRenderer>();
