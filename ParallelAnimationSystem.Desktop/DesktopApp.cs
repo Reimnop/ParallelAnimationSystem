@@ -18,9 +18,18 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
         Backward5
     }
     
+    private struct FullscreenData
+    {
+        public int X;
+        public int Y;
+        public int Width;
+        public int Height;
+    }
+    
     private volatile bool appRunning = true;
     
     private SeekAction seekAction;
+    private FullscreenData? fullscreenData;
     
     public void StartApp(string beatmapPath, string audioPath, float startTime = 0.0f)
     {
@@ -118,6 +127,37 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
                 case Keys.Escape:
                     GLFW.SetWindowShouldClose(window, true);
                     break;
+                case Keys.F11:
+                {
+                    if (fullscreenData == null)
+                    {
+                        var monitor = GLFW.GetPrimaryMonitor();
+                        var mode = GLFW.GetVideoMode(monitor);
+                        GLFW.GetWindowPos(window, out var x, out var y);
+                        GLFW.GetWindowSize(window, out var width, out var height);
+                        fullscreenData = new FullscreenData
+                        {
+                            X = x,
+                            Y = y,
+                            Width = width,
+                            Height = height
+                        };
+                        GLFW.SetWindowMonitor(window, monitor, 0, 0, mode->Width, mode->Height, mode->RefreshRate);
+                    }
+                    else
+                    {
+                        GLFW.SetWindowMonitor(
+                            window, 
+                            null, 
+                            fullscreenData.Value.X, 
+                            fullscreenData.Value.Y,
+                            fullscreenData.Value.Width, 
+                            fullscreenData.Value.Height, 
+                            0);
+                        fullscreenData = null;
+                    }
+                    break;
+                }
                 case Keys.J:
                     seekAction = SeekAction.Backward10;
                     break;
