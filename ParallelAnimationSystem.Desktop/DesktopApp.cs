@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Runtime.InteropServices;
+using Microsoft.Extensions.DependencyInjection;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Service;
@@ -96,11 +97,16 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
         var renderQueue = (AsyncRenderQueue) sp.GetRequiredService<IRenderQueue>();
         var renderer = sp.GetRequiredService<IRenderer>();
         var window = (DesktopWindow) sp.GetRequiredService<IWindow>();
-
+        
+        GCHandle keyCallbackHandle;
+        
         unsafe
         {
+            GLFWCallbacks.KeyCallback keyCallback = OnKey;
+            keyCallbackHandle = GCHandle.Alloc(keyCallback);
+            
             var windowPtr = window.Handle;
-            GLFW.SetKeyCallback(windowPtr, OnKey);
+            GLFW.SetKeyCallback(windowPtr, keyCallback);
         }
         
         // Start the render loop
@@ -116,8 +122,11 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
         
         // Signal the main thread to stop
         appRunning = false;
+        
+        // Free the GCHandle for the key callback
+        keyCallbackHandle.Free();
     }
-
+    
     private unsafe void OnKey(Window* window, Keys key, int scanCode, InputAction action, KeyModifiers mods)
     {
         if (action == InputAction.Press)
