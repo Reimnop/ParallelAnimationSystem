@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Rendering;
@@ -8,7 +9,18 @@ namespace ParallelAnimationSystem.Desktop;
 
 public sealed class DesktopApp(IServiceProvider serviceProvider)
 {
+    private enum SeekAction
+    {
+        None,
+        Forward10,
+        Backward10,
+        Forward5,
+        Backward5
+    }
+    
     private volatile bool appRunning = true;
+    
+    private SeekAction seekAction;
     
     public void StartApp(string beatmapPath, string audioPath, float startTime = 0.0f)
     {
@@ -35,7 +47,30 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
         
         // Start the main loop
         while (appRunning)
+        {
+            if (seekAction != SeekAction.None)
+            {
+                switch (seekAction)
+                {
+                    case SeekAction.Forward10:
+                        audioPlayer.Position += 10.0f;
+                        break;
+                    case SeekAction.Backward10:
+                        audioPlayer.Position -= 10.0f;
+                        break;
+                    case SeekAction.Forward5:
+                        audioPlayer.Position += 5.0f;
+                        break;
+                    case SeekAction.Backward5:
+                        audioPlayer.Position -= 5.0f;
+                        break;
+                }
+
+                seekAction = SeekAction.None;
+            }
+            
             appDirector.ProcessFrame((float) audioPlayer.Position);
+        }
         
         // Stop audio
         audioPlayer.Stop();
@@ -51,7 +86,13 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
         
         var renderQueue = (AsyncRenderQueue) sp.GetRequiredService<IRenderQueue>();
         var renderer = sp.GetRequiredService<IRenderer>();
-        var window = sp.GetRequiredService<IWindow>();
+        var window = (DesktopWindow) sp.GetRequiredService<IWindow>();
+
+        unsafe
+        {
+            var windowPtr = window.Handle;
+            GLFW.SetKeyCallback(windowPtr, OnKey);
+        }
         
         // Start the render loop
         while (!window.ShouldClose)
@@ -66,5 +107,30 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
         
         // Signal the main thread to stop
         appRunning = false;
+    }
+
+    private unsafe void OnKey(Window* window, Keys key, int scanCode, InputAction action, KeyModifiers mods)
+    {
+        if (action == InputAction.Press)
+        {
+            switch (key)
+            {
+                case Keys.Escape:
+                    GLFW.SetWindowShouldClose(window, true);
+                    break;
+                case Keys.J:
+                    seekAction = SeekAction.Backward10;
+                    break;
+                case Keys.L:
+                    seekAction = SeekAction.Forward10;
+                    break;
+                case Keys.Left:
+                    seekAction = SeekAction.Backward5;
+                    break;
+                case Keys.Right:
+                    seekAction = SeekAction.Forward5;
+                    break;
+            }
+        }
     }
 }
