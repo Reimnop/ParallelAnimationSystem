@@ -683,6 +683,38 @@ public static class PaAssets
         5, 4, 2,
         2, 0, 5,
     ];
+    
+    public static Vector2[] TriangleFilledBottomOriginVertices { get; } =
+    [
+        new Vector2(0f, 0.8625f),
+        new Vector2(-0.497965f, 0f),
+        new Vector2(0.497965f, 0f),
+    ];
+    
+    public static int[] TriangleFilledBottomOriginIndices { get; } =
+    [
+        0, 1, 2,
+    ];
+    
+    public static Vector2[] TriangleOutlineBottomOriginVertices { get; } =
+    [
+        new Vector2(0f, 0.8625f),
+        new Vector2(-0.497965f, 0f),
+        new Vector2(0f, 0.636807f),
+        new Vector2(-0.302509f, 0.112846f),
+        new Vector2(0.302509f, 0.112846f),
+        new Vector2(0.497965f, 0f),
+    ];
+    
+    public static int[] TriangleOutlineBottomOriginIndices { get; } =
+    [
+        0, 1, 2,
+        2, 1, 3,
+        3, 1, 4,
+        4, 1, 5,
+        5, 4, 2,
+        2, 0, 5,
+    ];
 
     public static Vector2[] TriangleRightFilledVertices { get; } =
     [

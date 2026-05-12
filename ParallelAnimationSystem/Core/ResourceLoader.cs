@@ -4,9 +4,9 @@ public class ResourceLoader
 {
     private readonly List<IResourceSource> resourceSources;
 
-    internal ResourceLoader(IEnumerable<Func<IResourceSource>> resourceSourceFactories)
+    public ResourceLoader(ResourceSourceFactories factories)
     {
-        resourceSources = resourceSourceFactories.Select(factory => factory()).ToList();
+        resourceSources = factories.Select(factory => factory()).ToList();
     }
     
     public Stream? OpenResource(string resourceName)

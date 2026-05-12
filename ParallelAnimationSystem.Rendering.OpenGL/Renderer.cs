@@ -13,6 +13,8 @@ using ParallelAnimationSystem.Rendering.OpenGL.PostProcessing;
 using ParallelAnimationSystem.Util;
 using ParallelAnimationSystem.Windowing;
 using ParallelAnimationSystem.Windowing.OpenGL;
+using BandEntry = Tmpx.Common.BandEntry;
+using QuadraticCurve = Tmpx.Common.QuadraticCurve;
 
 namespace ParallelAnimationSystem.Rendering.OpenGL;
 
@@ -23,11 +25,6 @@ public class Renderer : IRenderer, IDisposable
         public int VertexOffset;
         public int IndexOffset;
         public int IndexCount;
-    }
-
-    private struct FontInfo
-    {
-        public int AtlasTextureHandle;
     }
 
     private struct TextInfo
@@ -43,22 +40,30 @@ public class Renderer : IRenderer, IDisposable
         public float Depth;
     }
     
-    private const int MaxFontsCount = 12;
     private const int MsaaSamples = 4;
     private const int MaxOverlays = 10;
+
+    // SSBO binding points (must match shader layout(binding=N))
+    private const int BindMultiDraw = 0;
+    private const int BindGlyphs = 1;
+    private const int BindCurves = 2;
+    private const int BindCurveIndices = 3;
+    private const int BindBandEntries = 4;
+    private const int BindShapeEntries = 5;
     
     // Rendering data
     private readonly Buffer<Vector2> vertexBuffer = new();
     private readonly Buffer<int> indexBuffer = new();
-    private readonly Buffer<RenderGlyph> glyphBuffer = new();
-    
+    private readonly Buffer<GpuRenderGlyph> glyphBuffer = new();
+
     private readonly List<MeshInfo> meshInfos = [];
-    private readonly FontInfo[] fontInfos = new FontInfo[MaxFontsCount];
     private readonly List<TextInfo> textInfos = [];
     
     // Post processors
     private readonly LegacyBloom legacyBloom;
     private readonly UniversalBloom universalBloom;
+    private readonly Glitch glitch;
+    private readonly Grain grain;
     private readonly UberPost uberPost;
     
     // Graphics data
@@ -72,8 +77,13 @@ public class Renderer : IRenderer, IDisposable
     private readonly int multiDrawStorageBufferHandle;
     private int multiDrawStorageBufferSize;
     private readonly int programHandle;
-    private readonly int fontAtlasesUniformLocation;
-    private readonly int fontAtlasSampler;
+
+    // TMPX SSBO handles, populated in UpdateFontData
+    private readonly int curveSsboHandle;
+    private readonly int curveIndexSsboHandle;
+    private readonly int bandEntrySsboHandle;
+    private readonly int shapeEntrySsboHandle;
+    private readonly int viewportSizeUniformLocation;
     
     private Vector2i currentFboSize;
     private int fboColorBufferHandle, fboDepthBufferHandle;
@@ -100,8 +110,8 @@ public class Renderer : IRenderer, IDisposable
     
     // Dirty flags
     private bool meshBufferDirty = true;
-    private bool fontsDirty = true; // there is a way to not reload all fonts, but I'm lazy and this is not gonna be a bottleneck so who cares
     private bool textsDirty = true;
+    private bool fontBuffersDirty = true;
 
     // Injected dependencies
     private readonly AppSettings appSettings;
@@ -166,12 +176,14 @@ public class Renderer : IRenderer, IDisposable
             programHandle = LoaderUtil.LoadShaderProgram(loader, "UberVertex", "UberFragment");
 
             // Get uniform locations
-            fontAtlasesUniformLocation = GL.GetUniformLocation(programHandle, "uFontAtlases");
+            viewportSizeUniformLocation = GL.GetUniformLocation(programHandle, "uViewportSize");
 
-            // Initialize font atlas sampler
-            fontAtlasSampler = GL.CreateSampler();
-            GL.SamplerParameteri(fontAtlasSampler, SamplerParameterI.TextureMinFilter, (int)TextureMinFilter.Linear);
-            GL.SamplerParameteri(fontAtlasSampler, SamplerParameterI.TextureMagFilter, (int)TextureMagFilter.Linear);
+            // Create the global TMPX SSBOs. They'll be (re)populated lazily by UpdateFontData when
+            // the font set changes.
+            curveSsboHandle = GL.CreateBuffer();
+            curveIndexSsboHandle = GL.CreateBuffer();
+            bandEntrySsboHandle = GL.CreateBuffer();
+            shapeEntrySsboHandle = GL.CreateBuffer();
 
             // Initialize fbos
             // Initialize scene fbo
@@ -241,16 +253,17 @@ public class Renderer : IRenderer, IDisposable
             // Initialize post processors
             legacyBloom = new LegacyBloom(loader);
             universalBloom = new UniversalBloom(loader);
+            glitch = new Glitch(loader);
+            grain = new Grain(loader);
             uberPost = new UberPost(loader);
         }
 
         #endregion
         
         // Subscribe to events
+        this.renderingFactory.FontBuffersUpdated += OnFontBuffersUpdated;
         this.renderingFactory.Meshes.ItemInserted += OnMeshInserted;
         this.renderingFactory.Meshes.ItemRemoved += OnMeshRemoved;
-        this.renderingFactory.Fonts.ItemInserted += OnFontInserted;
-        this.renderingFactory.Fonts.ItemRemoved += OnFontRemoved;
         this.renderingFactory.Texts.ItemInserted += OnTextInserted;
         this.renderingFactory.Texts.ItemRemoved += OnTextRemoved;
     }
@@ -260,10 +273,9 @@ public class Renderer : IRenderer, IDisposable
         logger.LogInformation("Disposing OpenGL renderer");
         
         // Unsubscribe from events
+        renderingFactory.FontBuffersUpdated -= OnFontBuffersUpdated;
         renderingFactory.Meshes.ItemInserted -= OnMeshInserted;
         renderingFactory.Meshes.ItemRemoved -= OnMeshRemoved;
-        renderingFactory.Fonts.ItemInserted -= OnFontInserted;
-        renderingFactory.Fonts.ItemRemoved -= OnFontRemoved;
         renderingFactory.Texts.ItemInserted -= OnTextInserted;
         renderingFactory.Texts.ItemRemoved -= OnTextRemoved;
         
@@ -280,21 +292,16 @@ public class Renderer : IRenderer, IDisposable
         GL.DeleteBuffer(vertexBufferHandle);
         GL.DeleteBuffer(indexBufferHandle);
         GL.DeleteVertexArray(vertexArrayHandle);
+        GL.DeleteBuffer(glyphStorageBufferHandle);
         
         GL.DeleteBuffer(multiDrawIndirectBufferHandle);
         GL.DeleteBuffer(multiDrawStorageBufferHandle);
         
         GL.DeleteProgram(programHandle);
-        GL.DeleteSampler(fontAtlasSampler);
-        
-        // Delete font atlas textures
-        foreach (var fontInfo in fontInfos)
-        {
-            if (fontInfo.AtlasTextureHandle == 0)
-                continue;
-            
-            GL.DeleteTexture(fontInfo.AtlasTextureHandle);
-        }
+        GL.DeleteBuffer(curveSsboHandle);
+        GL.DeleteBuffer(curveIndexSsboHandle);
+        GL.DeleteBuffer(bandEntrySsboHandle);
+        GL.DeleteBuffer(shapeEntrySsboHandle);
         
         // Delete overlay resources
         GL.DeleteProgram(overlayProgram);
@@ -306,7 +313,14 @@ public class Renderer : IRenderer, IDisposable
         // Dispose post processors
         legacyBloom.Dispose();
         universalBloom.Dispose();
+        glitch.Dispose();
+        grain.Dispose();
         uberPost.Dispose();
+    }
+    
+    private void OnFontBuffersUpdated(object? sender, EventArgs e)
+    {
+        fontBuffersDirty = true;
     }
     
     private void OnTextInserted(object? sender, ObservableSparseSetEventArgs<Common.Text> e)
@@ -317,16 +331,6 @@ public class Renderer : IRenderer, IDisposable
     private void OnTextRemoved(object? sender, ObservableSparseSetEventArgs<Common.Text> e)
     {
         textsDirty = true;
-    }
-    
-    private void OnFontInserted(object? sender, ObservableSparseSetEventArgs<Font> e)
-    {
-        fontsDirty = true;
-    }
-    
-    private void OnFontRemoved(object? sender, ObservableSparseSetEventArgs<Font> e)
-    {
-        fontsDirty = true;
     }
     
     private void OnMeshInserted(object? sender, ObservableSparseSetEventArgs<Mesh> e)
@@ -348,23 +352,7 @@ public class Renderer : IRenderer, IDisposable
     public void ProcessFrame(IDrawDataProvider drawDataProvider)
     {
         var size = window.FramebufferSize;
-        var renderWidth = size.X;
-        var renderHeight = size.Y;
-        
-        if (appSettings.AspectRatio.HasValue)
-        {
-            var targetAspectRatio = appSettings.AspectRatio.Value;
-            var screenAspectRatio = size.X / (float) size.Y;
-            if (targetAspectRatio < screenAspectRatio)
-            {
-                renderWidth = (int) (size.Y * targetAspectRatio);
-            }
-            else
-            {
-                renderHeight = (int) (size.X / targetAspectRatio);
-            }
-        }
-        var renderSize = new Vector2i(renderWidth, renderHeight);
+        RenderUtil.GetRenderSize(size, appSettings.AspectRatio, out var renderSize, out var renderOffset);
         
         // Set context
         window.MakeContextCurrent();
@@ -387,7 +375,7 @@ public class Renderer : IRenderer, IDisposable
                 {
                     DrawType = drawCommand.DrawType,
                     DrawId = drawCommand.DrawId,
-                    Depth = currentDepthInt / (float)(1 << 24)
+                    Depth = currentDepthInt / (float)(1 << 23)
                 });
             }
             else
@@ -396,7 +384,7 @@ public class Renderer : IRenderer, IDisposable
                 {
                     DrawType = drawCommand.DrawType,
                     DrawId = drawCommand.DrawId,
-                    Depth = currentDepthInt / (float)(1 << 24)
+                    Depth = currentDepthInt / (float)(1 << 23)
                 });
             }
 
@@ -404,11 +392,11 @@ public class Renderer : IRenderer, IDisposable
         }
         
         // Reverse opaque draw data list so that it is drawn
-        // from back to front to avoid overdraw
+        // from front to back to avoid overdraw
         opaqueDrawCommands.Reverse();
         
         // Get camera matrix (view and projection)
-        var camera = RenderUtil.GetCameraMatrix(drawData.CameraData, renderSize);
+        var camera = RenderUtil.GetCameraMatrix(drawData.CameraState, renderSize);
         
         // Render
         GL.Viewport(0, 0, currentFboSize.X, currentFboSize.Y);
@@ -423,25 +411,20 @@ public class Renderer : IRenderer, IDisposable
         
         // Use our program
         GL.UseProgram(programHandle);
-        
-        // Bind atlas texture
-        for (var i = 0; i < fontInfos.Length; i++)
-        {
-            ref var fontInfo = ref fontInfos[i];
-            if (fontInfo.AtlasTextureHandle == 0)
-                continue;
-            
-            GL.Uniform1i(fontAtlasesUniformLocation + i, 1, i);
-            GL.BindTextureUnit((uint) i, fontInfo.AtlasTextureHandle);
-            GL.BindSampler((uint) i, fontAtlasSampler);
-        }
-        
+
+        // Set viewport-size uniform for sub-pixel dilation in the text vertex shader
+        GL.Uniform2f(viewportSizeUniformLocation, currentFboSize.X, currentFboSize.Y);
+
         // Bind indirect buffer
         GL.BindBuffer(BufferTarget.DrawIndirectBuffer, multiDrawIndirectBufferHandle);
         
         // Bind storage buffers
-        GL.BindBufferBase(BufferTarget.ShaderStorageBuffer, 0, multiDrawStorageBufferHandle);
-        GL.BindBufferBase(BufferTarget.ShaderStorageBuffer, 1, glyphStorageBufferHandle);
+        GL.BindBufferBase(BufferTarget.ShaderStorageBuffer, BindMultiDraw, multiDrawStorageBufferHandle);
+        GL.BindBufferBase(BufferTarget.ShaderStorageBuffer, BindGlyphs, glyphStorageBufferHandle);
+        GL.BindBufferBase(BufferTarget.ShaderStorageBuffer, BindCurves, curveSsboHandle);
+        GL.BindBufferBase(BufferTarget.ShaderStorageBuffer, BindCurveIndices, curveIndexSsboHandle);
+        GL.BindBufferBase(BufferTarget.ShaderStorageBuffer, BindBandEntries, bandEntrySsboHandle);
+        GL.BindBufferBase(BufferTarget.ShaderStorageBuffer, BindShapeEntries, shapeEntrySsboHandle);
         
         // Bind our vertex array
         GL.BindVertexArray(vertexArrayHandle);
@@ -489,7 +472,7 @@ public class Renderer : IRenderer, IDisposable
             BlitFramebufferFilter.Linear);
         
         // Do post-processing
-        var finalTexture = HandlePostProcessing(drawData.PostProcessingData, postProcessTextureHandle1, postProcessTextureHandle2);
+        var finalTexture = HandlePostProcessing(drawData.PostProcessingState, postProcessTextureHandle1, postProcessTextureHandle2);
         
         // Render overlays into final texture
         {
@@ -502,6 +485,9 @@ public class Renderer : IRenderer, IDisposable
                 
                 overlayTexture = GL.CreateTexture(TextureTarget.Texture2d);
                 GL.TextureStorage2D(overlayTexture, 1, SizedInternalFormat.Rgba16f, size.X, size.Y);
+                
+                // Reattach texture to framebuffer
+                GL.NamedFramebufferTexture(overlayFramebufferHandle, FramebufferAttachment.ColorAttachment0, overlayTexture, 0);
             }
             
             Span<int> overlayTextures = stackalloc int[MaxOverlays];
@@ -530,16 +516,8 @@ public class Renderer : IRenderer, IDisposable
             GL.UseProgram(overlayProgram);
             
             // Set scale and offset of first overlay
-            var offsetXInt = (size.X - renderSize.X) / 2;
-            var offsetYInt = (size.Y - renderSize.Y) / 2;
-            var offsetX = offsetXInt / (float) size.X;
-            var offsetY = offsetYInt / (float) size.Y;
-            
-            var scaleX = renderSize.X / (float) size.X;
-            var scaleY = renderSize.Y / (float) size.Y;
-            
-            GL.Uniform2f(overlaySourceOffsetsUniformLocation, offsetX, offsetY);
-            GL.Uniform2f(overlaySourceScalesUniformLocation, scaleX, scaleY);
+            GL.Uniform2f(overlaySourceOffsetsUniformLocation, renderOffset.X / (float)size.X, renderOffset.Y / (float)size.Y);
+            GL.Uniform2f(overlaySourceScalesUniformLocation, renderSize.X / (float)size.X, renderSize.Y / (float)size.Y);
             
             // Set overlay count
             GL.Uniform1i(overlaySourceCountUniformLocation, overlayCount);
@@ -548,11 +526,8 @@ public class Renderer : IRenderer, IDisposable
                 (uint)MathUtil.DivideCeil(size.X, 8),
                 (uint)MathUtil.DivideCeil(size.Y, 8),
                 1);
-            GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit);
+            GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit | MemoryBarrierMask.TextureFetchBarrierBit);
         }
-        
-        // Bind overlay texture to overlay fbo
-        GL.NamedFramebufferTexture(overlayFramebufferHandle, FramebufferAttachment.ColorAttachment0, overlayTexture, 0);
         
         // Present to window
         window.Present(overlayFramebufferHandle, Vector4.Zero, size, Vector2i.Zero);
@@ -589,7 +564,9 @@ public class Renderer : IRenderer, IDisposable
                         Z = drawCommand.Depth,
                         RenderMode = (int) meshDrawItem.RenderMode,
                         RenderType = 0, // 0 is mesh
-                        GlyphOffset = 0
+                        GlyphOffset = 0,
+                        GradientRotation = meshDrawItem.GradientRotation,
+                        GradientScale = meshDrawItem.GradientScale
                     });
                     
                     multiDrawIndirectBuffer.Append(new DrawElementsIndirectCommand
@@ -669,23 +646,27 @@ public class Renderer : IRenderer, IDisposable
             0);
     }
 
-    private int HandlePostProcessing(PostProcessingData data, int texture1, int texture2)
+    private int HandlePostProcessing(PostProcessingState state, int texture1, int texture2)
     {
-        if (legacyBloom.Process(currentFboSize, data.LegacyBloom.Intensity, data.LegacyBloom.Diffusion, texture1, texture2))
+        if (legacyBloom.Process(currentFboSize, state.LegacyBloom.Intensity, state.LegacyBloom.Diffusion, state.LegacyBloom.Color, texture1, texture2))
             Swap(ref texture1, ref texture2);
         
-        if (universalBloom.Process(currentFboSize, data.UniversalBloom.Intensity, data.UniversalBloom.Diffusion, texture1, texture2))
+        if (universalBloom.Process(currentFboSize, state.UniversalBloom.Intensity, state.UniversalBloom.Diffusion, state.UniversalBloom.Color, texture1, texture2))
+            Swap(ref texture1, ref texture2);
+        
+        if (glitch.Process(currentFboSize, state.Time, state.Glitch.Speed, state.Glitch.Intensity, state.Glitch.Amount, state.Glitch.StretchMultiplier, texture1, texture2))
+            Swap(ref texture1, ref texture2);
+        
+        if (grain.Process(currentFboSize, state.Time, state.Grain.Colored, state.Grain.Intensity, state.Grain.Size, state.Grain.LuminanceContribution, texture1, texture2))
             Swap(ref texture1, ref texture2);
         
         if (uberPost.Process(
                 currentFboSize,
-                data.Time,
-                data.HueShift.Angle,
-                data.LensDistortion.Intensity, data.LensDistortion.Center,
-                data.ChromaticAberration.Intensity,
-                data.Vignette.Center, data.Vignette.Intensity, data.Vignette.Rounded, data.Vignette.Roundness, data.Vignette.Smoothness, data.Vignette.Color,
-                data.Gradient.Color1, data.Gradient.Color2, data.Gradient.Intensity, data.Gradient.Rotation, data.Gradient.Mode,
-                data.Glitch.Intensity, data.Glitch.Speed, data.Glitch.Size,
+                state.HueShift.Angle,
+                state.LensDistortion.Intensity, state.LensDistortion.Center,
+                state.ChromaticAberration.Intensity,
+                state.Vignette.Center, state.Vignette.Intensity, state.Vignette.Rounded, state.Vignette.Roundness, state.Vignette.Smoothness, state.Vignette.Color, state.Vignette.Mode,
+                state.Gradient.Color1, state.Gradient.Color2, state.Gradient.Intensity, state.Gradient.Rotation, state.Gradient.Mode,
                 texture1, texture2))
             Swap(ref texture1, ref texture2);
         
@@ -729,7 +710,7 @@ public class Renderer : IRenderer, IDisposable
         {
             var maxId = renderingFactory.Meshes.Select(x => x.Key).Max();
             meshInfos.EnsureCount(maxId + 1);
-        
+            
             var meshInfosSpan = CollectionsMarshal.AsSpan(meshInfos);
             foreach (var (id, mesh) in renderingFactory.Meshes)
             {
@@ -741,11 +722,13 @@ public class Renderer : IRenderer, IDisposable
                 vertexBuffer.Append(mesh.Vertices);
                 indexBuffer.Append(mesh.Indices);
             }
-
-            // Update our buffers with the new data
-            GL.NamedBufferData(vertexBufferHandle, vertexBuffer.LengthInBytes, vertexBuffer.Data, VertexBufferObjectUsage.DynamicDraw);
-            GL.NamedBufferData(indexBufferHandle, indexBuffer.LengthInBytes, indexBuffer.Data, VertexBufferObjectUsage.DynamicDraw);
         }
+
+        // Update our buffers with the new data
+        // There is always data to upload, due to the base font quad
+        // So this is outside of the if statement
+        GL.NamedBufferData(vertexBufferHandle, vertexBuffer.LengthInBytes, vertexBuffer.Data, VertexBufferObjectUsage.DynamicDraw);
+        GL.NamedBufferData(indexBufferHandle, indexBuffer.LengthInBytes, indexBuffer.Data, VertexBufferObjectUsage.DynamicDraw);
         
         logger.LogInformation("Mesh buffer updated, registered {VertexCount} vertices and {IndexCount} indices", 
             vertexBuffer.Length,
@@ -754,44 +737,42 @@ public class Renderer : IRenderer, IDisposable
     
     private void UpdateFontData()
     {
-        if (!fontsDirty)
+        if (!fontBuffersDirty)
             return;
-        
-        fontsDirty = false;
-        
-        // Free all existing font atlas textures
-        foreach (ref var fontInfo in fontInfos.AsSpan())
-        {
-            if (fontInfo.AtlasTextureHandle == 0)
-                continue;
-            
-            GL.DeleteTexture(fontInfo.AtlasTextureHandle);
-            fontInfo.AtlasTextureHandle = 0;
-        }
 
-        // Rebuild font atlases
-        if (renderingFactory.Fonts.Count > 0)
-        {
-            var maxId = renderingFactory.Fonts.Select(x => x.Key).Max();
-            if (maxId >= fontInfos.Length)
-                throw new InvalidOperationException($"Exceeded maximum number of fonts ({fontInfos.Length}) supported by the renderer");
-            
-            foreach (var (id, font) in renderingFactory.Fonts)
-            {
-                GL.PixelStorei(PixelStoreParameter.UnpackAlignment, 2);
-            
-                // Create texture
-                var atlasHandle = GL.CreateTexture(TextureTarget.Texture2d);
-                GL.TextureStorage2D(atlasHandle, 1, SizedInternalFormat.Rgb16f, font.Width, font.Height);
-                GL.TextureSubImage2D(atlasHandle, 0, 0, 0, font.Width, font.Height, PixelFormat.Rgb, PixelType.HalfFloat, font.Atlas);
-            
-                // Put it in our font info list
-                ref var fontInfo = ref fontInfos[id];
-                fontInfo.AtlasTextureHandle = atlasHandle;
-            }
-        }
+        fontBuffersDirty = false;
         
-        logger.LogInformation("Font atlases updated, registered {FontCount} fonts", renderingFactory.Fonts.Count);
+        var curves = renderingFactory.FontCurves.AsSpan();
+        var curveIndices = renderingFactory.FontCurveIndices.AsSpan();
+        var bandEntries = renderingFactory.FontBandEntries.AsSpan();
+        
+        var shapeEntries = renderingFactory.FontShapeEntries;
+        var gpuShapeEntries = shapeEntries.Select(x => new GpuShapeEntry
+        {
+            HorizontalBandEntryBaseIndex = x.HorizontalBandEntryBaseIndex,
+            HorizontalBandEntryCount = x.HorizontalBandEntryCount,
+            HorizontalBandScale = x.HorizontalBandScale,
+            HorizontalBandOffset = x.HorizontalBandOffset,
+            VerticalBandEntryBaseIndex = x.VerticalBandEntryBaseIndex,
+            VerticalBandEntryCount = x.VerticalBandEntryCount,
+            VerticalBandScale = x.VerticalBandScale,
+            VerticalBandOffset = x.VerticalBandOffset,
+            Min = x.Min,
+            Max = x.Max,
+            Color = x.Color
+        }).ToArray();
+        
+        GL.NamedBufferData(curveSsboHandle, curves.Length * Unsafe.SizeOf<QuadraticCurve>(), curves, VertexBufferObjectUsage.DynamicDraw);
+        GL.NamedBufferData(curveIndexSsboHandle, curveIndices.Length * sizeof(int), curveIndices, VertexBufferObjectUsage.DynamicDraw);
+        GL.NamedBufferData(bandEntrySsboHandle, bandEntries.Length * Unsafe.SizeOf<BandEntry>(), bandEntries, VertexBufferObjectUsage.DynamicDraw);
+        GL.NamedBufferData(shapeEntrySsboHandle, gpuShapeEntries.Length * Unsafe.SizeOf<GpuShapeEntry>(), gpuShapeEntries, VertexBufferObjectUsage.DynamicDraw);
+        
+        logger.LogInformation(
+            "Font buffers updated, registered {Curves} curves, {CurveIndices} curve indices, {Bands} band entries, {Shapes} shape entries",
+            renderingFactory.FontCurves.Length,
+            renderingFactory.FontCurveIndices.Length,
+            renderingFactory.FontBandEntries.Length,
+            renderingFactory.FontShapeEntries.Length);
     }
 
     private void UpdateTextData()
@@ -804,7 +785,8 @@ public class Renderer : IRenderer, IDisposable
         // Clear existing data
         glyphBuffer.Clear();
         
-        // Rebuild text buffer
+        // Rebuild text buffer, glyphs carry globally-valid ShapeEntryIndex values already (FontService
+        // remapped them at shaping time), so we append verbatim with no patching.
         if (renderingFactory.Texts.Count > 0)
         {
             var maxId = renderingFactory.Texts.Select(x => x.Key).Max();
@@ -816,11 +798,17 @@ public class Renderer : IRenderer, IDisposable
                 ref var textInfo = ref textInfosSpan[id];
                 textInfo.GlyphOffset = glyphBuffer.Length;
                 textInfo.GlyphCount = text.Glyphs.Length;
-            
-                glyphBuffer.Append(text.Glyphs);
+                
+                var gpuRenderGlyphs = text.Glyphs.Select(x => new GpuRenderGlyph
+                {
+                    Color = x.Color,
+                    Transform = x.Transform,
+                    ShapeEntryIndex = x.ShapeEntryIndex,
+                }).ToArray();
+                
+                glyphBuffer.Append(gpuRenderGlyphs);
             }
 
-            // Update our buffer with the new data
             GL.NamedBufferData(glyphStorageBufferHandle, glyphBuffer.LengthInBytes, glyphBuffer.Data, VertexBufferObjectUsage.DynamicDraw);
         }
         

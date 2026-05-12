@@ -1,9 +1,10 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
-using Pamx.Common.Enum;
+using Pamx.Objects;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Core.Model;
 using ParallelAnimationSystem.Wasm.Interop.Data;
+using BeatmapObject = ParallelAnimationSystem.Core.Model.BeatmapObject;
 
 namespace ParallelAnimationSystem.Wasm.Interop;
 
@@ -131,7 +132,7 @@ public static class InteropBeatmapObject
     public static void SetRenderType(IntPtr ptr, int renderType)
     {
         var beatmapObject = InteropHelper.IntPtrToObject<BeatmapObject>(ptr);
-        beatmapObject.RenderType = (RenderType)renderType;
+        beatmapObject.RenderType = (GradientType)renderType;
     }
 
     [UnmanagedCallersOnly(EntryPoint = "beatmapObject_getOrigin")]

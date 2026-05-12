@@ -24,9 +24,9 @@ public static class Extension
         bool lockAspectRatio,
         bool enablePostProcessing,
         bool enableTextRendering) 
-        where TWindow : IWindow
+        where TWindow : class, IWindow
         where TGlfw : GlfwService
-        where TRenderQueue : IRenderQueue
+        where TRenderQueue : class, IRenderQueue
     {
         var appSettings = new AppSettings
         {
@@ -42,22 +42,21 @@ public static class Extension
         });
 
         services.AddScoped<GlfwService, TGlfw>();
+
+        var builder = services.AddPAS()
+            .UseAppSettings(appSettings)
+            .UseWindow<TWindow>()
+            .UseRenderQueue<TRenderQueue>();
         
-        services.AddPAS(builder =>
+        switch (backend)
         {
-            builder.UseAppSettings(appSettings);
-            builder.UseWindow<TWindow>();
-            builder.UseRenderQueue<TRenderQueue>();
-            switch (backend)
-            {
-                case RenderingBackend.OpenGL:
-                    builder.UseOpenGLRenderer();
-                    break;
-                case RenderingBackend.OpenGLES:
-                    builder.UseOpenGLESRenderer();
-                    break;
-            }
-        });
+            case RenderingBackend.OpenGL:
+                builder.UseOpenGLRenderer();
+                break;
+            case RenderingBackend.OpenGLES:
+                builder.UseOpenGLESRenderer();
+                break;
+        }
         
 #if DEBUG
         // Add ImGui platform backend

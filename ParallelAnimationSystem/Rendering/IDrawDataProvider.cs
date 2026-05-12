@@ -24,6 +24,8 @@ public struct MeshDrawItem
     public ColorRgba Color1;
     public ColorRgba Color2;
     public RenderMode RenderMode;
+    public float GradientRotation;
+    public float GradientScale;
 }
 
 public struct TextDrawItem
@@ -35,8 +37,8 @@ public struct TextDrawItem
 
 public ref struct DrawData
 {
-    public CameraData CameraData;
-    public PostProcessingData PostProcessingData;
+    public CameraState CameraState;
+    public PostProcessingState PostProcessingState;
     public ColorRgba ClearColor;
     public Span<DrawCommand> DrawCommands;
     public Span<MeshDrawItem> MeshDrawItems;

@@ -3,6 +3,7 @@ using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Core.Text;
 using ParallelAnimationSystem.Rendering.Data;
 using ParallelAnimationSystem.Rendering.Handle;
+using Tmpx.Common;
 
 namespace ParallelAnimationSystem.Rendering;
 
@@ -10,9 +11,9 @@ public class RenderQueue(IRenderingFactory renderingFactory) : IRenderQueue
 {
     private class DrawList : IDrawList, IDrawDataProvider
     {
-        public CameraData CameraData { get; set; } = new(Vector2.Zero, 10.0f, 0.0f);
-        public PostProcessingData PostProcessingData { get; set; }
-        public ColorRgba ClearColor { get; set; } = new(0.0f, 0.0f, 0.0f, 1.0f);
+        public CameraState CameraState { get; set; }
+        public PostProcessingState PostProcessingState { get; set; }
+        public ColorRgba ClearColor { get; set; }
 
         private MeshDrawItem[] meshDrawItems = new MeshDrawItem[1000];
         private TextDrawItem[] textDrawItems = new TextDrawItem[1000];
@@ -22,7 +23,7 @@ public class RenderQueue(IRenderingFactory renderingFactory) : IRenderQueue
         private int textDrawItemCount;
         private int drawCommandCount;
 
-        public void AddMesh(MeshHandle mesh, Matrix3x2 transform, ColorRgba color1, ColorRgba color2, RenderMode renderMode)
+        public void AddMesh(MeshHandle mesh, Matrix3x2 transform, ColorRgba color1, ColorRgba color2, RenderMode renderMode, float gradientRotation, float gradientScale)
         {
             EnsureIndexExists(ref meshDrawItems, meshDrawItemCount);
             ref var drawItem = ref meshDrawItems[meshDrawItemCount];
@@ -31,6 +32,8 @@ public class RenderQueue(IRenderingFactory renderingFactory) : IRenderQueue
             drawItem.Color1 = color1;
             drawItem.Color2 = color2;
             drawItem.RenderMode = renderMode;
+            drawItem.GradientRotation = gradientRotation;
+            drawItem.GradientScale = gradientScale;
 
             EnsureIndexExists(ref drawCommands, drawCommandCount);
             ref var drawCommand = ref drawCommands[drawCommandCount];
@@ -60,10 +63,9 @@ public class RenderQueue(IRenderingFactory renderingFactory) : IRenderQueue
 
         public void Reset()
         {
-            CameraData = new CameraData(Vector2.Zero, 10.0f, 0.0f);
-            PostProcessingData = default;
+            CameraState = new CameraState { Scale = 10f };
+            PostProcessingState = default;
             ClearColor = new ColorRgba(0.0f, 0.0f, 0.0f, 1.0f);
-
             meshDrawItemCount = 0;
             textDrawItemCount = 0;
             drawCommandCount = 0;
@@ -72,8 +74,8 @@ public class RenderQueue(IRenderingFactory renderingFactory) : IRenderQueue
         public DrawData CreateDrawData()
             => new()
             {
-                CameraData = CameraData,
-                PostProcessingData = PostProcessingData,
+                CameraState = CameraState,
+                PostProcessingState = PostProcessingState,
                 ClearColor = ClearColor,
                 MeshDrawItems = meshDrawItems.AsSpan(0, meshDrawItemCount),
                 TextDrawItems = textDrawItems.AsSpan(0, textDrawItemCount),
@@ -82,46 +84,32 @@ public class RenderQueue(IRenderingFactory renderingFactory) : IRenderQueue
 
         private static void EnsureIndexExists<T>(ref T[] drawItems, int index) where T : struct
         {
-            if (index < drawItems.Length)
-                return;
-
-            // add new item if index exceeds current count
+            if (index < drawItems.Length) return;
             var newSize = Math.Max(drawItems.Length * 2, index + 1);
             Array.Resize(ref drawItems, newSize);
         }
     }
-    
+
     private readonly DrawList drawList = new();
 
     public MeshHandle CreateMesh(ReadOnlySpan<Vector2> vertices, ReadOnlySpan<int> indices)
-    {
-        return renderingFactory.CreateMesh(vertices, indices);
-    }
+        => renderingFactory.CreateMesh(vertices, indices);
 
     public void DestroyMesh(MeshHandle handle)
-    {
-        renderingFactory.DestroyMesh(handle);
-    }
+        => renderingFactory.DestroyMesh(handle);
 
-    public FontHandle CreateFont(int width, int height, ReadOnlySpan<byte> atlas)
-    {
-        return renderingFactory.CreateFont(width, height, atlas);
-    }
-
-    public void DestroyFont(FontHandle handle)
-    {
-        renderingFactory.DestroyFont(handle);
-    }
+    public void SetFontBuffers(
+        ReadOnlySpan<QuadraticCurve> curves,
+        ReadOnlySpan<int> curveIndices,
+        ReadOnlySpan<BandEntry> bandEntries,
+        ReadOnlySpan<ShapeEntry> shapeEntries)
+        => renderingFactory.SetFontBuffers(curves, curveIndices, bandEntries, shapeEntries);
 
     public TextHandle CreateText(ShapedRichText richText)
-    {
-        return renderingFactory.CreateText(richText);
-    }
+        => renderingFactory.CreateText(richText);
 
     public void DestroyText(TextHandle handle)
-    {
-        renderingFactory.DestroyText(handle);
-    }
+        => renderingFactory.DestroyText(handle);
 
     public IDrawList GetDrawList()
     {
@@ -129,13 +117,8 @@ public class RenderQueue(IRenderingFactory renderingFactory) : IRenderQueue
         return drawList;
     }
 
-    public void SubmitDrawList(IDrawList drawList)
-    {
-        // do nothing
-    }
+    public void SubmitDrawList(IDrawList drawList) { /* no-op for synchronous path */ }
 
     public void ProcessFrame(IRenderer renderer)
-    {
-        renderer.ProcessFrame(drawList);
-    }
+        => renderer.ProcessFrame(drawList);
 }

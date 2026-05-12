@@ -1,17 +1,16 @@
 using OpenTK.Graphics.OpenGL;
 using System.Numerics;
-using Pamx.Common.Enum;
+using Pamx.Events;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Mathematics;
+using ParallelAnimationSystem.Rendering.Data;
 
 namespace ParallelAnimationSystem.Rendering.OpenGL.PostProcessing;
 
 public class UberPost : IDisposable
 {
     private readonly int program;
-    
-    private readonly int timeUniformLocation;
     
     private readonly int hueShiftAngleUniformLocation;
     
@@ -22,20 +21,16 @@ public class UberPost : IDisposable
     
     private readonly int vignetteCenterUniformLocation;
     private readonly int vignetteIntensityUniformLocation;
-    private readonly int vignetteRoundedUniformLocation;
     private readonly int vignetteRoundnessUniformLocation;
     private readonly int vignetteSmoothnessUniformLocation;
     private readonly int vignetteColorUniformLocation;
+    private readonly int vignetteModeUniformLocation;
     
     private readonly int gradientColor1UniformLocation;
     private readonly int gradientColor2UniformLocation;
     private readonly int gradientIntensityUniformLocation;
     private readonly int gradientRotationUniformLocation;
     private readonly int gradientModeUniformLocation;
-    
-    private readonly int glitchIntensityUniformLocation;
-    private readonly int glitchSpeedUniformLocation;
-    private readonly int glitchSizeUniformLocation;
     
     private readonly int sampler;
 
@@ -44,8 +39,6 @@ public class UberPost : IDisposable
         program = LoaderUtil.LoadComputeProgram(loader, "PostProcessing/UberPost");
         
         // Get uniform locations
-        timeUniformLocation = GL.GetUniformLocation(program, "uTime");
-        
         hueShiftAngleUniformLocation = GL.GetUniformLocation(program, "uHueShiftAngle");
         
         lensDistortionIntensityUniformLocation = GL.GetUniformLocation(program, "uLensDistortionIntensity");
@@ -55,20 +48,16 @@ public class UberPost : IDisposable
         
         vignetteCenterUniformLocation = GL.GetUniformLocation(program, "uVignetteCenter");
         vignetteIntensityUniformLocation = GL.GetUniformLocation(program, "uVignetteIntensity");
-        vignetteRoundedUniformLocation = GL.GetUniformLocation(program, "uVignetteRounded");
         vignetteRoundnessUniformLocation = GL.GetUniformLocation(program, "uVignetteRoundness");
         vignetteSmoothnessUniformLocation = GL.GetUniformLocation(program, "uVignetteSmoothness");
         vignetteColorUniformLocation = GL.GetUniformLocation(program, "uVignetteColor");
+        vignetteModeUniformLocation = GL.GetUniformLocation(program, "uVignetteMode");
         
         gradientColor1UniformLocation = GL.GetUniformLocation(program, "uGradientColor1");
         gradientColor2UniformLocation = GL.GetUniformLocation(program, "uGradientColor2");
         gradientIntensityUniformLocation = GL.GetUniformLocation(program, "uGradientIntensity");
         gradientRotationUniformLocation = GL.GetUniformLocation(program, "uGradientRotation");
         gradientModeUniformLocation = GL.GetUniformLocation(program, "uGradientMode");
-        
-        glitchIntensityUniformLocation = GL.GetUniformLocation(program, "uGlitchIntensity");
-        glitchSpeedUniformLocation = GL.GetUniformLocation(program, "uGlitchSpeed");
-        glitchSizeUniformLocation = GL.GetUniformLocation(program, "uGlitchSize");
         
         // Initialize sampler
         sampler = GL.CreateSampler();
@@ -80,13 +69,11 @@ public class UberPost : IDisposable
     
     public bool Process(
         Vector2i size,
-        float time,
         float hueShiftAngle,
         float lensDistortionIntensity, Vector2 lensDistortionCenter,
         float chromaticAberrationIntensity,
-        Vector2 vignetteCenter, float vignetteIntensity, bool vignetteRounded, float vignetteRoundness, float vignetteSmoothness, ColorRgb vignetteColor,
+        Vector2 vignetteCenter, float vignetteIntensity, bool vignetteRounded, float vignetteRoundness, float vignetteSmoothness, ColorRgb vignetteColor, VignetteMode vignetteMode,
         ColorRgb gradientColor1, ColorRgb gradientColor2, float gradientIntensity, float gradientRotation, GradientOverlayMode gradientMode,
-        float glitchIntensity, float glitchSpeed, Vector2 glitchSize,
         int inputTexture, int outputTexture)
     {
         GL.UseProgram(program);
@@ -95,8 +82,6 @@ public class UberPost : IDisposable
         GL.BindTextureUnit(0, inputTexture);
         GL.BindSampler(0, sampler);
         
-        GL.Uniform1f(timeUniformLocation, time);
-        
         GL.Uniform1f(hueShiftAngleUniformLocation, hueShiftAngle);
         
         GL.Uniform1f(lensDistortionIntensityUniformLocation, lensDistortionIntensity);
@@ -104,11 +89,22 @@ public class UberPost : IDisposable
         
         GL.Uniform1f(chromaticAberrationIntensityUniformLocation, chromaticAberrationIntensity);
         
-        GL.Uniform2f(vignetteCenterUniformLocation, 1, vignetteCenter);
-        GL.Uniform1f(vignetteIntensityUniformLocation, vignetteIntensity * 3.0f);
-        GL.Uniform1f(vignetteRoundedUniformLocation, vignetteRounded ? 1.0f : 0.0f);
-        GL.Uniform1f(vignetteRoundnessUniformLocation, (1.0f - vignetteRoundness) * 6.0f + vignetteRoundness);
-        GL.Uniform1f(vignetteSmoothnessUniformLocation, vignetteSmoothness * 5.0f);
+        GL.Uniform2f(vignetteCenterUniformLocation, vignetteCenter.X, vignetteCenter.Y);
+        GL.Uniform1f(vignetteIntensityUniformLocation, vignetteIntensity * 3);
+        
+        if (vignetteMode == VignetteMode.UseRounded)
+        {
+            GL.Uniform1f(vignetteRoundnessUniformLocation, vignetteRounded ? 1f : 0f);
+            GL.Uniform1i(vignetteModeUniformLocation, 0);
+        }
+        else
+        {
+            var roundness = (1f - vignetteRoundness) * 6f + vignetteRoundness;
+            GL.Uniform1f(vignetteRoundnessUniformLocation, roundness);
+            GL.Uniform1i(vignetteModeUniformLocation, 1);
+        }
+        
+        GL.Uniform1f(vignetteSmoothnessUniformLocation, vignetteSmoothness * 5f);
         GL.Uniform3f(vignetteColorUniformLocation, vignetteColor.R, vignetteColor.G, vignetteColor.B);
         
         GL.Uniform3f(gradientColor1UniformLocation, gradientColor1.R, gradientColor1.G, gradientColor1.B);
@@ -119,23 +115,19 @@ public class UberPost : IDisposable
         {
             var rotationMatrix = stackalloc float[4];
             rotationMatrix[0] = MathF.Cos(gradientRotation);
-            rotationMatrix[1] = MathF.Sin(gradientRotation);
-            rotationMatrix[2] = -MathF.Sin(gradientRotation);
+            rotationMatrix[1] = -MathF.Sin(gradientRotation);
+            rotationMatrix[2] = MathF.Sin(gradientRotation);
             rotationMatrix[3] = MathF.Cos(gradientRotation);
             GL.UniformMatrix2fv(gradientRotationUniformLocation, 1, false, rotationMatrix);
         }
         
         GL.Uniform1i(gradientModeUniformLocation, (int) gradientMode);
         
-        GL.Uniform1f(glitchIntensityUniformLocation, glitchIntensity);
-        GL.Uniform1f(glitchSpeedUniformLocation, glitchSpeed);
-        GL.Uniform2f(glitchSizeUniformLocation, 1, glitchSize);
-        
         GL.DispatchCompute(
             (uint)MathUtil.DivideCeil(size.X, 8), 
             (uint)MathUtil.DivideCeil(size.Y, 8), 
             1);
-        GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit);
+        GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit | MemoryBarrierMask.TextureFetchBarrierBit);
         
         return true;
     }

@@ -1,5 +1,5 @@
 ﻿using System.Numerics;
-using Pamx.Common.Data;
+using Pamx.Events;
 
 namespace ParallelAnimationSystem.Core.Data;
 
@@ -12,9 +12,9 @@ public class EventState
     public float Chroma { get; set; }
     public BloomEffectState Bloom { get; set; }
     public VignetteEffectState Vignette { get; set; }
-    public LensDistortionData LensDistortion { get; set; }
-    public GrainData Grain { get; set; }
+    public LensDistortionValue LensDistortion { get; set; }
+    public GrainValue Grain { get; set; }
     public GradientEffectState Gradient { get; set; }
-    public GlitchData Glitch { get; set; }
+    public GlitchValue Glitch { get; set; }
     public float Hue { get; set; }
 }

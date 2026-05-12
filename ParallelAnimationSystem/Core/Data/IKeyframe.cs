@@ -1,4 +1,4 @@
-using Pamx.Common.Enum;
+using Pamx.Keyframes;
 
 namespace ParallelAnimationSystem.Core.Data;
 

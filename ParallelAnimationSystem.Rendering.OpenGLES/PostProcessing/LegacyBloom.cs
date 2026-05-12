@@ -1,5 +1,6 @@
 using OpenTK.Graphics.OpenGLES2;
 using ParallelAnimationSystem.Core;
+using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Mathematics;
 
 namespace ParallelAnimationSystem.Rendering.OpenGLES.PostProcessing;
@@ -11,9 +12,9 @@ public class LegacyBloom : IDisposable
     private readonly int prefilterProgram, downsampleProgram, upsampleProgram, combineProgram;
     private readonly int
         prefilterThresholdUniformLocation,
-        prefilterCurveUniformLocation,
+        prefilterKneeUniformLocation,
         upsampleSampleScaleUniformLocation,
-        combineIntensityUniformLocation;
+        combineTintUniformLocation;
     
     private readonly int textureSampler;
     private readonly int framebuffer;
@@ -31,9 +32,9 @@ public class LegacyBloom : IDisposable
         combineProgram = LoaderUtil.LoadPostProcessingProgram(loader, "Bloom/Combine", vertexShader);
         
         prefilterThresholdUniformLocation = GL.GetUniformLocation(prefilterProgram, "uThreshold");
-        prefilterCurveUniformLocation = GL.GetUniformLocation(prefilterProgram, "uCurve");
+        prefilterKneeUniformLocation = GL.GetUniformLocation(prefilterProgram, "uKnee");
         upsampleSampleScaleUniformLocation = GL.GetUniformLocation(upsampleProgram, "uSampleScale");
-        combineIntensityUniformLocation = GL.GetUniformLocation(combineProgram, "uIntensity");
+        combineTintUniformLocation = GL.GetUniformLocation(combineProgram, "uTint");
         
         var combineSourceSamplerUniformLocation = GL.GetUniformLocation(combineProgram, "uSourceSampler");
         var combineBloomSamplerUniformLocation = GL.GetUniformLocation(combineProgram, "uBloomSampler");
@@ -53,7 +54,7 @@ public class LegacyBloom : IDisposable
         vaoHandle = GL.GenVertexArray();
     }
 
-    public bool Process(Vector2i size, float intensity, float diffusion, int inputTexture, int outputTexture)
+    public bool Process(Vector2i size, float intensity, float diffusion, ColorRgb color, int inputTexture, int outputTexture)
     {
         if (intensity == 0.0f)
             return false;
@@ -75,7 +76,7 @@ public class LegacyBloom : IDisposable
             UpdateMipChain(size, iterations);
         }
         
-        if (mipChain.Count == 0)
+        if (mipChain.Count < 2)
             return false;
         
         // Get mip 0
@@ -91,7 +92,7 @@ public class LegacyBloom : IDisposable
         // Prefilter to mip 0
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, framebuffer);
         GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, mip0.Handle, 0); // Bind output texture
-        GL.Viewport(0, 0, size.X, size.Y);
+        GL.Viewport(0, 0, mip0.Size.X, mip0.Size.Y);
         
         // Turn off blending
         GL.Disable(EnableCap.Blend);
@@ -99,16 +100,11 @@ public class LegacyBloom : IDisposable
         GL.UseProgram(prefilterProgram);
         
         // Set knee and threshold uniforms
-        var threshold = 0.95f; // TODO: expose as parameter
-        var softKnee = 0.5f;
-        
-        var knee = threshold * softKnee + 1e-5f;
-        var curve0 = threshold - knee;
-        var curve1 = knee * 2.0f;
-        var curve2 = 0.25f / knee;
+        var threshold = 0.9f; // TODO: expose as parameter
+        var knee = 0.5f;
         
         GL.Uniform1f(prefilterThresholdUniformLocation, threshold);
-        GL.Uniform3f(prefilterCurveUniformLocation, curve0, curve1, curve2);
+        GL.Uniform1f(prefilterKneeUniformLocation, threshold * knee);
         
         // We use active texture 0
         GL.ActiveTexture(TextureUnit.Texture0);
@@ -127,6 +123,7 @@ public class LegacyBloom : IDisposable
             var targetMip = mipChain[i];
             
             // Downsample pass (mip[i - 1] -> mip[i])
+            // Use up mip as our target to save memory
             GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, targetMip.Handle, 0);
             GL.Viewport(0, 0, targetMip.Size.X, targetMip.Size.Y);
             
@@ -167,9 +164,14 @@ public class LegacyBloom : IDisposable
         GL.Viewport(0, 0, size.X, size.Y);
         
         GL.UseProgram(combineProgram);
+
+        var colorLinear = new ColorRgb(color.R * color.R, color.G * color.G, color.B * color.B);
+        var colorLuminance = 0.2126f * colorLinear.R + 0.7152f * colorLinear.G + 0.0722f * colorLinear.B;
+        colorLinear = colorLuminance > 0f ? colorLinear * (1f / colorLuminance) : new ColorRgb(1f, 1f, 1f);
+        var tint = colorLinear * intensity;
+        GL.Uniform3f(combineTintUniformLocation, tint.R, tint.G, tint.B);
         
-        GL.Uniform1f(combineIntensityUniformLocation, intensity);
-        
+        GL.ActiveTexture(TextureUnit.Texture0);
         GL.BindTexture(TextureTarget.Texture2d, inputTexture);
         
         GL.ActiveTexture(TextureUnit.Texture1);
@@ -191,11 +193,16 @@ public class LegacyBloom : IDisposable
         // Initialize mip chain
         for (var i = 0; i < levels; i++)
         {
-            var mipSize = new Vector2i(size.X >> i, size.Y >> i);
+            var mipSize = new Vector2i(
+                Math.Max(size.X >> i, 1),
+                Math.Max(size.Y >> i, 1));
             var mip = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2d, mip);
             GL.TexStorage2D(TextureTarget.Texture2d, 1, SizedInternalFormat.Rgba16f, mipSize.X, mipSize.Y);
             mipChain.Add(new Mip(mip, mipSize));
+            
+            if (mipSize is { X: 1, Y: 1 })
+                break; // Stop if we've reached 1x1
         }
     }
 

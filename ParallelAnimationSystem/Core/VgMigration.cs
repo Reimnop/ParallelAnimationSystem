@@ -1,22 +1,22 @@
 using System.Drawing;
-using System.Text.Json.Nodes;
-using Pamx.Common;
-using Pamx.Common.Data;
-using Pamx.Common.Enum;
-using Pamx.Common.Implementation;
-using Pamx.Vg;
+using System.Text.Json;
+using Pamx;
+using Pamx.Keyframes;
+using Pamx.Objects;
+using Pamx.Serialization;
+using Pamx.Themes;
 
 namespace ParallelAnimationSystem.Core;
 
 public class VgMigration(ResourceLoader loader)
 {
-    public void MigrateBeatmap(IBeatmap beatmap)
+    public void MigrateBeatmap(Beatmap beatmap)
     {
         // Load themes
         var themes = LoadThemes();
         
         // Add to beatmap
-        beatmap.Themes.AddRange(themes.Values);
+        beatmap.Themes.AddRange(themes);
         
         // Fix themes
         foreach (var theme in beatmap.Themes)
@@ -30,7 +30,7 @@ public class VgMigration(ResourceLoader loader)
         }
 
         // Migrate theme color keyframes
-        foreach (var o in beatmap.Objects.Concat(beatmap.Prefabs.SelectMany(x => x.BeatmapObjects)))
+        foreach (var o in beatmap.Objects.Concat(beatmap.Prefabs.SelectMany(x => x.Objects)))
         {
             if (o.Type == ObjectType.LegacyHelper)
             {
@@ -38,11 +38,11 @@ public class VgMigration(ResourceLoader loader)
                 for (var i = 0; i < o.ColorEvents.Count; i++)
                 {
                     var oldColorKeyframe = o.ColorEvents[i];
-                    oldColorKeyframe.Value = new ThemeColor
+                    oldColorKeyframe.Value = new ObjectColorValue
                     {
                         Index = oldColorKeyframe.Value.Index,
                         EndIndex = oldColorKeyframe.Value.EndIndex,
-                        Opacity = 0.35f,
+                        Opacity = 0.35f
                     };
                     o.ColorEvents[i] = oldColorKeyframe;
                 }
@@ -55,26 +55,24 @@ public class VgMigration(ResourceLoader loader)
         for (var i = 0; i < events.Theme.Count; i++)
         {
             var themeKeyframe = events.Theme[i];
-            if (themeKeyframe.Value is IIdentifiable<string> themeIdentifiable &&
-                themes.TryGetValue(themeIdentifiable.Id, out var theme))
-                events.Theme[i] = new FixedKeyframe<IReference<ITheme>>
-                {
-                    Time = themeKeyframe.Time,
-                    Value = theme,
-                    Ease = themeKeyframe.Ease,
-                };
+            events.Theme[i] = new FixedKeyframe<string>
+            {
+                Time = themeKeyframe.Time,
+                Value = themeKeyframe.Value,
+                Ease = themeKeyframe.Ease,
+            };
         }
         
         // Migrate chromatic aberration keyframes
-        for (var i = 0; i < events.Chroma.Count; i++)
+        for (var i = 0; i < events.Chromatic.Count; i++)
         {
-            var chromaticAberrationKeyframe = events.Chroma[i];
+            var chromaticAberrationKeyframe = events.Chromatic[i];
             chromaticAberrationKeyframe.Value /= 80.0f;
-            events.Chroma[i] = chromaticAberrationKeyframe;
+            events.Chromatic[i] = chromaticAberrationKeyframe;
         }
     }
 
-    private Dictionary<string, ITheme> LoadThemes()
+    private List<BeatmapTheme> LoadThemes()
     {
         var themeNames = new[]
         {
@@ -98,49 +96,45 @@ public class VgMigration(ResourceLoader loader)
             "StoneField.vgt",
             "ViciousGoop.vgt",
             "WhiteBlack.vgt",
-            "Wonderland.vgt",
+            "Wonderland.vgt"
         };
         
-        var themes = new Dictionary<string, ITheme>();
+        var themes = new List<BeatmapTheme>();
         
         foreach (var themeName in themeNames)
         {
-            var themeString = loader.ReadResourceString($"Themes/{themeName}");
-            if (themeString is null)
+            var themeData = loader.ReadResourceString($"Themes/{themeName}");
+            if (themeData is null)
                 throw new InvalidOperationException($"Could not load theme data for '{themeName}'");
-            
-            var json = JsonNode.Parse(themeString);
-            if (json is not JsonObject jsonObject)
-                continue;
-            
-            var theme = (VgBeatmapTheme) VgDeserialization.DeserializeTheme(jsonObject);
-            themes.Add(theme.Id, theme);
+
+            var theme = JsonSerializer.Deserialize<BeatmapTheme>(themeData, PamxSerialization.Options)!;
+            themes.Add(theme);
         }
         
         return themes;
     }
     
-    private static void FixTheme(ITheme theme)
+    private static void FixTheme(ExternalTheme theme)
     {
         // Make sure theme has correct amount of colors
-        for (var i = theme.Player.Count; i < 4; i++)
+        for (var i = theme.Players.Count; i < 4; i++)
         {
-            theme.Player.Add(Color.Black);
+            theme.Players.Add(Color.Black);
         }
         
-        for (var i = theme.Object.Count; i < 9; i++)
+        for (var i = theme.Objects.Count; i < 9; i++)
         {
-            theme.Object.Add(Color.Black);
+            theme.Objects.Add(Color.Black);
         }
         
-        for (var i = theme.ParallaxObject.Count; i < 9; i++)
+        for (var i = theme.ParallaxObjects.Count; i < 9; i++)
         {
-            theme.ParallaxObject.Add(Color.Black);
+            theme.ParallaxObjects.Add(Color.Black);
         }
         
-        for (var i = theme.Effect.Count; i < 9; i++)
+        for (var i = theme.Effects.Count; i < 9; i++)
         {
-            theme.Effect.Add(Color.Black);
+            theme.Effects.Add(Color.Black);
         }
     }
 }

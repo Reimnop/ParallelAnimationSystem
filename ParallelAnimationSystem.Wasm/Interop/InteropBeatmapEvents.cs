@@ -1,14 +1,9 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
+using Pamx.Events;
 using ParallelAnimationSystem.Core.Data;
-using ParallelAnimationSystem.Core.Model;
 using ParallelAnimationSystem.Wasm.Interop.Data;
-using BloomData = Pamx.Common.Data.BloomData;
-using GlitchData = Pamx.Common.Data.GlitchData;
-using GradientData = Pamx.Common.Data.GradientData;
-using GrainData = Pamx.Common.Data.GrainData;
-using LensDistortionData = Pamx.Common.Data.LensDistortionData;
-using VignetteData = Pamx.Common.Data.VignetteData;
+using BeatmapEvents = ParallelAnimationSystem.Core.Model.BeatmapEvents;
 
 namespace ParallelAnimationSystem.Wasm.Interop;
 
@@ -79,8 +74,8 @@ public static class InteropBeatmapEvents
     {
         var events = InteropHelper.IntPtrToObject<BeatmapEvents>(ptr);
         var keyframeList = events.Bloom;
-        var wrapper = new FixedSizeKeyframeListInteropWrapper<Keyframe<BloomData>>(keyframeList,
-            new KeyframeInteropCodec<BloomData>());
+        var wrapper = new FixedSizeKeyframeListInteropWrapper<Keyframe<BloomValue>>(keyframeList,
+            new KeyframeInteropCodec<BloomValue>());
         return InteropHelper.ObjectToIntPtr(wrapper);
     }
 
@@ -89,8 +84,8 @@ public static class InteropBeatmapEvents
     {
         var events = InteropHelper.IntPtrToObject<BeatmapEvents>(ptr);
         var keyframeList = events.Vignette;
-        var wrapper = new FixedSizeKeyframeListInteropWrapper<Keyframe<VignetteData>>(keyframeList,
-            new KeyframeInteropCodec<VignetteData>());
+        var wrapper = new FixedSizeKeyframeListInteropWrapper<Keyframe<VignetteValue>>(keyframeList,
+            new KeyframeInteropCodec<VignetteValue>());
         return InteropHelper.ObjectToIntPtr(wrapper);
     }
 
@@ -99,8 +94,8 @@ public static class InteropBeatmapEvents
     {
         var events = InteropHelper.IntPtrToObject<BeatmapEvents>(ptr);
         var keyframeList = events.LensDistortion;
-        var wrapper = new FixedSizeKeyframeListInteropWrapper<Keyframe<LensDistortionData>>(keyframeList,
-            new KeyframeInteropCodec<LensDistortionData>());
+        var wrapper = new FixedSizeKeyframeListInteropWrapper<Keyframe<LensDistortionValue>>(keyframeList,
+            new KeyframeInteropCodec<LensDistortionValue>());
         return InteropHelper.ObjectToIntPtr(wrapper);
     }
 
@@ -109,8 +104,8 @@ public static class InteropBeatmapEvents
     {
         var events = InteropHelper.IntPtrToObject<BeatmapEvents>(ptr);
         var keyframeList = events.Grain;
-        var wrapper = new FixedSizeKeyframeListInteropWrapper<Keyframe<GrainData>>(keyframeList,
-            new KeyframeInteropCodec<GrainData>());
+        var wrapper = new FixedSizeKeyframeListInteropWrapper<Keyframe<GrainValue>>(keyframeList,
+            new KeyframeInteropCodec<GrainValue>());
         return InteropHelper.ObjectToIntPtr(wrapper);
     }
 
@@ -119,8 +114,8 @@ public static class InteropBeatmapEvents
     {
         var events = InteropHelper.IntPtrToObject<BeatmapEvents>(ptr);
         var keyframeList = events.Gradient;
-        var wrapper = new FixedSizeKeyframeListInteropWrapper<Keyframe<GradientData>>(keyframeList,
-            new KeyframeInteropCodec<GradientData>());
+        var wrapper = new FixedSizeKeyframeListInteropWrapper<Keyframe<GradientValue>>(keyframeList,
+            new KeyframeInteropCodec<GradientValue>());
         return InteropHelper.ObjectToIntPtr(wrapper);
     }
 
@@ -129,8 +124,8 @@ public static class InteropBeatmapEvents
     {
         var events = InteropHelper.IntPtrToObject<BeatmapEvents>(ptr);
         var keyframeList = events.Glitch;
-        var wrapper = new FixedSizeKeyframeListInteropWrapper<Keyframe<GlitchData>>(keyframeList,
-            new KeyframeInteropCodec<GlitchData>());
+        var wrapper = new FixedSizeKeyframeListInteropWrapper<Keyframe<GlitchValue>>(keyframeList,
+            new KeyframeInteropCodec<GlitchValue>());
         return InteropHelper.ObjectToIntPtr(wrapper);
     }
 

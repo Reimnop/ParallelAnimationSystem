@@ -1,14 +1,18 @@
-using TmpIO;
+using Tmpx.Common;
+using Tmpx.Shaping;
 
 namespace ParallelAnimationSystem.Core.Text;
 
-public class FontInfo(TmpMetadata metadata, Dictionary<char, TmpCharacter> ordinalToCharacter, Dictionary<int, TmpGlyph> glyphIdToGlyph)
+public class FontInfo(string name, FontStyle style, Font font, int globalShapeEntryBase)
 {
-    public TmpMetadata Metadata => metadata;
+    public string Name => name;
+    public FontStyle Style => style;
+    public Font Font => font;
     
-    public bool TryGetCharacterFromOrdinal(char ordinal, out TmpCharacter character)
-        => ordinalToCharacter.TryGetValue(ordinal, out character);
-
-    public bool TryGetGlyphFromId(int glyphId, out TmpGlyph glyph)
-        => glyphIdToGlyph.TryGetValue(glyphId, out glyph);
+    /// <summary>
+    /// Offset into the global ShapeEntries buffer where this font's entries begin.
+    /// Shaper-emitted local indices must be offset by this value before being stored in
+    /// <see cref="ShapedTextGlyph.ShapeEntryIndex"/>.
+    /// </summary>
+    public int GlobalShapeEntryBase => globalShapeEntryBase;
 }

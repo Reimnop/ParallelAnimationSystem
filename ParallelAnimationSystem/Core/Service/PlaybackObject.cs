@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using Pamx.Common.Enum;
+using Pamx.Objects;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Core.Shape;
 using ParallelAnimationSystem.Core.Text;
@@ -46,6 +46,18 @@ public class PlaybackObject(Identifier id) : IIdentifiable, INotifyPropertyChang
     }
 
     public RenderMode RenderMode
+    {
+        get;
+        set => SetField(ref field, value);
+    }
+    
+    public float GradientRotation
+    {
+        get;
+        set => SetField(ref field, value);
+    }
+    
+    public float GradientScale
     {
         get;
         set => SetField(ref field, value);

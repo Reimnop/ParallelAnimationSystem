@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Runtime.InteropServices;
+using Microsoft.Extensions.DependencyInjection;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Rendering;
@@ -8,23 +10,46 @@ namespace ParallelAnimationSystem.Desktop;
 
 public sealed class DesktopApp(IServiceProvider serviceProvider)
 {
+    private enum ButtonAction
+    {
+        None,
+        Forward10,
+        Backward10,
+        Forward5,
+        Backward5,
+        PlayPause
+    }
+    
+    private struct FullscreenData
+    {
+        public int X;
+        public int Y;
+        public int Width;
+        public int Height;
+    }
+    
     private volatile bool appRunning = true;
     
-    public void StartApp(string beatmapPath, string audioPath)
+    private ButtonAction buttonAction;
+    private FullscreenData? fullscreenData;
+    
+    public void StartApp(string beatmapPath, string audioPath, float startTime = 0.0f)
     {
         using var scope = serviceProvider.CreateScope();
         var sp = scope.ServiceProvider;
         
         // Load beatmap
-        BeatmapHelper.ReadBeatmap(beatmapPath, out var beatmapData, out var beatmapFormat);
+        // BeatmapHelper.ReadBeatmap(beatmapPath, out var beatmapData, out var beatmapFormat);
         var beatmapService = sp.GetRequiredService<BeatmapService>();
-        beatmapService.LoadBeatmap(beatmapData, beatmapFormat);
+        // beatmapService.LoadBeatmap(beatmapData, beatmapFormat);
+        beatmapService.LoadBeatmap(beatmapPath);
         
         // Initialize core service
-        var appCore = sp.GetRequiredService<AppCore>();
+        var appDirector = sp.GetRequiredService<AppDirector>();
         
         // Play audio
         using var audioPlayer = AudioPlayer.Load(audioPath);
+        audioPlayer.Position = startTime;
         audioPlayer.Play();
         
         // Start render thread
@@ -33,7 +58,36 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
         
         // Start the main loop
         while (appRunning)
-            appCore.ProcessFrame((float) audioPlayer.Position);
+        {
+            if (buttonAction != ButtonAction.None)
+            {
+                switch (buttonAction)
+                {
+                    case ButtonAction.Forward10:
+                        audioPlayer.Position += 10.0f;
+                        break;
+                    case ButtonAction.Backward10:
+                        audioPlayer.Position -= 10.0f;
+                        break;
+                    case ButtonAction.Forward5:
+                        audioPlayer.Position += 5.0f;
+                        break;
+                    case ButtonAction.Backward5:
+                        audioPlayer.Position -= 5.0f;
+                        break;
+                    case ButtonAction.PlayPause:
+                        if (audioPlayer.Playing)                            
+                            audioPlayer.Pause();
+                        else                            
+                            audioPlayer.Play();
+                        break;
+                }
+
+                buttonAction = ButtonAction.None;
+            }
+            
+            appDirector.ProcessFrame((float) audioPlayer.Position);
+        }
         
         // Stop audio
         audioPlayer.Stop();
@@ -49,7 +103,18 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
         
         var renderQueue = (AsyncRenderQueue) sp.GetRequiredService<IRenderQueue>();
         var renderer = sp.GetRequiredService<IRenderer>();
-        var window = sp.GetRequiredService<IWindow>();
+        var window = (DesktopWindow) sp.GetRequiredService<IWindow>();
+        
+        GCHandle keyCallbackHandle;
+        
+        unsafe
+        {
+            GLFWCallbacks.KeyCallback keyCallback = OnKey;
+            keyCallbackHandle = GCHandle.Alloc(keyCallback);
+            
+            var windowPtr = window.Handle;
+            GLFW.SetKeyCallback(windowPtr, keyCallback);
+        }
         
         // Start the render loop
         while (!window.ShouldClose)
@@ -64,5 +129,67 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
         
         // Signal the main thread to stop
         appRunning = false;
+        
+        // Free the GCHandle for the key callback
+        keyCallbackHandle.Free();
+    }
+    
+    private unsafe void OnKey(Window* window, Keys key, int scanCode, InputAction action, KeyModifiers mods)
+    {
+        if (action == InputAction.Press)
+        {
+            switch (key)
+            {
+                case Keys.Escape:
+                    GLFW.SetWindowShouldClose(window, true);
+                    break;
+                case Keys.F11:
+                {
+                    if (fullscreenData == null)
+                    {
+                        var monitor = GLFW.GetPrimaryMonitor();
+                        var mode = GLFW.GetVideoMode(monitor);
+                        GLFW.GetWindowPos(window, out var x, out var y);
+                        GLFW.GetWindowSize(window, out var width, out var height);
+                        fullscreenData = new FullscreenData
+                        {
+                            X = x,
+                            Y = y,
+                            Width = width,
+                            Height = height
+                        };
+                        GLFW.SetWindowMonitor(window, monitor, 0, 0, mode->Width, mode->Height, mode->RefreshRate);
+                    }
+                    else
+                    {
+                        GLFW.SetWindowMonitor(
+                            window, 
+                            null, 
+                            fullscreenData.Value.X, 
+                            fullscreenData.Value.Y,
+                            fullscreenData.Value.Width, 
+                            fullscreenData.Value.Height, 
+                            0);
+                        fullscreenData = null;
+                    }
+                    break;
+                }
+                case Keys.J:
+                    buttonAction = ButtonAction.Backward10;
+                    break;
+                case Keys.L:
+                    buttonAction = ButtonAction.Forward10;
+                    break;
+                case Keys.Left:
+                    buttonAction = ButtonAction.Backward5;
+                    break;
+                case Keys.Right:
+                    buttonAction = ButtonAction.Forward5;
+                    break;
+                case Keys.Space:
+                    buttonAction = ButtonAction.PlayPause;
+                    break;
+            }
+        }
     }
 }

@@ -2,7 +2,6 @@ using System.CommandLine.Parsing;
 using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Pamx.Common.Implementation;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Rendering;
@@ -29,9 +28,10 @@ public class FFmpegFrameGenerator(
         var sp = scope.ServiceProvider;
         
         // Load beatmap
-        BeatmapHelper.ReadBeatmap(beatmapPath, out var beatmapData, out var beatmapFormat);
+        // BeatmapHelper.ReadBeatmap(beatmapPath, out var beatmapData, out var beatmapFormat);
         var beatmapService = sp.GetRequiredService<BeatmapService>();
-        beatmapService.LoadBeatmap(beatmapData, beatmapFormat);
+        // beatmapService.LoadBeatmap(beatmapData, beatmapFormat);
+        beatmapService.LoadBeatmap(beatmapPath);
         
         // Initialize renderer
         var renderer = sp.GetRequiredService<IRenderer>();
@@ -49,27 +49,30 @@ public class FFmpegFrameGenerator(
             RedirectStandardError = true,
             CreateNoWindow = true
         };
-        
-        processStartInfo.ArgumentList.AddRange([
+
+        var processStartArgs = new List<string> {
             "-y",
-            
+
             // input video args
             "-f", "rawvideo",
             "-pix_fmt", "rgba",
             "-s", $"{windowSize.X}x{windowSize.Y}",
             "-r", framerate.ToString(),
             "-i", "pipe:0",
-            
+
             // input audio args
             "-c:a", "libvorbis",
             "-i", audioPath,
-            
+
             // video filter
             "-vf", "vflip"
-        ]);
+        };
 
-        var outputArgs = CommandLineStringSplitter.Instance.Split(settings.Args);
-        processStartInfo.ArgumentList.AddRange(outputArgs);
+        foreach (var arg in processStartArgs)
+            processStartInfo.ArgumentList.Add(arg);
+
+        foreach (var arg in CommandLineParser.SplitCommandLine(settings.Args))
+            processStartInfo.ArgumentList.Add(arg);
         processStartInfo.ArgumentList.Add(outputPath);
         
         using var ffmpegProcess = Process.Start(processStartInfo);
@@ -97,7 +100,7 @@ public class FFmpegFrameGenerator(
         // Generate frames
         logger.LogInformation("Rendering video to {OutputPath}", outputPath);
         
-        var appCore = sp.GetRequiredService<AppCore>();
+        var appDirector = sp.GetRequiredService<AppDirector>();
         
         // Load audio
         using var audioPlayer = AudioPlayer.Load(audioPath);
@@ -108,7 +111,7 @@ public class FFmpegFrameGenerator(
         for (var i = 0; i < frameCount; i++)
         {
             var time = i / (float)framerate;
-            appCore.ProcessFrame(time);
+            appDirector.ProcessFrame(time);
             renderQueue.ProcessFrame(renderer);
 
             var frameData = window.FrameData;
@@ -130,7 +133,7 @@ public class FFmpegFrameGenerator(
 
         var bar = $"[{new string('#', (int)(frame / (float)totalFrames * barWidth)),-barWidth}] " +
                   $"{frame}/{totalFrames} " +
-                  $"({(frame / (float)totalFrames * 100):0.00}%)";
+                  $"({frame / (float)totalFrames * 100:0.00}%)";
 
         // Clear + redraw
         Console.Write("\e[2K");
