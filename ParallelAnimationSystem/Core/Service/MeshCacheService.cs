@@ -51,6 +51,7 @@ public class MeshCacheService
     
     private void OnPlaybackObjectInserted(object? sender, IndexedCollectionEntry<PlaybackObject> e)
     {
+        ClearMeshCacheHandleAtIndex(e.Index);
         if (e.Item.Type == PlaybackObjectType.Visible)
             InsertVisiblePlaybackObject(e);
         
@@ -59,6 +60,7 @@ public class MeshCacheService
 
     private void OnPlaybackObjectRemoved(object? sender, IndexedCollectionEntry<PlaybackObject> e)
     {
+        ClearMeshCacheHandleAtIndex(e.Index);
         if (e.Item.Type == PlaybackObjectType.Visible)
             RemoveVisiblePlaybackObject(e);
         
@@ -68,6 +70,7 @@ public class MeshCacheService
     private void InsertVisiblePlaybackObject(IndexedCollectionEntry<PlaybackObject> entry)
     {
         var playbackObject = entry.Item;
+        ClearMeshCacheHandleAtIndex(entry.Index);
         if (playbackObject.CustomShapeInfo is not null)
         {
             objectIndexToCacheIndex.EnsureCount(entry.Index + 1);
@@ -77,18 +80,22 @@ public class MeshCacheService
     
     private void RemoveVisiblePlaybackObject(IndexedCollectionEntry<PlaybackObject> entry)
     {
-        var playbackObject = entry.Item;
-        if (playbackObject.CustomShapeInfo is not null)
+        ClearMeshCacheHandleAtIndex(entry.Index);
+    }
+
+    private void ClearMeshCacheHandleAtIndex(int index)
+    {
+        if (index < 0 || index >= objectIndexToCacheIndex.Count)
+            return;
+
+        var cacheIndex = objectIndexToCacheIndex[index];
+        if (cacheIndex.HasValue)
         {
-            var cacheIndex = objectIndexToCacheIndex[entry.Index];
-            if (cacheIndex.HasValue)
-            {
-                DestroyMeshCacheHandle(cacheIndex.Value);
-                objectIndexToCacheIndex[entry.Index] = null;
-            }
+            DestroyMeshCacheHandle(cacheIndex.Value);
+            objectIndexToCacheIndex[index] = null;
         }
     }
-    
+
     private void OnPlaybackObjectPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (sender is not PlaybackObject playbackObject)
@@ -107,13 +114,7 @@ public class MeshCacheService
             case nameof(PlaybackObject.CustomShapeInfo):
                 if (playbackObject.Type == PlaybackObjectType.Visible)
                 {
-                    if (index < objectIndexToCacheIndex.Count)
-                    {
-                        var oldMeshCacheHandle = objectIndexToCacheIndex[index];
-                        if (oldMeshCacheHandle.HasValue)
-                            DestroyMeshCacheHandle(oldMeshCacheHandle.Value);
-                        objectIndexToCacheIndex[index] = null;
-                    }
+                    ClearMeshCacheHandleAtIndex(index);
 
                     if (playbackObject.CustomShapeInfo is not null)
                     {

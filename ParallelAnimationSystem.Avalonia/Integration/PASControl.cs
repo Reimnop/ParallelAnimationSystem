@@ -5,6 +5,7 @@ using Avalonia;
 using Avalonia.OpenGL;
 using Avalonia.OpenGL.Controls;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenTK.Graphics.OpenGLES2;
@@ -118,9 +119,17 @@ public class PASControl : OpenGlControlBase, IOpenGLWindow, IDisposable
             disposable.Dispose();
     }
 
-    public Vector2i FramebufferSize => new(
-        Math.Max(1, (int)Bounds.Width),
-        Math.Max(1, (int)Bounds.Height));
+    public Vector2i FramebufferSize
+    {
+        get
+        {
+            var dipSize = Bounds.Size;
+            var renderScaling = this.GetPresentationSource()?.RenderScaling ?? 1f;
+            return new Vector2i(
+                Math.Max(1, (int)(dipSize.Width * renderScaling)),
+                Math.Max(1, (int)(dipSize.Height * renderScaling)));
+        }
+    }
 
     public bool ShouldClose => false;
     public bool IsContextCurrent => true;

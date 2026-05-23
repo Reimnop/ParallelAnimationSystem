@@ -1,11 +1,8 @@
-using Avalonia.Controls;
 using Avalonia.Interactivity;
-using Microsoft.Extensions.DependencyInjection;
-using ParallelAnimationSystem.Core.Service;
 
 namespace ParallelAnimationSystem.Avalonia.Views;
 
-public partial class MainWindow : Window
+public partial class MainWindow : ShadUI.Window
 {
     public MainWindow()
     {

@@ -269,7 +269,7 @@ public class PrefabInstanceObjectSource : IDisposable
             Origin = beatmapObject.Origin,
             RenderDepth = beatmapObject.RenderDepth,
             Shape = beatmapObject.Shape,
-            Text = beatmapObject.Text is not null 
+            Text = beatmapObject.Text is not null && beatmapObject.Shape == ObjectShape.Text
                 ? textShaper.ShapeText(beatmapObject.Text, beatmapObject.Origin)
                 : null,
             CustomShapeInfo = beatmapObject.CustomShapeInfo
@@ -354,7 +354,7 @@ public class PrefabInstanceObjectSource : IDisposable
     private void RemoveBeatmapObject(BeatmapObject beatmapObject)
     {
         // remove from container
-        var playbackObjectIndex = playbackObjects.GetIndexForId(beatmapObject.Id);
+        var playbackObjectIndex = playbackObjects.GetIndexForId(GetInternalObjectId(beatmapObject.Id));
         playbackObjects.Remove(playbackObjectIndex);
         internalParentById.Remove(beatmapObject.Id);
         
@@ -562,7 +562,7 @@ public class PrefabInstanceObjectSource : IDisposable
                 break;
             case nameof(BeatmapObject.Origin):
                 playbackObject.Origin = beatmapObject.Origin;
-                playbackObject.Text = beatmapObject.Text is not null 
+                playbackObject.Text = beatmapObject.Text is not null && beatmapObject.Shape == ObjectShape.Text
                     ? textShaper.ShapeText(beatmapObject.Text, beatmapObject.Origin)
                     : null;
                 break;
@@ -571,9 +571,12 @@ public class PrefabInstanceObjectSource : IDisposable
                 break;
             case nameof(BeatmapObject.Shape):
                 playbackObject.Shape = beatmapObject.Shape;
+                playbackObject.Text = beatmapObject.Text is not null && beatmapObject.Shape == ObjectShape.Text
+                    ? textShaper.ShapeText(beatmapObject.Text, beatmapObject.Origin)
+                    : null;
                 break;
             case nameof(BeatmapObject.Text):
-                playbackObject.Text = beatmapObject.Text is not null 
+                playbackObject.Text = beatmapObject.Text is not null && beatmapObject.Shape == ObjectShape.Text
                     ? textShaper.ShapeText(beatmapObject.Text, beatmapObject.Origin)
                     : null;
                 break;
