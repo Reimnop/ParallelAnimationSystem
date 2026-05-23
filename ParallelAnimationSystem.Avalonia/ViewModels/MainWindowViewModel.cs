@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Data.Converters;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -14,7 +15,23 @@ namespace ParallelAnimationSystem.Avalonia.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
-    private AudioPlayer audioPlayer;
+    public static FuncValueConverter<bool, LucideIconKind> PlayingToPlayPauseIconConverter
+        => new(x => x ? LucideIconKind.Pause : LucideIconKind.Play);
+
+    public static FuncValueConverter<AudioPlayer?, string> AudioPlayerToDurationTextConverter
+        => new(ap =>
+        {
+            if (ap == null)
+                return "0:00";
+            return TimeSpan.FromSeconds(ap.Length).ToString(@"m\:ss");
+        });
+    
+    public static FuncValueConverter<AudioPlayer?, float> AudioPlayerToDurationConverter
+        => new(ap => ap == null ? 0f : (float)ap.Length);
+    
+    public static FuncValueConverter<float, string> TimeToCurrentTimeTextConverter
+        => new(t => TimeSpan.FromSeconds(t).ToString(@"m\:ss"));
+    
     private PASControl pasControl = null!;
 
     private bool updatingFromTick;
@@ -28,27 +45,18 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     public partial double SeekPosition { get; set; }
 
-    public double Duration { get; private set; }
-
-    public string CurrentTimeText => TimeSpan.FromSeconds(SeekPosition).ToString(@"m\:ss");
-    public string DurationText => TimeSpan.FromSeconds(Duration).ToString(@"m\:ss");
-    public LucideIconKind PlayPauseIcon => IsPlaying ? LucideIconKind.Pause : LucideIconKind.Play;
-
-    public MainWindowViewModel()
-    {
-        audioPlayer = AudioPlayer.Load("H:\\PA Levels\\pam4.ogg");
-    }
-
-    partial void OnIsPlayingChanged(bool value) 
-        => OnPropertyChanged(nameof(PlayPauseIcon));
+    [ObservableProperty] 
+    public partial AudioPlayer? AudioPlayer { get; set; }
 
     partial void OnSeekPositionChanged(double value)
     {
+        if (AudioPlayer == null)
+            return;
+        
         if (!updatingFromTick)
         {
-            audioPlayer.Position = value;
+            AudioPlayer.Position = value;
             Time = (float)value;
-            OnPropertyChanged(nameof(CurrentTimeText));
         }
     }
 
@@ -107,47 +115,37 @@ public partial class MainWindowViewModel : ViewModelBase
         var beatmapService = sp.GetRequiredService<BeatmapService>();
         beatmapService.LoadBeatmap(beatmapPath);
         
-        audioPlayer.Dispose();
-        audioPlayer = AudioPlayer.Load(audioPath);
-        Duration = audioPlayer.Length;
-        OnPropertyChanged(nameof(Duration));
-        OnPropertyChanged(nameof(DurationText));
+        AudioPlayer?.Dispose();
+        AudioPlayer = AudioPlayer.Load(audioPath);
     }
 
     [RelayCommand]
     public void OnTick()
     {
+        if (AudioPlayer == null)
+            return;
+        
         updatingFromTick = true;
-        SeekPosition = audioPlayer.Position;
-        Time = (float)audioPlayer.Position;
-        IsPlaying = audioPlayer.Playing;
-        OnPropertyChanged(nameof(CurrentTimeText));
+        SeekPosition = AudioPlayer.Position;
+        Time = (float)AudioPlayer.Position;
+        IsPlaying = AudioPlayer.Playing;
         updatingFromTick = false;
     }
 
     [RelayCommand]
     public void PlayPause()
     {
-        if (audioPlayer.Playing)
-            audioPlayer.Pause();
+        if (AudioPlayer == null)
+            return;
+        
+        if (AudioPlayer.Playing)
+            AudioPlayer.Pause();
         else
-            audioPlayer.Play();
-        IsPlaying = audioPlayer.Playing;
+            AudioPlayer.Play();
     }
 
     public void InitializePAS(PASControl control)
     {
         pasControl = control;
-        
-        var sp = pasControl.InternalServiceProvider;
-        var beatmapService = sp.GetRequiredService<BeatmapService>();
-        beatmapService.LoadBeatmap("H:\\PA Levels\\pam4.vgd");
-
-        Duration = audioPlayer.Length;
-        OnPropertyChanged(nameof(Duration));
-        OnPropertyChanged(nameof(DurationText));
-
-        audioPlayer.Play();
-        IsPlaying = true;
     }
 }

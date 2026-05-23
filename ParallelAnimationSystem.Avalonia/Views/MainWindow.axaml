@@ -16,10 +16,6 @@
                x:DataType="vm:MainWindowViewModel"
                Icon="/Assets/avalonia-logo.ico"
                Title="Parallel Animation System">
-
-    <Design.DataContext>
-        <vm:MainWindowViewModel />
-    </Design.DataContext>
     
     <shadui:Window.RightWindowTitleBarContent>
         <Button
@@ -53,14 +49,14 @@
             <StackPanel Spacing="4">
                 <!-- Seek slider -->
                 <Slider Minimum="0"
-                        Maximum="{Binding Duration}"
+                        Maximum="{Binding AudioPlayer, Converter={x:Static vm:MainWindowViewModel.AudioPlayerToDurationConverter}}"
                         Value="{Binding SeekPosition}" />
 
                 <!-- Controls row -->
                 <Grid ColumnDefinitions="*,Auto,*" Height="36">
                     <!-- Current time -->
                     <TextBlock Grid.Column="0"
-                               Text="{Binding CurrentTimeText}"
+                               Text="{Binding Time, Converter={x:Static vm:MainWindowViewModel.TimeToCurrentTimeTextConverter}}"
                                VerticalAlignment="Center"
                                FontSize="13"
                                Foreground="{DynamicResource ForegroundLeadColor}" />
@@ -72,12 +68,12 @@
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             ToolTip.Tip="Play / Pause">
-                        <LucideIcon Kind="{Binding PlayPauseIcon}" />
+                        <LucideIcon Kind="{Binding IsPlaying, Converter={x:Static vm:MainWindowViewModel.PlayingToPlayPauseIconConverter}}" />
                     </Button>
 
                     <!-- Total duration -->
                     <TextBlock Grid.Column="2"
-                               Text="{Binding DurationText}"
+                               Text="{Binding AudioPlayer, Converter={x:Static vm:MainWindowViewModel.AudioPlayerToDurationTextConverter}}"
                                HorizontalAlignment="Right"
                                VerticalAlignment="Center"
                                FontSize="13"
