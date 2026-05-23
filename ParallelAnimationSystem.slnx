@@ -12,6 +12,7 @@
   <Project Path="ParallelAnimationSystem.Android/ParallelAnimationSystem.Android.csproj">
     <Deploy />
   </Project>
+  <Project Path="ParallelAnimationSystem.Avalonia/ParallelAnimationSystem.Avalonia.csproj" />
   <Project Path="ParallelAnimationSystem.Desktop/ParallelAnimationSystem.Desktop.csproj" />
   <Project Path="ParallelAnimationSystem.Mathematics/ParallelAnimationSystem.Mathematics.csproj" />
   <Project Path="ParallelAnimationSystem.Redist/ParallelAnimationSystem.Redist.csproj" />
