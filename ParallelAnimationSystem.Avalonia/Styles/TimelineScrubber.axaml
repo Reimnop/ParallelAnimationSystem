@@ -1,0 +1,92 @@
+<!--
+    Default style for TimelineScrubber.
+
+    The template uses two named parts the control hooks into:
+      PART_Track  - the full-width hit area; pointer events are read from here
+      PART_Thumb  - the playhead knob; positioned via a binding to NormalisedValue
+                    (exposed as a TemplateBinding on Value / Minimum / Maximum)
+
+    Pseudo-classes:
+      :dragging - pointer is captured and the user is scrubbing
+      :hovering - pointer is over the track
+      :at-start - Value == Minimum
+      :at-end - Value == Maximum
+-->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:ParallelAnimationSystem.Avalonia.Controls">
+
+    <Style Selector="controls|TimelineScrubber">
+        <Style.Resources>
+            <controls:NormalizedToWidthConverter x:Key="NormalizedToWidthConverter" />
+            <controls:NormalizedToThumbMarginConverter x:Key="NormalizedToThumbMarginConverter" />
+        </Style.Resources>
+        
+        <Setter Property="MinHeight" Value="20" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Focusable" Value="True" />
+
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Grid RowDefinitions="*,4,*"
+                      Margin="7,0"
+                      Height="20"
+                      Background="Transparent"
+                      x:Name="PART_Track">
+                    <Border Grid.Row="1"
+                            Height="8"
+                            CornerRadius="2"
+                            Background="{DynamicResource BackgroundColor}"
+                            BorderThickness="1"
+                            BorderBrush="{DynamicResource BorderColor}"
+                            IsHitTestVisible="False">
+                        <Border x:Name="FillBar"
+                                CornerRadius="2"
+                                HorizontalAlignment="Left"
+                                Background="{DynamicResource PrimaryColor}"
+                                IsHitTestVisible="False">
+                            <Border.Width>
+                                <MultiBinding Converter="{StaticResource NormalizedToWidthConverter}">
+                                    <TemplateBinding Property="Value" />
+                                    <TemplateBinding Property="Minimum" />
+                                    <TemplateBinding Property="Maximum" />
+                                    <Binding ElementName="PART_Track" Path="Bounds.Width" />
+                                </MultiBinding>
+                            </Border.Width>
+                        </Border>
+                    </Border>
+                    
+                    <Border x:Name="PART_Thumb"
+                            Grid.Row="0"
+                            Grid.RowSpan="3"
+                            Width="14" Height="14"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Background="{DynamicResource PrimaryColor}"
+                            CornerRadius="7"
+                            IsHitTestVisible="False">
+                        <Border.Margin>
+                            <MultiBinding Converter="{StaticResource NormalizedToThumbMarginConverter}">
+                                <TemplateBinding Property="Value" />
+                                <TemplateBinding Property="Minimum" />
+                                <TemplateBinding Property="Maximum" />
+                                <Binding ElementName="PART_Track" Path="Bounds.Width" />
+                            </MultiBinding>
+                        </Border.Margin>
+                        
+                        <Border.Transitions>
+                            <Transitions>
+                                <DoubleTransition Property="Height" Duration="0:0:0.1" />
+                            </Transitions>
+                        </Border.Transitions>
+                    </Border>
+                </Grid>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    
+    <Style Selector="controls|TimelineScrubber:hovering /template/ Border#PART_Thumb">
+        <Setter Property="Height" Value="20" />
+    </Style>
+</Styles>

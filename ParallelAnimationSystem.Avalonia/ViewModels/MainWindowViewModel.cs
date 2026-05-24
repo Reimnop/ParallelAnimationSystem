@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Data.Converters;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Lucide.Avalonia;
@@ -13,51 +14,62 @@ using Window = ShadUI.Window;
 
 namespace ParallelAnimationSystem.Avalonia.ViewModels;
 
-public partial class MainWindowViewModel : ViewModelBase
+public partial class MainWindowViewModel : ViewModelBase, IDisposable
 {
     public static FuncValueConverter<bool, LucideIconKind> PlayingToPlayPauseIconConverter
         => new(x => x ? LucideIconKind.Pause : LucideIconKind.Play);
 
     public static FuncValueConverter<AudioPlayer?, string> AudioPlayerToDurationTextConverter
-        => new(ap =>
-        {
-            if (ap == null)
-                return "0:00";
-            return TimeSpan.FromSeconds(ap.Length).ToString(@"m\:ss");
-        });
+        => new(ap => ap == null ? "0:00" : TimeSpan.FromSeconds(ap.Length).ToString(@"m\:ss"));
     
-    public static FuncValueConverter<AudioPlayer?, float> AudioPlayerToDurationConverter
-        => new(ap => ap == null ? 0f : (float)ap.Length);
+    public static FuncValueConverter<AudioPlayer?, double> AudioPlayerToDurationConverter
+        => new(ap => ap?.Length ?? 0f);
     
-    public static FuncValueConverter<float, string> TimeToCurrentTimeTextConverter
+    public static FuncValueConverter<double, string> TimeToCurrentTimeTextConverter
         => new(t => TimeSpan.FromSeconds(t).ToString(@"m\:ss"));
     
-    private PASControl pasControl = null!;
+    public static FuncValueConverter<int, string> FpsTextConverter
+        => new(x => $"{x} FPS");
 
-    private bool updatingFromTick;
-    
+    [ObservableProperty] 
+    public partial int Fps { get; set; }
+
     [ObservableProperty]
-    public partial float Time { get; set; }
+    public partial double ScrubberPosition { get; set; }
 
     [ObservableProperty]
     public partial bool IsPlaying { get; set; }
 
-    [ObservableProperty]
-    public partial double SeekPosition { get; set; }
-
     [ObservableProperty] 
     public partial AudioPlayer? AudioPlayer { get; set; }
 
-    partial void OnSeekPositionChanged(double value)
+    public Func<float> GetTimeCallback => TickGetTime;
+
+    private readonly DispatcherTimer fpsTimer;
+    
+    private PASControl pasControl = null!;
+    private int countingFps;
+
+    public MainWindowViewModel()
     {
-        if (AudioPlayer == null)
-            return;
-        
-        if (!updatingFromTick)
+        fpsTimer = new DispatcherTimer(DispatcherPriority.Normal)
         {
-            AudioPlayer.Position = value;
-            Time = (float)value;
-        }
+            Interval = TimeSpan.FromSeconds(1)
+        };
+        fpsTimer.Tick += FpsTimerOnTick;
+        fpsTimer.Start();
+    }
+
+    public void Dispose()
+    {
+        fpsTimer.Stop();
+        AudioPlayer?.Dispose();
+    }
+    
+    private void FpsTimerOnTick(object? sender, EventArgs e)
+    {
+        Fps = countingFps;
+        countingFps = 0;
     }
 
     [RelayCommand]
@@ -120,19 +132,6 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    public void OnTick()
-    {
-        if (AudioPlayer == null)
-            return;
-        
-        updatingFromTick = true;
-        SeekPosition = AudioPlayer.Position;
-        Time = (float)AudioPlayer.Position;
-        IsPlaying = AudioPlayer.Playing;
-        updatingFromTick = false;
-    }
-
-    [RelayCommand]
     public void PlayPause()
     {
         if (AudioPlayer == null)
@@ -143,9 +142,26 @@ public partial class MainWindowViewModel : ViewModelBase
         else
             AudioPlayer.Play();
     }
+    
+    public float TickGetTime()
+    {
+        var time = (float?)AudioPlayer?.Position ?? 0f;
+        ScrubberPosition = time;
+        IsPlaying = AudioPlayer?.Playing ?? false;
+        countingFps++;
+        return time;
+    }
 
     public void InitializePAS(PASControl control)
     {
         pasControl = control;
+    }
+
+    public void Seek(double position)
+    {
+        if (AudioPlayer == null)
+            return;
+        
+        AudioPlayer.Position = position;
     }
 }

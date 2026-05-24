@@ -5,7 +5,7 @@
                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                xmlns:integration="clr-namespace:ParallelAnimationSystem.Avalonia.Integration"
                xmlns:shadui="clr-namespace:ShadUI;assembly=ShadUI"
-               xmlns:control="clr-namespace:ParallelAnimationSystem.Avalonia.Control"
+               xmlns:control="clr-namespace:ParallelAnimationSystem.Avalonia.Controls"
                SaveWindowState="True"
                TitleFontWeight="SemiBold"
                Width="1024"
@@ -15,24 +15,35 @@
                mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="720"
                x:Class="ParallelAnimationSystem.Avalonia.Views.MainWindow"
                x:DataType="vm:MainWindowViewModel"
-               Icon="/Assets/avalonia-logo.ico"
+               Icon="/Assets/icon.ico"
                Title="Parallel Animation System">
-    
     <shadui:Window.RightWindowTitleBarContent>
-        <Button
-            Background="{DynamicResource SidebarBackgroundColor}"
-            CornerRadius="{DynamicResource MdCornerRadius}"
-            Command="{Binding OpenBeatmapCommand}"
-            CommandParameter="{Binding $parent[shadui:Window]}"
-            Height="30"
-            Width="30"
-            ToolTip.Tip="Open Beatmap">
-            <LucideIcon Kind="FolderOpen" 
-                        Size="20" />
-        </Button>
+        <StackPanel Orientation="Horizontal" 
+                    FlowDirection="RightToLeft"
+                    Spacing="8">
+            <Button Background="{DynamicResource SidebarBackgroundColor}"
+                    CornerRadius="{DynamicResource MdCornerRadius}"
+                    Command="{Binding OpenBeatmapCommand}"
+                    CommandParameter="{Binding $parent[shadui:Window]}"
+                    Height="30"
+                    Width="30"
+                    ToolTip.Tip="Open Beatmap"
+                    Content="{LucideIconContent FolderOpen, Size=20}"
+                    VerticalAlignment="Center"/>
+            <TextBlock FontWeight="Bold"
+                       VerticalAlignment="Center"
+                       TextAlignment="Right"
+                       HorizontalAlignment="Right"
+                       FlowDirection="LeftToRight"
+                       Text="{Binding Fps, Converter={x:Static vm:MainWindowViewModel.FpsTextConverter}}"/>
+        </StackPanel>
     </shadui:Window.RightWindowTitleBarContent>
     
-    <Grid RowDefinitions="*,Auto" Margin="12" ColumnSpacing="12" RowSpacing="12" ClipToBounds="True">
+    <Grid RowDefinitions="*,Auto" 
+          Margin="12" 
+          ColumnSpacing="12" 
+          RowSpacing="12" 
+          ClipToBounds="True">
         <control:AspectRatioPanel Grid.Row="0" >
             <Border CornerRadius="12" 
                     BorderThickness="1"
@@ -40,29 +51,24 @@
                     BorderBrush="{DynamicResource BorderColor}">
                 <Border CornerRadius="13"
                         ClipToBounds="True">
-                    <integration:PASControl x:Name="PasControl"
-                                            Time="{Binding Time}"
-                                            TickCommand="{Binding TickCommand}" />
+                    <integration:PASControl x:Name="PASControl" GetTimeCallback="{Binding GetTimeCallback}" />
                 </Border>
             </Border>
         </control:AspectRatioPanel>
         
         <shadui:Card Grid.Row="1">
             <StackPanel Spacing="4">
-                <!-- Seek slider -->
-                <Slider Minimum="0"
-                        Maximum="{Binding AudioPlayer, Converter={x:Static vm:MainWindowViewModel.AudioPlayerToDurationConverter}}"
-                        Value="{Binding SeekPosition}" />
-
-                <!-- Controls row -->
+                <control:TimelineScrubber Minimum="0"
+                                          Maximum="{Binding AudioPlayer, Converter={x:Static vm:MainWindowViewModel.AudioPlayerToDurationConverter}}"
+                                          Value="{Binding ScrubberPosition}"
+                                          SeekRequested="TimelineScrubber_OnSeekRequested" />
+                
                 <Grid ColumnDefinitions="*,Auto,*" Height="36">
-                    <!-- Current time -->
                     <TextBlock Grid.Column="0"
-                               Text="{Binding Time, Converter={x:Static vm:MainWindowViewModel.TimeToCurrentTimeTextConverter}}"
+                               Text="{Binding ScrubberPosition, Converter={x:Static vm:MainWindowViewModel.TimeToCurrentTimeTextConverter}}"
                                VerticalAlignment="Center"
                                FontSize="13"
                                Foreground="{DynamicResource ForegroundLeadColor}" />
-                    
                     <Button Grid.Column="1"
                             Classes="Icon" 
                             Command="{Binding PlayPauseCommand}"
@@ -72,8 +78,6 @@
                             ToolTip.Tip="Play / Pause">
                         <LucideIcon Kind="{Binding IsPlaying, Converter={x:Static vm:MainWindowViewModel.PlayingToPlayPauseIconConverter}}" />
                     </Button>
-
-                    <!-- Total duration -->
                     <TextBlock Grid.Column="2"
                                Text="{Binding AudioPlayer, Converter={x:Static vm:MainWindowViewModel.AudioPlayerToDurationTextConverter}}"
                                HorizontalAlignment="Right"

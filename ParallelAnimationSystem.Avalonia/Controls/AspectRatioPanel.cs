@@ -1,7 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
 
-namespace ParallelAnimationSystem.Avalonia.Control;
+namespace ParallelAnimationSystem.Avalonia.Controls;
 
 public class AspectRatioPanel : Panel
 {

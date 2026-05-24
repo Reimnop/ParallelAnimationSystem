@@ -1,16 +1,13 @@
 ﻿using System;
 using System.Numerics;
-using System.Windows.Input;
 using Avalonia;
 using Avalonia.OpenGL;
 using Avalonia.OpenGL.Controls;
-using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenTK.Graphics.OpenGLES2;
 using ParallelAnimationSystem.Core;
-using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.OpenGLES;
@@ -21,22 +18,13 @@ namespace ParallelAnimationSystem.Avalonia.Integration;
 
 public class PASControl : OpenGlControlBase, IOpenGLWindow, IDisposable
 {
-    public static readonly StyledProperty<float> TimeProperty =
-        AvaloniaProperty.Register<PASControl, float>(nameof(Time));
-    
-    public static readonly StyledProperty<ICommand?> TickCommandProperty =
-        AvaloniaProperty.Register<PASControl, ICommand?>(nameof(TickCommand));
+    public static readonly StyledProperty<Func<float>?> GetTimeCallbackProperty =
+        AvaloniaProperty.Register<PASControl, Func<float>?>(nameof(GetTimeCallback));
 
-    public float Time
+    public Func<float>? GetTimeCallback
     {
-        get => GetValue(TimeProperty);
-        set => SetValue(TimeProperty, value);
-    }
-    
-    public ICommand? TickCommand
-    {
-        get => GetValue(TickCommandProperty);
-        set => SetValue(TickCommandProperty, value);
+        get => GetValue(GetTimeCallbackProperty);
+        set => SetValue(GetTimeCallbackProperty, value);
     }
     
     public IServiceProvider InternalServiceProvider => directorScope.ServiceProvider;
@@ -104,10 +92,8 @@ public class PASControl : OpenGlControlBase, IOpenGLWindow, IDisposable
 
     protected override void OnOpenGlRender(GlInterface gl, int fb)
     {
-        TickCommand?.Execute(null);
-        
         targetFramebuffer = fb;
-        director.ProcessFrame(Time);
+        director.ProcessFrame(GetTimeCallback?.Invoke() ?? 0f);
         renderQueue!.ProcessFrame(renderer!);
         
         RequestNextFrameRendering(); 

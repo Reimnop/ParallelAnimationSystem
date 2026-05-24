@@ -3,4 +3,5 @@
     <StyleInclude Source="avares://ParallelAnimationSystem.Avalonia/Styles/TextBlock.axaml" />
     <StyleInclude Source="avares://ParallelAnimationSystem.Avalonia/Styles/Tooltip.axaml" />
     <StyleInclude Source="avares://ParallelAnimationSystem.Avalonia/Styles/Window.axaml" />
+    <StyleInclude Source="avares://ParallelAnimationSystem.Avalonia/Styles/TimelineScrubber.axaml" />
 </Styles>
