@@ -5,6 +5,7 @@
                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                xmlns:integration="clr-namespace:ParallelAnimationSystem.Avalonia.Integration"
                xmlns:shadui="clr-namespace:ShadUI;assembly=ShadUI"
+               xmlns:control="clr-namespace:ParallelAnimationSystem.Avalonia.Control"
                SaveWindowState="True"
                TitleFontWeight="SemiBold"
                Width="1024"
@@ -32,18 +33,19 @@
     </shadui:Window.RightWindowTitleBarContent>
     
     <Grid RowDefinitions="*,Auto" Margin="12" ColumnSpacing="12" RowSpacing="12" ClipToBounds="True">
-        <Border Grid.Row="0" 
-                CornerRadius="12" 
-                BorderThickness="1"
-                Background="{DynamicResource CardBackgroundColor}"
-                BorderBrush="{DynamicResource BorderColor}">
-            <Border CornerRadius="13"
-                    ClipToBounds="True">
-                <integration:PASControl x:Name="PasControl"
-                                        Time="{Binding Time}"
-                                        TickCommand="{Binding TickCommand}" />
+        <control:AspectRatioPanel Grid.Row="0" >
+            <Border CornerRadius="12" 
+                    BorderThickness="1"
+                    Background="{DynamicResource CardBackgroundColor}"
+                    BorderBrush="{DynamicResource BorderColor}">
+                <Border CornerRadius="13"
+                        ClipToBounds="True">
+                    <integration:PASControl x:Name="PasControl"
+                                            Time="{Binding Time}"
+                                            TickCommand="{Binding TickCommand}" />
+                </Border>
             </Border>
-        </Border>
+        </control:AspectRatioPanel>
         
         <shadui:Card Grid.Row="1">
             <StackPanel Spacing="4">
