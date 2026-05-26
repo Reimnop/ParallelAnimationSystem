@@ -42,26 +42,23 @@ public class TextCacheService : IDisposable
     
     private void OnPlaybackObjectInserted(object? sender, IndexedCollectionEntry<PlaybackObject> e)
     {
-        ClearTextHandleAtIndex(e.Index);
         if (e.Item.Type == PlaybackObjectType.Visible)
             InsertVisiblePlaybackObject(e);
-
+        
         e.Item.PropertyChanged += OnPlaybackObjectPropertyChanged;
     }
 
     private void OnPlaybackObjectRemoved(object? sender, IndexedCollectionEntry<PlaybackObject> e)
     {
-        ClearTextHandleAtIndex(e.Index);
         if (e.Item.Type == PlaybackObjectType.Visible)
             RemoveVisiblePlaybackObject(e);
-
+        
         e.Item.PropertyChanged -= OnPlaybackObjectPropertyChanged;
     }
 
     private void InsertVisiblePlaybackObject(IndexedCollectionEntry<PlaybackObject> entry)
     {
         var playbackObject = entry.Item;
-        ClearTextHandleAtIndex(entry.Index);
         if (playbackObject.Text is not null)
         {
             textHandles.EnsureCount(entry.Index + 1);
@@ -71,22 +68,18 @@ public class TextCacheService : IDisposable
     
     private void RemoveVisiblePlaybackObject(IndexedCollectionEntry<PlaybackObject> entry)
     {
-        ClearTextHandleAtIndex(entry.Index);
-    }
-
-    private void ClearTextHandleAtIndex(int index)
-    {
-        if (index < 0 || index >= textHandles.Count)
-            return;
-
-        var textHandle = textHandles[index];
-        if (textHandle.HasValue)
+        var playbackObject = entry.Item;
+        if (playbackObject.Text is not null)
         {
-            renderQueue.DestroyText(textHandle.Value);
-            textHandles[index] = null;
+            var textHandle = textHandles[entry.Index];
+            if (textHandle.HasValue)
+            {
+                renderQueue.DestroyText(textHandle.Value);
+                textHandles[entry.Index] = null;
+            }
         }
     }
-
+    
     private void OnPlaybackObjectPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (sender is not PlaybackObject playbackObject)
@@ -105,7 +98,13 @@ public class TextCacheService : IDisposable
             case nameof(PlaybackObject.Text):
                 if (playbackObject.Type == PlaybackObjectType.Visible)
                 {
-                    ClearTextHandleAtIndex(index);
+                    if (index < textHandles.Count)
+                    {
+                        var oldTextHandle = textHandles[index];
+                        if (oldTextHandle.HasValue)
+                            renderQueue.DestroyText(oldTextHandle.Value);
+                        textHandles[index] = null;
+                    }
 
                     if (playbackObject.Text is not null)
                     {
