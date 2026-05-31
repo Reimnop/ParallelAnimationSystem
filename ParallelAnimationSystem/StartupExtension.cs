@@ -3,26 +3,12 @@ using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Core.Text;
 
-#if DEBUG
-using ParallelAnimationSystem.DebugStuff;
-#endif
-
 namespace ParallelAnimationSystem;
 
 public static class StartupExtension
 {
     public static PASBuilder AddPAS(this IServiceCollection services)
     {
-        // services.AddSingleton(options.AppSettings);
-
-        // Everything related to resources are singletons
-        // options.RenderingFactoryDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);
-        // options.RenderQueueDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);
-
-        // Add resource loader with all resource source factories
-        // services.AddSingleton(_ => new ResourceLoader(options.ResourceSourceFactories
-        //     .Append(() => new EmbeddedResourceSource(typeof(StartupExtension).Assembly))));
-
         var resourceSourceFactories = new ResourceSourceFactories();
         services.AddSingleton(resourceSourceFactories);
         
@@ -35,10 +21,6 @@ public static class StartupExtension
         // These manage rendering resources, so they should be singletons
         services.AddSingleton<MeshService>();
         services.AddSingleton<FontService>();
-
-        // Add rendering services
-        // options.WindowDefinition.RegisterToServiceCollection(services, ServiceLifetime.Scoped);
-        // options.RendererDefinition.RegisterToServiceCollection(services, ServiceLifetime.Scoped);
 
         // Add main services
         services.AddScoped<AppDirector>();
