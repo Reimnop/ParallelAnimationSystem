@@ -51,7 +51,7 @@
                     BorderBrush="{DynamicResource BorderColor}">
                 <Border CornerRadius="13"
                         ClipToBounds="True">
-                    <integration:PASControl x:Name="PASControl" GetTimeCallback="{Binding GetTimeCallback}" />
+                    <ContentControl Content="{Binding PASViewModel}"/>
                 </Border>
             </Border>
         </control:AspectRatioPanel>

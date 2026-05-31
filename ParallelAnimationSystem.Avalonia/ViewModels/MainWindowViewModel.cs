@@ -34,6 +34,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     public static FuncValueConverter<int, string> FpsTextConverter
         => new(x => $"{x} FPS");
 
+    [ObservableProperty]
+    public partial PASViewModel PASViewModel { get; set; }
+
     [ObservableProperty] 
     public partial int Fps { get; set; }
 
@@ -46,15 +49,14 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     [ObservableProperty] 
     public partial AudioPlayer? AudioPlayer { get; set; }
 
-    public Func<float> GetTimeCallback => TickGetTime;
-
     private readonly DispatcherTimer fpsTimer;
-    
-    private PASControl pasControl = null!;
     private int countingFps;
 
-    public MainWindowViewModel()
+    public MainWindowViewModel(PASViewModel pasViewModel)
     {
+        PASViewModel = pasViewModel;
+        PASViewModel.TickCallback = OnTick;
+        
         fpsTimer = new DispatcherTimer(DispatcherPriority.Normal)
         {
             Interval = TimeSpan.FromSeconds(1)
@@ -65,6 +67,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     public void Dispose()
     {
+        PASViewModel.Dispose();
         fpsTimer.Stop();
         AudioPlayer?.Dispose();
     }
@@ -126,9 +129,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         if (audioPath == null)            
             return;
         
-        var sp = pasControl.InternalServiceProvider;
-        var beatmapService = sp.GetRequiredService<BeatmapService>();
-        beatmapService.LoadBeatmap(beatmapPath);
+        PASViewModel.BeatmapService.LoadBeatmap(beatmapPath);
         
         AudioPlayer?.Dispose();
         AudioPlayer = AudioPlayer.Load(audioPath);
@@ -146,18 +147,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             AudioPlayer.Play();
     }
     
-    public float TickGetTime()
+    public float OnTick()
     {
         var time = (float?)AudioPlayer?.Position ?? 0f;
         ScrubberPosition = time;
         IsPlaying = AudioPlayer?.Playing ?? false;
         countingFps++;
         return time;
-    }
-
-    public void InitializePAS(PASControl control)
-    {
-        pasControl = control;
     }
 
     public void Seek(double position)
