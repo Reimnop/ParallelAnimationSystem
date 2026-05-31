@@ -3,11 +3,6 @@ using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Rendering.Common;
 using ParallelAnimationSystem.Windowing.OpenGL;
 
-#if DEBUG
-using ParallelAnimationSystem.DebugStuff;
-using ParallelAnimationSystem.Rendering.OpenGLES.DebugStuff;
-#endif
-
 namespace ParallelAnimationSystem.Rendering.OpenGLES;
 
 public static class PASOptionsBuilderExtension
@@ -27,11 +22,6 @@ public static class PASOptionsBuilderExtension
         });
         
         builder.UseResourceSourceFactory(() => new EmbeddedResourceSource(typeof(PASOptionsBuilderExtension).Assembly));
-        
-#if DEBUG
-        // Add ImGui renderer backend
-        services.AddScoped<IImGuiRendererBackend, ImGuiRendererBackend>();
-#endif
         
         return builder;
     }
