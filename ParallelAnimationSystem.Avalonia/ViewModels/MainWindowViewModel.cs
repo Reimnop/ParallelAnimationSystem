@@ -9,11 +9,14 @@ using CommunityToolkit.Mvvm.Input;
 using Lucide.Avalonia;
 using Microsoft.Extensions.DependencyInjection;
 using ParallelAnimationSystem.Avalonia.Integration;
+using ParallelAnimationSystem.Avalonia.Views;
 using ParallelAnimationSystem.Core.Service;
+using Reimnop.MvvmHelper;
 using Window = ShadUI.Window;
 
 namespace ParallelAnimationSystem.Avalonia.ViewModels;
 
+[ViewModelView(typeof(MainWindow))]
 public partial class MainWindowViewModel : ViewModelBase, IDisposable
 {
     public static FuncValueConverter<bool, LucideIconKind> PlayingToPlayPauseIconConverter

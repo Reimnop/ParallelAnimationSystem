@@ -2,6 +2,10 @@
   <Folder Name="/Pamx/">
     <Project Path="Pamx/Pamx/Pamx.csproj" />
   </Folder>
+  <Folder Name="/Reimnop.MvvmHelper/">
+    <Project Path="Reimnop.MvvmHelper/Reimnop.MvvmHelper.Generator/Reimnop.MvvmHelper.Generator.csproj" />
+    <Project Path="Reimnop.MvvmHelper/Reimnop.MvvmHelper/Reimnop.MvvmHelper.csproj" />
+  </Folder>
   <Folder Name="/Tmpx/">
     <Project Path="Tmpx/Tmpx.Common/Tmpx.Common.csproj" />
     <Project Path="Tmpx/Tmpx.Demo/Tmpx.Demo.csproj" />
