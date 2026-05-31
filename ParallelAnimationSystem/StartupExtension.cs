@@ -56,12 +56,6 @@ public static class StartupExtension
         services.AddScoped<MeshCacheService>();
         services.AddScoped<TextCacheService>();
 
-#if DEBUG
-        // Add ImGui
-        services.AddScoped<ImGuiContext>();
-        services.AddScoped<ImGuiBackend>();
-#endif
-
         // Add migrations
         services.AddTransient<LsMigration>();
         services.AddTransient<VgMigration>();

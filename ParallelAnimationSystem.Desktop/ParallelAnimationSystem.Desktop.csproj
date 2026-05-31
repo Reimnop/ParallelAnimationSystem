@@ -33,10 +33,6 @@
     <ProjectReference Include="../ParallelAnimationSystem.Rendering.OpenGLES/ParallelAnimationSystem.Rendering.OpenGLES.csproj" />
   </ItemGroup>
   
-  <ItemGroup Condition="'$(Configuration)' != 'Debug'">
-    <Compile Remove="DebugStuff/**/*" />
-  </ItemGroup>
-  
   <ItemGroup>
     <EmbeddedResource Include="icon.ico" />
   </ItemGroup>
