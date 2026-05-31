@@ -46,7 +46,6 @@ public sealed class ViewRegistryGenerator : IIncrementalGenerator
         sb.AppendLine("/// </summary>");
         sb.AppendLine("internal static class ViewRegistryRegistration");
         sb.AppendLine("{");
-        sb.AppendLine();
         sb.AppendLine("    /// <summary>");
         sb.AppendLine("    /// Adds all <see cref=\"Reimnop.MvvmHelper.ViewModelViewAttribute\" />-decorated ViewModels");
         sb.AppendLine("    /// in the current assembly to the provided service collection");
@@ -98,7 +97,7 @@ public sealed class ViewRegistryGenerator : IIncrementalGenerator
         sb.AppendLine("/// create the corresponding Views. Generated from classes decorated with");
         sb.AppendLine("/// <see cref=\"Reimnop.MvvmHelper.ViewModelViewAttribute\" />.");
         sb.AppendLine("/// </summary>");
-        sb.AppendLine("internal class ViewRegistry : Reimnop.MvvmHelper.AbstractGeneratedViewRegistry");
+        sb.AppendLine("internal class ViewRegistry : global::Reimnop.MvvmHelper.AbstractGeneratedViewRegistry");
         sb.AppendLine("{");
 
         // factory function fields
