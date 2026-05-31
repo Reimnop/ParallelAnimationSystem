@@ -18,9 +18,6 @@ public sealed class ViewModelViewAttribute : Attribute
     /// </param>
     public ViewModelViewAttribute([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type viewType)
     {
-        if (!viewType.IsSubclassOf(typeof(Control)))
-            throw new ArgumentException($"'{viewType.FullName}' must derive from ${nameof(Control)}", nameof(viewType));
- 
         ViewType = viewType;
     }
 }
