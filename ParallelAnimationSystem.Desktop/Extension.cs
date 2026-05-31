@@ -6,11 +6,6 @@ using ParallelAnimationSystem.Rendering.OpenGL;
 using ParallelAnimationSystem.Rendering.OpenGLES;
 using ParallelAnimationSystem.Windowing;
 
-#if DEBUG
-using ParallelAnimationSystem.DebugStuff;
-using ParallelAnimationSystem.Desktop.DebugStuff;
-#endif
-
 namespace ParallelAnimationSystem.Desktop;
 
 public static class Extension
@@ -57,11 +52,6 @@ public static class Extension
                 builder.UseOpenGLESRenderer();
                 break;
         }
-        
-#if DEBUG
-        // Add ImGui platform backend
-        services.AddSingleton<IImGuiPlatformBackend, ImGuiPlatformBackend>();
-#endif
         
         return services;
     }
