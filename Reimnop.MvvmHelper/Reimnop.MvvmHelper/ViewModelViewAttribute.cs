@@ -16,7 +16,7 @@ public sealed class ViewModelViewAttribute : Attribute
     /// <param name="viewType">
     /// Must be a concrete <see cref="Control"/> with a public parameterless constructor.
     /// </param>
-    public ViewModelViewAttribute([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type viewType)
+    public ViewModelViewAttribute(Type viewType)
     {
         ViewType = viewType;
     }
