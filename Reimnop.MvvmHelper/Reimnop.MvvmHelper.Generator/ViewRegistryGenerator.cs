@@ -26,6 +26,11 @@ public sealed class ViewRegistryGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(combinedProvider, static (spc, tuple) =>
         {
             var (compilation, classes) = tuple;
+            
+            // skip generating for assemblies with no decorated classes
+            if (classes.IsDefaultOrEmpty)
+                return;
+            
             var registryNamespace = $"{compilation.AssemblyName}.Generated";
             spc.AddSource("ViewRegistry.g.cs", GeneratedRegistrySource(registryNamespace, classes));
             spc.AddSource("ViewRegistryRegistration.g.cs", GeneratedRegistryRegistrationSource(registryNamespace, classes));
