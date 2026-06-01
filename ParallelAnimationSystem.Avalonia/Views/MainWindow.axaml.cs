@@ -1,4 +1,3 @@
-using Avalonia.Interactivity;
 using ParallelAnimationSystem.Avalonia.Controls;
 
 namespace ParallelAnimationSystem.Avalonia.Views;
