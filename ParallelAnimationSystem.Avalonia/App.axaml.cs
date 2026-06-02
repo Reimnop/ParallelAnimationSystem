@@ -1,3 +1,4 @@
+using System;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -6,11 +7,14 @@ using ParallelAnimationSystem.Avalonia.Generated;
 using ParallelAnimationSystem.Avalonia.ViewModels;
 using ParallelAnimationSystem.Avalonia.Views;
 using Reimnop.MvvmHelper;
+using ShadUI;
 
 namespace ParallelAnimationSystem.Avalonia;
 
-public partial class App : Application
+public class App : Application, IDisposable
 {
+    private MainWindowViewModel? mainWindowViewModel;
+    
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -19,20 +23,28 @@ public partial class App : Application
     public override void OnFrameworkInitializationCompleted()
     {
         var services = new ServiceCollection()
+            .AddSingleton<DialogManager>()
             .AddMvvm();
         
         var serviceProvider = services.BuildServiceProvider();
         var viewLocator = serviceProvider.GetRequiredService<IViewLocator>();
         DataTemplates.Add(viewLocator);
         
+        mainWindowViewModel = serviceProvider.GetRequiredService<MainWindowViewModel>();
+        
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.MainWindow = new MainWindow
             {
-                DataContext = serviceProvider.GetRequiredService<MainWindowViewModel>()
+                DataContext = mainWindowViewModel
             };
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    public void Dispose()
+    {
+        mainWindowViewModel?.Dispose();
     }
 }

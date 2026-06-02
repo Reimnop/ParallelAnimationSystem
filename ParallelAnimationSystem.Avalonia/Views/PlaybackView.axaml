@@ -1,0 +1,60 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:control="clr-namespace:ParallelAnimationSystem.Avalonia.Controls"
+             xmlns:shadui="clr-namespace:ShadUI;assembly=ShadUI"
+             xmlns:vm="clr-namespace:ParallelAnimationSystem.Avalonia.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="ParallelAnimationSystem.Avalonia.Views.PlaybackView"
+             x:DataType="vm:PlaybackViewModel">
+    <Grid RowDefinitions="*,Auto" 
+          Margin="12" 
+          ColumnSpacing="12" 
+          RowSpacing="12" 
+          ClipToBounds="True">
+        <control:AspectRatioPanel Grid.Row="0" >
+            <Border CornerRadius="12" 
+                    BorderThickness="1"
+                    Background="{DynamicResource CardBackgroundColor}"
+                    BorderBrush="{DynamicResource BorderColor}">
+                <Border CornerRadius="13"
+                        ClipToBounds="True">
+                    <ContentControl Content="{Binding PASViewModel}"/>
+                </Border>
+            </Border>
+        </control:AspectRatioPanel>
+        
+        <shadui:Card Grid.Row="1">
+            <StackPanel Spacing="4">
+                <control:TimelineScrubber Minimum="0"
+                                          Maximum="{Binding AudioPlayer, Converter={x:Static vm:PlaybackViewModel.AudioPlayerToDurationConverter}}"
+                                          Value="{Binding ScrubberPosition}"
+                                          SeekRequested="TimelineScrubber_OnSeekRequested" />
+                
+                <Grid ColumnDefinitions="*,Auto,*" Height="36">
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding ScrubberPosition, Converter={x:Static vm:PlaybackViewModel.TimeToCurrentTimeTextConverter}}"
+                               VerticalAlignment="Center"
+                               FontSize="13"
+                               Foreground="{DynamicResource ForegroundLeadColor}" />
+                    <Button Grid.Column="1"
+                            Classes="Icon" 
+                            Command="{Binding PlayPauseCommand}"
+                            Width="36" Height="36"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            ToolTip.Tip="Play / Pause">
+                        <LucideIcon Kind="{Binding IsPlaying, Converter={x:Static vm:PlaybackViewModel.PlayingToPlayPauseIconConverter}}" />
+                    </Button>
+                    <TextBlock Grid.Column="2"
+                               Text="{Binding AudioPlayer, Converter={x:Static vm:PlaybackViewModel.AudioPlayerToDurationTextConverter}}"
+                               HorizontalAlignment="Right"
+                               VerticalAlignment="Center"
+                               FontSize="13"
+                               Foreground="{DynamicResource ForegroundLeadColor}" />
+                </Grid>
+            </StackPanel>
+        </shadui:Card>
+    </Grid>
+</UserControl>

@@ -1,5 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace Reimnop.MvvmHelper;
+namespace ParallelAnimationSystem.Avalonia.ViewModels;
 
 public abstract class ViewModelBase : ObservableObject;

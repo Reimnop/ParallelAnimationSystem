@@ -10,7 +10,7 @@ public sealed class ViewLocator(IViewRegistry registry) : IViewLocator
 {
     /// <inheritdoc/>
     public bool Match(object? data)
-        => data is ViewModelBase vm && registry.IsRegistered(vm.GetType());
+        => data is not null && registry.IsRegistered(data.GetType());
  
     /// <inheritdoc/>
     public Control? Build(object? data)

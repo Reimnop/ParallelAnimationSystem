@@ -1,10 +1,9 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using Avalonia.Controls;
+﻿using Avalonia.Controls;
 
 namespace Reimnop.MvvmHelper;
 
 /// <summary>
-/// Place on a <see cref="ViewModelBase"/> subclass to declare which Avalonia
+/// Place on a view model class to declare which Avalonia
 /// <see cref="Control"/> renders it.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]

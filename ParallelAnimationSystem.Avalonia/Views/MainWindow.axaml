@@ -17,13 +17,18 @@
                x:DataType="vm:MainWindowViewModel"
                Icon="/Assets/icon.ico"
                Title="Parallel Animation System">
+    <shadui:Window.Hosts>
+        <shadui:DialogHost
+            Manager="{Binding DialogManager}"
+            x:Name="PART_DialogHost" />
+    </shadui:Window.Hosts>
     <shadui:Window.RightWindowTitleBarContent>
-        <StackPanel Orientation="Horizontal" 
+        <StackPanel Orientation="Horizontal"
                     FlowDirection="RightToLeft"
                     Spacing="8">
             <Button Background="{DynamicResource SidebarBackgroundColor}"
                     CornerRadius="{DynamicResource MdCornerRadius}"
-                    Command="{Binding OpenBeatmapCommand}"
+                    Command="{Binding PlaybackViewModel.OpenBeatmapCommand}"
                     CommandParameter="{Binding $parent[shadui:Window]}"
                     Height="30"
                     Width="30"
@@ -35,57 +40,9 @@
                        TextAlignment="Right"
                        HorizontalAlignment="Right"
                        FlowDirection="LeftToRight"
-                       Text="{Binding Fps, Converter={x:Static vm:MainWindowViewModel.FpsTextConverter}}"/>
+                       Text="{Binding PlaybackViewModel.Fps, Converter={x:Static vm:MainWindowViewModel.FpsTextConverter}}"/>
         </StackPanel>
     </shadui:Window.RightWindowTitleBarContent>
     
-    <Grid RowDefinitions="*,Auto" 
-          Margin="12" 
-          ColumnSpacing="12" 
-          RowSpacing="12" 
-          ClipToBounds="True">
-        <control:AspectRatioPanel Grid.Row="0" >
-            <Border CornerRadius="12" 
-                    BorderThickness="1"
-                    Background="{DynamicResource CardBackgroundColor}"
-                    BorderBrush="{DynamicResource BorderColor}">
-                <Border CornerRadius="13"
-                        ClipToBounds="True">
-                    <ContentControl Content="{Binding PASViewModel}"/>
-                </Border>
-            </Border>
-        </control:AspectRatioPanel>
-        
-        <shadui:Card Grid.Row="1">
-            <StackPanel Spacing="4">
-                <control:TimelineScrubber Minimum="0"
-                                          Maximum="{Binding AudioPlayer, Converter={x:Static vm:MainWindowViewModel.AudioPlayerToDurationConverter}}"
-                                          Value="{Binding ScrubberPosition}"
-                                          SeekRequested="TimelineScrubber_OnSeekRequested" />
-                
-                <Grid ColumnDefinitions="*,Auto,*" Height="36">
-                    <TextBlock Grid.Column="0"
-                               Text="{Binding ScrubberPosition, Converter={x:Static vm:MainWindowViewModel.TimeToCurrentTimeTextConverter}}"
-                               VerticalAlignment="Center"
-                               FontSize="13"
-                               Foreground="{DynamicResource ForegroundLeadColor}" />
-                    <Button Grid.Column="1"
-                            Classes="Icon" 
-                            Command="{Binding PlayPauseCommand}"
-                            Width="36" Height="36"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            ToolTip.Tip="Play / Pause">
-                        <LucideIcon Kind="{Binding IsPlaying, Converter={x:Static vm:MainWindowViewModel.PlayingToPlayPauseIconConverter}}" />
-                    </Button>
-                    <TextBlock Grid.Column="2"
-                               Text="{Binding AudioPlayer, Converter={x:Static vm:MainWindowViewModel.AudioPlayerToDurationTextConverter}}"
-                               HorizontalAlignment="Right"
-                               VerticalAlignment="Center"
-                               FontSize="13"
-                               Foreground="{DynamicResource ForegroundLeadColor}" />
-                </Grid>
-            </StackPanel>
-        </shadui:Card>
-    </Grid>
+    <ContentControl Content="{Binding PlaybackViewModel}" />
 </shadui:Window>

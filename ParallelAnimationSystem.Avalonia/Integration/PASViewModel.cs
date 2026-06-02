@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using ParallelAnimationSystem.Avalonia.ViewModels;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Rendering;
