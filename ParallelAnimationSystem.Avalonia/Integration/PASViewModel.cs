@@ -16,9 +16,11 @@ public class PASViewModel : ViewModelBase, IDisposable
 {
     public Func<float>? TickCallback { get; set; }
 
-    public IServiceProvider InternalServiceProvider { get; }
-    public BeatmapService BeatmapService { get; }
+    public IServiceProvider ServiceProvider { get; }
 
+    public BeatmapService BeatmapService { get; }
+    public RandomSeedService RandomSeedService { get; }
+    
     private readonly AppDirector director;
 
     public PASViewModel()
@@ -52,11 +54,14 @@ public class PASViewModel : ViewModelBase, IDisposable
             return holder.Window;
         });
         
-        InternalServiceProvider = services.BuildServiceProvider();
+        ServiceProvider = services.BuildServiceProvider();
         
-        var directorScope = InternalServiceProvider.CreateScope();
-        BeatmapService = directorScope.ServiceProvider.GetRequiredService<BeatmapService>();
-        director = directorScope.ServiceProvider.GetRequiredService<AppDirector>();
+        var directorScope = ServiceProvider.CreateScope();
+        var directorSp = directorScope.ServiceProvider;
+        
+        director = directorSp.GetRequiredService<AppDirector>();
+        BeatmapService = directorSp.GetRequiredService<BeatmapService>();
+        RandomSeedService = directorSp.GetRequiredService<RandomSeedService>();
     }
 
     public void ProcessFrame()
@@ -66,7 +71,7 @@ public class PASViewModel : ViewModelBase, IDisposable
 
     public void Dispose()
     {
-        if (InternalServiceProvider is IDisposable disposable)
+        if (ServiceProvider is IDisposable disposable)
             disposable.Dispose();
     }
 }

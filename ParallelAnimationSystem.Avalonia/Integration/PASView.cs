@@ -28,7 +28,7 @@ public class PASView : OpenGlControlBase
         if (renderContext is not null)
             throw new InvalidOperationException("RenderContext is already initialized");
         
-        var sp = vm.InternalServiceProvider;
+        var sp = vm.ServiceProvider;
         
         var renderQueue = (RenderQueue)sp.GetRequiredService<IRenderQueue>();
         var windowHolder = sp.GetRequiredService<PASWindowHolder>();
@@ -58,7 +58,7 @@ public class PASView : OpenGlControlBase
         if (DataContext is not PASViewModel vm)
             throw new InvalidOperationException($"DataContext must be of type {nameof(PASViewModel)}");
         
-        var sp = vm.InternalServiceProvider;
+        var sp = vm.ServiceProvider;
         var windowHolder = sp.GetRequiredService<PASWindowHolder>();
         windowHolder.Window = null;
         
