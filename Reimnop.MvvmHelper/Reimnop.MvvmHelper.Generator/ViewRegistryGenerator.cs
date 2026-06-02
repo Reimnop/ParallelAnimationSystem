@@ -14,7 +14,7 @@ public sealed class ViewRegistryGenerator : IIncrementalGenerator
         // find all class declarations with the attribute
         var classesProvider = context.SyntaxProvider
             .ForAttributeWithMetadataName(
-                "Reimnop.MvvmHelper.ViewModelViewAttribute",
+                "Reimnop.MvvmHelper.ViewModelViewAttribute`1",
                 predicate: static (node, _) => node is ClassDeclarationSyntax,
                 transform: static (ctx, _) => GetClassInfo(ctx))
             .Where(static m => m is not null)
@@ -135,13 +135,15 @@ public sealed class ViewRegistryGenerator : IIncrementalGenerator
         
         var attributes = symbol.GetAttributes();
         var viewModelViewAttribute = attributes
-            .FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == "Reimnop.MvvmHelper.ViewModelViewAttribute");
+            .FirstOrDefault(a => 
+                a.AttributeClass?.ConstructedFrom.ToDisplayString() == "Reimnop.MvvmHelper.ViewModelViewAttribute<T>");
 
         if (viewModelViewAttribute is null)
             return null;
 
-        var typeofArgument = viewModelViewAttribute.ConstructorArguments.FirstOrDefault();
-        if (typeofArgument.Value is not INamedTypeSymbol viewTypeSymbol)
+        var typeSymbol = viewModelViewAttribute.AttributeClass?.TypeArguments.FirstOrDefault();
+        
+        if (typeSymbol is not INamedTypeSymbol viewTypeSymbol)
             return null;
         
         var viewFullName = viewTypeSymbol.ToDisplayString();

@@ -7,7 +7,7 @@ using ShadUI;
 
 namespace ParallelAnimationSystem.Avalonia.ViewModels;
 
-[ViewModelView(typeof(MainWindow))]
+[ViewModelView<MainWindow>]
 public partial class MainWindowViewModel : ViewModelBase, IDisposable
 {
     public static FuncValueConverter<int, string> FpsTextConverter

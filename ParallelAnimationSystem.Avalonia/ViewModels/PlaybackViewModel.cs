@@ -13,7 +13,7 @@ using Reimnop.MvvmHelper;
 
 namespace ParallelAnimationSystem.Avalonia.ViewModels;
 
-[ViewModelView(typeof(PlaybackView))]
+[ViewModelView<PlaybackView>]
 public partial class PlaybackViewModel : ViewModelBase, IDisposable
 {
     public static FuncValueConverter<bool, LucideIconKind> PlayingToPlayPauseIconConverter

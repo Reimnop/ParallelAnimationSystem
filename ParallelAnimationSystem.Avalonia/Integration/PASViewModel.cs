@@ -11,7 +11,7 @@ using Reimnop.MvvmHelper;
 
 namespace ParallelAnimationSystem.Avalonia.Integration;
 
-[ViewModelView(typeof(PASView))]
+[ViewModelView<PASView>]
 public class PASViewModel : ViewModelBase, IDisposable
 {
     public Func<float>? TickCallback { get; set; }
