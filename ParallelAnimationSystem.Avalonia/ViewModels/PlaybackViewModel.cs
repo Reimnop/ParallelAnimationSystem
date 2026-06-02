@@ -125,7 +125,7 @@ public partial class PlaybackViewModel : ViewModelBase, IDisposable
         if (audioPath == null)            
             return;
         
-        PASViewModel.BeatmapService.LoadBeatmap(beatmapPath);
+        PASViewModel.BeatmapService.LoadBeatmapFromPath(beatmapPath);
         
         AudioPlayer?.Dispose();
         AudioPlayer = AudioPlayer.Load(audioPath);

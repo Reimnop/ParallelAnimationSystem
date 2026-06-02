@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -54,58 +55,29 @@ public class BeatmapService : IDisposable
         themeManager.DetachBeatmapData();
     }
 
-    public void LoadBeatmap(string beatmapPath)
+    public void LoadBeatmapFromPath(string beatmapPath)
     {
-        // Load beatmap
-        var sw = Stopwatch.StartNew();
-
-        try
+        using var stream = File.OpenRead(beatmapPath);
+        var extension = Path.GetExtension(beatmapPath);
+        var format = extension.ToLower() switch
         {
-            BeatmapData.Clear();
-            logger.LogInformation("Clearing existing beatmap data took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
-
-            // Get beatmap format
-            var extension = Path.GetExtension(beatmapPath).ToLowerInvariant();
-            var format = extension switch
-            {
-                ".lsb" => BeatmapFormat.Lsb,
-                ".vgd" => BeatmapFormat.Vgd,
-                _ => throw new NotSupportedException($"Unsupported beatmap extension '{extension}'")
-            };
-            
-            // Deserialize beatmap
-            sw.Restart();
-            using var stream = File.OpenRead(beatmapPath);
-            var beatmap = format switch
-            {
-                BeatmapFormat.Lsb => JsonSerializer.Deserialize<Beatmap>(stream, PamxSerialization.LegacyOptions)!,
-                BeatmapFormat.Vgd => JsonSerializer.Deserialize<Beatmap>(stream, PamxSerialization.Options)!,
-                _ => throw new NotSupportedException($"Unsupported beatmap format '{format}'"),
-            };
-            logger.LogInformation("Deserializing beatmap took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
-
-            // Migrate the beatmap
-            sw.Restart();
-            MigrateBeatmap(beatmap, format);
-            logger.LogInformation("Migrating beatmap took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
-
-            // Import beatmap
-            sw.Restart();
-            BeatmapImporter.Import(beatmap, BeatmapData);
-            logger.LogInformation("Importing beatmap data took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);
-
-            BeatmapFormat = format;
-
-            logger.LogInformation("Beatmap loading complete, loaded {ObjectCount} objects", playbackObjects.Count);
-        }
-        finally
-        {
-            sw.Stop();
-        }
+            ".lsb" => BeatmapFormat.Lsb,
+            ".vgd" => BeatmapFormat.Vgd,
+            _ => throw new NotSupportedException($"Unsupported beatmap file extension '{extension}'"),
+        };
+        
+        LoadBeatmap(stream, format);
     }
 
     public void LoadBeatmap(string data, BeatmapFormat format)
     {
+        var bytes = Encoding.UTF8.GetBytes(data);
+        using var stream = new MemoryStream(bytes);
+        LoadBeatmap(stream, format);
+    }
+
+    public void LoadBeatmap(Stream stream, BeatmapFormat format)
+    {
         // Load beatmap
         var sw = Stopwatch.StartNew();
 
@@ -118,8 +90,8 @@ public class BeatmapService : IDisposable
             sw.Restart();
             var beatmap = format switch
             {
-                BeatmapFormat.Lsb => JsonSerializer.Deserialize<Beatmap>(data, PamxSerialization.LegacyOptions)!,
-                BeatmapFormat.Vgd => JsonSerializer.Deserialize<Beatmap>(data, PamxSerialization.Options)!,
+                BeatmapFormat.Lsb => JsonSerializer.Deserialize<Beatmap>(stream, PamxSerialization.LegacyOptions)!,
+                BeatmapFormat.Vgd => JsonSerializer.Deserialize<Beatmap>(stream, PamxSerialization.Options)!,
                 _ => throw new NotSupportedException($"Unsupported beatmap format '{format}'"),
             };
             logger.LogInformation("Deserializing beatmap took {ElapsedMilliseconds}ms", sw.ElapsedMilliseconds);

@@ -32,7 +32,7 @@ public class FFmpegFrameGenerator(
         // BeatmapHelper.ReadBeatmap(beatmapPath, out var beatmapData, out var beatmapFormat);
         var beatmapService = sp.GetRequiredService<BeatmapService>();
         // beatmapService.LoadBeatmap(beatmapData, beatmapFormat);
-        beatmapService.LoadBeatmap(beatmapPath);
+        beatmapService.LoadBeatmapFromPath(beatmapPath);
         
         // Set random seed
         var rss = sp.GetRequiredService<RandomSeedService>();
