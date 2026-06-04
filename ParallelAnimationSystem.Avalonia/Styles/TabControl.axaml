@@ -1,0 +1,108 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shadui="clr-namespace:ShadUI;assembly=ShadUI">
+    <Style Selector="TabControl">
+        <Setter Property="Foreground" Value="{DynamicResource ForegroundColor}" />
+        <Setter Property="Background" Value="{DynamicResource BackgroundColor}" />
+        <Setter Property="(shadui:TabControlBehaviors.UseSlidingPill)" Value="True" />
+        <Setter Property="ItemsPanel">
+            <Setter.Value>
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" Spacing="4" />
+                </ItemsPanelTemplate>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border
+                    Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}"
+                    CornerRadius="{TemplateBinding CornerRadius}"
+                    HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
+                    VerticalAlignment="{TemplateBinding VerticalAlignment}">
+                    <Grid 
+                        RowDefinitions="Auto,*"
+                        RowSpacing="8">
+                        <LayoutTransformControl
+                            Grid.Row="0"
+                            DockPanel.Dock="{TemplateBinding TabStripPlacement}"
+                            HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
+                            Name="LayoutTransform">
+                            <Border
+                                Background="{DynamicResource TabItemsBackgroundColor}"
+                                CornerRadius="{DynamicResource LgCornerRadius}"
+                                HorizontalAlignment="Left"
+                                Padding="2,4,2,0">
+                                <Panel>
+                                    <Canvas IsHitTestVisible="False">
+                                        <Border
+                                            Background="{DynamicResource TabItemSelectedColor}"
+                                            BoxShadow="{DynamicResource Shadow}"
+                                            Canvas.Left="0"
+                                            Canvas.Top="0"
+                                            CornerRadius="{DynamicResource MdCornerRadius}"
+                                            Height="0"
+                                            Opacity="0"
+                                            Width="0"
+                                            x:Name="PART_SelectionPill">
+                                            <Border.Transitions>
+                                                <Transitions>
+                                                    <DoubleTransition Duration="0:0:0.30" Easing="{StaticResource EaseOut}" Property="(Canvas.Left)" />
+                                                    <DoubleTransition Duration="0:0:0.30" Easing="{StaticResource EaseOut}" Property="(Canvas.Top)" />
+                                                    <DoubleTransition Duration="0:0:0.30" Easing="{StaticResource EaseOut}" Property="Width" />
+                                                    <DoubleTransition Duration="0:0:0.30" Easing="{StaticResource EaseOut}" Property="Height" />
+                                                    <DoubleTransition Duration="0:0:0.20" Easing="{StaticResource EaseOut}" Property="Opacity" />
+                                                </Transitions>
+                                            </Border.Transitions>
+                                        </Border>
+                                    </Canvas>
+                                    <ItemsPresenter ItemsPanel="{TemplateBinding ItemsPanel}" Name="PART_ItemsPresenter" />
+                                </Panel>
+                            </Border>
+                        </LayoutTransformControl>
+                        <ContentPresenter
+                            Grid.Row="1"
+                            Content="{TemplateBinding SelectedContent}"
+                            ContentTemplate="{TemplateBinding SelectedContentTemplate}"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            Margin="{TemplateBinding Padding}"
+                            Name="PART_SelectedContentHost"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+                    </Grid>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+        <Style Selector="^[TabStripPlacement=Left] /template/ LayoutTransformControl#LayoutTransform">
+            <Setter Property="LayoutTransform" Value="rotate(-90deg)" />
+            <Style Selector="^ ItemsPresenter#PART_ItemsPresenter WrapPanel">
+                <Setter Property="Orientation" Value="Horizontal" />
+                <Setter Property="FlowDirection" Value="{DynamicResource FlowDirectionOpposite}" />
+            </Style>
+        </Style>
+        <Style Selector="^[TabStripPlacement=Right] /template/ LayoutTransformControl#LayoutTransform">
+            <Setter Property="LayoutTransform" Value="rotate(90deg)" />
+            <Style Selector="^ ItemsPresenter#PART_ItemsPresenter WrapPanel">
+                <Setter Property="Orientation" Value="Horizontal" />
+            </Style>
+        </Style>
+        <Style Selector="^[TabStripPlacement=Top] /template/ ItemsPresenter#PART_ItemsPresenter">
+            <Setter Property="Margin" Value="{DynamicResource TabControlTopPlacementItemMargin}" />
+        </Style>
+        <Style Selector="^.HorizontalTabs">
+            <Style Selector="^[TabStripPlacement=Left] /template/ LayoutTransformControl#LayoutTransform">
+                <Setter Property="LayoutTransform" Value="rotate(0)" />
+                <Style Selector="^ ItemsPresenter#PART_ItemsPresenter WrapPanel">
+                    <Setter Property="Orientation" Value="Vertical" />
+                    <Setter Property="FlowDirection" Value="{DynamicResource FlowDirectionOpposite}" />
+                </Style>
+            </Style>
+            <Style Selector="^[TabStripPlacement=Right] /template/ LayoutTransformControl#LayoutTransform">
+                <Setter Property="LayoutTransform" Value="rotate(0)" />
+                <Style Selector="^ ItemsPresenter#PART_ItemsPresenter WrapPanel">
+                    <Setter Property="Orientation" Value="Vertical" />
+                </Style>
+            </Style>
+        </Style>
+    </Style>
+</Styles>

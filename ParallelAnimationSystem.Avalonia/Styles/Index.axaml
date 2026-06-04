@@ -4,5 +4,6 @@
     <StyleInclude Source="avares://ParallelAnimationSystem.Avalonia/Styles/Tooltip.axaml" />
     <StyleInclude Source="avares://ParallelAnimationSystem.Avalonia/Styles/Window.axaml" />
     <StyleInclude Source="avares://ParallelAnimationSystem.Avalonia/Styles/TimelineScrubber.axaml" />
+    <StyleInclude Source="avares://ParallelAnimationSystem.Avalonia/Styles/TabControl.axaml" />
     <StyleInclude Source="avares://ParallelAnimationSystem.Avalonia/Styles/TabItem.axaml" />
 </Styles>
