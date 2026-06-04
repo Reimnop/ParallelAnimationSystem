@@ -1,10 +1,7 @@
 ﻿using DotMake.CommandLine;
 using Microsoft.Extensions.DependencyInjection;
-using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Platform.OpenGL;
-using ParallelAnimationSystem.Rendering;
-using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Desktop;
 
