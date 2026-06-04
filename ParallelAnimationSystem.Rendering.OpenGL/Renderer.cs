@@ -119,8 +119,6 @@ public class Renderer : IRenderer, IDisposable
         
         logger.LogInformation("Initializing OpenGL renderer");
         
-        this.surface.MakeContextCurrent();
-        
         // Enable multisampling
         GL.Enable(EnableCap.Multisample);
         
@@ -133,7 +131,7 @@ public class Renderer : IRenderer, IDisposable
         #region OpenGL Data Initialization
 
         {
-            var size = surface.FramebufferSize;
+            var size = surface.RenderSize;
             
             // Create vertex array and buffers
             vertexArrayHandle = GL.CreateVertexArray();
@@ -225,8 +223,6 @@ public class Renderer : IRenderer, IDisposable
         if (surface.IsContextLost)
             return;
         
-        surface.MakeContextCurrent();
-        
         // Delete OpenGL resources
         GL.DeleteFramebuffer(fboHandle);
         GL.DeleteRenderbuffer(fboColorBufferHandle);
@@ -284,10 +280,7 @@ public class Renderer : IRenderer, IDisposable
 
     public void ProcessFrame(IDrawDataProvider drawDataProvider)
     {
-        var renderSize = surface.FramebufferSize;
-        
-        // Set context
-        surface.MakeContextCurrent();
+        var renderSize = surface.RenderSize;
         
         // Update OpenGL data
         UpdateOpenGlData(renderSize);

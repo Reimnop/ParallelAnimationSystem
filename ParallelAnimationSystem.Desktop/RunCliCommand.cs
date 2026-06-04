@@ -20,11 +20,12 @@ public class RunCliCommand : RootCliCommand
     {
         var services = new ServiceCollection();
         
-        services.AddSingleton(new DesktopWindowSettings
+        services.AddSingleton(new DesktopSurfaceSettings
         {
             Size = new Vector2i(Width, Height),
             VSync = VSync,
-            UseEgl = UseEgl
+            UseEgl = UseEgl,
+            LockAspectRatio = LockAspectRatio
         });
 
         services
@@ -37,6 +38,6 @@ public class RunCliCommand : RootCliCommand
         
         // Start the app
         var app = serviceProvider.GetRequiredService<DesktopApp>();
-        app.StartApp(BeatmapPath, AudioPath, StartTime, Seed);
+        app.StartApp(BeatmapPath, AudioPath, Seed, EnablePostProcessing, EnableTextRendering);
     }
 }

@@ -9,7 +9,7 @@ namespace ParallelAnimationSystem.Avalonia.Integration;
 
 public class PASSurface(PASView view) : IOpenGLSurface, IDisposable
 {
-    public Vector2i FramebufferSize
+    public Vector2i RenderSize
     {
         get
         {
@@ -21,23 +21,18 @@ public class PASSurface(PASView view) : IOpenGLSurface, IDisposable
         }
     }
 
-    // Avalonia does not lose the context
+    // Avalonia does not "lose" the context
     public bool IsContextLost => false;
-
     public int TargetFramebufferHandle { get; set; }
 
     private readonly int framebuffer = GL.GenFramebuffer();
-
-    public void MakeContextCurrent()
-    {
-    }
 
     public void Present(int texture, Vector2i size, ColorRgba clearColor)
     {
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, framebuffer);
         GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, texture, 0);
         
-        var dstSize = FramebufferSize;
+        var dstSize = RenderSize;
         
         GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, framebuffer);
         GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, TargetFramebufferHandle);

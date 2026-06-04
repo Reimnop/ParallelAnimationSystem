@@ -23,6 +23,10 @@ public struct ColorRgba(float r, float g, float b, float a)
     {
     }
 
+    public ColorRgba() : this(0f, 0f, 0f, 1f)
+    {
+    }
+
     public static ColorRgba operator*(ColorRgba color, float scalar) 
         => new(color.R * scalar, color.G * scalar, color.B * scalar, color.A * scalar);
     

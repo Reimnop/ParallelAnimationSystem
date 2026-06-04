@@ -35,7 +35,7 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
     private ButtonAction buttonAction;
     private FullscreenData? fullscreenData;
     
-    public void StartApp(string beatmapPath, string audioPath, float startTime, ulong? randomSeed)
+    public void StartApp(string beatmapPath, string audioPath, ulong? randomSeed, bool enablePostProcessing, bool enableTextRendering)
     {
         using var scope = serviceProvider.CreateScope();
         var sp = scope.ServiceProvider;
@@ -49,6 +49,8 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
         // Initialize core service
         var renderQueue = sp.GetRequiredService<RenderQueue>();
         var appDirector = sp.GetRequiredService<AppDirector>();
+        appDirector.EnablePostProcessing = enablePostProcessing;
+        appDirector.EnableTextRendering = enableTextRendering;
         
         // Get the random seed service
         var rss = sp.GetRequiredService<RandomSeedService>();
@@ -56,7 +58,6 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
         
         // Play audio
         using var audioPlayer = AudioPlayer.Load(audioPath);
-        audioPlayer.Position = startTime;
         audioPlayer.Play();
         
         // Start render thread

@@ -53,7 +53,7 @@ public class PasActivity : Activity
         surfaceView.SurfaceCreatedCallback = surfaceHolder =>
         {
             var thread = new Thread(() => 
-                RunApp(beatmapPath, beatmapFormat, audioPath, surfaceView, surfaceHolder));
+                RunApp(beatmapPath, beatmapFormat, audioPath, surfaceView, surfaceHolder, lockAspectRatio, enableTextRendering, enablePostProcessing));
             thread.Start();
         };
         
@@ -65,7 +65,10 @@ public class PasActivity : Activity
         BeatmapFormat beatmapFormat,
         Uri audioPath, 
         GraphicsSurfaceView surfaceView,
-        ISurfaceHolder surfaceHolder)
+        ISurfaceHolder surfaceHolder,
+        bool lockAspectRatio,
+        bool enableTextRendering,
+        bool enablePostProcessing)
     {
         var beatmapData = ReadBeatmapData(beatmapPath);
         var audioData = ReadAudioData(audioPath);
@@ -95,6 +98,12 @@ public class PasActivity : Activity
         // Register PAS services
         services.AddPAS()
             .UseOpenGLESRenderer();
+
+        var surfaceSettings = new AndroidSurfaceSettings
+        {
+            LockAspectRatio = lockAspectRatio,
+        };
+        services.AddSingleton(surfaceSettings);
         
         // Initialize PAS services
         using var serviceProvider = services.BuildServiceProvider();
@@ -108,8 +117,11 @@ public class PasActivity : Activity
         var beatmapService = scope.ServiceProvider.GetRequiredService<BeatmapService>();
         beatmapService.LoadBeatmap(beatmapData, beatmapFormat);
         
-        var renderQueue = scope.ServiceProvider.GetRequiredService<RenderQueue>();
         var appDirector = scope.ServiceProvider.GetRequiredService<AppDirector>();
+        appDirector.EnablePostProcessing = enablePostProcessing;
+        appDirector.EnableTextRendering = enableTextRendering;
+        
+        var renderQueue = serviceProvider.GetRequiredService<RenderQueue>();
         var renderer = scope.ServiceProvider.GetRequiredService<IRenderer>();
         
         var surface = (AndroidSurface)scope.ServiceProvider.GetRequiredService<IOpenGLSurface>();

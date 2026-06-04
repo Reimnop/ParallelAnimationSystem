@@ -27,11 +27,12 @@ public class RenderCliCommand : RootCliCommand
     {
         var services = new ServiceCollection();
         
-        services.AddSingleton(new DesktopWindowSettings
+        services.AddSingleton(new DesktopSurfaceSettings
         {
             Size = new Vector2i(Width, Height),
             VSync = false,
-            UseEgl = UseEgl
+            UseEgl = UseEgl,
+            LockAspectRatio = false,
         });
 
         services.AddSingleton(new FFmpegSettings
@@ -49,7 +50,7 @@ public class RenderCliCommand : RootCliCommand
         
         // Start frame generator
         var frameGenerator = serviceProvider.GetRequiredService<FFmpegFrameGenerator>();
-        frameGenerator.GenerateFrames(BeatmapPath, AudioPath, Framerate, OutputPath, Seed);
+        frameGenerator.GenerateFrames(BeatmapPath, AudioPath, Framerate, OutputPath, Seed, EnablePostProcessing, EnableTextRendering);
     }
 }
 

@@ -23,7 +23,7 @@ public class FFmpegFrameGenerator(
         ffmpegLogWriter.Dispose();
     }
 
-    public void GenerateFrames(string beatmapPath, string audioPath, int framerate, string outputPath, ulong? seed)
+    public void GenerateFrames(string beatmapPath, string audioPath, int framerate, string outputPath, ulong? seed, bool enablePostProcessing, bool enableTextRendering)
     {
         using var scope = serviceProvider.CreateScope();
         var sp = scope.ServiceProvider;
@@ -43,7 +43,7 @@ public class FFmpegFrameGenerator(
         var renderer = sp.GetRequiredService<IRenderer>();
         var window = (FFmpegSurface)sp.GetRequiredService<IOpenGLSurface>();
         
-        var windowSize = window.FramebufferSize;
+        var windowSize = window.RenderSize;
         
         // Start FFmpeg process
         var processStartInfo = new ProcessStartInfo(settings.ExecPath) 
@@ -106,6 +106,8 @@ public class FFmpegFrameGenerator(
         logger.LogInformation("Rendering video to {OutputPath}", outputPath);
         
         var appDirector = sp.GetRequiredService<AppDirector>();
+        appDirector.EnablePostProcessing = enablePostProcessing;
+        appDirector.EnableTextRendering = enableTextRendering;
         
         // Load audio
         using var audioPlayer = AudioPlayer.Load(audioPath);

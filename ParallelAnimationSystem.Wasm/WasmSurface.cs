@@ -16,7 +16,7 @@ public class WasmSurface : IOpenGLSurface, IDisposable
             => Egl.GetProcAddress(procName);
     }
     
-    public Vector2i FramebufferSize
+    public Vector2i RenderSize
     {
         get
         {
@@ -86,17 +86,12 @@ public class WasmSurface : IOpenGLSurface, IDisposable
         if (surface == IntPtr.Zero)
             throw new InvalidOperationException("Failed to create EGL surface");
         
-        MakeContextCurrent();
+        if (!Egl.MakeCurrent(display, surface, surface, context))
+            throw new InvalidOperationException("Failed to make context current");
         
         GLLoader.LoadBindings(new BindingsContext());
         
         framebuffer = GL.GenFramebuffer();
-    }
-
-    public void MakeContextCurrent()
-    {
-        if (!Egl.MakeCurrent(display, surface, surface, context))
-            throw new InvalidOperationException("Failed to make context current");
     }
 
     public void Present(int texture, Vector2i size, ColorRgba clearColor)
@@ -104,7 +99,7 @@ public class WasmSurface : IOpenGLSurface, IDisposable
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, framebuffer);
         GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, texture, 0);
         
-        var dstSize = FramebufferSize;
+        var dstSize = RenderSize;
         
         GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, framebuffer);
         GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);

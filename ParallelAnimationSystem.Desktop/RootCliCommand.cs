@@ -20,10 +20,10 @@ public class RootCliCommand
     [CliOption(Name = "height", Alias = "h", Description = "Height of the window")]
     public int Height { get; set; } = 768;
 
-    [CliOption(Name = "use-egl", Description = "Use EGL for context creation")]
+    [CliOption(Name = "use-egl", Description = "Uses EGL for context creation")]
     public bool UseEgl { get; set; }
 
-    [CliOption(Name = "seed", Description = "Seed for the random number generator")]
+    [CliOption(Name = "seed", Description = "Sets the seed for the random number generator")]
     public ulong? Seed { get; set; }
 
     [CliOption(Name = "backend", Description = "Sets the rendering backend to use")]
@@ -34,7 +34,4 @@ public class RootCliCommand
 
     [CliOption(Name = "text-rendering", Description = "Enable text rendering")]
     public bool EnableTextRendering { get; set; } = true;
-
-    [CliOption(Name = "start-time", Description = "Sets the playback start time")]
-    public float StartTime { get; set; }
 }

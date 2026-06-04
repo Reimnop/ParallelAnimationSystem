@@ -4,6 +4,7 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Platform.OpenGL;
+using ParallelAnimationSystem.Rendering;
 using ReFuel.Stb;
 
 namespace ParallelAnimationSystem.Desktop;
@@ -11,7 +12,18 @@ namespace ParallelAnimationSystem.Desktop;
 public unsafe class DesktopSurface : IOpenGLSurface, IDisposable
 {
     private const string Title = "Parallel Animation System";
+    private const float LockedAspectRatio = 16f / 9f;
     
+    public Vector2i RenderSize
+    {
+        get
+        {
+            var size = FramebufferSize;
+            RenderUtil.GetRenderSize(size, surfaceSettings.LockAspectRatio ? LockedAspectRatio : null, out var renderSize);
+            return renderSize;
+        }
+    }
+
     public Vector2i FramebufferSize
     {
         get
@@ -25,20 +37,22 @@ public unsafe class DesktopSurface : IOpenGLSurface, IDisposable
     public bool ShouldClose => GLFW.WindowShouldClose(window);
     
     public Window* WindowPtr => window;
-
+    
+    private readonly DesktopSurfaceSettings surfaceSettings;
     private readonly GlfwService glfw;
     private readonly Window* window;
 
     private readonly int framebuffer;
 
-    public DesktopSurface(DesktopWindowSettings windowSettings, GlfwService glfw)
+    public DesktopSurface(DesktopSurfaceSettings surfaceSettings, GlfwService glfw)
     {
+        this.surfaceSettings = surfaceSettings;
         this.glfw = glfw;
         
-        window = this.glfw.CreateWindowHandle(windowSettings.Size.X, windowSettings.Size.Y, Title, windowSettings.UseEgl);
+        window = this.glfw.CreateWindowHandle(this.surfaceSettings.Size.X, this.surfaceSettings.Size.Y, Title, this.surfaceSettings.UseEgl);
         
         GLFW.MakeContextCurrent(window);
-        GLFW.SwapInterval(windowSettings.VSync ? 1 : 0);
+        GLFW.SwapInterval(surfaceSettings.VSync ? 1 : 0);
 
         framebuffer = GL.GenFramebuffer();
         
@@ -50,6 +64,9 @@ public unsafe class DesktopSurface : IOpenGLSurface, IDisposable
     
     public void Dispose()
     {
+        // We don't need to dispose the framebuffer because
+        // it will be deleted automatically when context is lost
+        
         GLFW.DestroyWindow(window);
         IsContextLost = true;
     }
@@ -86,33 +103,31 @@ public unsafe class DesktopSurface : IOpenGLSurface, IDisposable
         }
     }
 
-    public void MakeContextCurrent()
-    {
-        GLFW.MakeContextCurrent(window);
-    }
-
     public void Present(int texture, Vector2i size, ColorRgba clearColor)
     {
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, framebuffer);
         GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, texture, 0);
         
-        var dstSize = FramebufferSize;
+        var framebufferSize = FramebufferSize;
+        var offset = (framebufferSize - size) / 2;
         
         GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, framebuffer);
         GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);
         
         // Clear the default framebuffer
         GL.ClearColor(clearColor.R, clearColor.G, clearColor.B, clearColor.A);
-        GL.Viewport(0, 0, size.X, size.Y);
+        GL.Viewport(0, 0, framebufferSize.X, framebufferSize.Y);
         GL.Clear(ClearBufferMask.ColorBufferBit);
         
         // Blit the framebuffer to the default framebuffer
         GL.BlitFramebuffer(
             0, 0, size.X, size.Y,
-            0, 0, dstSize.X, dstSize.Y,
+            offset.X, offset.Y, offset.X + size.X, offset.Y + size.Y,
             ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Nearest);
         
         GLFW.SwapBuffers(window);
+        
+        OnFramePresent(framebufferSize);
     }
 
     public void PollEvents()

@@ -116,9 +116,6 @@ public class Renderer : IRenderer, IDisposable
         
         logger.LogInformation("Initializing OpenGL ES renderer");
         
-        // Create window
-        this.surface.MakeContextCurrent();
-        
         // Log OpenGL information
         logger.LogInformation("OpenGL ES: {Version}", GL.GetString(StringName.Version));
         logger.LogInformation("Renderer: {Renderer}", GL.GetString(StringName.Renderer));
@@ -128,7 +125,7 @@ public class Renderer : IRenderer, IDisposable
         #region OpenGL Data Initialization
 
         {
-            var initialSize = this.surface.FramebufferSize;
+            var initialSize = this.surface.RenderSize;
             
             // Create main program handle
             programHandle = LoaderUtil.LoadShaderProgram(loader, "UnlitVertex", "UnlitFragment");
@@ -271,8 +268,6 @@ public class Renderer : IRenderer, IDisposable
         if (surface.IsContextLost)
             return;
         
-        surface.MakeContextCurrent();
-        
         // Delete GL resources
         GL.DeleteProgram(programHandle);
         GL.DeleteProgram(glyphProgramHandle);
@@ -333,10 +328,7 @@ public class Renderer : IRenderer, IDisposable
     
     public void ProcessFrame(IDrawDataProvider drawDataProvider)
     {
-        var renderSize = surface.FramebufferSize;
-        
-        // Set context
-        surface.MakeContextCurrent();
+        var renderSize = surface.RenderSize;
         
         // Update OpenGL data
         UpdateOpenGlData(renderSize);
