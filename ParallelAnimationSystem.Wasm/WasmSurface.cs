@@ -1,13 +1,21 @@
-using System.Numerics;
+using OpenTK;
+using OpenTK.Graphics;
 using OpenTK.Graphics.Egl;
 using OpenTK.Graphics.OpenGLES2;
+using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Mathematics;
-using ParallelAnimationSystem.Windowing.OpenGL;
+using ParallelAnimationSystem.Platform.OpenGL;
 
 namespace ParallelAnimationSystem.Wasm;
 
-public class WasmWindow : IOpenGLWindow, IDisposable
+public class WasmSurface : IOpenGLSurface, IDisposable
 {
+    private class BindingsContext : IBindingsContext
+    {
+        public IntPtr GetProcAddress(string procName)
+            => Egl.GetProcAddress(procName);
+    }
+    
     public Vector2i FramebufferSize
     {
         get
@@ -18,16 +26,15 @@ public class WasmWindow : IOpenGLWindow, IDisposable
         }
     }
 
-    // JS controls the lifecycle of the canvas, so we never want to close it from C#
-    public bool ShouldClose => false;
-
-    public bool IsContextCurrent => Egl.GetCurrentContext() == context;
+    public bool IsContextLost { get; private set; }
 
     private readonly IntPtr display;
     private readonly IntPtr context;
     private readonly IntPtr surface;
     
-    public WasmWindow(OpenGLSettings glSettings)
+    private readonly int framebuffer;
+    
+    public WasmSurface(OpenGLSettings glSettings)
     {
         if (!glSettings.IsES)
             throw new InvalidOperationException("Only OpenGL ES is supported on WebAssembly");
@@ -78,6 +85,12 @@ public class WasmWindow : IOpenGLWindow, IDisposable
         surface = Egl.CreateWindowSurface(display, chosenConfig, IntPtr.Zero, IntPtr.Zero);
         if (surface == IntPtr.Zero)
             throw new InvalidOperationException("Failed to create EGL surface");
+        
+        MakeContextCurrent();
+        
+        GLLoader.LoadBindings(new BindingsContext());
+        
+        framebuffer = GL.GenFramebuffer();
     }
 
     public void MakeContextCurrent()
@@ -85,37 +98,27 @@ public class WasmWindow : IOpenGLWindow, IDisposable
         if (!Egl.MakeCurrent(display, surface, surface, context))
             throw new InvalidOperationException("Failed to make context current");
     }
-    
-    public void Present(int framebuffer, Vector4 clearColor, Vector2i size, Vector2i offset)
+
+    public void Present(int texture, Vector2i size, ColorRgba clearColor)
     {
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, framebuffer);
+        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, texture, 0);
+        
         var dstSize = FramebufferSize;
         
         GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, framebuffer);
         GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);
         
         // Clear the default framebuffer
-        GL.ClearColor(clearColor.X, clearColor.Y, clearColor.Z, clearColor.W);
+        GL.ClearColor(clearColor.R, clearColor.G, clearColor.B, clearColor.A);
         GL.Viewport(0, 0, dstSize.X, dstSize.Y);
         GL.Clear(ClearBufferMask.ColorBufferBit);
         
         // Blit the framebuffer to the default framebuffer
         GL.BlitFramebuffer(
             0, 0, size.X, size.Y,
-            offset.X, offset.Y, offset.X + size.X, offset.Y + size.Y,
+            0, 0, dstSize.X, dstSize.Y,
             ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Nearest);
-    }
-
-    public IntPtr GetProcAddress(string procName)
-        => Egl.GetProcAddress(procName);
-
-    public void PollEvents()
-    {
-        // Do nothing
-    }
-
-    public void Close()
-    {
-        // Do nothing
     }
 
     public void Dispose()
@@ -124,5 +127,7 @@ public class WasmWindow : IOpenGLWindow, IDisposable
         Egl.DestroyContext(display, context);
         Egl.DestroySurface(display, surface);
         Egl.Terminate(display);
+        
+        IsContextLost = true;
     }
 }

@@ -3,9 +3,9 @@ using Microsoft.Extensions.DependencyInjection;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Service;
+using ParallelAnimationSystem.Platform.OpenGL;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Util;
-using ParallelAnimationSystem.Windowing;
 
 namespace ParallelAnimationSystem.Desktop;
 
@@ -47,6 +47,7 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
         beatmapService.LoadBeatmapFromPath(beatmapPath);
         
         // Initialize core service
+        var renderQueue = sp.GetRequiredService<RenderQueue>();
         var appDirector = sp.GetRequiredService<AppDirector>();
         
         // Get the random seed service
@@ -95,7 +96,11 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
                 buttonAction = ButtonAction.None;
             }
             
-            appDirector.ProcessFrame((float) audioPlayer.Position);
+            appDirector.PopulateRenderQueueDrawList((float) audioPlayer.Position);
+            renderQueue.FinishFrame();
+            
+            while (renderQueue.FreeFrameCount == 0)
+                Thread.Yield();
         }
         
         // Stop audio
@@ -110,9 +115,10 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
         using var scope = serviceProvider.CreateScope();
         var sp = scope.ServiceProvider;
         
-        var renderQueue = (AsyncRenderQueue) sp.GetRequiredService<IRenderQueue>();
+        var renderQueue = serviceProvider.GetRequiredService<RenderQueue>();
+        
         var renderer = sp.GetRequiredService<IRenderer>();
-        var window = (DesktopWindow) sp.GetRequiredService<IWindow>();
+        var surface = (DesktopSurface) sp.GetRequiredService<IOpenGLSurface>();
         
         GCHandle keyCallbackHandle;
         
@@ -121,23 +127,20 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
             GLFWCallbacks.KeyCallback keyCallback = OnKey;
             keyCallbackHandle = GCHandle.Alloc(keyCallback);
             
-            var windowPtr = window.Handle;
+            var windowPtr = surface.WindowPtr;
             GLFW.SetKeyCallback(windowPtr, keyCallback);
         }
         
         // Start the render loop
-        while (!window.ShouldClose)
+        while (renderQueue.QueuedFrameCount > 0 || !surface.ShouldClose)
         {
-            window.PollEvents();
-
-            while (renderQueue.QueuedFrames == 0)
-                Thread.Yield();
+            if (surface.ShouldClose)
+                // Signal the main thread to stop
+                appRunning = false;
             
-            renderQueue.FlushOneFrame(renderer);
+            surface.PollEvents();
+            renderQueue.FlushFrame(renderer);
         }
-        
-        // Signal the main thread to stop
-        appRunning = false;
         
         // Free the GCHandle for the key callback
         keyCallbackHandle.Free();

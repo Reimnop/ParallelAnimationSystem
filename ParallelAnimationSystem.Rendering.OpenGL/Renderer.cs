@@ -5,14 +5,14 @@ using OpenTK.Graphics.OpenGL;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using ParallelAnimationSystem.Core;
+using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Data;
 using ParallelAnimationSystem.Mathematics;
+using ParallelAnimationSystem.Platform.OpenGL;
 using ParallelAnimationSystem.Rendering.Common;
 using ParallelAnimationSystem.Rendering.Data;
 using ParallelAnimationSystem.Rendering.OpenGL.PostProcessing;
 using ParallelAnimationSystem.Util;
-using ParallelAnimationSystem.Windowing;
-using ParallelAnimationSystem.Windowing.OpenGL;
 using BandEntry = Tmpx.Common.BandEntry;
 using QuadraticCurve = Tmpx.Common.QuadraticCurve;
 
@@ -91,22 +91,11 @@ public class Renderer : IRenderer, IDisposable
     private int postProcessTextureHandle1, postProcessTextureHandle2;
     private readonly int postProcessFboHandle;
 
-    private Vector2i currentOverlaySize;
-    private readonly int overlayProgram;
-    private readonly int overlaySourceOffsetsUniformLocation, overlaySourceScalesUniformLocation, overlaySourceCountUniformLocation;
-    private readonly int overlaySampler;
-    private int overlayTexture;
-
-    private readonly int overlayFramebufferHandle;
-
     private readonly List<DrawCommandWithDepth> opaqueDrawCommands = [];
     private readonly List<DrawCommandWithDepth> transparentDrawCommands = [];
     
     private readonly Buffer<DrawElementsIndirectCommand> multiDrawIndirectBuffer = new();
     private readonly Buffer<MultiDrawItem> multiDrawStorageBuffer = new();
-    
-    // Overlay renderers
-    private readonly List<IOverlayRenderer> overlayRenderers = [];
     
     // Dirty flags
     private bool meshBufferDirty = true;
@@ -114,29 +103,23 @@ public class Renderer : IRenderer, IDisposable
     private bool fontBuffersDirty = true;
 
     // Injected dependencies
-    private readonly AppSettings appSettings;
     private readonly RenderingFactory renderingFactory;
-    private readonly IOpenGLWindow window;
+    private readonly IOpenGLSurface surface;
     private readonly ILogger<Renderer> logger;
 
     public Renderer(
-        AppSettings appSettings,
         IRenderingFactory renderingFactory,
-        IWindow window,
+        IOpenGLSurface surface,
         ResourceLoader loader,
         ILogger<Renderer> logger)
     {
-        this.appSettings = appSettings;
         this.renderingFactory = (RenderingFactory) renderingFactory;
-        this.window = (IOpenGLWindow) window;
+        this.surface = surface;
         this.logger = logger;
         
         logger.LogInformation("Initializing OpenGL renderer");
         
-        this.window.MakeContextCurrent();
-        
-        // Load OpenGL bindings
-        GLLoader.LoadBindings(new BindingsContext(this.window));
+        this.surface.MakeContextCurrent();
         
         // Enable multisampling
         GL.Enable(EnableCap.Multisample);
@@ -150,7 +133,7 @@ public class Renderer : IRenderer, IDisposable
         #region OpenGL Data Initialization
 
         {
-            var size = window.FramebufferSize;
+            var size = surface.FramebufferSize;
             
             // Create vertex array and buffers
             vertexArrayHandle = GL.CreateVertexArray();
@@ -209,47 +192,6 @@ public class Renderer : IRenderer, IDisposable
 
             currentFboSize = size;
             
-            // Initialize overlay resources
-            
-            // Load overlay program
-            overlayProgram = LoaderUtil.LoadComputeProgram(loader, "Overlay");
-            overlaySourceOffsetsUniformLocation = GL.GetUniformLocation(overlayProgram, "uSourceOffsets");
-            overlaySourceScalesUniformLocation = GL.GetUniformLocation(overlayProgram, "uSourceScales");
-            overlaySourceCountUniformLocation = GL.GetUniformLocation(overlayProgram, "uSourceCount");
-            
-            var overlaySourceSamplersUniformLocation = GL.GetUniformLocation(overlayProgram, "uSourceSamplers");
-            
-            GL.UseProgram(overlayProgram);
-            for (var i = 0; i < MaxOverlays; i++)
-                GL.Uniform1i(overlaySourceSamplersUniformLocation + i, 1, i);
-            
-            // Hardcode offsets and scales from 1 to MaxOverlays
-            for (var i = 0; i < MaxOverlays; i++)
-            {
-                GL.Uniform2f(overlaySourceOffsetsUniformLocation + i, 0f, 0f);
-                GL.Uniform2f(overlaySourceScalesUniformLocation + i, 1f, 1f);
-            }
-            
-            // Create overlay sampler
-            overlaySampler = GL.CreateSampler();
-            GL.SamplerParameteri(overlaySampler, SamplerParameterI.TextureMinFilter, (int)TextureMinFilter.Nearest);
-            GL.SamplerParameteri(overlaySampler, SamplerParameterI.TextureMagFilter, (int)TextureMagFilter.Nearest);
-            GL.SamplerParameteri(overlaySampler, SamplerParameterI.TextureWrapS, (int)TextureWrapMode.ClampToBorder);
-            GL.SamplerParameteri(overlaySampler, SamplerParameterI.TextureWrapT, (int)TextureWrapMode.ClampToBorder);
-
-            var borderColor = Vector4.Zero;
-            GL.SamplerParameterf(overlaySampler, SamplerParameterF.TextureBorderColor, in borderColor.X);
-            
-            // Initialize overlay texture
-            overlayTexture = GL.CreateTexture(TextureTarget.Texture2d);
-            GL.TextureStorage2D(overlayTexture, 1, SizedInternalFormat.Rgba16f, size.X, size.Y);
-            
-            // Create overlay fbo
-            overlayFramebufferHandle = GL.CreateFramebuffer();
-            GL.NamedFramebufferTexture(overlayFramebufferHandle, FramebufferAttachment.ColorAttachment0, overlayTexture, 0);
-            
-            currentOverlaySize = size;
-
             // Initialize post processors
             legacyBloom = new LegacyBloom(loader);
             universalBloom = new UniversalBloom(loader);
@@ -279,7 +221,11 @@ public class Renderer : IRenderer, IDisposable
         renderingFactory.Texts.ItemInserted -= OnTextInserted;
         renderingFactory.Texts.ItemRemoved -= OnTextRemoved;
         
-        window.MakeContextCurrent();
+        // Context already lost, no need to continue disposing
+        if (surface.IsContextLost)
+            return;
+        
+        surface.MakeContextCurrent();
         
         // Delete OpenGL resources
         GL.DeleteFramebuffer(fboHandle);
@@ -302,13 +248,6 @@ public class Renderer : IRenderer, IDisposable
         GL.DeleteBuffer(curveIndexSsboHandle);
         GL.DeleteBuffer(bandEntrySsboHandle);
         GL.DeleteBuffer(shapeEntrySsboHandle);
-        
-        // Delete overlay resources
-        GL.DeleteProgram(overlayProgram);
-        GL.DeleteSampler(overlaySampler);
-        if (overlayTexture != 0)
-            GL.DeleteTexture(overlayTexture);
-        GL.DeleteFramebuffer(overlayFramebufferHandle);
         
         // Dispose post processors
         legacyBloom.Dispose();
@@ -342,20 +281,13 @@ public class Renderer : IRenderer, IDisposable
     {
         meshBufferDirty = true;
     }
-    
-    public void AddOverlayRenderer(IOverlayRenderer overlayRenderer)
-        => overlayRenderers.Add(overlayRenderer);
-    
-    public bool RemoveOverlayRenderer(IOverlayRenderer overlayRenderer) 
-        => overlayRenderers.Remove(overlayRenderer);
 
     public void ProcessFrame(IDrawDataProvider drawDataProvider)
     {
-        var size = window.FramebufferSize;
-        RenderUtil.GetRenderSize(size, appSettings.AspectRatio, out var renderSize, out var renderOffset);
+        var renderSize = surface.FramebufferSize;
         
         // Set context
-        window.MakeContextCurrent();
+        surface.MakeContextCurrent();
         
         // Update OpenGL data
         UpdateOpenGlData(renderSize);
@@ -474,63 +406,8 @@ public class Renderer : IRenderer, IDisposable
         // Do post-processing
         var finalTexture = HandlePostProcessing(drawData.PostProcessingState, postProcessTextureHandle1, postProcessTextureHandle2);
         
-        // Render overlays into final texture
-        {
-            // Update final texture if size changed
-            if (currentOverlaySize != size)
-            {
-                currentOverlaySize = size;
-                
-                GL.DeleteTexture(overlayTexture);
-                
-                overlayTexture = GL.CreateTexture(TextureTarget.Texture2d);
-                GL.TextureStorage2D(overlayTexture, 1, SizedInternalFormat.Rgba16f, size.X, size.Y);
-                
-                // Reattach texture to framebuffer
-                GL.NamedFramebufferTexture(overlayFramebufferHandle, FramebufferAttachment.ColorAttachment0, overlayTexture, 0);
-            }
-            
-            Span<int> overlayTextures = stackalloc int[MaxOverlays];
-            overlayTextures[0] = finalTexture;
-
-            var overlayCount = 1;
-            foreach (var overlayRenderer in overlayRenderers)
-            {
-                if (overlayCount >= MaxOverlays)
-                    break;
-                
-                var texture = overlayRenderer.ProcessFrame(size);
-                if (texture != 0)
-                    overlayTextures[overlayCount++] = texture;
-            }
-
-            GL.BindImageTexture(0, overlayTexture, 0, false, 0, BufferAccess.WriteOnly, InternalFormat.Rgba16f);
-            
-            // Set overlay textures and samplers
-            for (var i = 0; i < overlayCount; i++)
-            {
-                GL.BindTextureUnit((uint) i, overlayTextures[i]);
-                GL.BindSampler((uint) i, overlaySampler);
-            }
-            
-            GL.UseProgram(overlayProgram);
-            
-            // Set scale and offset of first overlay
-            GL.Uniform2f(overlaySourceOffsetsUniformLocation, renderOffset.X / (float)size.X, renderOffset.Y / (float)size.Y);
-            GL.Uniform2f(overlaySourceScalesUniformLocation, renderSize.X / (float)size.X, renderSize.Y / (float)size.Y);
-            
-            // Set overlay count
-            GL.Uniform1i(overlaySourceCountUniformLocation, overlayCount);
-            
-            GL.DispatchCompute(
-                (uint)MathUtil.DivideCeil(size.X, 8),
-                (uint)MathUtil.DivideCeil(size.Y, 8),
-                1);
-            GL.MemoryBarrier(MemoryBarrierMask.ShaderImageAccessBarrierBit | MemoryBarrierMask.TextureFetchBarrierBit);
-        }
-        
         // Present to window
-        window.Present(overlayFramebufferHandle, Vector4.Zero, size, Vector2i.Zero);
+        surface.Present(finalTexture, renderSize, new ColorRgba());
     }
 
     private void RenderDrawDataList(in Span<DrawCommandWithDepth> drawCommands, in DrawData drawData, in Matrix3x2 camera)

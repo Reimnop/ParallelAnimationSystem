@@ -19,10 +19,14 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     public partial PlaybackViewModel PlaybackViewModel { get; set; }
 
-    public MainWindowViewModel(DialogManager dialogManager, PlaybackViewModel playbackViewModel)
+    [ObservableProperty]
+    public partial SettingsViewModel SettingsViewModel { get; set; }
+
+    public MainWindowViewModel(DialogManager dialogManager, PlaybackViewModel playbackViewModel, SettingsViewModel settingsViewModel)
     {
         DialogManager = dialogManager;
         PlaybackViewModel = playbackViewModel;
+        SettingsViewModel = settingsViewModel;
     }
 
     public void Dispose()

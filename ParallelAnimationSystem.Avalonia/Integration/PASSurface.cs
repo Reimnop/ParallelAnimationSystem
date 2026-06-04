@@ -1,14 +1,13 @@
 ﻿using System;
-using System.Numerics;
-using Avalonia.OpenGL;
 using Avalonia.VisualTree;
 using OpenTK.Graphics.OpenGLES2;
+using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Mathematics;
-using ParallelAnimationSystem.Windowing.OpenGL;
+using ParallelAnimationSystem.Platform.OpenGL;
 
 namespace ParallelAnimationSystem.Avalonia.Integration;
 
-public class PASWindow(PASView view, GlInterface gl) : IOpenGLWindow
+public class PASSurface(PASView view) : IOpenGLSurface, IDisposable
 {
     public Vector2i FramebufferSize
     {
@@ -21,43 +20,42 @@ public class PASWindow(PASView view, GlInterface gl) : IOpenGLWindow
                 (int)(size.Height * scaling));
         }
     }
-    public bool ShouldClose => false;
 
-    public bool IsContextCurrent => true;
+    // Avalonia does not lose the context
+    public bool IsContextLost => false;
 
     public int TargetFramebufferHandle { get; set; }
+
+    private readonly int framebuffer = GL.GenFramebuffer();
 
     public void MakeContextCurrent()
     {
     }
 
-    public void Present(int framebuffer, Vector4 clearColor, Vector2i size, Vector2i offset)
+    public void Present(int texture, Vector2i size, ColorRgba clearColor)
     {
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, framebuffer);
+        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, texture, 0);
+        
         var dstSize = FramebufferSize;
         
         GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, framebuffer);
         GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, TargetFramebufferHandle);
         
         // Clear the default framebuffer
-        GL.ClearColor(clearColor.X, clearColor.Y, clearColor.Z, clearColor.W);
+        GL.ClearColor(clearColor.R, clearColor.G, clearColor.B, clearColor.A);
         GL.Viewport(0, 0, dstSize.X, dstSize.Y);
         GL.Clear(ClearBufferMask.ColorBufferBit);
         
         // Blit the framebuffer to the default framebuffer
         GL.BlitFramebuffer(
             0, 0, size.X, size.Y,
-            offset.X, offset.Y, offset.X + size.X, offset.Y + size.Y,
+            0, 0, dstSize.X, dstSize.Y,
             ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Nearest);
     }
 
-    public IntPtr GetProcAddress(string procName)
-        => gl.GetProcAddress(procName);
-    
-    public void PollEvents()
+    public void Dispose()
     {
-    }
-
-    public void Close()
-    {
+        GL.DeleteFramebuffer(framebuffer);
     }
 }

@@ -6,10 +6,10 @@ namespace ParallelAnimationSystem.Core.Service;
 
 public class MeshService : IDisposable
 {
-    private readonly IRenderQueue renderQueue;
+    private readonly RenderQueue renderQueue;
     private readonly List<List<MeshHandle>> meshes = [];
 
-    public MeshService(IRenderQueue renderQueue, ILogger<MeshService> logger)
+    public MeshService(RenderQueue renderQueue, ILogger<MeshService> logger)
     {
         this.renderQueue = renderQueue;
         

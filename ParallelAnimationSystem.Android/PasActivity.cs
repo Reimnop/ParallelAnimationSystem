@@ -6,10 +6,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Service;
+using ParallelAnimationSystem.Platform.OpenGL;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.OpenGLES;
 using ParallelAnimationSystem.Util;
-using ParallelAnimationSystem.Windowing;
 using Activity = Android.App.Activity;
 using Uri = Android.Net.Uri;
 
@@ -45,13 +45,6 @@ public class PasActivity : Activity
         var beatmapPath = Intent.GetParcelableExtra("beatmapPath") as Uri ?? throw new Exception("Beatmap path not provided in intent extras");
         var audioPath = Intent.GetParcelableExtra("audioPath") as Uri ?? throw new Exception("Audio path not provided in intent extras");
 #pragma warning restore CA1422
-
-        var appSettings = new AppSettings
-        {
-            AspectRatio = lockAspectRatio ? 16.0f / 9.0f : null,
-            EnablePostProcessing = enablePostProcessing,
-            EnableTextRendering = enableTextRendering,
-        };
         
         // Create graphics surface
         var surfaceView = new GraphicsSurfaceView(this);
@@ -60,7 +53,7 @@ public class PasActivity : Activity
         surfaceView.SurfaceCreatedCallback = surfaceHolder =>
         {
             var thread = new Thread(() => 
-                RunApp(appSettings, beatmapPath, beatmapFormat, audioPath, surfaceView, surfaceHolder));
+                RunApp(beatmapPath, beatmapFormat, audioPath, surfaceView, surfaceHolder));
             thread.Start();
         };
         
@@ -68,7 +61,6 @@ public class PasActivity : Activity
     }
 
     private void RunApp(
-        AppSettings appSettings,
         Uri beatmapPath,
         BeatmapFormat beatmapFormat,
         Uri audioPath, 
@@ -102,9 +94,6 @@ public class PasActivity : Activity
         
         // Register PAS services
         services.AddPAS()
-            .UseAppSettings(appSettings)
-            .UseWindow<AndroidWindow>()
-            .UseRenderQueue<RenderQueue>()
             .UseOpenGLESRenderer();
         
         // Initialize PAS services
@@ -119,23 +108,22 @@ public class PasActivity : Activity
         var beatmapService = scope.ServiceProvider.GetRequiredService<BeatmapService>();
         beatmapService.LoadBeatmap(beatmapData, beatmapFormat);
         
+        var renderQueue = scope.ServiceProvider.GetRequiredService<RenderQueue>();
         var appDirector = scope.ServiceProvider.GetRequiredService<AppDirector>();
         var renderer = scope.ServiceProvider.GetRequiredService<IRenderer>();
-        var renderQueue = (RenderQueue)scope.ServiceProvider.GetRequiredService<IRenderQueue>();
-        var window = scope.ServiceProvider.GetRequiredService<IWindow>();
+        
+        var surface = (AndroidSurface)scope.ServiceProvider.GetRequiredService<IOpenGLSurface>();
         
         // Initialize audio player
         using var audioPlayer = AudioPlayer.Load(audioData);
         audioPlayer.Play();
         
         // Enter main loop
-        while (!window.ShouldClose)
+        while (!surface.ShouldClose)
         {
-            window.PollEvents();
-            
-            // Process a frame
-            appDirector.ProcessFrame((float) audioPlayer.Position);
-            renderQueue.ProcessFrame(renderer);
+            appDirector.PopulateRenderQueueDrawList((float) audioPlayer.Position);
+            renderQueue.FinishFrame();
+            renderQueue.FlushFrame(renderer);
         }
         
         audioPlayer.Stop();

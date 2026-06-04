@@ -1,5 +1,6 @@
+using OpenTK.Graphics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
-using ParallelAnimationSystem.Windowing.OpenGL;
+using ParallelAnimationSystem.Platform.OpenGL;
 
 namespace ParallelAnimationSystem.Desktop;
 
@@ -16,6 +17,9 @@ public class GlfwService : IDisposable
         
         if (!GLFW.Init())
             throw new Exception("Failed to initialize GLFW");
+        
+        // Load OpenGL bindings
+        GLLoader.LoadBindings(new GLFWBindingsContext());
     }
     
     public void Dispose()

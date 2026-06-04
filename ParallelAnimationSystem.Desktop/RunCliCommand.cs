@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Mathematics;
+using ParallelAnimationSystem.Platform.OpenGL;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Util;
 
@@ -30,10 +31,8 @@ public class RunCliCommand : RootCliCommand
         });
 
         services
-            .AddPlatform<DesktopWindow, GlfwService, AsyncRenderQueue>(
-                Backend,
-                LockAspectRatio,
-                EnablePostProcessing, EnableTextRendering)
+            .AddPlatform<GlfwService>(Backend)
+            .AddScoped<IOpenGLSurface, DesktopSurface>()
             .AddTransient<DesktopApp>();
         
         // Build service provider

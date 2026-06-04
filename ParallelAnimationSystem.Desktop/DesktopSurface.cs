@@ -1,14 +1,14 @@
-using System.Numerics;
 using Ico.Reader;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Mathematics;
-using ParallelAnimationSystem.Windowing.OpenGL;
+using ParallelAnimationSystem.Platform.OpenGL;
 using ReFuel.Stb;
 
 namespace ParallelAnimationSystem.Desktop;
 
-public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
+public unsafe class DesktopSurface : IOpenGLSurface, IDisposable
 {
     private const string Title = "Parallel Animation System";
     
@@ -20,17 +20,18 @@ public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
             return new Vector2i(width, height);
         }
     }
-    
+
+    public bool IsContextLost { get; set; }
     public bool ShouldClose => GLFW.WindowShouldClose(window);
     
-    public bool IsContextCurrent => GLFW.GetCurrentContext() == window;
-    
-    public Window* Handle => window;
+    public Window* WindowPtr => window;
 
     private readonly GlfwService glfw;
     private readonly Window* window;
 
-    public DesktopWindow(DesktopWindowSettings windowSettings, GlfwService glfw)
+    private readonly int framebuffer;
+
+    public DesktopSurface(DesktopWindowSettings windowSettings, GlfwService glfw)
     {
         this.glfw = glfw;
         
@@ -38,9 +39,11 @@ public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
         
         GLFW.MakeContextCurrent(window);
         GLFW.SwapInterval(windowSettings.VSync ? 1 : 0);
+
+        framebuffer = GL.GenFramebuffer();
         
         // Load window icon
-        using var iconStream = typeof(DesktopWindow).Assembly.GetManifestResourceStream("ParallelAnimationSystem.Desktop.icon.ico");
+        using var iconStream = typeof(DesktopSurface).Assembly.GetManifestResourceStream("ParallelAnimationSystem.Desktop.icon.ico");
         if (iconStream is not null)
             LoadIcon(iconStream);
     }
@@ -48,6 +51,7 @@ public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
     public void Dispose()
     {
         GLFW.DestroyWindow(window);
+        IsContextLost = true;
     }
 
     private void LoadIcon(Stream iconStream)
@@ -87,45 +91,38 @@ public unsafe class DesktopWindow : IOpenGLWindow, IDisposable
         GLFW.MakeContextCurrent(window);
     }
 
-    public void PollEvents()
+    public void Present(int texture, Vector2i size, ColorRgba clearColor)
     {
-        glfw.PollEvents();
-    }
-    
-    public void Present(int framebuffer, Vector4 clearColor, Vector2i size, Vector2i offset)
-    {
-        MakeContextCurrent();
-
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, framebuffer);
+        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, texture, 0);
+        
         var dstSize = FramebufferSize;
         
         GL.BindFramebuffer(FramebufferTarget.ReadFramebuffer, framebuffer);
         GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);
         
         // Clear the default framebuffer
-        GL.ClearColor(clearColor.X, clearColor.Y, clearColor.Z, clearColor.W);
-        GL.Viewport(0, 0, dstSize.X, dstSize.Y);
+        GL.ClearColor(clearColor.R, clearColor.G, clearColor.B, clearColor.A);
+        GL.Viewport(0, 0, size.X, size.Y);
         GL.Clear(ClearBufferMask.ColorBufferBit);
         
         // Blit the framebuffer to the default framebuffer
         GL.BlitFramebuffer(
             0, 0, size.X, size.Y,
-            offset.X, offset.Y, offset.X + size.X, offset.Y + size.Y,
+            0, 0, dstSize.X, dstSize.Y,
             ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Nearest);
-
-        OnFramePresent(dstSize);
         
         GLFW.SwapBuffers(window);
+    }
+
+    public void PollEvents()
+    {
+        glfw.PollEvents();
     }
 
     public IntPtr GetProcAddress(string procName)
         => GLFW.GetProcAddress(procName);
 
-    public void Close()
-    {
-        GLFW.SetWindowShouldClose(window, true);
-    }
-    
-    // Frame presentation hook
     protected virtual void OnFramePresent(Vector2i framebufferSize)
     {
     }

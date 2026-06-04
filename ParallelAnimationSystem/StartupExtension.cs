@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Core.Text;
+using ParallelAnimationSystem.Rendering;
 
 namespace ParallelAnimationSystem;
 
@@ -14,6 +15,8 @@ public static class StartupExtension
         
         // Add our own resource loader
         resourceSourceFactories.Add(() => new EmbeddedResourceSource(typeof(StartupExtension).Assembly));
+
+        services.AddSingleton<RenderQueue>();
         
         // Add resource loader
         services.AddSingleton<ResourceLoader>();

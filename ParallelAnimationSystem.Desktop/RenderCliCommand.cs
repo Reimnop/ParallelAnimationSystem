@@ -1,10 +1,8 @@
 ﻿using DotMake.CommandLine;
 using Microsoft.Extensions.DependencyInjection;
-using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Desktop.FFmpeg;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering;
-using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Desktop;
 
@@ -43,10 +41,7 @@ public class RenderCliCommand : RootCliCommand
         });
 
         services
-            .AddPlatform<FFmpegWindow, FFmpegGlfwService, RenderQueue>(
-                Backend,
-                false,
-                EnablePostProcessing, EnableTextRendering)
+            .AddPlatform<FFmpegGlfwService>(Backend)
             .AddTransient<FFmpegFrameGenerator>();
         
         // Build service provider

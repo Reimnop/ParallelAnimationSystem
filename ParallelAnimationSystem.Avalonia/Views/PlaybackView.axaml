@@ -9,7 +9,6 @@
              x:Class="ParallelAnimationSystem.Avalonia.Views.PlaybackView"
              x:DataType="vm:PlaybackViewModel">
     <Grid RowDefinitions="*,Auto" 
-          Margin="12" 
           ColumnSpacing="12" 
           RowSpacing="12" 
           ClipToBounds="True">

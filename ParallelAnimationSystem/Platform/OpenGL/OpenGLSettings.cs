@@ -1,4 +1,4 @@
-﻿namespace ParallelAnimationSystem.Windowing.OpenGL;
+﻿namespace ParallelAnimationSystem.Platform.OpenGL;
 
 public class OpenGLSettings
 {

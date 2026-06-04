@@ -8,7 +8,7 @@ public interface IResettable
     void Reset();
 }
 
-public class MemoryPool<T> where T : IResettable
+public class ConcurrentMemoryPool<T> where T : IResettable
 {
     public int Capacity { get; }
     public int FreeCount => pool.Count;
@@ -16,7 +16,7 @@ public class MemoryPool<T> where T : IResettable
 
     private readonly ConcurrentStack<T> pool = new();
 
-    public MemoryPool(int capacity, Func<T> factory)
+    public ConcurrentMemoryPool(int capacity, Func<T> factory)
     {
         Capacity = capacity;
         

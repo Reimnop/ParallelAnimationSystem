@@ -1,16 +1,24 @@
 using System.Diagnostics;
-using System.Numerics;
 using System.Runtime.InteropServices;
 using Android.Runtime;
+using OpenTK;
+using OpenTK.Graphics;
 using OpenTK.Graphics.Egl;
 using OpenTK.Graphics.OpenGLES2;
+using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Mathematics;
-using ParallelAnimationSystem.Windowing.OpenGL;
+using ParallelAnimationSystem.Platform.OpenGL;
 
 namespace ParallelAnimationSystem.Android;
 
-public class AndroidWindow : IOpenGLWindow, IDisposable
+public class AndroidSurface : IOpenGLSurface, IDisposable
 {
+    private class BindingsContext : IBindingsContext
+    {
+        public IntPtr GetProcAddress(string procName)
+            => Egl.GetProcAddress(procName);
+    }
+    
     private const string LibAndroid = "libandroid.so";
 
     public Vector2i FramebufferSize
@@ -29,14 +37,16 @@ public class AndroidWindow : IOpenGLWindow, IDisposable
     
     public bool ShouldClose { get; private set; }
 
-    public bool IsContextCurrent => Egl.GetCurrentContext() == eglContext;
+    public bool IsContextLost => Egl.GetCurrentContext() == eglContext;
 
     private readonly IntPtr aNativeWindowPtr;
     private readonly IntPtr eglDisplay;
     private readonly IntPtr eglSurface;
     private readonly IntPtr eglContext;
 
-    public AndroidWindow(OpenGLSettings glSettings, AndroidSurfaceContext surfaceContext)
+    private readonly int framebuffer;
+
+    public AndroidSurface(OpenGLSettings glSettings, AndroidSurfaceContext surfaceContext)
     {
         if (!glSettings.IsES)
             throw new NotSupportedException("Desktop OpenGL is not supported on Android, use OpenGL ES instead");
@@ -83,6 +93,10 @@ public class AndroidWindow : IOpenGLWindow, IDisposable
         eglSurface = Egl.CreateWindowSurface(eglDisplay, config, aNativeWindowPtr, IntPtr.Zero);
         if (eglSurface == IntPtr.Zero)
             throw new Exception("Failed to create EGL window surface");
+        
+        GLLoader.LoadBindings(new BindingsContext());
+        
+        framebuffer = GL.GenFramebuffer();
     }
 
     public void MakeContextCurrent()
@@ -90,10 +104,11 @@ public class AndroidWindow : IOpenGLWindow, IDisposable
         if (!Egl.MakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext))
             throw new Exception("Failed to make EGL context current");
     }
-    
-    public void Present(int framebuffer, Vector4 clearColor, Vector2i size, Vector2i offset)
+
+    public void Present(int texture, Vector2i size, ColorRgba clearColor)
     {
-        MakeContextCurrent();
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, framebuffer);
+        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2d, texture, 0);
         
         var dstSize = FramebufferSize;
         
@@ -101,14 +116,14 @@ public class AndroidWindow : IOpenGLWindow, IDisposable
         GL.BindFramebuffer(FramebufferTarget.DrawFramebuffer, 0);
         
         // Clear the default framebuffer
-        GL.ClearColor(clearColor.X, clearColor.Y, clearColor.Z, clearColor.W);
+        GL.ClearColor(clearColor.R, clearColor.G, clearColor.B, clearColor.A);
         GL.Viewport(0, 0, dstSize.X, dstSize.Y);
         GL.Clear(ClearBufferMask.ColorBufferBit);
         
         // Blit the framebuffer to the default framebuffer
         GL.BlitFramebuffer(
             0, 0, size.X, size.Y,
-            offset.X, offset.Y, offset.X + size.X, offset.Y + size.Y,
+            0, 0, size.X, size.Y,
             ClearBufferMask.ColorBufferBit, BlitFramebufferFilter.Nearest);
         
         Egl.SwapBuffers(eglDisplay, eglSurface);
@@ -116,11 +131,6 @@ public class AndroidWindow : IOpenGLWindow, IDisposable
 
     public IntPtr GetProcAddress(string procName)
         => Egl.GetProcAddress(procName);
-
-    public void PollEvents()
-    {
-        // Not needed on Android
-    }
 
     public void Close()
     {

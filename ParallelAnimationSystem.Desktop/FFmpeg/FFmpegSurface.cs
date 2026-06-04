@@ -3,7 +3,7 @@ using ParallelAnimationSystem.Mathematics;
 
 namespace ParallelAnimationSystem.Desktop.FFmpeg;
 
-public class FFmpegWindow(DesktopWindowSettings windowSettings, GlfwService glfw) : DesktopWindow(windowSettings, glfw)
+public class FFmpegSurface(DesktopWindowSettings windowSettings, GlfwService glfw) : DesktopSurface(windowSettings, glfw)
 {
     public ReadOnlySpan<byte> FrameData => frameData;
     

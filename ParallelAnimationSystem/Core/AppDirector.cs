@@ -13,15 +13,17 @@ using VignetteEffectState = ParallelAnimationSystem.Rendering.Data.VignetteEffec
 namespace ParallelAnimationSystem.Core;
 
 public class AppDirector(
-    AppSettings appSettings,
     PlaybackObjectContainer playbackObjects,
     MeshService meshService,
     BeatmapService beatmapService,
     TextCacheService textCacheService,
     MeshCacheService meshCacheService,
-    IRenderQueue renderQueue)
+    RenderQueue renderQueue)
 {
-    public void ProcessFrame(float time)
+    public bool EnablePostProcessing { get; set; } = true;
+    public bool EnableTextRendering { get; set; } = true;
+    
+    public void PopulateRenderQueueDrawList(float time)
     {
         beatmapService.ProcessBeatmap(time, out var themeColorState, out var eventState, out var drawItems);
         
@@ -37,7 +39,7 @@ public class AppDirector(
         shakeVector *= shake * 0.5f;
         
         // Get a draw list from the render queue
-        var drawList = renderQueue.GetDrawList();
+        var drawList = renderQueue.GetCurrentFrameDrawList();
         
         // Start queuing draw commands
         drawList.ClearColor = new ColorRgba(themeColorState.Background);
@@ -48,7 +50,7 @@ public class AppDirector(
             Rotation = eventState.CameraRotation
         };
         
-        if (appSettings.EnablePostProcessing)
+        if (EnablePostProcessing)
         {
             drawList.PostProcessingState = new PostProcessingState
             {
@@ -151,7 +153,7 @@ public class AppDirector(
                     drawList.AddMesh(mesh, transform, color1Rgba, color2Rgba, renderMode, playbackObject.GradientRotation, playbackObject.GradientScale);
                 }
             }
-            else if (appSettings.EnableTextRendering)
+            else if (EnableTextRendering)
             {
                 if (textCacheService.TryGetText(drawItem.ObjectIndex, out var textHandle))
                 {
@@ -161,9 +163,6 @@ public class AppDirector(
                 }
             }
         }
-        
-        // Submit the draw list to the render queue
-        renderQueue.SubmitDrawList(drawList);
     }
 
     private bool TryGetMesh(PlaybackObject playbackObject, int objectIndex, out MeshHandle meshHandle)

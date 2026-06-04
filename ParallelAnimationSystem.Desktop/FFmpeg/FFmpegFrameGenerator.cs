@@ -4,9 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Service;
+using ParallelAnimationSystem.Platform.OpenGL;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Util;
-using ParallelAnimationSystem.Windowing;
 
 namespace ParallelAnimationSystem.Desktop.FFmpeg;
 
@@ -39,9 +39,9 @@ public class FFmpegFrameGenerator(
         rss.Seed = seed ?? NumberUtil.SplitMix64((ulong)DateTimeOffset.Now.ToUnixTimeSeconds());
         
         // Initialize renderer
+        var renderQueue = serviceProvider.GetRequiredService<RenderQueue>();
         var renderer = sp.GetRequiredService<IRenderer>();
-        var renderQueue = (RenderQueue)sp.GetRequiredService<IRenderQueue>();
-        var window = (FFmpegWindow)sp.GetRequiredService<IWindow>();
+        var window = (FFmpegSurface)sp.GetRequiredService<IOpenGLSurface>();
         
         var windowSize = window.FramebufferSize;
         
@@ -116,8 +116,9 @@ public class FFmpegFrameGenerator(
         for (var i = 0; i < frameCount; i++)
         {
             var time = i / (float)framerate;
-            appDirector.ProcessFrame(time);
-            renderQueue.ProcessFrame(renderer);
+            appDirector.PopulateRenderQueueDrawList(time);
+            renderQueue.FinishFrame();
+            renderQueue.FlushFrame(renderer);
 
             var frameData = window.FrameData;
             ffmpegProcess.StandardInput.BaseStream.Write(frameData);

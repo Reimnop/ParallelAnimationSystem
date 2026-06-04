@@ -1,35 +1,17 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.OpenGL;
 using ParallelAnimationSystem.Rendering.OpenGLES;
-using ParallelAnimationSystem.Windowing;
 
 namespace ParallelAnimationSystem.Desktop;
 
 public static class Extension
 {
     public static IServiceCollection AddPlatform<
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TWindow,
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TGlfw,
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TRenderQueue>(
-        this IServiceCollection services,
-        RenderingBackend backend,
-        bool lockAspectRatio,
-        bool enablePostProcessing,
-        bool enableTextRendering) 
-        where TWindow : class, IWindow
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TGlfw>(this IServiceCollection services, RenderingBackend backend) 
         where TGlfw : GlfwService
-        where TRenderQueue : class, IRenderQueue
     {
-        var appSettings = new AppSettings
-        {
-            AspectRatio = lockAspectRatio ? 16f / 9f : null,
-            EnablePostProcessing = enablePostProcessing,
-            EnableTextRendering = enableTextRendering,
-        };
-        
         services.AddLogging(builder =>
         {
             builder.SetMinimumLevel(LogLevel.Information);
@@ -38,10 +20,7 @@ public static class Extension
 
         services.AddScoped<GlfwService, TGlfw>();
 
-        var builder = services.AddPAS()
-            .UseAppSettings(appSettings)
-            .UseWindow<TWindow>()
-            .UseRenderQueue<TRenderQueue>();
+        var builder = services.AddPAS();
         
         switch (backend)
         {

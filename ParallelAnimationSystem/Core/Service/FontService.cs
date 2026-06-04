@@ -15,11 +15,11 @@ public class FontService : IDisposable, IFontResolver
     private readonly FontFallbackChainRegistry fallbackChainRegistry = new("NotoSans");
 
     private readonly ResourceLoader resourceLoader;
-    private readonly IRenderQueue renderQueue;
+    private readonly RenderQueue renderQueue;
 
     public Shaper Shaper { get; }
 
-    public FontService(ResourceLoader resourceLoader, IRenderQueue renderQueue)
+    public FontService(ResourceLoader resourceLoader, RenderQueue renderQueue)
     {
         this.resourceLoader = resourceLoader;
         this.renderQueue = renderQueue;

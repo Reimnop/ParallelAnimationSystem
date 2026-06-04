@@ -4,9 +4,8 @@ using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Avalonia.ViewModels;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Service;
-using ParallelAnimationSystem.Rendering;
+using ParallelAnimationSystem.Platform.OpenGL;
 using ParallelAnimationSystem.Rendering.OpenGLES;
-using ParallelAnimationSystem.Windowing;
 using Reimnop.MvvmHelper;
 
 namespace ParallelAnimationSystem.Avalonia.Integration;
@@ -25,13 +24,6 @@ public class PASViewModel : ViewModelBase, IDisposable
 
     public PASViewModel()
     {
-        var appSettings = new AppSettings
-        {
-            AspectRatio = null,
-            EnablePostProcessing = true,
-            EnableTextRendering = true,
-        };
-        
         var services = new ServiceCollection();
         
         services.AddLogging(builder =>
@@ -41,17 +33,15 @@ public class PASViewModel : ViewModelBase, IDisposable
         });
         
         services.AddPAS()
-            .UseAppSettings(appSettings)
-            .UseRenderQueue<RenderQueue>()
             .UseOpenGLESRenderer();
 
-        services.AddSingleton<PASWindowHolder>();
-        services.AddScoped<IWindow>(x =>
+        services.AddSingleton<PASViewHolder>();
+        services.AddScoped<IOpenGLSurface, PASSurface>(x =>
         {
-            var holder = x.GetRequiredService<PASWindowHolder>();
-            if (holder.Window is null)
-                throw new NullReferenceException("Window is null");
-            return holder.Window;
+            var holder = x.GetRequiredService<PASViewHolder>();
+            if (holder.View is null)
+                throw new NullReferenceException("View is null");
+            return new PASSurface(holder.View);
         });
         
         ServiceProvider = services.BuildServiceProvider();
@@ -66,7 +56,7 @@ public class PASViewModel : ViewModelBase, IDisposable
 
     public void ProcessFrame()
     {
-        director.ProcessFrame(TickCallback?.Invoke() ?? 0f);
+        director.PopulateRenderQueueDrawList(TickCallback?.Invoke() ?? 0f);
     }
 
     public void Dispose()

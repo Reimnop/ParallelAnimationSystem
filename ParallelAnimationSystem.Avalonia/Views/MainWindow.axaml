@@ -3,9 +3,7 @@
                xmlns:vm="using:ParallelAnimationSystem.Avalonia.ViewModels"
                xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-               xmlns:integration="clr-namespace:ParallelAnimationSystem.Avalonia.Integration"
                xmlns:shadui="clr-namespace:ShadUI;assembly=ShadUI"
-               xmlns:control="clr-namespace:ParallelAnimationSystem.Avalonia.Controls"
                SaveWindowState="True"
                TitleFontWeight="SemiBold"
                Width="1024"
@@ -44,5 +42,14 @@
         </StackPanel>
     </shadui:Window.RightWindowTitleBarContent>
     
-    <ContentControl Content="{Binding PlaybackViewModel}" />
+    <TabControl Margin="12">
+        <TabControl.Items>
+            <TabItem Header="Playback">
+                <ContentControl Content="{Binding PlaybackViewModel}" />
+            </TabItem>
+            <TabItem Header="Settings">
+                <ContentControl Content="{Binding SettingsViewModel}" />
+            </TabItem>
+        </TabControl.Items>
+    </TabControl>
 </shadui:Window>

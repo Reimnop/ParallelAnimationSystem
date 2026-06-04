@@ -2,17 +2,26 @@
 using Avalonia.OpenGL;
 using Avalonia.OpenGL.Controls;
 using Microsoft.Extensions.DependencyInjection;
+using OpenTK;
+using OpenTK.Graphics;
+using ParallelAnimationSystem.Platform.OpenGL;
 using ParallelAnimationSystem.Rendering;
 
 namespace ParallelAnimationSystem.Avalonia.Integration;
 
 public class PASView : OpenGlControlBase
 {
+    private class BindingsContext(GlInterface gl) : IBindingsContext
+    {
+        public IntPtr GetProcAddress(string procName)
+            => gl.GetProcAddress(procName);
+    }
+    
     private class RenderContext
     {
         public required RenderQueue RenderQueue { get; init; }
         public required IServiceScope Scope { get; init; }
-        public required PASWindow Window { get; init; }
+        public required PASSurface Surface { get; init; }
         public required IRenderer Renderer { get; init; }
     }
     
@@ -30,23 +39,25 @@ public class PASView : OpenGlControlBase
         
         var sp = vm.ServiceProvider;
         
-        var renderQueue = (RenderQueue)sp.GetRequiredService<IRenderQueue>();
-        var windowHolder = sp.GetRequiredService<PASWindowHolder>();
+        var renderQueue = sp.GetRequiredService<RenderQueue>();
+        var viewHolder = sp.GetRequiredService<PASViewHolder>();
         
-        if (windowHolder.Window is not null)
-            throw new InvalidOperationException("Window is already initialized");
+        if (viewHolder.View is not null)
+            throw new InvalidOperationException("Another view is already initialized");
+
+        viewHolder.View = this;
         
-        var window = new PASWindow(this, gl);
-        windowHolder.Window = window;
+        GLLoader.LoadBindings(new BindingsContext(gl));
         
         var scope = sp.CreateScope();
         var renderer = scope.ServiceProvider.GetRequiredService<IRenderer>();
+        var surface = (PASSurface)scope.ServiceProvider.GetRequiredService<IOpenGLSurface>();
         
         renderContext = new RenderContext
         {
             RenderQueue = renderQueue,
             Scope = scope,
-            Window = window,
+            Surface = surface,
             Renderer = renderer
         };
     }
@@ -59,8 +70,8 @@ public class PASView : OpenGlControlBase
             throw new InvalidOperationException($"DataContext must be of type {nameof(PASViewModel)}");
         
         var sp = vm.ServiceProvider;
-        var windowHolder = sp.GetRequiredService<PASWindowHolder>();
-        windowHolder.Window = null;
+        var viewHolder = sp.GetRequiredService<PASViewHolder>();
+        viewHolder.View = null;
         
         if (renderContext is null)
             return;
@@ -77,10 +88,14 @@ public class PASView : OpenGlControlBase
         if (renderContext is null)
             return;
 
+        var surface = renderContext.Surface;
+        var renderQueue = renderContext.RenderQueue;
+        
+        surface.TargetFramebufferHandle = fb;
+        
         vm.ProcessFrame();
-
-        renderContext.Window.TargetFramebufferHandle = fb;
-        renderContext.RenderQueue.ProcessFrame(renderContext.Renderer);
+        renderQueue.FinishFrame();
+        renderQueue.FlushFrame(renderContext.Renderer);
         
         RequestNextFrameRendering(); 
     }
