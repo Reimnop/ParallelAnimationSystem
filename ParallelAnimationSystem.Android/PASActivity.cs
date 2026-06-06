@@ -66,14 +66,22 @@ public class PASActivity : Activity
                 InitializeApp(beatmapPath, beatmapFormat, audioPath, surfaceView, surfaceHolder, lockAspectRatio, enableTextRendering, enablePostProcessing));
             thread.Start();
         };
-        
+
         SetContentView(surfaceView);
+    }
+
+    protected override void OnDestroy()
+    {
+        base.OnDestroy();
+
+        appContext.IsRunning = false;
+        appContext.IsRendering = false;
     }
 
     private void InitializeApp(
         Uri beatmapPath,
         BeatmapFormat beatmapFormat,
-        Uri audioPath, 
+        Uri audioPath,
         GraphicsSurfaceView surfaceView,
         ISurfaceHolder surfaceHolder,
         bool lockAspectRatio,
@@ -118,19 +126,19 @@ public class PASActivity : Activity
 
         // Initialize PAS services
         using var serviceProvider = services.BuildServiceProvider();
-        
+
         var directorScope = serviceProvider.CreateScope();
-        
+
         var director = directorScope.ServiceProvider.GetRequiredService<AppDirector>();
         director.EnablePostProcessing = enablePostProcessing;
         director.EnableTextRendering = enableTextRendering;
-        
+
         var randomSeedService = directorScope.ServiceProvider.GetRequiredService<RandomSeedService>();
         randomSeedService.Seed = NumberUtil.SplitMix64((ulong)DateTimeOffset.Now.ToUnixTimeSeconds());
-        
+
         var beatmapService = directorScope.ServiceProvider.GetRequiredService<BeatmapService>();
         beatmapService.LoadBeatmap(beatmapData, beatmapFormat);
-        
+
         var renderQueue = serviceProvider.GetRequiredService<RenderQueue>();
 
         appContext = new AppContext
@@ -140,11 +148,11 @@ public class PASActivity : Activity
             ServiceProvider = serviceProvider,
             RenderQueue = renderQueue,
         };
-        
+
         // Run the render thread
         var renderThread = new Thread(RunRenderThread);
         renderThread.Start();
-        
+
         using var audioPlayer = AudioPlayer.Load(audioData);
         audioPlayer.Play();
 
@@ -158,7 +166,7 @@ public class PASActivity : Activity
             else
                 Thread.Yield();
         }
-        
+
         audioPlayer.Stop();
     }
 
@@ -168,12 +176,12 @@ public class PASActivity : Activity
         {
             while (!appContext.IsRendering)
                 Thread.Yield();
-            
+
             using var scope = appContext.ServiceProvider.CreateScope();
 
             var renderQueue = appContext.RenderQueue;
             var renderer = scope.ServiceProvider.GetRequiredService<IRenderer>();
-            
+
             // Start the render loop
             while (appContext.IsRendering)
                 if (renderQueue.QueuedFrameCount > 0)

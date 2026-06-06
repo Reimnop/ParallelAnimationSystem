@@ -46,8 +46,8 @@ public class AndroidSurface : IOpenGLSurface, IDisposable
             return new Vector2i(width, height);
         }
     }
-    
-    public bool IsContextLost { get; private set; }
+
+    public bool IsContextLost => Egl.GetCurrentContext() != eglContext;
 
     private readonly AndroidSurfaceSettings surfaceSettings;
 
@@ -110,6 +110,9 @@ public class AndroidSurface : IOpenGLSurface, IDisposable
         
         GLLoader.LoadBindings(new BindingsContext());
         
+        if (!Egl.MakeCurrent(eglDisplay, eglSurface, eglSurface, eglContext))
+            throw new Exception("Failed to make EGL context current");
+        
         framebuffer = GL.GenFramebuffer();
     }
 
@@ -148,8 +151,6 @@ public class AndroidSurface : IOpenGLSurface, IDisposable
         Egl.Terminate(eglDisplay);
         
         ANativeWindow_release(aNativeWindowPtr);
-        
-        IsContextLost = true;
     }
     
     [DllImport(LibAndroid)]
