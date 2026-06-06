@@ -23,10 +23,20 @@ namespace ParallelAnimationSystem.Android;
     ConfigurationChanges = DefaultConfigChanges,
     LaunchMode = DefaultLaunchMode,
     ScreenOrientation = ScreenOrientation.Landscape)]
-public class PasActivity : Activity
+public class PASActivity : Activity
 {
+    private class AppContext
+    {
+        public required bool IsRunning { get; set; }
+        public required bool IsRendering { get; set; }
+        public required IServiceProvider ServiceProvider { get; set; }
+        public required RenderQueue RenderQueue { get; set; }
+    }
+    
     private const ConfigChanges DefaultConfigChanges = (ConfigChanges) ~0;
     private const LaunchMode DefaultLaunchMode = LaunchMode.SingleTask;
+
+    private AppContext appContext = null!;
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
@@ -52,15 +62,15 @@ public class PasActivity : Activity
         // Start the app
         surfaceView.SurfaceCreatedCallback = surfaceHolder =>
         {
-            var thread = new Thread(() => 
-                RunApp(beatmapPath, beatmapFormat, audioPath, surfaceView, surfaceHolder, lockAspectRatio, enableTextRendering, enablePostProcessing));
+            var thread = new Thread(() =>
+                InitializeApp(beatmapPath, beatmapFormat, audioPath, surfaceView, surfaceHolder, lockAspectRatio, enableTextRendering, enablePostProcessing));
             thread.Start();
         };
         
         SetContentView(surfaceView);
     }
 
-    private void RunApp(
+    private void InitializeApp(
         Uri beatmapPath,
         BeatmapFormat beatmapFormat,
         Uri audioPath, 
@@ -75,7 +85,6 @@ public class PasActivity : Activity
         
         var services = new ServiceCollection();
         
-        // Register contexts
         services.AddSingleton(new AndroidSurfaceContext
         {
             SurfaceView = surfaceView,
@@ -87,7 +96,7 @@ public class PasActivity : Activity
             Data = beatmapData,
             Format = beatmapFormat
         });
-        
+
         // Register logging
         services.AddLogging(builder =>
         {
@@ -95,50 +104,83 @@ public class PasActivity : Activity
             builder.AddLogcat("ParallelAnimationSystem");
         });
         
-        // Register PAS services
-        services.AddPAS()
-            .UseOpenGLESRenderer();
-
         var surfaceSettings = new AndroidSurfaceSettings
         {
             LockAspectRatio = lockAspectRatio,
         };
         services.AddSingleton(surfaceSettings);
-        
+
+        services.AddScoped<IOpenGLSurface, AndroidSurface>();
+
+        // Register PAS services
+        services.AddPAS()
+            .UseOpenGLESRenderer();
+
         // Initialize PAS services
         using var serviceProvider = services.BuildServiceProvider();
-        using var scope = serviceProvider.CreateScope();
         
-        // Set random seed
-        var randomSeedService = scope.ServiceProvider.GetRequiredService<RandomSeedService>();
+        var directorScope = serviceProvider.CreateScope();
+        
+        var director = directorScope.ServiceProvider.GetRequiredService<AppDirector>();
+        director.EnablePostProcessing = enablePostProcessing;
+        director.EnableTextRendering = enableTextRendering;
+        
+        var randomSeedService = directorScope.ServiceProvider.GetRequiredService<RandomSeedService>();
         randomSeedService.Seed = NumberUtil.SplitMix64((ulong)DateTimeOffset.Now.ToUnixTimeSeconds());
         
-        // Load beatmap
-        var beatmapService = scope.ServiceProvider.GetRequiredService<BeatmapService>();
+        var beatmapService = directorScope.ServiceProvider.GetRequiredService<BeatmapService>();
         beatmapService.LoadBeatmap(beatmapData, beatmapFormat);
         
-        var appDirector = scope.ServiceProvider.GetRequiredService<AppDirector>();
-        appDirector.EnablePostProcessing = enablePostProcessing;
-        appDirector.EnableTextRendering = enableTextRendering;
-        
         var renderQueue = serviceProvider.GetRequiredService<RenderQueue>();
-        var renderer = scope.ServiceProvider.GetRequiredService<IRenderer>();
+
+        appContext = new AppContext
+        {
+            IsRunning = true,
+            IsRendering = true,
+            ServiceProvider = serviceProvider,
+            RenderQueue = renderQueue,
+        };
         
-        var surface = (AndroidSurface)scope.ServiceProvider.GetRequiredService<IOpenGLSurface>();
+        // Run the render thread
+        var renderThread = new Thread(RunRenderThread);
+        renderThread.Start();
         
-        // Initialize audio player
         using var audioPlayer = AudioPlayer.Load(audioData);
         audioPlayer.Play();
-        
-        // Enter main loop
-        while (!surface.ShouldClose)
+
+        while (appContext.IsRunning)
         {
-            appDirector.PopulateRenderQueueDrawList((float) audioPlayer.Position);
-            renderQueue.FinishFrame();
-            renderQueue.FlushFrame(renderer);
+            if (renderQueue.FreeFrameCount > 0)
+            {
+                director.PopulateRenderQueueDrawList((float) audioPlayer.Position);
+                renderQueue.FinishFrame();
+            }
+            else
+                Thread.Yield();
         }
         
         audioPlayer.Stop();
+    }
+
+    private void RunRenderThread()
+    {
+        while (appContext.IsRunning)
+        {
+            while (!appContext.IsRendering)
+                Thread.Yield();
+            
+            using var scope = appContext.ServiceProvider.CreateScope();
+
+            var renderQueue = appContext.RenderQueue;
+            var renderer = scope.ServiceProvider.GetRequiredService<IRenderer>();
+            
+            // Start the render loop
+            while (appContext.IsRendering)
+                if (renderQueue.QueuedFrameCount > 0)
+                    renderQueue.FlushFrame(renderer);
+                else
+                    Thread.Yield();
+        }
     }
     
     private string ReadBeatmapData(Uri beatmapPath)

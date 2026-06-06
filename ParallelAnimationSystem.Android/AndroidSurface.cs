@@ -47,8 +47,7 @@ public class AndroidSurface : IOpenGLSurface, IDisposable
         }
     }
     
-    public bool ShouldClose { get; private set; }
-    public bool IsContextLost => Egl.GetCurrentContext() == eglContext;
+    public bool IsContextLost { get; private set; }
 
     private readonly AndroidSurfaceSettings surfaceSettings;
 
@@ -138,23 +137,19 @@ public class AndroidSurface : IOpenGLSurface, IDisposable
         
         Egl.SwapBuffers(eglDisplay, eglSurface);
     }
-
-    public void Close()
-    {
-        ShouldClose = true;
-    }
     
     public void Dispose()
     {
         // We don't need to dispose the framebuffer because
         // it will be deleted automatically when context is lost
-        
         Egl.MakeCurrent(eglDisplay, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
         Egl.DestroySurface(eglDisplay, eglSurface);
         Egl.DestroyContext(eglDisplay, eglContext);
         Egl.Terminate(eglDisplay);
         
         ANativeWindow_release(aNativeWindowPtr);
+        
+        IsContextLost = true;
     }
     
     [DllImport(LibAndroid)]

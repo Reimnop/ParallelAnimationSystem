@@ -296,7 +296,8 @@ public class RenderQueue
         {
             // rent a new one
             if (!frameCommandListPool.TryRent(out currentFrame))
-                throw new InvalidOperationException("No available frame command lists in pool");
+                // fallback to creating a new one if the pool is exhausted
+                currentFrame = new FrameCommandList(this); 
         }
         
         return currentFrame;
