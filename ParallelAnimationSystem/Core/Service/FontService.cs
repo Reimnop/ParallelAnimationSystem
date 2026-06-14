@@ -108,7 +108,7 @@ public class FontService : IDisposable, IFontResolver
         using var stream = resourceLoader.OpenResource(path)
             ?? throw new InvalidOperationException($"Could not open font asset '{path}'");
 
-        if (SsbfRead.ReadFromStream(stream) is not SsbfObject root)
+        if (SsbfDocument.Load(stream, true) is not SsbfObject root)
             throw new InvalidOperationException($"Font asset '{path}' is not a valid SSBF object");
 
         var font = TmpxReader.Read(root);
