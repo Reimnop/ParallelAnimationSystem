@@ -1,8 +1,10 @@
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Pamx.Objects;
 using ParallelAnimationSystem.Core.Data;
 using ParallelAnimationSystem.Core.Model;
+using ParallelAnimationSystem.Core.Shape;
 using ParallelAnimationSystem.Wasm.Interop.Data;
 using BeatmapObject = ParallelAnimationSystem.Core.Model.BeatmapObject;
 
@@ -10,6 +12,15 @@ namespace ParallelAnimationSystem.Wasm.Interop;
 
 public static class InteropBeatmapObject
 {
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    private struct CustomShapeInfoBuffer
+    {
+        public int Sides;
+        public float Roundness;
+        public float Thickness;
+        public int SliceCount;
+    }
+    
     [UnmanagedCallersOnly(EntryPoint = "beatmapObject_new")]
     public static IntPtr New(IntPtr idPtr)
     {
@@ -220,6 +231,39 @@ public static class InteropBeatmapObject
     {
         var beatmapObject = InteropHelper.IntPtrToObject<BeatmapObject>(ptr);
         beatmapObject.Shape = (ObjectShape)shape;
+    }
+
+    [UnmanagedCallersOnly(EntryPoint = "beatmapObject_getCustomShapeInfo")]
+    public static unsafe bool GetCustomShapeInfo(IntPtr ptr, IntPtr customShapeInfoPtr)
+    {
+        var beatmapObject = InteropHelper.IntPtrToObject<BeatmapObject>(ptr);
+        
+        if (beatmapObject.CustomShapeInfo == null)
+            return false;
+        
+        var data = new CustomShapeInfoBuffer
+        {
+            Sides = beatmapObject.CustomShapeInfo.Sides,
+            Roundness = beatmapObject.CustomShapeInfo.Roundness,
+            Thickness = beatmapObject.CustomShapeInfo.Thickness,
+            SliceCount = beatmapObject.CustomShapeInfo.SliceCount
+        };
+        
+        Unsafe.Write(customShapeInfoPtr.ToPointer(), data);
+        return true;
+    }
+    
+    [UnmanagedCallersOnly(EntryPoint = "beatmapObject_setCustomShapeInfo")]
+    public static unsafe void SetCustomShapeInfo(IntPtr ptr, IntPtr customShapeInfoPtr)
+    {
+        var beatmapObject = InteropHelper.IntPtrToObject<BeatmapObject>(ptr);
+        if (customShapeInfoPtr == IntPtr.Zero)
+        {
+            beatmapObject.CustomShapeInfo = null;
+            return;
+        }
+        var data = Unsafe.Read<CustomShapeInfoBuffer>(customShapeInfoPtr.ToPointer());
+        beatmapObject.CustomShapeInfo = new VGShapeInfo(data.Sides, data.Roundness, data.Thickness, data.SliceCount);
     }
 
     [UnmanagedCallersOnly(EntryPoint = "beatmapObject_getText")]

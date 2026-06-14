@@ -13,6 +13,7 @@ import type { BeatmapObjectIndexedColor } from "../data/BeatmapObjectIndexedColo
 import type { KeyframeList } from "./KeyframeList";
 import { KeyframeCodec, RandomizableKeyframeCodec } from "./FixedSizeKeyframeCodec";
 import { BeatmapObjectIndexedColorCodec, Float32Codec, Vector2Codec } from "./StructCodec";
+import type { VGShapeInfo } from "../data/VGShapeInfo";
 
 export class BeatmapObject extends NativeObject {
   static create(module: Module, id: string): BeatmapObject {
@@ -160,6 +161,42 @@ export class BeatmapObject extends NativeObject {
   
   set shape(value: BeatmapObjectShape) {
     this.wasm._beatmapObject_setShape(this.ptr, value);
+  }
+  
+  get customShapeInfo(): VGShapeInfo | null {
+    const sp = this.wasm.stackSave();
+    try {
+      const buf = this.wasm.stackAlloc(16); // allocate buffer
+      const hasInfo = this.wasm._beatmapObject_getCustomShapeInfo(this.ptr, buf);
+      if (!hasInfo) {
+        return null;
+      }
+      const sides = this.wasm.HEAP_DATA_VIEW.getInt32(buf, true);
+      const roundness = this.wasm.HEAP_DATA_VIEW.getFloat32(buf + 4, true);
+      const thickness = this.wasm.HEAP_DATA_VIEW.getFloat32(buf + 8, true);
+      const sliceCount = this.wasm.HEAP_DATA_VIEW.getInt32(buf + 12, true);
+      return { sides, roundness, thickness, sliceCount };
+    } finally {
+      this.wasm.stackRestore(sp);
+    }
+  }
+  
+  set customShapeInfo(value: VGShapeInfo | null) {
+    const sp = this.wasm.stackSave();
+    try {
+      if (value) {
+        const buf = this.wasm.stackAlloc(16); // allocate buffer
+        this.wasm.HEAP_DATA_VIEW.setInt32(buf, value.sides, true);
+        this.wasm.HEAP_DATA_VIEW.setFloat32(buf + 4, value.roundness, true);
+        this.wasm.HEAP_DATA_VIEW.setFloat32(buf + 8, value.thickness, true);
+        this.wasm.HEAP_DATA_VIEW.setInt32(buf + 12, value.sliceCount, true);
+        this.wasm._beatmapObject_setCustomShapeInfo(this.ptr, buf);
+      } else {
+        this.wasm._beatmapObject_setCustomShapeInfo(this.ptr, 0);
+      }
+    } finally {
+      this.wasm.stackRestore(sp);
+    }
   }
   
   get text(): string | null {

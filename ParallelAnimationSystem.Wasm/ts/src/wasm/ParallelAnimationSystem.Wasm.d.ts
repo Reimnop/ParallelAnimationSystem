@@ -107,6 +107,8 @@ interface WasmModule {
   _beatmapObject_getPositionKeyframes(_0: number): number;
   _beatmapObject_setText(_0: number, _1: number): void;
   _beatmapObject_getText(_0: number): number;
+  _beatmapObject_setCustomShapeInfo(_0: number, _1: number): void;
+  _beatmapObject_getCustomShapeInfo(_0: number, _1: number): number;
   _beatmapObject_setShape(_0: number, _1: number): void;
   _beatmapObject_getShape(_0: number): number;
   _beatmapObject_setAutoKillOffset(_0: number, _1: number): void;
