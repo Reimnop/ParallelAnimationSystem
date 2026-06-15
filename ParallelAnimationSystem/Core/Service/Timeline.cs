@@ -119,19 +119,17 @@ public class Timeline : IDisposable
         }
     }
     
+    // TODO: This might cause problems later. Too bad!
+    
+    // In case it causes problem, change HashSets to event queues
+    // and process them sequentially
     private void InsertObjectForPlayback(int index)
     {
-        if (objectsPendingForRemoval.Remove(index))
-            return;
-        
         objectsPendingForInsertion.Add(index);
     }
     
     private void RemoveObjectFromPlayback(int index)
     {
-        if (objectsPendingForInsertion.Remove(index))
-            return;
-        
         objectsPendingForRemoval.Add(index);
     }
 
