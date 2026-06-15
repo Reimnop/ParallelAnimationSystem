@@ -39,6 +39,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../ParallelAnimationSystem.Resources.Compressed/ParallelAnimationSystem.Resources.Compressed.csproj" />
     <ProjectReference Include="../ParallelAnimationSystem.Rendering.OpenGLES/ParallelAnimationSystem.Rendering.OpenGLES.csproj" />
     <ProjectReference Include="../ParallelAnimationSystem/ParallelAnimationSystem.csproj" />
     <ProjectReference Include="../Reimnop.MvvmHelper/Reimnop.MvvmHelper.Generator/Reimnop.MvvmHelper.Generator.csproj"

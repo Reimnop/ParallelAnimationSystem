@@ -6,6 +6,7 @@ using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Platform.OpenGL;
 using ParallelAnimationSystem.Rendering.OpenGLES;
+using ParallelAnimationSystem.Resources.Compressed;
 using Reimnop.MvvmHelper;
 
 namespace ParallelAnimationSystem.Avalonia.Integration;
@@ -32,7 +33,7 @@ public class PASViewModel : ViewModelBase, IDisposable
             builder.AddConsole();
         });
         
-        services.AddPAS()
+        services.AddPAS(x => x.AddCompressedResources())
             .UseOpenGLESRenderer();
 
         services.AddSingleton<PASViewHolder>();

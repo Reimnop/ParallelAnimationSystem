@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Rendering.OpenGL;
 using ParallelAnimationSystem.Rendering.OpenGLES;
+using ParallelAnimationSystem.Resources.Compressed;
 
 namespace ParallelAnimationSystem.Desktop;
 
@@ -20,7 +21,7 @@ public static class Extension
 
         services.AddScoped<GlfwService, TGlfw>();
 
-        var builder = services.AddPAS();
+        var builder = services.AddPAS(x => x.AddCompressedResources());
         
         switch (backend)
         {

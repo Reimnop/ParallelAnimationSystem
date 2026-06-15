@@ -8,13 +8,14 @@ namespace ParallelAnimationSystem;
 
 public static class StartupExtension
 {
-    public static PASBuilder AddPAS(this IServiceCollection services)
+    public static PASBuilder AddPAS(this IServiceCollection services, Action<ResourceSourceFactories>? resourceSourceConfig = null)
     {
         var resourceSourceFactories = new ResourceSourceFactories();
         services.AddSingleton(resourceSourceFactories);
         
         // Add our own resource loader
         resourceSourceFactories.Add(() => new EmbeddedResourceSource(typeof(StartupExtension).Assembly));
+        resourceSourceConfig?.Invoke(resourceSourceFactories);
 
         services.AddSingleton<RenderQueue>();
         

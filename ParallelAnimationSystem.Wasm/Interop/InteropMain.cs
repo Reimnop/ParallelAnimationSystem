@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Platform.OpenGL;
 using ParallelAnimationSystem.Rendering.OpenGLES;
+using ParallelAnimationSystem.Resources.Raw;
 
 namespace ParallelAnimationSystem.Wasm.Interop;
 
@@ -24,7 +25,7 @@ public static class InteropMain
             builder.AddProvider(new WasmLoggerProvider());
         });
         
-        services.AddPAS()
+        services.AddPAS(x => x.AddRawResources())
             .UseOpenGLESRenderer();
 
         services.AddScoped<IOpenGLSurface, WasmSurface>();

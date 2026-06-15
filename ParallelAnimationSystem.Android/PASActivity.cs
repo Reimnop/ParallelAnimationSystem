@@ -9,6 +9,7 @@ using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Platform.OpenGL;
 using ParallelAnimationSystem.Rendering;
 using ParallelAnimationSystem.Rendering.OpenGLES;
+using ParallelAnimationSystem.Resources.Compressed;
 using ParallelAnimationSystem.Util;
 using Activity = Android.App.Activity;
 using Uri = Android.Net.Uri;
@@ -121,7 +122,7 @@ public class PASActivity : Activity
         services.AddScoped<IOpenGLSurface, AndroidSurface>();
 
         // Register PAS services
-        services.AddPAS()
+        services.AddPAS(x => x.AddCompressedResources())
             .UseOpenGLESRenderer();
 
         // Initialize PAS services
