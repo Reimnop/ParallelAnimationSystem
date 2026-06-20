@@ -4,5 +4,23 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="ParallelAnimationSystem.Avalonia.Views.SettingsView">
-    Settings view
+    <Panel>
+        <Border Background="{DynamicResource DialogOverlayColor}"
+                Opacity="0.6" />
+        <Border Background="{DynamicResource DialogBackgroundColor}" 
+                BorderBrush="{DynamicResource BorderColor}" 
+                BorderThickness="1" 
+                CornerRadius="{DynamicResource XlCornerRadius}" 
+                Margin="96"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch">
+            <StackPanel Margin="24" 
+                        Spacing="16">
+                <TextBlock Classes="h4" Text="Settings" />
+                <TextBlock>
+                    
+                </TextBlock>
+            </StackPanel>
+        </Border>
+    </Panel>
 </UserControl>

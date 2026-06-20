@@ -4,7 +4,7 @@ using Reimnop.MvvmHelper;
 namespace ParallelAnimationSystem.Avalonia.ViewModels;
 
 [ViewModelView<SettingsView>]
-public class SettingsViewModel
+public class SettingsViewModel : ViewModelBase
 {
     
 }

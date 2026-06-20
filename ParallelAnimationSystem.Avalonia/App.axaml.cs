@@ -30,6 +30,9 @@ public class App : Application, IDisposable
         var viewLocator = serviceProvider.GetRequiredService<IViewLocator>();
         DataTemplates.Add(viewLocator);
         
+        var dialogManager = serviceProvider.GetRequiredService<DialogManager>();
+        dialogManager.Register<SettingsView, SettingsViewModel>();
+        
         mainWindowViewModel = serviceProvider.GetRequiredService<MainWindowViewModel>();
         
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
