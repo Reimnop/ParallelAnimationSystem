@@ -2,8 +2,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:ParallelAnimationSystem.Avalonia.ViewModels"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             x:Class="ParallelAnimationSystem.Avalonia.Views.SettingsView">
+             x:Class="ParallelAnimationSystem.Avalonia.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel"
+             Focusable="True">
     <Panel>
         <Border Background="{DynamicResource DialogOverlayColor}"
                 Opacity="0.6" />
@@ -11,15 +14,34 @@
                 BorderBrush="{DynamicResource BorderColor}" 
                 BorderThickness="1" 
                 CornerRadius="{DynamicResource XlCornerRadius}" 
-                Margin="96"
+                Margin="16"
+                MaxWidth="720"
+                MaxHeight="480"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch">
-            <StackPanel Margin="24" 
+            <StackPanel Margin="16" 
                         Spacing="16">
-                <TextBlock Classes="h4" Text="Settings" />
-                <TextBlock>
-                    
-                </TextBlock>
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" 
+                               Classes="h4"
+                               Text="Settings" />
+                    <Button Grid.Column="1"
+                            Classes="Icon"
+                            Command="{Binding CloseCommand}"
+                            Width="30"
+                            Height="30"
+                            Content="{LucideIconContent X, Size=20}"/>
+                </Grid>
+                <TabControl>
+                    <TabItem Header="General">
+                    </TabItem>
+                    <TabItem Header="FFmpeg">
+                    </TabItem>
+                    <TabItem Header="Logs">
+                    </TabItem>
+                    <TabItem Header="About">
+                    </TabItem>
+                </TabControl>
             </StackPanel>
         </Border>
     </Panel>

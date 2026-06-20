@@ -16,9 +16,27 @@
                Icon="/Assets/icon.ico"
                Title="Parallel Animation System">
     <shadui:Window.Hosts>
-        <shadui:DialogHost
-            Manager="{Binding DialogManager}"
-            x:Name="PART_DialogHost" />
+        
+        <!-- Settings overlay -->
+        <ContentControl Content="{Binding SettingsViewModel}"
+                        Opacity="{Binding IsSettingsOpen, Converter={x:Static vm:MainWindowViewModel.BoolToOpacityConverter}}">
+            <ContentControl.Styles>
+                <Style Selector="ContentControl">
+                    <Setter Property="Transitions">
+                        <Transitions>
+                            <DoubleTransition Property="Opacity" Duration="0:0:0.2"/>
+                        </Transitions>
+                    </Setter>
+                    <Setter Property="Opacity" Value="1"/>
+                    <Setter Property="IsVisible" Value="True" />
+                    
+                    <Style Selector="^[Opacity=0]">
+                        <Setter Property="IsVisible" Value="False"/>
+                    </Style>
+                </Style>
+            </ContentControl.Styles>
+        </ContentControl>
+        
     </shadui:Window.Hosts>
     <shadui:Window.RightWindowTitleBarContent>
         <StackPanel Orientation="Horizontal"
@@ -49,24 +67,6 @@
                        Text="{Binding PlaybackViewModel.Fps, Converter={x:Static vm:MainWindowViewModel.FpsTextConverter}}"/>
         </StackPanel>
     </shadui:Window.RightWindowTitleBarContent>
-    <Panel>
-        <ContentControl Content="{Binding PlaybackViewModel}" />
-        <ContentControl Content="{Binding SettingsViewModel}"
-                        Opacity="{Binding IsSettingsOpen, Converter={x:Static vm:MainWindowViewModel.BoolToOpacityConverter}}">
-            <ContentControl.Styles>
-                <Style Selector="ContentControl">
-                    <Setter Property="Transitions">
-                        <Transitions>
-                            <DoubleTransition Property="Opacity" Duration="0:0:0.2"/>
-                        </Transitions>
-                    </Setter>
-                    <Setter Property="Opacity" Value="1"/>
-                    <Setter Property="IsVisible" Value="True" />
-                </Style>
-                <Style Selector="ContentControl[Opacity=0]">
-                    <Setter Property="IsVisible" Value="False"/>
-                </Style>
-            </ContentControl.Styles>
-        </ContentControl>
-    </Panel>
+    
+    <ContentControl Content="{Binding PlaybackViewModel}" />
 </shadui:Window>

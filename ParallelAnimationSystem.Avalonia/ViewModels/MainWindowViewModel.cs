@@ -4,12 +4,11 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ParallelAnimationSystem.Avalonia.Views;
 using Reimnop.MvvmHelper;
-using ShadUI;
 
 namespace ParallelAnimationSystem.Avalonia.ViewModels;
 
 [ViewModelView<MainWindow>]
-public partial class MainWindowViewModel(DialogManager dialogManager, PlaybackViewModel playbackViewModel, SettingsViewModel settingsViewModel)
+public partial class MainWindowViewModel
     : ViewModelBase, IDisposable
 {
     public static FuncValueConverter<int, string> FpsTextConverter
@@ -18,22 +17,28 @@ public partial class MainWindowViewModel(DialogManager dialogManager, PlaybackVi
     public static FuncValueConverter<bool, float> BoolToOpacityConverter
         => new(x => x ? 1f : 0f);
     
-    public DialogManager DialogManager { get; } = dialogManager;
-    public PlaybackViewModel PlaybackViewModel { get; } = playbackViewModel;
-    public SettingsViewModel SettingsViewModel { get; } = settingsViewModel;
+    public PlaybackViewModel PlaybackViewModel { get; }
+    public SettingsViewModel SettingsViewModel { get; }
 
     [ObservableProperty]
     public partial bool IsSettingsOpen { get; set; }
     
+    public MainWindowViewModel(PlaybackViewModel playbackViewModel, SettingsViewModel settingsViewModel)
+    {
+        PlaybackViewModel = playbackViewModel;
+        SettingsViewModel = settingsViewModel;
+        
+        SettingsViewModel.Closing += (_, _) => IsSettingsOpen = false;
+    }
+    
     [RelayCommand]
     private void OpenSettings()
     {
-        IsSettingsOpen = !IsSettingsOpen;
+        IsSettingsOpen = true;
     }
 
     public void Dispose()
     {
-        DialogManager.Dispose();
         PlaybackViewModel.Dispose();
     }
 }
