@@ -14,9 +14,6 @@ public partial class MainWindowViewModel
     public static FuncValueConverter<int, string> FpsTextConverter
         => new(x => $"{x} FPS");
     
-    public static FuncValueConverter<bool, float> BoolToOpacityConverter
-        => new(x => x ? 1f : 0f);
-    
     public PlaybackViewModel PlaybackViewModel { get; }
     public SettingsViewModel SettingsViewModel { get; }
 

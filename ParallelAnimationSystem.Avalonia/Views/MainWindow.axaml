@@ -19,19 +19,26 @@
         
         <!-- Settings overlay -->
         <ContentControl Content="{Binding SettingsViewModel}"
-                        Opacity="{Binding IsSettingsOpen, Converter={x:Static vm:MainWindowViewModel.BoolToOpacityConverter}}">
+                        IsHitTestVisible="{Binding IsSettingsOpen}">
             <ContentControl.Styles>
                 <Style Selector="ContentControl">
                     <Setter Property="Transitions">
                         <Transitions>
-                            <DoubleTransition Property="Opacity" Duration="0:0:0.2"/>
+                            <DoubleTransition Property="Opacity" 
+                                              Duration="0:0:0.2" 
+                                              Easing="{StaticResource EaseOut}" />
+                            <TransformOperationsTransition Property="RenderTransform" 
+                                                           Duration="0:0:0.2"
+                                                           Easing="{StaticResource EaseOut}" />
                         </Transitions>
                     </Setter>
-                    <Setter Property="Opacity" Value="1"/>
-                    <Setter Property="IsVisible" Value="True" />
-                    
-                    <Style Selector="^[Opacity=0]">
-                        <Setter Property="IsVisible" Value="False"/>
+                    <Style Selector="^[IsHitTestVisible=True]">
+                        <Setter Property="Opacity" Value="1"/>
+                        <Setter Property="RenderTransform" Value="scale(1) translateY(0)" />
+                    </Style>
+                    <Style Selector="^[IsHitTestVisible=False]">
+                        <Setter Property="Opacity" Value="0"/>
+                        <Setter Property="RenderTransform" Value="scale(0.96) translateY(12px)" />
                     </Style>
                 </Style>
             </ContentControl.Styles>
