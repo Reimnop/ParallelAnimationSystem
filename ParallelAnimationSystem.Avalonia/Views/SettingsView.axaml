@@ -14,16 +14,16 @@
                 BorderBrush="{DynamicResource BorderColor}" 
                 BorderThickness="1" 
                 CornerRadius="{DynamicResource XlCornerRadius}" 
-                Margin="16"
+                Margin="24"
                 MaxWidth="720"
                 MaxHeight="480"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch">
-            <StackPanel Margin="16" 
-                        Spacing="16">
+            <StackPanel Margin="24" 
+                        Spacing="24">
                 <Grid ColumnDefinitions="*,Auto">
                     <TextBlock Grid.Column="0" 
-                               Classes="h4"
+                               Classes="h3"
                                Text="Settings" />
                     <Button Grid.Column="1"
                             Classes="Icon"
@@ -34,6 +34,34 @@
                 </Grid>
                 <TabControl>
                     <TabItem Header="General">
+                        <StackPanel Spacing="12">
+                            <Grid ColumnDefinitions="*,Auto"
+                                  ColumnSpacing="12">
+                                <StackPanel Grid.Column="0"
+                                            Spacing="6">
+                                    <TextBlock Classes="Large"
+                                               Text="Enable post-processing" />
+                                    <TextBlock Classes="Caption"
+                                               TextWrapping="Wrap"
+                                               Text="Enables post-processing effects such as bloom, chromatic aberration, glitch, etc.. May impact performance on older devices." />
+                                </StackPanel>
+                                <CheckBox Grid.Column="1"
+                                          VerticalAlignment="Center" />
+                            </Grid>
+                            <Grid ColumnDefinitions="*,Auto"
+                                  ColumnSpacing="12">
+                                <StackPanel Grid.Column="0"
+                                            Spacing="6">
+                                    <TextBlock Classes="Large"
+                                               Text="Enable text rendering" />
+                                    <TextBlock Classes="Caption"
+                                               TextWrapping="Wrap"
+                                               Text="Enables rendering of text objects. This is not perfect and may cause visual artifacts. May impact performance on older devices." />
+                                </StackPanel>
+                                <CheckBox Grid.Column="1"
+                                          VerticalAlignment="Center" />
+                            </Grid>
+                        </StackPanel>
                     </TabItem>
                     <TabItem Header="FFmpeg">
                     </TabItem>
