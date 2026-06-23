@@ -3,6 +3,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:ParallelAnimationSystem.Avalonia.ViewModels"
+             xmlns:shadui="clr-namespace:ShadUI;assembly=ShadUI"
+             xmlns:controls="clr-namespace:ParallelAnimationSystem.Avalonia.Controls"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="ParallelAnimationSystem.Avalonia.Views.SettingsView"
              x:DataType="vm:SettingsViewModel"
@@ -23,7 +25,7 @@
                         Spacing="24">
                 <Grid ColumnDefinitions="*,Auto">
                     <TextBlock Grid.Column="0" 
-                               Classes="h3"
+                               Classes="h4"
                                Text="Settings" />
                     <Button Grid.Column="1"
                             Classes="Icon"
@@ -35,32 +37,20 @@
                 <TabControl>
                     <TabItem Header="General">
                         <StackPanel Spacing="12">
-                            <Grid ColumnDefinitions="*,Auto"
-                                  ColumnSpacing="12">
-                                <StackPanel Grid.Column="0"
-                                            Spacing="6">
-                                    <TextBlock Classes="Large"
-                                               Text="Enable post-processing" />
-                                    <TextBlock Classes="Caption"
-                                               TextWrapping="Wrap"
-                                               Text="Enables post-processing effects such as bloom, chromatic aberration, glitch, etc.. May impact performance on older devices." />
-                                </StackPanel>
-                                <CheckBox Grid.Column="1"
-                                          VerticalAlignment="Center" />
-                            </Grid>
-                            <Grid ColumnDefinitions="*,Auto"
-                                  ColumnSpacing="12">
-                                <StackPanel Grid.Column="0"
-                                            Spacing="6">
-                                    <TextBlock Classes="Large"
-                                               Text="Enable text rendering" />
-                                    <TextBlock Classes="Caption"
-                                               TextWrapping="Wrap"
-                                               Text="Enables rendering of text objects. This is not perfect and may cause visual artifacts. May impact performance on older devices." />
-                                </StackPanel>
-                                <CheckBox Grid.Column="1"
-                                          VerticalAlignment="Center" />
-                            </Grid>
+                            <CheckBox Classes="ToggleSwitch"
+                                      HorizontalAlignment="Stretch">
+                                <CheckBox.Content>
+                                    <controls:SettingsLabel Content="Enable post-processing"
+                                                            Description="Enables post-processing effects such as bloom, chromatic aberration, glitch, etc.. May impact performance on older devices." />
+                                </CheckBox.Content>
+                            </CheckBox>
+                            <CheckBox Classes="ToggleSwitch"
+                                      HorizontalAlignment="Stretch">
+                                <CheckBox.Content>
+                                    <controls:SettingsLabel Content="Enable text rendering"
+                                                            Description="Enables rendering of text objects. This is not perfect and may cause visual artifacts. May impact performance on older devices." />
+                                </CheckBox.Content>
+                            </CheckBox>
                         </StackPanel>
                     </TabItem>
                     <TabItem Header="FFmpeg">

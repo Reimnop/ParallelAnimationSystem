@@ -1,0 +1,140 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Style Selector="CheckBox.ToggleSwitch">
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryColor}" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Grid
+                    x:Name="PART_Container"
+                    Cursor="Hand"
+                    Background="Transparent"
+                    ColumnSpacing="8"
+                    ColumnDefinitions="*,Auto">
+                    <ContentPresenter
+                        Grid.Column="0"
+                        Content="{TemplateBinding Content}"
+                        ContentTemplate="{TemplateBinding ContentTemplate}"
+                        RecognizesAccessKey="True"
+                        x:Name="PART_ContentPresenter" />
+                    <Panel
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        Margin="0,6">
+                        <Border
+                            Background="{DynamicResource SwitchBackgroundColor}"
+                            BorderThickness="0"
+                            CornerRadius="{DynamicResource FullCornerRadius}"
+                            Height="18"
+                            Width="32" />
+                        <Border
+                            Background="{DynamicResource PrimaryColor}"
+                            BorderThickness="0"
+                            ClipToBounds="True"
+                            CornerRadius="{DynamicResource FullCornerRadius}"
+                            Height="18"
+                            Opacity="0"
+                            Width="32"
+                            x:Name="SwitchBackground">
+                            <Border.Transitions>
+                                <Transitions>
+                                    <DoubleTransition
+                                        Duration="0:0:0.2"
+                                        Easing="{StaticResource EaseOut}"
+                                        Property="Opacity" />
+                                </Transitions>
+                            </Border.Transitions>
+                        </Border>
+                        <Canvas
+                            Height="16"
+                            HorizontalAlignment="Left"
+                            Width="16"
+                            x:Name="PART_SwitchKnob">
+                            <Border
+                                Canvas.Left="0"
+                                Canvas.Top="0"
+                                ClipToBounds="True"
+                                CornerRadius="{DynamicResource FullCornerRadius}"
+                                Height="16"
+                                Margin="0,0,0,0"
+                                Width="16"
+                                x:Name="SwitchKnob">
+                                <Border.Transitions>
+                                    <Transitions>
+                                        <DoubleTransition Duration="0:0:0.05" Property="Width">
+                                            <DoubleTransition.Easing>
+                                                <QuadraticEaseOut />
+                                            </DoubleTransition.Easing>
+                                        </DoubleTransition>
+                                        <DoubleTransition Duration="0:0:0.15" Property="Canvas.Left">
+                                            <DoubleTransition.Easing>
+                                                <QuarticEaseOut />
+                                            </DoubleTransition.Easing>
+                                        </DoubleTransition>
+                                    </Transitions>
+                                </Border.Transitions>
+                                <Panel>
+                                    <Border
+                                        Background="{DynamicResource SwitchForegroundColor}"
+                                        Name="KnobOff"
+                                        Opacity="1">
+                                        <Border.Transitions>
+                                            <Transitions>
+                                                <DoubleTransition Duration="0:0:0.05" Property="Opacity">
+                                                    <DoubleTransition.Easing>
+                                                        <QuadraticEaseOut />
+                                                    </DoubleTransition.Easing>
+                                                </DoubleTransition>
+                                            </Transitions>
+                                        </Border.Transitions>
+                                    </Border>
+                                    <Border
+                                        Background="{DynamicResource PrimaryForegroundColor}"
+                                        Name="KnobOn"
+                                        Opacity="0">
+                                        <Border.Transitions>
+                                            <Transitions>
+                                                <DoubleTransition Duration="0:0:0.05" Property="Opacity">
+                                                    <DoubleTransition.Easing>
+                                                        <QuadraticEaseOut />
+                                                    </DoubleTransition.Easing>
+                                                </DoubleTransition>
+                                            </Transitions>
+                                        </Border.Transitions>
+                                    </Border>
+                                </Panel>
+                            </Border>
+                        </Canvas>
+                    </Panel>
+                </Grid>
+            </ControlTemplate>
+        </Setter>
+        <Style Selector="^:unchecked">
+            <Style Selector="^ /template/ Border#SwitchKnob">
+                <Setter Property="Width" Value="16" />
+                <Setter Property="Canvas.Left" Value="1" />
+            </Style>
+            <Style Selector="^ /template/ Border#KnobOff">
+                <Setter Property="Opacity" Value="1" />
+            </Style>
+            <Style Selector="^ /template/ Border#KnobOn">
+                <Setter Property="Opacity" Value="0" />
+            </Style>
+        </Style>
+        <Style Selector="^:checked">
+            <Style Selector="^/template/ Border#SwitchBackground">
+                <Setter Property="Opacity" Value="1" />
+            </Style>
+            <Style Selector="^/template/ Border#SwitchKnob">
+                <Setter Property="Width" Value="16" />
+                <Setter Property="Canvas.Left" Value="15" />
+                <Setter Property="Background" Value="{DynamicResource PrimaryForegroundColor}" />
+            </Style>
+            <Style Selector="^ /template/ Border#KnobOff">
+                <Setter Property="Opacity" Value="0" />
+            </Style>
+            <Style Selector="^ /template/ Border#KnobOn">
+                <Setter Property="Opacity" Value="1" />
+            </Style>
+        </Style>
+    </Style>
+</Styles>

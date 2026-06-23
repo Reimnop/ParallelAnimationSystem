@@ -13,22 +13,13 @@ namespace ParallelAnimationSystem.Avalonia.Controls;
 public sealed class SeekRequestedEventArgs(double position) : EventArgs
 {
     /// <summary>
-    /// Normalised position in [0, 1] requested by the user.
-    /// Multiply by your duration to get an absolute timestamp.
+    /// Normalized position in [0, 1].
     /// </summary>
     public double Position { get; } = position;
 }
 
 /// <summary>
-/// A timeline scrubber for audio/video playback.
-///
-/// The control is intentionally display-only: it never mutates <see cref="Value"/>.
-/// Every user interaction (click, drag, keyboard) raises <see cref="SeekRequested"/>
-/// and the caller decides whether and how to update <see cref="Value"/>.
-///
-/// Template parts:
-///   PART_Track  - the clickable/draggable track area (any <see cref="Control"/>)
-///   PART_Thumb  - the draggable thumb (any <see cref="Control"/>)
+/// A timeline scrubber for playback.
 /// </summary>
 [TemplatePart("PART_Track", typeof(Control))]
 [TemplatePart("PART_Thumb", typeof(Control))]
@@ -101,9 +92,6 @@ public sealed class TimelineScrubber : TemplatedControl
 
     static TimelineScrubber()
     {
-        // Value changes should push the thumb position through the template
-        // binding, not through code. We just need to keep the pseudo-class
-        // and template bindings in sync.
         ValueProperty.Changed.AddClassHandler<TimelineScrubber>(
             (o, _) => o.UpdatePseudoClasses());
 
@@ -195,7 +183,7 @@ public sealed class TimelineScrubber : TemplatedControl
             return;
 
         // If the pointer never exceeded the dead zone we already fired on press,
-        // so nothing extra is needed -- just clean up.
+        // so nothing extra is needed, just clean up.
         isDragging = false;
         dragThresholdExceeded = false;
         e.Pointer.Capture(null);
@@ -225,10 +213,10 @@ public sealed class TimelineScrubber : TemplatedControl
         var current = NormalizedValue();
         var next = e.Key switch
         {
-            Key.Left or Key.Down  => current - step,
-            Key.Right or Key.Up   => current + step,
-            Key.Home              => 0.0,
-            Key.End               => 1.0,
+            Key.Left or Key.Down => current - step,
+            Key.Right or Key.Up => current + step,
+            Key.Home => 0.0,
+            Key.End => 1.0,
             _ => double.NaN
         };
 
@@ -256,8 +244,6 @@ public sealed class TimelineScrubber : TemplatedControl
 
     private void UpdatePseudoClasses()
     {
-        // Expose normalized value as a pseudo-class boundary for
-        // those who want to style e.g. "near the end"
         PseudoClasses.Set(":at-start", NormalizedValue() <= 0.0);
         PseudoClasses.Set(":at-end", NormalizedValue() >= 1.0);
     }

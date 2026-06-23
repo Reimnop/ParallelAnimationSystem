@@ -1,17 +1,3 @@
-<!--
-    Default style for TimelineScrubber.
-
-    The template uses two named parts the control hooks into:
-      PART_Track  - the full-width hit area; pointer events are read from here
-      PART_Thumb  - the playhead knob; positioned via a binding to NormalisedValue
-                    (exposed as a TemplateBinding on Value / Minimum / Maximum)
-
-    Pseudo-classes:
-      :dragging - pointer is captured and the user is scrubbing
-      :hovering - pointer is over the track
-      :at-start - Value == Minimum
-      :at-end - Value == Maximum
--->
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:ParallelAnimationSystem.Avalonia.Controls">
