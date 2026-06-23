@@ -41,12 +41,11 @@ public sealed class NormalizedToWidthConverter : IMultiValueConverter
 }
 
 /// <summary>
-/// Converts (Value, Minimum, Maximum, TrackWidth) to left Thickness for the thumb,
-/// so it stays centred on the fill bar's right edge.
+/// Converts (Value, Minimum, Maximum, TrackWidth) to left for the thumb
 /// </summary>
-public sealed class NormalizedToThumbMarginConverter : IMultiValueConverter
+public sealed class NormalizedToLeftConverter : IMultiValueConverter
 {
-    public static NormalizedToThumbMarginConverter Instance { get; } = new();
+    public static NormalizedToLeftConverter Instance { get; } = new();
 
     // Half the thumb's natural width; keep in sync with the template's Width="14".
     private const double HalfThumbWidth = 7.0;
@@ -64,6 +63,6 @@ public sealed class NormalizedToThumbMarginConverter : IMultiValueConverter
         var norm = range <= 0 ? 0 : Math.Clamp((value - min) / range, 0.0, 1.0);
         var left = norm * trackWidth - HalfThumbWidth;
 
-        return new Thickness(left, 0, 0, 0);
+        return left;
     }
 }

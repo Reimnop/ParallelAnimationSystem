@@ -5,7 +5,7 @@
     <Style Selector="controls|TimelineScrubber">
         <Style.Resources>
             <controls:NormalizedToWidthConverter x:Key="NormalizedToWidthConverter" />
-            <controls:NormalizedToThumbMarginConverter x:Key="NormalizedToThumbMarginConverter" />
+            <controls:NormalizedToLeftConverter x:Key="NormalizedToThumbMarginConverter" />
         </Style.Resources>
         
         <Setter Property="MinHeight" Value="20" />
@@ -15,23 +15,18 @@
 
         <Setter Property="Template">
             <ControlTemplate>
-                <Grid RowDefinitions="*,4,*"
-                      Margin="7,0"
-                      Height="20"
-                      Background="Transparent"
-                      x:Name="PART_Track">
-                    <Border Grid.Row="1"
-                            Height="8"
+                <Panel Height="20"
+                       Background="Transparent"
+                       Margin="7,0"
+                       x:Name="PART_Track">
+                    <Border Height="6"
                             CornerRadius="2"
-                            Background="{DynamicResource BackgroundColor}"
-                            BorderThickness="1"
-                            BorderBrush="{DynamicResource BorderColor}"
+                            Background="#0FE0E0E0"
                             IsHitTestVisible="False">
                         <Border x:Name="FillBar"
                                 CornerRadius="2"
                                 HorizontalAlignment="Left"
-                                Background="{DynamicResource PrimaryColor}"
-                                IsHitTestVisible="False">
+                                Background="{DynamicResource PrimaryColor}">
                             <Border.Width>
                                 <MultiBinding Converter="{StaticResource NormalizedToWidthConverter}">
                                     <TemplateBinding Property="Value" />
@@ -43,36 +38,40 @@
                         </Border>
                     </Border>
                     
-                    <Border x:Name="PART_Thumb"
-                            Grid.Row="0"
-                            Grid.RowSpan="3"
-                            Width="14" Height="14"
+                    <Canvas Width="0"
+                            Height="0"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
-                            Background="{DynamicResource PrimaryColor}"
-                            CornerRadius="7"
                             IsHitTestVisible="False">
-                        <Border.Margin>
-                            <MultiBinding Converter="{StaticResource NormalizedToThumbMarginConverter}">
-                                <TemplateBinding Property="Value" />
-                                <TemplateBinding Property="Minimum" />
-                                <TemplateBinding Property="Maximum" />
-                                <Binding ElementName="PART_Track" Path="Bounds.Width" />
-                            </MultiBinding>
-                        </Border.Margin>
-                        
-                        <Border.Transitions>
-                            <Transitions>
-                                <DoubleTransition Property="Height" Duration="0:0:0.1" />
-                            </Transitions>
-                        </Border.Transitions>
-                    </Border>
-                </Grid>
+                        <Border x:Name="PART_Thumb"
+                                Width="14" Height="14"
+                                Canvas.Top="-7"
+                                Background="{DynamicResource PrimaryColor}"
+                                CornerRadius="7">
+                            <Canvas.Left>
+                                <MultiBinding Converter="{StaticResource NormalizedToThumbMarginConverter}">
+                                    <TemplateBinding Property="Value" />
+                                    <TemplateBinding Property="Minimum" />
+                                    <TemplateBinding Property="Maximum" />
+                                    <Binding ElementName="PART_Track" Path="Bounds.Width" />
+                                </MultiBinding>
+                            </Canvas.Left>
+    
+                            <Border.Transitions>
+                                <Transitions>
+                                    <DoubleTransition Property="Height" Duration="0:0:0.1" />
+                                    <DoubleTransition Property="(Canvas.Top)" Duration="0:0:0.1" />
+                                </Transitions>
+                            </Border.Transitions>
+                        </Border>
+                    </Canvas>
+                </Panel>
             </ControlTemplate>
         </Setter>
     </Style>
     
     <Style Selector="controls|TimelineScrubber:hovering /template/ Border#PART_Thumb">
         <Setter Property="Height" Value="20" />
+        <Setter Property="(Canvas.Top)" Value="-10" />
     </Style>
 </Styles>
