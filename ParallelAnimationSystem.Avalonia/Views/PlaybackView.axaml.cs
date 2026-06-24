@@ -31,4 +31,16 @@ public partial class PlaybackView : UserControl
             vm.PlayPause();
         }
     }
+
+    private void PlaybackControlsBorder_OnPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+            e.Handled = true;
+    }
+
+    private void PlaybackControlsBorder_OnPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (e.InitialPressMouseButton == MouseButton.Left)
+            e.Handled = true;
+    }
 }

@@ -39,7 +39,9 @@
             
             <Border VerticalAlignment="Bottom"
                     x:Name="PlaybackControlsBorder"
-                    Background="{DynamicResource TransparentBackgroundColor}">
+                    Background="{DynamicResource TransparentBackgroundColor}"
+                    PointerPressed="PlaybackControlsBorder_OnPointerPressed"
+                    PointerReleased="PlaybackControlsBorder_OnPointerReleased">
                 <StackPanel Spacing="8"
                             Margin="6">
                     <control:TimelineScrubber Minimum="0"
