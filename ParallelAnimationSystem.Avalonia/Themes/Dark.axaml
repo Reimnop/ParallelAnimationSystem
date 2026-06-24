@@ -4,5 +4,7 @@
     <Color x:Key="CodeForegroundColor">#FAFAFA</Color>
     <Color x:Key="CodeForegroundColor50">#33FAFAFA</Color>
     <Color x:Key="CodeBackgroundColor">#18181B</Color>
+    
+    <Color x:Key="TransparentBackgroundColor">#7F18181B</Color>
 
 </ResourceDictionary>

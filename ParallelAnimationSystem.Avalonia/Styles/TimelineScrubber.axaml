@@ -5,7 +5,7 @@
     <Style Selector="controls|TimelineScrubber">
         <Style.Resources>
             <controls:NormalizedToWidthConverter x:Key="NormalizedToWidthConverter" />
-            <controls:NormalizedToLeftConverter x:Key="NormalizedToThumbMarginConverter" />
+            <controls:NormalizedToLeftConverter x:Key="NormalizedToLeftConverter" />
         </Style.Resources>
         
         <Setter Property="MinHeight" Value="20" />
@@ -21,7 +21,7 @@
                        x:Name="PART_Track">
                     <Border Height="6"
                             CornerRadius="2"
-                            Background="#0FE0E0E0"
+                            Background="#33FAFAFA"
                             IsHitTestVisible="False">
                         <Border x:Name="FillBar"
                                 CornerRadius="2"
@@ -49,7 +49,7 @@
                                 Background="{DynamicResource PrimaryColor}"
                                 CornerRadius="7">
                             <Canvas.Left>
-                                <MultiBinding Converter="{StaticResource NormalizedToThumbMarginConverter}">
+                                <MultiBinding Converter="{StaticResource NormalizedToLeftConverter}">
                                     <TemplateBinding Property="Value" />
                                     <TemplateBinding Property="Minimum" />
                                     <TemplateBinding Property="Maximum" />

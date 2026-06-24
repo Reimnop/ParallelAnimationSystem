@@ -8,4 +8,5 @@
     <StyleInclude Source="avares://ParallelAnimationSystem.Avalonia/Styles/TabItem.axaml" />
     <StyleInclude Source="avares://ParallelAnimationSystem.Avalonia/Styles/CheckBox.axaml" />
     <StyleInclude Source="avares://ParallelAnimationSystem.Avalonia/Styles/SettingsLabel.axaml" />
+    <StyleInclude Source="avares://ParallelAnimationSystem.Avalonia/Styles/Button.axaml" />
 </Styles>

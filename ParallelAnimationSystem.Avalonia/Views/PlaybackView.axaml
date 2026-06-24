@@ -12,53 +12,56 @@
         <Panel Background="Transparent"
                x:Name="PlaybackRootPanel">
             <Panel.Styles>
-                <Style Selector="Border#PlaybackControlsBorder">
-                    <Setter Property="Transitions">
-                        <Transitions>
-                            <DoubleTransition Property="Opacity" 
-                                              Easing="{StaticResource EaseOut}"
-                                              Duration="0:0:0.2" />
-                        </Transitions>
-                    </Setter>
-                    <Setter Property="Opacity" Value="0" />
-                </Style>
-                
-                <Style Selector="Panel#PlaybackRootPanel:pointerover Border#PlaybackControlsBorder">
-                    <Setter Property="Opacity" Value="1" />
+                <Style Selector="Panel#PlaybackRootPanel">
+                    <Style Selector="^ > Border#PlaybackControlsBorder">
+                        <Setter Property="Transitions">
+                            <Transitions>
+                                <DoubleTransition Property="Opacity" 
+                                                  Easing="{StaticResource EaseOut}"
+                                                  Duration="0:0:0.2" />
+                                <TransformOperationsTransition Property="RenderTransform" 
+                                                               Duration="0:0:0.2"
+                                                               Easing="{StaticResource EaseOut}" />
+                            </Transitions>
+                        </Setter>
+                        <Setter Property="Opacity" Value="0" />
+                        <Setter Property="RenderTransform" Value="translateY(12px)" />
+                    </Style>
+                    <Style Selector="^:pointerover > Border#PlaybackControlsBorder">
+                        <Setter Property="Opacity" Value="1" />
+                        <Setter Property="RenderTransform" Value="translateY(0)" />
+                    </Style>
                 </Style>
             </Panel.Styles>
             
             <ContentControl Content="{Binding PASViewModel}"/>
             
             <Border VerticalAlignment="Bottom"
-                    x:Name="PlaybackControlsBorder">
-                <StackPanel Spacing="6">
+                    x:Name="PlaybackControlsBorder"
+                    Background="{DynamicResource TransparentBackgroundColor}">
+                <StackPanel Spacing="8"
+                            Margin="6">
                     <control:TimelineScrubber Minimum="0"
                                               Maximum="{Binding AudioPlayer, Converter={x:Static vm:PlaybackViewModel.AudioPlayerToDurationConverter}}"
                                               Value="{Binding ScrubberPosition}"
                                               SeekRequested="TimelineScrubber_OnSeekRequested" />
-                    <shadui:Card HorizontalAlignment="Left"
-                                 CornerRadius="{DynamicResource SmCornerRadius}"
-                                 Margin="4,0,0,4"
-                                 Padding="4,4,8,4">
-                        <StackPanel Spacing="6"
-                                    Orientation="Horizontal">
-                            <Button Classes="Icon" 
-                                    Command="{Binding PlayPauseCommand}"
-                                    Width="36" Height="36"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    ToolTip.Tip="Play / Pause">
-                                <LucideIcon Kind="{Binding IsPlaying, Converter={x:Static vm:PlaybackViewModel.PlayingToPlayPauseIconConverter}}" />
-                            </Button>
-                            <TextBlock VerticalAlignment="Center">
-                                <Run Text="{Binding ScrubberPosition, Converter={x:Static vm:PlaybackViewModel.TimeToCurrentTimeTextConverter}}" />
-                                <Run Text=" / "
-                                     FontWeight="Bold" />
-                                <Run Text="{Binding AudioPlayer, Converter={x:Static vm:PlaybackViewModel.AudioPlayerToDurationTextConverter}}" />
-                            </TextBlock>
-                        </StackPanel>
-                    </shadui:Card>
+                    <StackPanel Spacing="6"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Left">
+                        <Button Classes="PlaybackIcon" 
+                                Command="{Binding PlayPauseCommand}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                ToolTip.Tip="Play / Pause">
+                            <LucideIcon Kind="{Binding IsPlaying, Converter={x:Static vm:PlaybackViewModel.PlayingToPlayPauseIconConverter}}" />
+                        </Button>
+                        <TextBlock VerticalAlignment="Center">
+                            <Run Text="{Binding ScrubberPosition, Converter={x:Static vm:PlaybackViewModel.TimeToCurrentTimeTextConverter}}" />
+                            <Run Text=" / "
+                                 FontWeight="Bold" />
+                            <Run Text="{Binding AudioPlayer, Converter={x:Static vm:PlaybackViewModel.AudioPlayerToDurationTextConverter}}" />
+                        </TextBlock>
+                    </StackPanel>
                 </StackPanel>
             </Border>
         </Panel>
