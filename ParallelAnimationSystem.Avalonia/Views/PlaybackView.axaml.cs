@@ -1,5 +1,6 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Input;
+using Lucide.Avalonia;
 using ParallelAnimationSystem.Avalonia.Controls;
 using ParallelAnimationSystem.Avalonia.ViewModels;
 
@@ -7,9 +8,13 @@ namespace ParallelAnimationSystem.Avalonia.Views;
 
 public partial class PlaybackView : UserControl
 {
+    private readonly PlayPauseAnimation playPauseAnim;
+    
     public PlaybackView()
     {
         InitializeComponent();
+        
+        playPauseAnim = new PlayPauseAnimation(PlayPauseIconContainer);
     }
     
     private void TimelineScrubber_OnSeekRequested(object? sender, SeekRequestedEventArgs e)
@@ -28,6 +33,10 @@ public partial class PlaybackView : UserControl
         if (e.InitialPressMouseButton == MouseButton.Left)
         {
             e.Handled = true;
+            
+            PlayPauseIcon.Kind = vm.IsPlaying ? LucideIconKind.Pause : LucideIconKind.Play;
+            _ = playPauseAnim.Trigger();
+            
             vm.PlayPause();
         }
     }

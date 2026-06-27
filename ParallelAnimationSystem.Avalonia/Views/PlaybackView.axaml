@@ -37,6 +37,24 @@
             
             <ContentControl Content="{Binding PASViewModel}"/>
             
+            <Border Width="256" 
+                    Height="256"
+                    CornerRadius="{DynamicResource FullCornerRadius}"
+                    Background="{DynamicResource TransparentBackgroundColor}"
+                    IsVisible="False"
+                    Opacity="0"
+                    x:Name="PlayPauseIconContainer">
+                <Border.RenderTransform>
+                    <ScaleTransform ScaleX="0.5"
+                                    ScaleY="0.5" />
+                </Border.RenderTransform>
+                
+                <LucideIcon x:Name="PlayPauseIcon"
+                            Size="128"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center" />
+            </Border>
+            
             <Border VerticalAlignment="Bottom"
                     x:Name="PlaybackControlsBorder"
                     Background="{DynamicResource TransparentBackgroundColor}"
