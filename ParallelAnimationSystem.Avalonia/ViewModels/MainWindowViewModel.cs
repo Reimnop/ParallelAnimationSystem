@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using Avalonia.Data.Converters;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -26,8 +27,24 @@ public partial class MainWindowViewModel
         SettingsViewModel = settingsViewModel;
         
         SettingsViewModel.Closing += (_, _) => IsSettingsOpen = false;
+        SettingsViewModel.PropertyChanged += SettingsViewModelOnPropertyChanged;
     }
-    
+
+    private void SettingsViewModelOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        var director = PlaybackViewModel.PASViewModel.Director;
+
+        switch (e.PropertyName)
+        {
+            case nameof(SettingsViewModel.EnablePostProcessing):
+                director.EnablePostProcessing = SettingsViewModel.EnablePostProcessing;
+                break;
+            case nameof(SettingsViewModel.EnableTextRendering):
+                director.EnableTextRendering = SettingsViewModel.EnableTextRendering;
+                break;
+        }
+    }
+
     [RelayCommand]
     private void OpenSettings()
     {

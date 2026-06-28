@@ -20,8 +20,8 @@ public class PASViewModel : ViewModelBase, IDisposable
 
     public BeatmapService BeatmapService { get; }
     public RandomSeedService RandomSeedService { get; }
-    
-    private readonly AppDirector director;
+
+    public AppDirector Director { get; }
 
     public PASViewModel()
     {
@@ -50,14 +50,14 @@ public class PASViewModel : ViewModelBase, IDisposable
         var directorScope = ServiceProvider.CreateScope();
         var directorSp = directorScope.ServiceProvider;
         
-        director = directorSp.GetRequiredService<AppDirector>();
+        Director = directorSp.GetRequiredService<AppDirector>();
         BeatmapService = directorSp.GetRequiredService<BeatmapService>();
         RandomSeedService = directorSp.GetRequiredService<RandomSeedService>();
     }
 
     public void ProcessFrame()
     {
-        director.PopulateRenderQueueDrawList(TickCallback?.Invoke() ?? 0f);
+        Director.PopulateRenderQueueDrawList(TickCallback?.Invoke() ?? 0f);
     }
 
     public void Dispose()

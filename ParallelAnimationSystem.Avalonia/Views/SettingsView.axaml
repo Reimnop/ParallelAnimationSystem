@@ -38,14 +38,16 @@
                     <TabItem Header="General">
                         <StackPanel Spacing="12">
                             <CheckBox Classes="ToggleSwitch"
-                                      HorizontalAlignment="Stretch">
+                                      HorizontalAlignment="Stretch"
+                                      IsChecked="{Binding EnablePostProcessing}">
                                 <CheckBox.Content>
                                     <controls:SettingsLabel Content="Enable post-processing"
                                                             Description="Enables post-processing effects such as bloom, chromatic aberration, glitch, etc.. May impact performance on older devices." />
                                 </CheckBox.Content>
                             </CheckBox>
                             <CheckBox Classes="ToggleSwitch"
-                                      HorizontalAlignment="Stretch">
+                                      HorizontalAlignment="Stretch"
+                                      IsChecked="{Binding EnableTextRendering}">
                                 <CheckBox.Content>
                                     <controls:SettingsLabel Content="Enable text rendering"
                                                             Description="Enables rendering of text objects. This is not perfect and may cause visual artifacts. May impact performance on older devices." />
