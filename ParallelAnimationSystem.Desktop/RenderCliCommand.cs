@@ -1,10 +1,8 @@
 ﻿using DotMake.CommandLine;
 using Microsoft.Extensions.DependencyInjection;
-using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Desktop.FFmpeg;
 using ParallelAnimationSystem.Mathematics;
 using ParallelAnimationSystem.Rendering;
-using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Desktop;
 
@@ -29,11 +27,12 @@ public class RenderCliCommand : RootCliCommand
     {
         var services = new ServiceCollection();
         
-        services.AddSingleton(new DesktopWindowSettings
+        services.AddSingleton(new DesktopSurfaceSettings
         {
             Size = new Vector2i(Width, Height),
             VSync = false,
-            UseEgl = UseEgl
+            UseEgl = UseEgl,
+            LockAspectRatio = false,
         });
 
         services.AddSingleton(new FFmpegSettings
@@ -43,22 +42,15 @@ public class RenderCliCommand : RootCliCommand
         });
 
         services
-            .AddPlatform<FFmpegWindow, FFmpegGlfwService, RenderQueue>(
-                Backend,
-                false,
-                EnablePostProcessing, EnableTextRendering)
+            .AddPlatform<FFmpegGlfwService>(Backend)
             .AddTransient<FFmpegFrameGenerator>();
         
         // Build service provider
         using var serviceProvider = services.BuildServiceProvider();
         
-        // Set random seed
-        var rss = serviceProvider.GetRequiredService<RandomSeedService>();
-        rss.Seed = Seed ?? NumberUtil.SplitMix64((ulong)DateTimeOffset.Now.ToUnixTimeSeconds());
-        
         // Start frame generator
         var frameGenerator = serviceProvider.GetRequiredService<FFmpegFrameGenerator>();
-        frameGenerator.GenerateFrames(BeatmapPath, AudioPath, Framerate, OutputPath);
+        frameGenerator.GenerateFrames(BeatmapPath, AudioPath, Framerate, OutputPath, Seed, EnablePostProcessing, EnableTextRendering);
     }
 }
 

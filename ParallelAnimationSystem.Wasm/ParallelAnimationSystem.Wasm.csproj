@@ -39,12 +39,9 @@
   </ItemGroup>
   
   <ItemGroup>
+    <ProjectReference Include="../ParallelAnimationSystem.Resources.Raw/ParallelAnimationSystem.Resources.Raw.csproj" />
     <ProjectReference Include="../ParallelAnimationSystem/ParallelAnimationSystem.csproj" />
     <ProjectReference Include="../ParallelAnimationSystem.Rendering.OpenGLES/ParallelAnimationSystem.Rendering.OpenGLES.csproj" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <EmbeddedResource Include="Resources/**/*" />
   </ItemGroup>
   
   <ItemGroup>

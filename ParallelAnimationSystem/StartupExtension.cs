@@ -2,32 +2,22 @@ using Microsoft.Extensions.DependencyInjection;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Core.Text;
-
-#if DEBUG
-using ParallelAnimationSystem.DebugStuff;
-#endif
+using ParallelAnimationSystem.Rendering;
 
 namespace ParallelAnimationSystem;
 
 public static class StartupExtension
 {
-    public static PASBuilder AddPAS(this IServiceCollection services)
+    public static PASBuilder AddPAS(this IServiceCollection services, Action<ResourceSourceFactories>? resourceSourceConfig = null)
     {
-        // services.AddSingleton(options.AppSettings);
-
-        // Everything related to resources are singletons
-        // options.RenderingFactoryDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);
-        // options.RenderQueueDefinition.RegisterToServiceCollection(services, ServiceLifetime.Singleton);
-
-        // Add resource loader with all resource source factories
-        // services.AddSingleton(_ => new ResourceLoader(options.ResourceSourceFactories
-        //     .Append(() => new EmbeddedResourceSource(typeof(StartupExtension).Assembly))));
-
         var resourceSourceFactories = new ResourceSourceFactories();
         services.AddSingleton(resourceSourceFactories);
         
         // Add our own resource loader
         resourceSourceFactories.Add(() => new EmbeddedResourceSource(typeof(StartupExtension).Assembly));
+        resourceSourceConfig?.Invoke(resourceSourceFactories);
+
+        services.AddSingleton<RenderQueue>();
         
         // Add resource loader
         services.AddSingleton<ResourceLoader>();
@@ -35,10 +25,6 @@ public static class StartupExtension
         // These manage rendering resources, so they should be singletons
         services.AddSingleton<MeshService>();
         services.AddSingleton<FontService>();
-
-        // Add rendering services
-        // options.WindowDefinition.RegisterToServiceCollection(services, ServiceLifetime.Scoped);
-        // options.RendererDefinition.RegisterToServiceCollection(services, ServiceLifetime.Scoped);
 
         // Add main services
         services.AddScoped<AppDirector>();
@@ -55,12 +41,6 @@ public static class StartupExtension
         services.AddScoped<TextShaper>();
         services.AddScoped<MeshCacheService>();
         services.AddScoped<TextCacheService>();
-
-#if DEBUG
-        // Add ImGui
-        services.AddScoped<ImGuiContext>();
-        services.AddScoped<ImGuiBackend>();
-#endif
 
         // Add migrations
         services.AddTransient<LsMigration>();

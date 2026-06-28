@@ -1,0 +1,79 @@
+<shadui:Window xmlns="https://github.com/avaloniaui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+               xmlns:vm="using:ParallelAnimationSystem.Avalonia.ViewModels"
+               xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+               xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+               xmlns:shadui="clr-namespace:ShadUI;assembly=ShadUI"
+               SaveWindowState="True"
+               TitleFontWeight="SemiBold"
+               Width="1024"
+               WindowStartupLocation="CenterScreen"
+               EnableTrafficLightPositioning="True"
+               TrafficLightOffset="5,8"
+               mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="720"
+               x:Class="ParallelAnimationSystem.Avalonia.Views.MainWindow"
+               x:DataType="vm:MainWindowViewModel"
+               Icon="/Assets/icon.ico"
+               Title="Parallel Animation System">
+    <shadui:Window.Hosts>
+        
+        <!-- Settings overlay -->
+        <ContentControl Content="{Binding SettingsViewModel}"
+                        IsHitTestVisible="{Binding IsSettingsOpen}">
+            <ContentControl.Styles>
+                <Style Selector="ContentControl">
+                    <Setter Property="Transitions">
+                        <Transitions>
+                            <DoubleTransition Property="Opacity" 
+                                              Duration="0:0:0.2" 
+                                              Easing="{StaticResource EaseOut}" />
+                            <TransformOperationsTransition Property="RenderTransform" 
+                                                           Duration="0:0:0.2"
+                                                           Easing="{StaticResource EaseOut}" />
+                        </Transitions>
+                    </Setter>
+                    <Style Selector="^[IsHitTestVisible=True]">
+                        <Setter Property="Opacity" Value="1"/>
+                        <Setter Property="RenderTransform" Value="scale(1) translateY(0)" />
+                    </Style>
+                    <Style Selector="^[IsHitTestVisible=False]">
+                        <Setter Property="Opacity" Value="0"/>
+                        <Setter Property="RenderTransform" Value="scale(0.96) translateY(12px)" />
+                    </Style>
+                </Style>
+            </ContentControl.Styles>
+        </ContentControl>
+        
+    </shadui:Window.Hosts>
+    <shadui:Window.RightWindowTitleBarContent>
+        <StackPanel Orientation="Horizontal"
+                    FlowDirection="RightToLeft"
+                    Spacing="8">
+            <Button Background="{DynamicResource SidebarBackgroundColor}"
+                    CornerRadius="{DynamicResource MdCornerRadius}"
+                    Width="30"
+                    Height="30"
+                    ToolTip.Tip="Settings"
+                    Content="{LucideIconContent Settings, Size=20}"
+                    Command="{Binding OpenSettingsCommand}"
+                    VerticalAlignment="Center" />
+            <Button Background="{DynamicResource SidebarBackgroundColor}"
+                    CornerRadius="{DynamicResource MdCornerRadius}"
+                    Command="{Binding PlaybackViewModel.OpenBeatmapCommand}"
+                    CommandParameter="{Binding $parent[shadui:Window]}"
+                    Height="30"
+                    Width="30"
+                    ToolTip.Tip="Open Beatmap"
+                    Content="{LucideIconContent FolderOpen, Size=20}"
+                    VerticalAlignment="Center"/>
+            <TextBlock FontWeight="Bold"
+                       VerticalAlignment="Center"
+                       TextAlignment="Right"
+                       HorizontalAlignment="Right"
+                       FlowDirection="LeftToRight"
+                       Text="{Binding PlaybackViewModel.Fps, Converter={x:Static vm:MainWindowViewModel.FpsTextConverter}}"/>
+        </StackPanel>
+    </shadui:Window.RightWindowTitleBarContent>
+    
+    <ContentControl Content="{Binding PlaybackViewModel}" />
+</shadui:Window>

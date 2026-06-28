@@ -181,6 +181,6 @@ public class GenerateCommand
         var obj = TmpxWriter.Write(font);
 
         using var stream = File.Create(OutputPath);
-        SsbfWrite.WriteToStream(stream, obj, true);
+        SsbfDocument.Save(stream, obj, true, true);
     }
 }

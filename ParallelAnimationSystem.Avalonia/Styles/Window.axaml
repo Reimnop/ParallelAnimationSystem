@@ -1,0 +1,12 @@
+﻿<Styles
+    xmlns="https://github.com/avaloniaui"
+    xmlns:shadui="clr-namespace:ShadUI;assembly=ShadUI"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Style Selector="shadui|Window">
+        <Setter Property="FontFamily" Value="{StaticResource ManropeFont}" />
+    </Style>
+    <Style Selector="shadui|Window[WindowState=Maximized]">
+        <Setter Property="Margin" Value="8" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+</Styles>

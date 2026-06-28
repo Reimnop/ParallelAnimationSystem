@@ -1,4 +1,3 @@
-using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace ParallelAnimationSystem.Core.Data;
@@ -21,6 +20,10 @@ public struct ColorRgba(float r, float g, float b, float a)
     }
     
     public ColorRgba(ColorRgb rgb, float a = 1f) : this(rgb.R, rgb.G, rgb.B, a)
+    {
+    }
+
+    public ColorRgba() : this(0f, 0f, 0f, 1f)
     {
     }
 

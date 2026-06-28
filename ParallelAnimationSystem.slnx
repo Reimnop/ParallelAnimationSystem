@@ -2,6 +2,14 @@
   <Folder Name="/Pamx/">
     <Project Path="Pamx/Pamx/Pamx.csproj" />
   </Folder>
+  <Folder Name="/Reimnop.MvvmHelper/">
+    <Project Path="Reimnop.MvvmHelper/Reimnop.MvvmHelper.Generator/Reimnop.MvvmHelper.Generator.csproj" />
+    <Project Path="Reimnop.MvvmHelper/Reimnop.MvvmHelper/Reimnop.MvvmHelper.csproj" />
+  </Folder>
+  <Folder Name="/Resources/">
+    <Project Path="ParallelAnimationSystem.Resources.Compressed/ParallelAnimationSystem.Resources.Compressed.csproj" />
+    <Project Path="ParallelAnimationSystem.Resources.Raw/ParallelAnimationSystem.Resources.Raw.csproj" />
+  </Folder>
   <Folder Name="/Tmpx/">
     <Project Path="Tmpx/Tmpx.Common/Tmpx.Common.csproj" />
     <Project Path="Tmpx/Tmpx.Demo/Tmpx.Demo.csproj" />
@@ -12,6 +20,7 @@
   <Project Path="ParallelAnimationSystem.Android/ParallelAnimationSystem.Android.csproj">
     <Deploy />
   </Project>
+  <Project Path="ParallelAnimationSystem.Avalonia/ParallelAnimationSystem.Avalonia.csproj" />
   <Project Path="ParallelAnimationSystem.Desktop/ParallelAnimationSystem.Desktop.csproj" />
   <Project Path="ParallelAnimationSystem.Mathematics/ParallelAnimationSystem.Mathematics.csproj" />
   <Project Path="ParallelAnimationSystem.Redist/ParallelAnimationSystem.Redist.csproj" />

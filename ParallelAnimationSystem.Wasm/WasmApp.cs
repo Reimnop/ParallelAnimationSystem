@@ -28,13 +28,14 @@ public class WasmApp : IDisposable
         BeatmapService = scope.ServiceProvider.GetRequiredService<BeatmapService>();
         appDirector = scope.ServiceProvider.GetRequiredService<AppDirector>();
         renderer = scope.ServiceProvider.GetRequiredService<IRenderer>();
-        renderQueue = (RenderQueue)scope.ServiceProvider.GetRequiredService<IRenderQueue>();
+        renderQueue = scope.ServiceProvider.GetRequiredService<RenderQueue>();
     }
     
     public void ProcessFrame(float time)
     {
-        appDirector.ProcessFrame(time);
-        renderQueue.ProcessFrame(renderer);
+        appDirector.PopulateRenderQueueDrawList(time);
+        renderQueue.FinishFrame();
+        renderQueue.FlushFrame(renderer);
     }
 
     public void Dispose()

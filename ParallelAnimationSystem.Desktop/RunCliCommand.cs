@@ -1,9 +1,7 @@
 ﻿using DotMake.CommandLine;
 using Microsoft.Extensions.DependencyInjection;
-using ParallelAnimationSystem.Core.Service;
 using ParallelAnimationSystem.Mathematics;
-using ParallelAnimationSystem.Rendering;
-using ParallelAnimationSystem.Util;
+using ParallelAnimationSystem.Platform.OpenGL;
 
 namespace ParallelAnimationSystem.Desktop;
 
@@ -22,29 +20,24 @@ public class RunCliCommand : RootCliCommand
     {
         var services = new ServiceCollection();
         
-        services.AddSingleton(new DesktopWindowSettings
+        services.AddSingleton(new DesktopSurfaceSettings
         {
             Size = new Vector2i(Width, Height),
             VSync = VSync,
-            UseEgl = UseEgl
+            UseEgl = UseEgl,
+            LockAspectRatio = LockAspectRatio
         });
 
         services
-            .AddPlatform<DesktopWindow, GlfwService, AsyncRenderQueue>(
-                Backend,
-                LockAspectRatio,
-                EnablePostProcessing, EnableTextRendering)
+            .AddPlatform<GlfwService>(Backend)
+            .AddScoped<IOpenGLSurface, DesktopSurface>()
             .AddTransient<DesktopApp>();
         
         // Build service provider
         using var serviceProvider = services.BuildServiceProvider();
         
-        // Set random seed
-        var rss = serviceProvider.GetRequiredService<RandomSeedService>();
-        rss.Seed = Seed ?? NumberUtil.SplitMix64((ulong)DateTimeOffset.Now.ToUnixTimeSeconds());
-        
         // Start the app
         var app = serviceProvider.GetRequiredService<DesktopApp>();
-        app.StartApp(BeatmapPath, AudioPath, StartTime);
+        app.StartApp(BeatmapPath, AudioPath, Seed, EnablePostProcessing, EnableTextRendering);
     }
 }

@@ -156,7 +156,7 @@ public class DemoWindow() : GameWindow(GameWindowSettings, NativeWindowSettings)
     private static Font ReadFont(string path)
     {
         using var stream = File.OpenRead(path);
-        var ssbf = (SsbfObject) SsbfRead.ReadFromStream(stream)!;
+        var ssbf = (SsbfObject) SsbfDocument.Load(stream, true);
         return TmpxReader.Read(ssbf);
     }
     

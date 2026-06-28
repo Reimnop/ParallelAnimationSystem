@@ -1,0 +1,12 @@
+﻿<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StyleInclude Source="avares://ParallelAnimationSystem.Avalonia/Styles/Menu.axaml" />
+    <StyleInclude Source="avares://ParallelAnimationSystem.Avalonia/Styles/TextBlock.axaml" />
+    <StyleInclude Source="avares://ParallelAnimationSystem.Avalonia/Styles/Tooltip.axaml" />
+    <StyleInclude Source="avares://ParallelAnimationSystem.Avalonia/Styles/Window.axaml" />
+    <StyleInclude Source="avares://ParallelAnimationSystem.Avalonia/Styles/TimelineScrubber.axaml" />
+    <StyleInclude Source="avares://ParallelAnimationSystem.Avalonia/Styles/TabControl.axaml" />
+    <StyleInclude Source="avares://ParallelAnimationSystem.Avalonia/Styles/TabItem.axaml" />
+    <StyleInclude Source="avares://ParallelAnimationSystem.Avalonia/Styles/CheckBox.axaml" />
+    <StyleInclude Source="avares://ParallelAnimationSystem.Avalonia/Styles/SettingsLabel.axaml" />
+    <StyleInclude Source="avares://ParallelAnimationSystem.Avalonia/Styles/Button.axaml" />
+</Styles>

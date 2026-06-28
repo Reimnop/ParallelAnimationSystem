@@ -5,10 +5,13 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-
-    <InvariantGlobalization>true</InvariantGlobalization>
+    
     <PublishAot>true</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+    <StripSymbols>true</StripSymbols>
 
     <ApplicationIcon>icon.ico</ApplicationIcon>
   </PropertyGroup>
@@ -20,17 +23,15 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.0" />
     <PackageReference Include="OpenTK.Windowing.GraphicsLibraryFramework" Version="5.0.0-pre.11" />
     <PackageReference Include="ParallelAnimationSystem.Redist" Version="1.0.0" />
+    <PackageReference Include="PublishAotCompressed" Version="1.0.5" />
     <PackageReference Include="ReFuel.StbImage" Version="2.0.1" />
   </ItemGroup>
   
   <ItemGroup>
+    <ProjectReference Include="../ParallelAnimationSystem.Resources.Compressed/ParallelAnimationSystem.Resources.Compressed.csproj" />
     <ProjectReference Include="../ParallelAnimationSystem/ParallelAnimationSystem.csproj" />
     <ProjectReference Include="../ParallelAnimationSystem.Rendering.OpenGL/ParallelAnimationSystem.Rendering.OpenGL.csproj" />
     <ProjectReference Include="../ParallelAnimationSystem.Rendering.OpenGLES/ParallelAnimationSystem.Rendering.OpenGLES.csproj" />
-  </ItemGroup>
-  
-  <ItemGroup Condition="'$(Configuration)' != 'Debug'">
-    <Compile Remove="DebugStuff/**/*" />
   </ItemGroup>
   
   <ItemGroup>

@@ -131,7 +131,7 @@ public class MainActivity : Activity
         if (audioPath is null)
             return;
         
-        var intent = new Intent(this, typeof(PasActivity));
+        var intent = new Intent(this, typeof(PASActivity));
         intent.PutExtra("lockAspectRatio", lockAspectRatioSwitch.Checked);
         intent.PutExtra("postProcessing", enablePostProcessingSwitch.Checked);
         intent.PutExtra("textRendering", enableTextRenderingSwitch.Checked);

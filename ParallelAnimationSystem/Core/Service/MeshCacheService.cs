@@ -16,13 +16,13 @@ public class MeshCacheService
         public int RefCount { get; set; }
     }
     
-    private readonly IRenderQueue renderQueue;
+    private readonly RenderQueue renderQueue;
     private readonly PlaybackObjectContainer playbackObjects;
 
     private readonly IndexedList<CacheItem> cacheItems = [];
     private readonly List<int?> objectIndexToCacheIndex = [];
 
-    public MeshCacheService(IRenderQueue renderQueue, PlaybackObjectContainer playbackObjects)
+    public MeshCacheService(RenderQueue renderQueue, PlaybackObjectContainer playbackObjects)
     {
         this.renderQueue = renderQueue;
         this.playbackObjects = playbackObjects;

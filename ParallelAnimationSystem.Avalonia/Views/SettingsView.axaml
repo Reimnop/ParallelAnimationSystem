@@ -1,0 +1,79 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:ParallelAnimationSystem.Avalonia.ViewModels"
+             xmlns:shadui="clr-namespace:ShadUI;assembly=ShadUI"
+             xmlns:controls="clr-namespace:ParallelAnimationSystem.Avalonia.Controls"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="ParallelAnimationSystem.Avalonia.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel"
+             Focusable="True">
+    <Panel>
+        <Border Background="{DynamicResource DialogOverlayColor}"
+                Opacity="0.6" />
+        <Border Background="{DynamicResource DialogBackgroundColor}" 
+                BorderBrush="{DynamicResource BorderColor}" 
+                BorderThickness="1" 
+                CornerRadius="{DynamicResource XlCornerRadius}" 
+                Margin="24"
+                MaxWidth="720"
+                MaxHeight="480"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch">
+            <StackPanel Margin="24" 
+                        Spacing="24">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" 
+                               Classes="h4"
+                               Text="Settings" />
+                    <Button Grid.Column="1"
+                            Classes="Icon"
+                            Command="{Binding CloseCommand}"
+                            Width="30"
+                            Height="30"
+                            Content="{LucideIconContent X, Size=20}"/>
+                </Grid>
+                <TabControl>
+                    <TabItem Header="General">
+                        <StackPanel Spacing="12">
+                            <CheckBox Classes="ToggleSwitch"
+                                      HorizontalAlignment="Stretch"
+                                      IsChecked="{Binding EnablePostProcessing}">
+                                <CheckBox.Content>
+                                    <controls:SettingsLabel Content="Enable post-processing"
+                                                            Description="Enables post-processing effects such as bloom, chromatic aberration, glitch, etc.. May impact performance on older devices." />
+                                </CheckBox.Content>
+                            </CheckBox>
+                            <CheckBox Classes="ToggleSwitch"
+                                      HorizontalAlignment="Stretch"
+                                      IsChecked="{Binding EnableTextRendering}">
+                                <CheckBox.Content>
+                                    <controls:SettingsLabel Content="Enable text rendering"
+                                                            Description="Enables rendering of text objects. This is not perfect and may cause visual artifacts. May impact performance on older devices." />
+                                </CheckBox.Content>
+                            </CheckBox>
+                        </StackPanel>
+                    </TabItem>
+                    <TabItem Header="FFmpeg">
+                        <TextBlock>Under construction!</TextBlock>
+                    </TabItem>
+                    <TabItem Header="Logs">
+                        <TextBlock>Under construction!</TextBlock>
+                    </TabItem>
+                    <TabItem Header="About">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Parallel Animation System" 
+                                       Classes="h4" />
+                            <TextBlock Classes="p">
+                                Copyright © 2026 Reimnop.
+                                <LineBreak />
+                                Parallel Animation System is open-source software licensed under the MIT License.
+                            </TextBlock>
+                        </StackPanel>
+                    </TabItem>
+                </TabControl>
+            </StackPanel>
+        </Border>
+    </Panel>
+</UserControl>

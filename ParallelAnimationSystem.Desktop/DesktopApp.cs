@@ -3,8 +3,9 @@ using Microsoft.Extensions.DependencyInjection;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Service;
+using ParallelAnimationSystem.Platform.OpenGL;
 using ParallelAnimationSystem.Rendering;
-using ParallelAnimationSystem.Windowing;
+using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Desktop;
 
@@ -17,7 +18,8 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
         Backward10,
         Forward5,
         Backward5,
-        PlayPause
+        PlayPause,
+        RandomizeSeed
     }
     
     private struct FullscreenData
@@ -33,7 +35,7 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
     private ButtonAction buttonAction;
     private FullscreenData? fullscreenData;
     
-    public void StartApp(string beatmapPath, string audioPath, float startTime = 0.0f)
+    public void StartApp(string beatmapPath, string audioPath, ulong? randomSeed, bool enablePostProcessing, bool enableTextRendering)
     {
         using var scope = serviceProvider.CreateScope();
         var sp = scope.ServiceProvider;
@@ -42,14 +44,20 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
         // BeatmapHelper.ReadBeatmap(beatmapPath, out var beatmapData, out var beatmapFormat);
         var beatmapService = sp.GetRequiredService<BeatmapService>();
         // beatmapService.LoadBeatmap(beatmapData, beatmapFormat);
-        beatmapService.LoadBeatmap(beatmapPath);
+        beatmapService.LoadBeatmapFromPath(beatmapPath);
         
         // Initialize core service
+        var renderQueue = sp.GetRequiredService<RenderQueue>();
         var appDirector = sp.GetRequiredService<AppDirector>();
+        appDirector.EnablePostProcessing = enablePostProcessing;
+        appDirector.EnableTextRendering = enableTextRendering;
+        
+        // Get the random seed service
+        var rss = sp.GetRequiredService<RandomSeedService>();
+        rss.Seed = randomSeed ?? NumberUtil.SplitMix64((ulong)DateTimeOffset.Now.ToUnixTimeSeconds());
         
         // Play audio
         using var audioPlayer = AudioPlayer.Load(audioPath);
-        audioPlayer.Position = startTime;
         audioPlayer.Play();
         
         // Start render thread
@@ -81,12 +89,19 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
                         else                            
                             audioPlayer.Play();
                         break;
+                    case ButtonAction.RandomizeSeed:
+                        rss.Seed = NumberUtil.SplitMix64((ulong)DateTimeOffset.Now.ToUnixTimeSeconds());
+                        break;
                 }
 
                 buttonAction = ButtonAction.None;
             }
             
-            appDirector.ProcessFrame((float) audioPlayer.Position);
+            appDirector.PopulateRenderQueueDrawList((float) audioPlayer.Position);
+            renderQueue.FinishFrame();
+            
+            while (renderQueue.FreeFrameCount == 0)
+                Thread.Yield();
         }
         
         // Stop audio
@@ -101,9 +116,10 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
         using var scope = serviceProvider.CreateScope();
         var sp = scope.ServiceProvider;
         
-        var renderQueue = (AsyncRenderQueue) sp.GetRequiredService<IRenderQueue>();
+        var renderQueue = serviceProvider.GetRequiredService<RenderQueue>();
+        
         var renderer = sp.GetRequiredService<IRenderer>();
-        var window = (DesktopWindow) sp.GetRequiredService<IWindow>();
+        var surface = (DesktopSurface) sp.GetRequiredService<IOpenGLSurface>();
         
         GCHandle keyCallbackHandle;
         
@@ -112,23 +128,20 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
             GLFWCallbacks.KeyCallback keyCallback = OnKey;
             keyCallbackHandle = GCHandle.Alloc(keyCallback);
             
-            var windowPtr = window.Handle;
+            var windowPtr = surface.WindowPtr;
             GLFW.SetKeyCallback(windowPtr, keyCallback);
         }
         
         // Start the render loop
-        while (!window.ShouldClose)
+        while (renderQueue.QueuedFrameCount > 0 || !surface.ShouldClose)
         {
-            window.PollEvents();
-
-            while (renderQueue.QueuedFrames == 0)
-                Thread.Yield();
+            if (surface.ShouldClose)
+                // Signal the main thread to stop
+                appRunning = false;
             
-            renderQueue.FlushOneFrame(renderer);
+            surface.PollEvents();
+            renderQueue.FlushFrame(renderer);
         }
-        
-        // Signal the main thread to stop
-        appRunning = false;
         
         // Free the GCHandle for the key callback
         keyCallbackHandle.Free();
@@ -188,6 +201,9 @@ public sealed class DesktopApp(IServiceProvider serviceProvider)
                     break;
                 case Keys.Space:
                     buttonAction = ButtonAction.PlayPause;
+                    break;
+                case Keys.R:
+                    buttonAction = ButtonAction.RandomizeSeed;
                     break;
             }
         }

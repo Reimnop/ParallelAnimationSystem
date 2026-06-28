@@ -7,7 +7,7 @@ namespace ParallelAnimationSystem.Rendering;
 
 public static class RenderUtil
 {
-    public static void GetRenderSize(Vector2i size, float? aspectRatio, out Vector2i renderSize, out Vector2i renderOffset)
+    public static void GetRenderSize(Vector2i size, float? aspectRatio, out Vector2i renderSize)
     {
         var newSize = size;
         if (aspectRatio.HasValue)
@@ -27,7 +27,6 @@ public static class RenderUtil
         renderSize = new Vector2i(
             Math.Min(size.X, newSize.X),
             Math.Min(size.Y, newSize.Y));
-        renderOffset = (size - renderSize) / 2;
     }
     
     public static Matrix3x2 GetCameraMatrix(in CameraState camera, Vector2i size)

@@ -665,11 +665,10 @@ public class Shaper(IFontResolver resolver, FontFallbackChainRegistry fallbackCh
         var i = 0;
         if (i < str.Length && (str[i] == '+' || str[i] == '-')) i++;
         while (i < str.Length && (char.IsDigit(str[i]) || str[i] == '.')) i++;
-    
+
         if (i == 0 || (i == 1 && (str[0] == '+' || str[0] == '-')))
-            return false; // no digits at all
-    
-        if (!float.TryParse(str[..i], NumberStyles.Float, CultureInfo.InvariantCulture, out value))
+            value = str[0] == '-' ? -1f : 1f;
+        else if (!float.TryParse(str[..i], NumberStyles.Float, CultureInfo.InvariantCulture, out value))
             return false;
     
         // detect unit suffix

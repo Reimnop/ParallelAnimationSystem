@@ -1,5 +1,5 @@
 using OpenTK.Windowing.GraphicsLibraryFramework;
-using ParallelAnimationSystem.Windowing.OpenGL;
+using ParallelAnimationSystem.Platform.OpenGL;
 
 namespace ParallelAnimationSystem.Desktop.FFmpeg;
 

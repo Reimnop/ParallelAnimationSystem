@@ -1,0 +1,75 @@
+using System;
+using System.IO;
+using System.Runtime.InteropServices;
+using ManagedBass;
+
+namespace ParallelAnimationSystem.Avalonia;
+
+// Simple util class to play audio using BASS
+public class AudioPlayer(int stream) : IDisposable
+{
+    static AudioPlayer()
+    {
+        Bass.Init();
+    }
+    
+    public double Position
+    {
+        get => Bass.ChannelBytes2Seconds(stream, Bass.ChannelGetPosition(stream));
+        set => Bass.ChannelSetPosition(stream, Bass.ChannelSeconds2Bytes(stream, value));
+    }
+
+    public double Frequency
+    {
+        get => Bass.ChannelGetAttribute(stream, ChannelAttribute.Frequency);
+        set => Bass.ChannelSetAttribute(stream, ChannelAttribute.Frequency, value);
+    }
+
+    public double Length => Bass.ChannelBytes2Seconds(stream, Bass.ChannelGetLength(stream));
+    
+    public bool Playing => Bass.ChannelIsActive(stream) == PlaybackState.Playing;
+    
+    public void Play()
+    {
+        Bass.ChannelPlay(stream);
+    }
+    
+    public void Pause()
+    {
+        Bass.ChannelPause(stream);
+    }
+    
+    public void Stop()
+    {
+        Bass.ChannelStop(stream);
+    }
+
+    // Gets the raw audio samples as a byte array, in int16 format, stereo
+    public byte[] GetSamples()
+    {
+        using var ms = new MemoryStream();
+        var buffer = new byte[1024];
+        while (true)
+        {
+            var bytesRead = Bass.ChannelGetData(stream, buffer, buffer.Length);
+            if (bytesRead <= 0)
+                break;
+            ms.Write(buffer, 0, bytesRead);
+        }
+        return ms.ToArray();
+    }
+    
+    public static AudioPlayer Load(string path)
+    {
+        // Load the audio file
+        var stream = Bass.CreateStream(path);
+        if (stream == 0)
+            throw new Exception($"Failed to load audio file '{Bass.LastError}'");
+        return new AudioPlayer(stream);
+    }
+
+    public void Dispose()
+    {
+        Bass.StreamFree(stream);
+    }
+}

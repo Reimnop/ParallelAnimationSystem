@@ -73,7 +73,7 @@ public class SparseSet<T> : IReadOnlyCollection<KeyValuePair<int, T>>
         if (id < 0 || id >= idToIndex.Count)
             return false;
         var index = idToIndex[id];
-        return index < items.Count;
+        return index >= 0 && index < items.Count;
     }
 
     private bool TryGetIndex(int id, out int index)
@@ -84,14 +84,14 @@ public class SparseSet<T> : IReadOnlyCollection<KeyValuePair<int, T>>
             return false;
         }
         index = idToIndex[id];
-        return index < items.Count;
+        return index >= 0 && index < items.Count;
     }
 
     public IEnumerator<KeyValuePair<int, T>> GetEnumerator()
     {
         for (var i = 0; i < items.Count; i++)
         {
-            var id = idToIndex[i];
+            var id = indexToId[i];
             yield return new KeyValuePair<int, T>(id, items[i]);
         }
     }

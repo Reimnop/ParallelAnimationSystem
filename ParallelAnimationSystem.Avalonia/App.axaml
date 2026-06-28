@@ -1,0 +1,25 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:shadui="clr-namespace:ShadUI;assembly=ShadUI"
+             x:Class="ParallelAnimationSystem.Avalonia.App"
+             RequestedThemeVariant="Dark">
+    
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceInclude Source="Themes/Light.axaml" x:Key="Light" />
+                <ResourceInclude Source="Themes/Dark.axaml" x:Key="Dark" />
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+        <FontFamily x:Key="JetbrainsFont">avares://ParallelAnimationSystem.Avalonia/Assets/Fonts#Jetbrains</FontFamily>
+        <FontFamily x:Key="ManropeFont">avares://ParallelAnimationSystem.Avalonia/Assets/Fonts#Manrope</FontFamily>
+        <FontFamily x:Key="ShadUIIcon">avares://ParallelAnimationSystem.Avalonia/Assets/Fonts#shadui</FontFamily>
+        <x:Double x:Key="ControlContentThemeFontSize">12</x:Double>
+    </Application.Resources>
+
+    <Application.Styles>
+        <shadui:ShadTheme />
+        <StyleInclude Source="avares://ParallelAnimationSystem.Avalonia/Styles/Index.axaml" />
+        <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml" />
+    </Application.Styles>
+</Application>

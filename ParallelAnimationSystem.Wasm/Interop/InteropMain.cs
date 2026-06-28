@@ -1,9 +1,9 @@
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using ParallelAnimationSystem.Core;
-using ParallelAnimationSystem.Rendering;
+using ParallelAnimationSystem.Platform.OpenGL;
 using ParallelAnimationSystem.Rendering.OpenGLES;
+using ParallelAnimationSystem.Resources.Raw;
 
 namespace ParallelAnimationSystem.Wasm.Interop;
 
@@ -17,13 +17,6 @@ public static class InteropMain
         if (app is not null)
             throw new InvalidOperationException("App already started, call shutdown first");
 
-        var appSettings = new AppSettings
-        {
-            AspectRatio = null,
-            EnablePostProcessing = enablePostProcessing,
-            EnableTextRendering = enableTextRendering,
-        };
-
         var services = new ServiceCollection();
         
         services.AddLogging(builder =>
@@ -32,11 +25,10 @@ public static class InteropMain
             builder.AddProvider(new WasmLoggerProvider());
         });
         
-        services.AddPAS()
-            .UseAppSettings(appSettings)
-            .UseWindow<WasmWindow>()
-            .UseRenderQueue<RenderQueue>()
+        services.AddPAS(x => x.AddRawResources())
             .UseOpenGLESRenderer();
+
+        services.AddScoped<IOpenGLSurface, WasmSurface>();
 
         var sp = services.BuildServiceProvider();
         app = new WasmApp(sp);

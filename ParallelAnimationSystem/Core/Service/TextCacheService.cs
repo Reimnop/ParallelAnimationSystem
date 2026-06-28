@@ -8,12 +8,12 @@ namespace ParallelAnimationSystem.Core.Service;
 
 public class TextCacheService : IDisposable
 {
-    private readonly IRenderQueue renderQueue;
+    private readonly RenderQueue renderQueue;
     private readonly PlaybackObjectContainer playbackObjects;
 
     private readonly List<TextHandle?> textHandles = [];
 
-    public TextCacheService(IRenderQueue renderQueue, PlaybackObjectContainer playbackObjects)
+    public TextCacheService(RenderQueue renderQueue, PlaybackObjectContainer playbackObjects)
     {
         this.renderQueue = renderQueue;
         this.playbackObjects = playbackObjects;

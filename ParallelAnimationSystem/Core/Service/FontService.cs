@@ -15,11 +15,11 @@ public class FontService : IDisposable, IFontResolver
     private readonly FontFallbackChainRegistry fallbackChainRegistry = new("NotoSans");
 
     private readonly ResourceLoader resourceLoader;
-    private readonly IRenderQueue renderQueue;
+    private readonly RenderQueue renderQueue;
 
     public Shaper Shaper { get; }
 
-    public FontService(ResourceLoader resourceLoader, IRenderQueue renderQueue)
+    public FontService(ResourceLoader resourceLoader, RenderQueue renderQueue)
     {
         this.resourceLoader = resourceLoader;
         this.renderQueue = renderQueue;
@@ -108,7 +108,7 @@ public class FontService : IDisposable, IFontResolver
         using var stream = resourceLoader.OpenResource(path)
             ?? throw new InvalidOperationException($"Could not open font asset '{path}'");
 
-        if (SsbfRead.ReadFromStream(stream) is not SsbfObject root)
+        if (SsbfDocument.Load(stream, true) is not SsbfObject root)
             throw new InvalidOperationException($"Font asset '{path}' is not a valid SSBF object");
 
         var font = TmpxReader.Read(root);

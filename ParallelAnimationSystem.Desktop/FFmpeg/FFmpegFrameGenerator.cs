@@ -4,8 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Core;
 using ParallelAnimationSystem.Core.Service;
+using ParallelAnimationSystem.Platform.OpenGL;
 using ParallelAnimationSystem.Rendering;
-using ParallelAnimationSystem.Windowing;
+using ParallelAnimationSystem.Util;
 
 namespace ParallelAnimationSystem.Desktop.FFmpeg;
 
@@ -22,7 +23,7 @@ public class FFmpegFrameGenerator(
         ffmpegLogWriter.Dispose();
     }
 
-    public void GenerateFrames(string beatmapPath, string audioPath, int framerate, string outputPath)
+    public void GenerateFrames(string beatmapPath, string audioPath, int framerate, string outputPath, ulong? seed, bool enablePostProcessing, bool enableTextRendering)
     {
         using var scope = serviceProvider.CreateScope();
         var sp = scope.ServiceProvider;
@@ -31,14 +32,18 @@ public class FFmpegFrameGenerator(
         // BeatmapHelper.ReadBeatmap(beatmapPath, out var beatmapData, out var beatmapFormat);
         var beatmapService = sp.GetRequiredService<BeatmapService>();
         // beatmapService.LoadBeatmap(beatmapData, beatmapFormat);
-        beatmapService.LoadBeatmap(beatmapPath);
+        beatmapService.LoadBeatmapFromPath(beatmapPath);
+        
+        // Set random seed
+        var rss = sp.GetRequiredService<RandomSeedService>();
+        rss.Seed = seed ?? NumberUtil.SplitMix64((ulong)DateTimeOffset.Now.ToUnixTimeSeconds());
         
         // Initialize renderer
+        var renderQueue = serviceProvider.GetRequiredService<RenderQueue>();
         var renderer = sp.GetRequiredService<IRenderer>();
-        var renderQueue = (RenderQueue)sp.GetRequiredService<IRenderQueue>();
-        var window = (FFmpegWindow)sp.GetRequiredService<IWindow>();
+        var window = (FFmpegSurface)sp.GetRequiredService<IOpenGLSurface>();
         
-        var windowSize = window.FramebufferSize;
+        var windowSize = window.RenderSize;
         
         // Start FFmpeg process
         var processStartInfo = new ProcessStartInfo(settings.ExecPath) 
@@ -101,6 +106,8 @@ public class FFmpegFrameGenerator(
         logger.LogInformation("Rendering video to {OutputPath}", outputPath);
         
         var appDirector = sp.GetRequiredService<AppDirector>();
+        appDirector.EnablePostProcessing = enablePostProcessing;
+        appDirector.EnableTextRendering = enableTextRendering;
         
         // Load audio
         using var audioPlayer = AudioPlayer.Load(audioPath);
@@ -111,8 +118,9 @@ public class FFmpegFrameGenerator(
         for (var i = 0; i < frameCount; i++)
         {
             var time = i / (float)framerate;
-            appDirector.ProcessFrame(time);
-            renderQueue.ProcessFrame(renderer);
+            appDirector.PopulateRenderQueueDrawList(time);
+            renderQueue.FinishFrame();
+            renderQueue.FlushFrame(renderer);
 
             var frameData = window.FrameData;
             ffmpegProcess.StandardInput.BaseStream.Write(frameData);
