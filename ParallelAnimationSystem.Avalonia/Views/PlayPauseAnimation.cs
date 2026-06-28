@@ -17,7 +17,8 @@ public class PlayPauseAnimation(Control control, TimeSpan? fadeDuration = null)
 
     public async Task Trigger()
     {
-        cts?.Cancel();
+        if (cts != null)
+            await cts.CancelAsync();
         cts = new CancellationTokenSource();
         var token = cts.Token;
 
