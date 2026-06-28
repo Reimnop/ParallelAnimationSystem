@@ -9,4 +9,18 @@ public partial class MainWindow : ShadUI.Window
     {
         InitializeComponent();
     }
+
+    protected override void OnKeyUp(KeyEventArgs e)
+    {
+        base.OnKeyUp(e);
+        
+        if (DataContext is not MainWindowViewModel vm)
+            return;
+
+        if (e.Key == Key.Space)
+        {
+            e.Handled = true;
+            vm.OnPlayPauseKey();
+        }
+    }
 }
