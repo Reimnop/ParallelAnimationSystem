@@ -17,8 +17,8 @@ public class PlayPauseAnimation(Control control, TimeSpan? fadeDuration = null)
 
     public async Task Trigger()
     {
-        if (cts != null)
-            await cts.CancelAsync();
+        // ReSharper disable once MethodHasAsyncOverload
+        cts?.Cancel();
         cts = new CancellationTokenSource();
         var token = cts.Token;
 
