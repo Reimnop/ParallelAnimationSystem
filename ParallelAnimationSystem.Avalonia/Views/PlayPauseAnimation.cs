@@ -3,10 +3,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Animation;
+using Avalonia.Animation.Easings;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Styling;
-using ShadUI;
 
 namespace ParallelAnimationSystem.Avalonia.Views;
 
@@ -37,7 +37,7 @@ public class PlayPauseAnimation(Control control, TimeSpan? fadeDuration = null)
     {
         Duration = fadeDuration,
         FillMode = FillMode.Forward,
-        Easing = new EaseOut(),
+        Easing = new QuarticEaseOut(),
         Children =
         {
             new KeyFrame
