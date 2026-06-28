@@ -50,6 +50,11 @@ public partial class MainWindowViewModel
     {
         IsSettingsOpen = true;
     }
+    
+    public void OnPlayPauseKey()
+    {
+        PlaybackViewModel.PlayPauseDisplayIcon();
+    }
 
     public void Dispose()
     {

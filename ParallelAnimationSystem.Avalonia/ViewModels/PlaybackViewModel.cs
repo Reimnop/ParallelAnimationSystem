@@ -28,6 +28,8 @@ public partial class PlaybackViewModel : ViewModelBase, IDisposable
     public static FuncValueConverter<double, string> TimeToCurrentTimeTextConverter
         => new(t => TimeSpan.FromSeconds(t).ToString(@"m\:ss"));
 
+    public event EventHandler<LucideIconKind>? PlayPauseIconDisplayRequested;
+
     [ObservableProperty]
     public partial PASViewModel PASViewModel { get; set; }
     
@@ -141,6 +143,12 @@ public partial class PlaybackViewModel : ViewModelBase, IDisposable
             AudioPlayer.Pause();
         else
             AudioPlayer.Play();
+    }
+
+    public void PlayPauseDisplayIcon()
+    {
+        PlayPauseIconDisplayRequested?.Invoke(this, IsPlaying ? LucideIconKind.Pause : LucideIconKind.Play);
+        PlayPause();
     }
     
     public float OnTick()
