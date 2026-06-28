@@ -11,7 +11,9 @@
     <control:AspectRatioPanel>
         <Panel Background="Transparent"
                PointerReleased="PlaybackRootPanel_OnPointerReleased"
-               x:Name="PlaybackRootPanel">
+               KeyUp="PlaybackRootPanel_OnKeyUp"
+               x:Name="PlaybackRootPanel"
+               Focusable="True">
             <Panel.Styles>
                 <Style Selector="Panel#PlaybackRootPanel">
                     <Style Selector="^ > Border#PlaybackControlsBorder">
