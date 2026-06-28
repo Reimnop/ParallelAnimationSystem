@@ -56,10 +56,21 @@
                         </StackPanel>
                     </TabItem>
                     <TabItem Header="FFmpeg">
+                        <TextBlock>Under construction!</TextBlock>
                     </TabItem>
                     <TabItem Header="Logs">
+                        <TextBlock>Under construction!</TextBlock>
                     </TabItem>
                     <TabItem Header="About">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Parallel Animation System" 
+                                       Classes="h4" />
+                            <TextBlock Classes="p">
+                                Copyright © 2026 Reimnop.
+                                <LineBreak />
+                                Parallel Animation System is open-source software licensed under the MIT License.
+                            </TextBlock>
+                        </StackPanel>
                     </TabItem>
                 </TabControl>
             </StackPanel>
