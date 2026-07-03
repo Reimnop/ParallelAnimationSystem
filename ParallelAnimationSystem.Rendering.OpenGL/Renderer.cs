@@ -1,6 +1,6 @@
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
-using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -20,10 +20,20 @@ namespace ParallelAnimationSystem.Rendering.OpenGL;
 
 public class Renderer : IRenderer, IDisposable
 {
+    private enum LifecycleCommandType
+    {
+        Create,
+        Destroy
+    }
+    
+    private readonly record struct MeshLifecycleCommand(int Id, LifecycleCommandType Type, (Vector2[] Vertices, int[] Indices)? Data = null);
+    private readonly record struct TextLifecycleCommand(int Id, LifecycleCommandType Type, RenderGlyph[]? Data = null);
+    
     private struct MeshInfo
     {
-        public int VertexOffset;
-        public int IndexOffset;
+        public Allocation VertexBufferAllocation;
+        public Allocation IndexBufferAllocation;
+        public int VertexCount; // not currently used
         public int IndexCount;
     }
 
@@ -51,12 +61,19 @@ public class Renderer : IRenderer, IDisposable
     private const int BindBandEntries = 4;
     private const int BindShapeEntries = 5;
     
-    // Rendering data
-    private readonly Buffer<Vector2> vertexBuffer = new();
-    private readonly Buffer<int> indexBuffer = new();
-    private readonly Buffer<GpuRenderGlyph> glyphBuffer = new();
+    // Mesh rendering data
+    private const int InitialVertexBufferCapacity = 1024;
+    private const int InitialIndexBufferCapacity = 1024;
+
+    private readonly PooledSuballocator vertexBufferAllocator = new(InitialVertexBufferCapacity);
+    private readonly PooledSuballocator indexBufferAllocator = new(InitialIndexBufferCapacity);
 
     private readonly List<MeshInfo> meshInfos = [];
+    
+    // Text rendering data
+    private const int InitialGlyphBufferCapacity = 1024;
+    
+    private readonly PooledSuballocator glyphBufferAllocator = new(InitialVertexBufferCapacity);
     private readonly List<TextInfo> textInfos = [];
     
     // Post processors
@@ -67,10 +84,9 @@ public class Renderer : IRenderer, IDisposable
     private readonly UberPost uberPost;
     
     // Graphics data
-    private readonly int baseFontVertexOffset = 0, baseFontIndexOffset = 0, baseFontIndexCount = 6;
-    
-    private readonly int vertexArrayHandle, vertexBufferHandle, indexBufferHandle;
-    private readonly int glyphStorageBufferHandle;
+    private readonly int vertexArrayHandle;
+    private int vertexBufferHandle, indexBufferHandle;
+    private int glyphStorageBufferHandle;
     
     private readonly int multiDrawIndirectBufferHandle;
     private int multiDrawIndirectBufferSize;
@@ -97,9 +113,11 @@ public class Renderer : IRenderer, IDisposable
     private readonly Buffer<DrawElementsIndirectCommand> multiDrawIndirectBuffer = new();
     private readonly Buffer<MultiDrawItem> multiDrawStorageBuffer = new();
     
+    // Lifecycle command lists
+    private readonly List<MeshLifecycleCommand> meshLifecycleCommands = [];
+    private readonly List<TextLifecycleCommand> textLifecycleCommands = [];
+    
     // Dirty flags
-    private bool meshBufferDirty = true;
-    private bool textsDirty = true;
     private bool fontBuffersDirty = true;
 
     // Injected dependencies
@@ -135,8 +153,12 @@ public class Renderer : IRenderer, IDisposable
             
             // Create vertex array and buffers
             vertexArrayHandle = GL.CreateVertexArray();
+            
             vertexBufferHandle = GL.CreateBuffer();
+            GL.NamedBufferData(vertexBufferHandle, InitialVertexBufferCapacity * Unsafe.SizeOf<Vector2>(), IntPtr.Zero, VertexBufferObjectUsage.DynamicDraw);
+            
             indexBufferHandle = GL.CreateBuffer();
+            GL.NamedBufferData(indexBufferHandle, InitialIndexBufferCapacity * sizeof(int), IntPtr.Zero, VertexBufferObjectUsage.DynamicDraw);
             
             // Bind buffers to vertex array
             GL.EnableVertexArrayAttrib(vertexArrayHandle, 0);
@@ -148,6 +170,7 @@ public class Renderer : IRenderer, IDisposable
             
             // Create glyph storage buffer
             glyphStorageBufferHandle = GL.CreateBuffer();
+            GL.NamedBufferData(glyphStorageBufferHandle, InitialGlyphBufferCapacity * Unsafe.SizeOf<RenderGlyph>(), IntPtr.Zero, VertexBufferObjectUsage.DynamicDraw);
 
             // Initialize multi draw buffer
             multiDrawIndirectBufferHandle = GL.CreateBuffer();
@@ -199,6 +222,14 @@ public class Renderer : IRenderer, IDisposable
         }
 
         #endregion
+        
+        // Push all current meshes into the lifecycle command list so that they are created in the next frame
+        foreach (var (id, mesh) in this.renderingFactory.Meshes)
+            meshLifecycleCommands.Add(new MeshLifecycleCommand(id, LifecycleCommandType.Create, (mesh.Vertices, mesh.Indices)));
+        
+        // Push all current texts into the lifecycle command list so that they are created in the next frame
+        foreach (var (id, text) in this.renderingFactory.Texts)
+            textLifecycleCommands.Add(new TextLifecycleCommand(id, LifecycleCommandType.Create, text.Glyphs));
         
         // Subscribe to events
         this.renderingFactory.FontBuffersUpdated += OnFontBuffersUpdated;
@@ -258,24 +289,24 @@ public class Renderer : IRenderer, IDisposable
         fontBuffersDirty = true;
     }
     
-    private void OnTextInserted(object? sender, ObservableSparseSetEventArgs<Common.Text> e)
+    private void OnTextInserted(object? sender, ObservableSparseSetEventArgs<Text> e)
     {
-        textsDirty = true;
+        textLifecycleCommands.Add(new TextLifecycleCommand(e.Id, LifecycleCommandType.Create, e.Item.Glyphs));
     }
 
-    private void OnTextRemoved(object? sender, ObservableSparseSetEventArgs<Common.Text> e)
+    private void OnTextRemoved(object? sender, ObservableSparseSetEventArgs<Text> e)
     {
-        textsDirty = true;
+        textLifecycleCommands.Add(new TextLifecycleCommand(e.Id, LifecycleCommandType.Destroy));
     }
     
     private void OnMeshInserted(object? sender, ObservableSparseSetEventArgs<Mesh> e)
     {
-        meshBufferDirty = true;
+        meshLifecycleCommands.Add(new MeshLifecycleCommand(e.Id, LifecycleCommandType.Create, (e.Item.Vertices, e.Item.Indices)));
     }
 
     private void OnMeshRemoved(object? sender, ObservableSparseSetEventArgs<Mesh> e)
     {
-        meshBufferDirty = true;
+        meshLifecycleCommands.Add(new MeshLifecycleCommand(e.Id, LifecycleCommandType.Destroy));
     }
 
     public void ProcessFrame(IDrawDataProvider drawDataProvider)
@@ -443,8 +474,8 @@ public class Renderer : IRenderer, IDisposable
                     {
                         Count = meshInfo.IndexCount,
                         InstanceCount = 1,
-                        FirstIndex = meshInfo.IndexOffset,
-                        BaseVertex = meshInfo.VertexOffset,
+                        FirstIndex = meshInfo.IndexBufferAllocation.Offset,
+                        BaseVertex = meshInfo.VertexBufferAllocation.Offset,
                         BaseInstance = 0
                     });
                     break;
@@ -468,10 +499,10 @@ public class Renderer : IRenderer, IDisposable
                     
                     multiDrawIndirectBuffer.Append(new DrawElementsIndirectCommand
                     {
-                        Count = baseFontIndexCount,
+                        Count = 6,
                         InstanceCount = textInfo.GlyphCount,
-                        FirstIndex = baseFontIndexOffset,
-                        BaseVertex = baseFontVertexOffset,
+                        FirstIndex = 0,
+                        BaseVertex = 0,
                         BaseInstance = 0
                     });
                     break;
@@ -553,56 +584,75 @@ public class Renderer : IRenderer, IDisposable
 
     private void UpdateMeshData()
     {
-        if (!meshBufferDirty)
-            return;
-        
-        meshBufferDirty = false;
-        
-        // Clear existing data
-        vertexBuffer.Clear();
-        indexBuffer.Clear();
-        
-        // Append base font quad data
-        vertexBuffer.Append([
-            new Vector2(0.0f, 1.0f),
-            new Vector2(1.0f, 1.0f),
-            new Vector2(0.0f, 0.0f),
-            new Vector2(1.0f, 0.0f),
-        ]);
-        
-        indexBuffer.Append([
-            0, 1, 2,
-            3, 2, 1,
-        ]);
-        
-        // Rebuild mesh buffer
-        if (renderingFactory.Meshes.Count > 0)
+        // Loop through the lifecycle command list
+        foreach (var command in meshLifecycleCommands)
         {
-            var maxId = renderingFactory.Meshes.Select(x => x.Key).Max();
-            meshInfos.EnsureCount(maxId + 1);
-            
-            var meshInfosSpan = CollectionsMarshal.AsSpan(meshInfos);
-            foreach (var (id, mesh) in renderingFactory.Meshes)
+            switch (command.Type)
             {
-                ref var meshInfo = ref meshInfosSpan[id];
-                meshInfo.VertexOffset = vertexBuffer.Length;
-                meshInfo.IndexOffset = indexBuffer.Length;
-                meshInfo.IndexCount = mesh.Indices.Length;
-            
-                vertexBuffer.Append(mesh.Vertices);
-                indexBuffer.Append(mesh.Indices);
+                case LifecycleCommandType.Create:
+                {
+                    Debug.Assert(command.Data.HasValue);
+                    
+                    var (vertices, indices) = command.Data.Value;
+
+                    var vtxAlloc = vertexBufferAllocator.Allocate(vertices.Length, (oldCapacity, newCapacity) =>
+                    {
+                        // Recreate vertex buffer with new capacity
+                        var newBufferHandle = GL.CreateBuffer();
+                        GL.NamedBufferData(newBufferHandle, newCapacity * Unsafe.SizeOf<Vector2>(), IntPtr.Zero, VertexBufferObjectUsage.DynamicDraw);
+                        GL.CopyNamedBufferSubData(vertexBufferHandle, newBufferHandle, IntPtr.Zero, IntPtr.Zero, oldCapacity * Unsafe.SizeOf<Vector2>());
+                        GL.DeleteBuffer(vertexBufferHandle);
+                        vertexBufferHandle = newBufferHandle;
+                        
+                        // Bind new vertex buffer to vertex array
+                        GL.VertexArrayVertexBuffer(vertexArrayHandle, 0, vertexBufferHandle, IntPtr.Zero, Unsafe.SizeOf<Vector2>());
+                        
+                        logger.LogInformation("Mesh vertex buffer reallocated from {OldCapacity} to {NewCapacity}", oldCapacity, newCapacity);
+                    });
+                    
+                    var idxAlloc = indexBufferAllocator.Allocate(indices.Length, (oldCapacity, newCapacity) =>
+                    {
+                        // Recreate index buffer with new capacity
+                        var newBufferHandle = GL.CreateBuffer();
+                        GL.NamedBufferData(newBufferHandle, newCapacity * sizeof(int), IntPtr.Zero, VertexBufferObjectUsage.DynamicDraw);
+                        GL.CopyNamedBufferSubData(indexBufferHandle, newBufferHandle, IntPtr.Zero, IntPtr.Zero, oldCapacity * sizeof(int));
+                        GL.DeleteBuffer(indexBufferHandle);
+                        indexBufferHandle = newBufferHandle;
+                        
+                        // Bind new index buffer to vertex array
+                        GL.VertexArrayElementBuffer(vertexArrayHandle, indexBufferHandle);
+                        
+                        logger.LogInformation("Mesh index buffer reallocated from {OldCapacity} to {NewCapacity}", oldCapacity, newCapacity);
+                    });
+                    
+                    // Upload vertex data
+                    GL.NamedBufferSubData(vertexBufferHandle, vtxAlloc.Offset * Unsafe.SizeOf<Vector2>(), vertices.Length * Unsafe.SizeOf<Vector2>(), vertices);
+                    GL.NamedBufferSubData(indexBufferHandle, idxAlloc.Offset * sizeof(int), indices.Length * sizeof(int), indices);
+                    
+                    // Store mesh info
+                    meshInfos.EnsureCount(command.Id + 1);
+                    meshInfos[command.Id] = new MeshInfo
+                    {
+                        VertexBufferAllocation = vtxAlloc,
+                        IndexBufferAllocation = idxAlloc,
+                        VertexCount = vertices.Length,
+                        IndexCount = indices.Length
+                    };
+                    break;
+                }
+                case LifecycleCommandType.Destroy:
+                {
+                    var meshInfo = meshInfos[command.Id];
+                    vertexBufferAllocator.Free(meshInfo.VertexBufferAllocation);
+                    indexBufferAllocator.Free(meshInfo.IndexBufferAllocation);
+                    meshInfos[command.Id] = default;
+                    break;
+                }
             }
         }
-
-        // Update our buffers with the new data
-        // There is always data to upload, due to the base font quad
-        // So this is outside of the if statement
-        GL.NamedBufferData(vertexBufferHandle, vertexBuffer.LengthInBytes, vertexBuffer.Data, VertexBufferObjectUsage.DynamicDraw);
-        GL.NamedBufferData(indexBufferHandle, indexBuffer.LengthInBytes, indexBuffer.Data, VertexBufferObjectUsage.DynamicDraw);
         
-        logger.LogInformation("Mesh buffer updated, registered {VertexCount} vertices and {IndexCount} indices", 
-            vertexBuffer.Length,
-            indexBuffer.Length);
+        // Clear the lifecycle command list
+        meshLifecycleCommands.Clear();
     }
     
     private void UpdateFontData()
@@ -647,42 +697,96 @@ public class Renderer : IRenderer, IDisposable
 
     private void UpdateTextData()
     {
-        if (!textsDirty)
-            return;
+        // if (!textsDirty)
+        //     return;
+        //
+        // textsDirty = false;
+        //
+        // // Clear existing data
+        // glyphBuffer.Clear();
+        //
+        // // Rebuild text buffer, glyphs carry globally-valid ShapeEntryIndex values already (FontService
+        // // remapped them at shaping time), so we append verbatim with no patching.
+        // if (renderingFactory.Texts.Count > 0)
+        // {
+        //     var maxId = renderingFactory.Texts.Select(x => x.Key).Max();
+        //     textInfos.EnsureCount(maxId + 1);
+        //
+        //     var textInfosSpan = CollectionsMarshal.AsSpan(textInfos);
+        //     foreach (var (id, text) in renderingFactory.Texts)
+        //     {
+        //         ref var textInfo = ref textInfosSpan[id];
+        //         textInfo.GlyphOffset = glyphBuffer.Length;
+        //         textInfo.GlyphCount = text.Glyphs.Length;
+        //         
+        //         var gpuRenderGlyphs = text.Glyphs.Select(x => new GpuRenderGlyph
+        //         {
+        //             Color = x.Color,
+        //             Transform = x.Transform,
+        //             ShapeEntryIndex = x.ShapeEntryIndex,
+        //         }).ToArray();
+        //         
+        //         glyphBuffer.Append(gpuRenderGlyphs);
+        //     }
+        //
+        //     GL.NamedBufferData(glyphStorageBufferHandle, glyphBuffer.LengthInBytes, glyphBuffer.Data, VertexBufferObjectUsage.DynamicDraw);
+        // }
+        //
+        // logger.LogInformation("Text buffer updated, registered {GlyphCount} glyphs", glyphBuffer.Length);
         
-        textsDirty = false;
-        
-        // Clear existing data
-        glyphBuffer.Clear();
-        
-        // Rebuild text buffer, glyphs carry globally-valid ShapeEntryIndex values already (FontService
-        // remapped them at shaping time), so we append verbatim with no patching.
-        if (renderingFactory.Texts.Count > 0)
+        // Loop through the lifecycle command list
+        foreach (var command in textLifecycleCommands)
         {
-            var maxId = renderingFactory.Texts.Select(x => x.Key).Max();
-            textInfos.EnsureCount(maxId + 1);
-        
-            var textInfosSpan = CollectionsMarshal.AsSpan(textInfos);
-            foreach (var (id, text) in renderingFactory.Texts)
+            switch (command.Type)
             {
-                ref var textInfo = ref textInfosSpan[id];
-                textInfo.GlyphOffset = glyphBuffer.Length;
-                textInfo.GlyphCount = text.Glyphs.Length;
-                
-                var gpuRenderGlyphs = text.Glyphs.Select(x => new GpuRenderGlyph
+                case LifecycleCommandType.Create:
                 {
-                    Color = x.Color,
-                    Transform = x.Transform,
-                    ShapeEntryIndex = x.ShapeEntryIndex,
-                }).ToArray();
-                
-                glyphBuffer.Append(gpuRenderGlyphs);
-            }
+                    var renderGlyphsData = command.Data;
+                    Debug.Assert(renderGlyphsData != null);
+                    
+                    var renderGlyphs = renderGlyphsData.Select(x => new GpuRenderGlyph
+                    {
+                        Color = x.Color,
+                        Transform = x.Transform,
+                        ShapeEntryIndex = x.ShapeEntryIndex,
+                    }).ToArray();
 
-            GL.NamedBufferData(glyphStorageBufferHandle, glyphBuffer.LengthInBytes, glyphBuffer.Data, VertexBufferObjectUsage.DynamicDraw);
+                    var glyphAlloc = glyphBufferAllocator.Allocate(renderGlyphs.Length, (oldCapacity, newCapacity) =>
+                    {
+                        // Recreate glyph buffer with new capacity
+                        var newBufferHandle = GL.CreateBuffer();
+                        GL.NamedBufferData(newBufferHandle, newCapacity * Unsafe.SizeOf<GpuRenderGlyph>(), IntPtr.Zero, VertexBufferObjectUsage.DynamicDraw);
+                        GL.CopyNamedBufferSubData(glyphStorageBufferHandle, newBufferHandle, IntPtr.Zero, IntPtr.Zero, oldCapacity * Unsafe.SizeOf<GpuRenderGlyph>());
+                        GL.DeleteBuffer(glyphStorageBufferHandle);
+                        glyphStorageBufferHandle = newBufferHandle;
+
+                        logger.LogInformation("Glyph buffer reallocated from {OldCapacity} to {NewCapacity}", oldCapacity, newCapacity);
+                    });
+
+                    // Upload glyph data
+                    GL.NamedBufferSubData(glyphStorageBufferHandle, glyphAlloc.Offset * Unsafe.SizeOf<GpuRenderGlyph>(), renderGlyphs.Length * Unsafe.SizeOf<GpuRenderGlyph>(), renderGlyphs);
+
+                    // Store text info
+                    textInfos.EnsureCount(command.Id + 1);
+                    textInfos[command.Id] = new TextInfo
+                    {
+                        GlyphOffset = glyphAlloc.Offset,
+                        GlyphCount = renderGlyphs.Length
+                    };
+                    break;
+                }
+                case LifecycleCommandType.Destroy:
+                {
+                    var textInfo = textInfos[command.Id];
+                    glyphBufferAllocator.Free(new Allocation(textInfo.GlyphOffset, textInfo.GlyphCount));
+                    textInfos[command.Id] = default;
+                    break;
+                }
+            }
         }
         
-        logger.LogInformation("Text buffer updated, registered {GlyphCount} glyphs", glyphBuffer.Length);
+        // Clear the lifecycle command list
+        textLifecycleCommands.Clear();
     }
 
     private void UpdateFboData(Vector2i size)

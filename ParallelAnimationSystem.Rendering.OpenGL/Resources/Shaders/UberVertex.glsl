@@ -2,6 +2,15 @@
 
 layout(location = 0) in vec2 aPos;
 
+const vec2 TEXT_VERTICES[6] = vec2[](
+    vec2(0.0, 1.0),
+    vec2(1.0, 1.0),
+    vec2(0.0, 0.0),
+    vec2(1.0, 0.0),
+    vec2(0.0, 0.0),
+    vec2(1.0, 1.0)
+);
+
 out vec2 vUv;
 out vec2 vUvNormalized;
 out vec4 vColor1;
@@ -75,16 +84,18 @@ void main() {
     vRenderType = item.renderType;
     
     if (item.renderType == 1) {
+        vec2 pos = TEXT_VERTICES[gl_VertexID];
+        
         RenderGlyph glyph = glyphs[item.glyphOffset + gl_InstanceID];
 
-        vUvNormalized = aPos;
+        vUvNormalized = pos;
         vColor1 = item.color1 * glyph.color;
         vShapeIndex = glyph.shapeEntryIndex;
         
         mat3x2 finalMvp = mult3x2(item.mvp, glyph.transform);
 
-        vec2 corner = aPos;                             // unit quad corner
-        vec2 normal = (aPos - vec2(0.5)) * 2.0;         // outward diagonal (-1,-1)..(1,1)
+        vec2 corner = pos;                             // unit quad corner
+        vec2 normal = (pos - vec2(0.5)) * 2.0;         // outward diagonal (-1,-1)..(1,1)
 
         if (glyph.shapeEntryIndex >= 0) {
             // Real glyph: place the unit quad over the shape entry's local em-bounds.
