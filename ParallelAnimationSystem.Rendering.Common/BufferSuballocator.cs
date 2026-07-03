@@ -34,22 +34,22 @@ public class BufferSuballocator
         var lastFreeEnd = lastFree.Offset + lastFree.Size;
 
         // grow the last free range
-        if (lastFreeEnd == this.Capacity)
+        if (lastFreeEnd == Capacity)
         {
-            var newLastFreeSize = capacity - this.Capacity + lastFree.Size;
+            var newLastFreeSize = capacity - Capacity + lastFree.Size;
             lastFree = lastFree with { Size = newLastFreeSize };
             freeRanges[^1] = lastFree;
         }
         // append a new free range
         else
         {
-            var newLastFreeSize = capacity - this.Capacity;
-            lastFree = new Allocation(Offset: this.Capacity, Size: newLastFreeSize);
+            var newLastFreeSize = capacity - Capacity;
+            lastFree = new Allocation(Offset: Capacity, Size: newLastFreeSize);
             freeRanges.Add(lastFree);
         }
 
         // set new capacity
-        this.Capacity = capacity;
+        Capacity = capacity;
     }
 
     public Allocation Allocate(int size, GrowBufferCallback? growCallback = null)
