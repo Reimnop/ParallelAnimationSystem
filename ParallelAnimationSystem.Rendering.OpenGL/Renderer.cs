@@ -39,7 +39,7 @@ public class Renderer : IRenderer, IDisposable
 
     private struct TextInfo
     {
-        public int GlyphOffset;
+        public Allocation Allocation;
         public int GlyphCount;
     }
     
@@ -494,7 +494,7 @@ public class Renderer : IRenderer, IDisposable
                         Z = drawCommand.Depth,
                         RenderMode = 0, // 0 is normal
                         RenderType = 1, // 1 is text
-                        GlyphOffset = textInfo.GlyphOffset
+                        GlyphOffset = textInfo.Allocation.Offset
                     });
                     
                     multiDrawIndirectBuffer.Append(new DrawElementsIndirectCommand
@@ -770,7 +770,7 @@ public class Renderer : IRenderer, IDisposable
                     textInfos.EnsureCount(command.Id + 1);
                     textInfos[command.Id] = new TextInfo
                     {
-                        GlyphOffset = glyphAlloc.Offset,
+                        Allocation = glyphAlloc,
                         GlyphCount = renderGlyphs.Length
                     };
                     break;
@@ -778,7 +778,7 @@ public class Renderer : IRenderer, IDisposable
                 case LifecycleCommandType.Destroy:
                 {
                     var textInfo = textInfos[command.Id];
-                    glyphBufferAllocator.Free(new Allocation(textInfo.GlyphOffset, textInfo.GlyphCount));
+                    glyphBufferAllocator.Free(textInfo.Allocation);
                     textInfos[command.Id] = default;
                     break;
                 }
