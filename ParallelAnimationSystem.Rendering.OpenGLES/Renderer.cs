@@ -441,7 +441,7 @@ public class Renderer : IRenderer, IDisposable
             camera);
         
         // Transparent pass, enable blending, disable depth write
-        GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+        GL.BlendFuncSeparate(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha, BlendingFactor.One, BlendingFactor.OneMinusSrcAlpha);
         GL.Enable(EnableCap.Blend);
         GL.DepthMask(false);
         
