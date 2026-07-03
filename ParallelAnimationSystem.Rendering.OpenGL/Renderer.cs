@@ -114,8 +114,8 @@ public class Renderer : IRenderer, IDisposable
     private readonly Buffer<MultiDrawItem> multiDrawStorageBuffer = new();
     
     // Lifecycle command lists
-    private readonly List<MeshLifecycleCommand> meshLifecycleCommands = [];
-    private readonly List<TextLifecycleCommand> textLifecycleCommands = [];
+    private readonly Queue<MeshLifecycleCommand> meshLifecycleCommands = [];
+    private readonly Queue<TextLifecycleCommand> textLifecycleCommands = [];
     
     // Dirty flags
     private bool fontBuffersDirty = true;
@@ -225,11 +225,11 @@ public class Renderer : IRenderer, IDisposable
         
         // Push all current meshes into the lifecycle command list so that they are created in the next frame
         foreach (var (id, mesh) in this.renderingFactory.Meshes)
-            meshLifecycleCommands.Add(new MeshLifecycleCommand(id, LifecycleCommandType.Create, (mesh.Vertices, mesh.Indices)));
+            meshLifecycleCommands.Enqueue(new MeshLifecycleCommand(id, LifecycleCommandType.Create, (mesh.Vertices, mesh.Indices)));
         
         // Push all current texts into the lifecycle command list so that they are created in the next frame
         foreach (var (id, text) in this.renderingFactory.Texts)
-            textLifecycleCommands.Add(new TextLifecycleCommand(id, LifecycleCommandType.Create, text.Glyphs));
+            textLifecycleCommands.Enqueue(new TextLifecycleCommand(id, LifecycleCommandType.Create, text.Glyphs));
         
         // Subscribe to events
         this.renderingFactory.FontBuffersUpdated += OnFontBuffersUpdated;
@@ -291,22 +291,22 @@ public class Renderer : IRenderer, IDisposable
     
     private void OnTextInserted(object? sender, ObservableSparseSetEventArgs<Text> e)
     {
-        textLifecycleCommands.Add(new TextLifecycleCommand(e.Id, LifecycleCommandType.Create, e.Item.Glyphs));
+        textLifecycleCommands.Enqueue(new TextLifecycleCommand(e.Id, LifecycleCommandType.Create, e.Item.Glyphs));
     }
 
     private void OnTextRemoved(object? sender, ObservableSparseSetEventArgs<Text> e)
     {
-        textLifecycleCommands.Add(new TextLifecycleCommand(e.Id, LifecycleCommandType.Destroy));
+        textLifecycleCommands.Enqueue(new TextLifecycleCommand(e.Id, LifecycleCommandType.Destroy));
     }
     
     private void OnMeshInserted(object? sender, ObservableSparseSetEventArgs<Mesh> e)
     {
-        meshLifecycleCommands.Add(new MeshLifecycleCommand(e.Id, LifecycleCommandType.Create, (e.Item.Vertices, e.Item.Indices)));
+        meshLifecycleCommands.Enqueue(new MeshLifecycleCommand(e.Id, LifecycleCommandType.Create, (e.Item.Vertices, e.Item.Indices)));
     }
 
     private void OnMeshRemoved(object? sender, ObservableSparseSetEventArgs<Mesh> e)
     {
-        meshLifecycleCommands.Add(new MeshLifecycleCommand(e.Id, LifecycleCommandType.Destroy));
+        meshLifecycleCommands.Enqueue(new MeshLifecycleCommand(e.Id, LifecycleCommandType.Destroy));
     }
 
     public void ProcessFrame(IDrawDataProvider drawDataProvider)
@@ -585,7 +585,7 @@ public class Renderer : IRenderer, IDisposable
     private void UpdateMeshData()
     {
         // Loop through the lifecycle command list
-        foreach (var command in meshLifecycleCommands)
+        while (meshLifecycleCommands.TryDequeue(out var command))
         {
             switch (command.Type)
             {
@@ -650,9 +650,6 @@ public class Renderer : IRenderer, IDisposable
                 }
             }
         }
-        
-        // Clear the lifecycle command list
-        meshLifecycleCommands.Clear();
     }
     
     private void UpdateFontData()
@@ -698,7 +695,7 @@ public class Renderer : IRenderer, IDisposable
     private void UpdateTextData()
     {
         // Loop through the lifecycle command list
-        foreach (var command in textLifecycleCommands)
+        while (textLifecycleCommands.TryDequeue(out var command))
         {
             switch (command.Type)
             {
@@ -747,9 +744,6 @@ public class Renderer : IRenderer, IDisposable
                 }
             }
         }
-        
-        // Clear the lifecycle command list
-        textLifecycleCommands.Clear();
     }
 
     private void UpdateFboData(Vector2i size)
