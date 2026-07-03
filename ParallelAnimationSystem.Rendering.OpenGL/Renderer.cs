@@ -73,7 +73,7 @@ public class Renderer : IRenderer, IDisposable
     // Text rendering data
     private const int InitialGlyphBufferCapacity = 1024;
     
-    private readonly PooledSuballocator glyphBufferAllocator = new(InitialVertexBufferCapacity);
+    private readonly PooledSuballocator glyphBufferAllocator = new(InitialGlyphBufferCapacity);
     private readonly List<TextInfo> textInfos = [];
     
     // Post processors
@@ -170,7 +170,7 @@ public class Renderer : IRenderer, IDisposable
             
             // Create glyph storage buffer
             glyphStorageBufferHandle = GL.CreateBuffer();
-            GL.NamedBufferData(glyphStorageBufferHandle, InitialGlyphBufferCapacity * Unsafe.SizeOf<RenderGlyph>(), IntPtr.Zero, VertexBufferObjectUsage.DynamicDraw);
+            GL.NamedBufferData(glyphStorageBufferHandle, InitialGlyphBufferCapacity * Unsafe.SizeOf<GpuRenderGlyph>(), IntPtr.Zero, VertexBufferObjectUsage.DynamicDraw);
 
             // Initialize multi draw buffer
             multiDrawIndirectBufferHandle = GL.CreateBuffer();
