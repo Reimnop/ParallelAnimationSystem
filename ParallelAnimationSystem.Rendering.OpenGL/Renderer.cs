@@ -697,43 +697,6 @@ public class Renderer : IRenderer, IDisposable
 
     private void UpdateTextData()
     {
-        // if (!textsDirty)
-        //     return;
-        //
-        // textsDirty = false;
-        //
-        // // Clear existing data
-        // glyphBuffer.Clear();
-        //
-        // // Rebuild text buffer, glyphs carry globally-valid ShapeEntryIndex values already (FontService
-        // // remapped them at shaping time), so we append verbatim with no patching.
-        // if (renderingFactory.Texts.Count > 0)
-        // {
-        //     var maxId = renderingFactory.Texts.Select(x => x.Key).Max();
-        //     textInfos.EnsureCount(maxId + 1);
-        //
-        //     var textInfosSpan = CollectionsMarshal.AsSpan(textInfos);
-        //     foreach (var (id, text) in renderingFactory.Texts)
-        //     {
-        //         ref var textInfo = ref textInfosSpan[id];
-        //         textInfo.GlyphOffset = glyphBuffer.Length;
-        //         textInfo.GlyphCount = text.Glyphs.Length;
-        //         
-        //         var gpuRenderGlyphs = text.Glyphs.Select(x => new GpuRenderGlyph
-        //         {
-        //             Color = x.Color,
-        //             Transform = x.Transform,
-        //             ShapeEntryIndex = x.ShapeEntryIndex,
-        //         }).ToArray();
-        //         
-        //         glyphBuffer.Append(gpuRenderGlyphs);
-        //     }
-        //
-        //     GL.NamedBufferData(glyphStorageBufferHandle, glyphBuffer.LengthInBytes, glyphBuffer.Data, VertexBufferObjectUsage.DynamicDraw);
-        // }
-        //
-        // logger.LogInformation("Text buffer updated, registered {GlyphCount} glyphs", glyphBuffer.Length);
-        
         // Loop through the lifecycle command list
         foreach (var command in textLifecycleCommands)
         {
