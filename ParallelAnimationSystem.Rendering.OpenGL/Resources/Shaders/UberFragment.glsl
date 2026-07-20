@@ -2,8 +2,6 @@
 
 layout(location = 0) out vec4 oFragColor;
 
-in vec2 vUv;
-in vec2 vUvNormalized;
 in vec4 vColor1;
 in vec4 vColor2;
 in vec2 vTexCoord;
@@ -198,7 +196,7 @@ void main() {
             oFragColor = vColor1;
         }
     } else {
-        oFragColor = getColor(vColor1, vColor2, vRenderMode, vUv);
+        oFragColor = getColor(vColor1, vColor2, vRenderMode, vTexCoord);
     }
 
     oFragColor = clamp(oFragColor, 0.0, 1.0);

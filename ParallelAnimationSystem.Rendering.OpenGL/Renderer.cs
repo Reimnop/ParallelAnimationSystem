@@ -122,16 +122,19 @@ public class Renderer : IRenderer, IDisposable
 
     // Injected dependencies
     private readonly RenderingFactory renderingFactory;
+    private readonly BuiltinRenderingPrimitive primitive;
     private readonly IOpenGLSurface surface;
     private readonly ILogger<Renderer> logger;
 
     public Renderer(
         IRenderingFactory renderingFactory,
+        BuiltinRenderingPrimitive primitive,
         IOpenGLSurface surface,
         ResourceLoader loader,
         ILogger<Renderer> logger)
     {
         this.renderingFactory = (RenderingFactory) renderingFactory;
+        this.primitive = primitive;
         this.surface = surface;
         this.logger = logger;
         
@@ -484,6 +487,7 @@ public class Renderer : IRenderer, IDisposable
                 {
                     ref var textDrawItem = ref drawData.TextDrawItems[drawCommand.DrawId];
                     ref var textInfo = ref textInfosSpan[textDrawItem.TextHandle.Id];
+                    ref var meshInfo = ref meshInfosSpan[primitive.GlyphMeshHandle.Id];
                     
                     var mvp = textDrawItem.Transform * camera;
                     
@@ -499,10 +503,10 @@ public class Renderer : IRenderer, IDisposable
                     
                     multiDrawIndirectBuffer.Append(new DrawElementsIndirectCommand
                     {
-                        Count = 6,
+                        Count = meshInfo.IndexCount,
                         InstanceCount = textInfo.GlyphCount,
-                        FirstIndex = 0,
-                        BaseVertex = 0,
+                        FirstIndex = meshInfo.IndexBufferAllocation.Offset,
+                        BaseVertex = meshInfo.VertexBufferAllocation.Offset,
                         BaseInstance = 0
                     });
                     break;

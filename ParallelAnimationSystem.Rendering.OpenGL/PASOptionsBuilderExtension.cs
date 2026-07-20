@@ -12,6 +12,7 @@ public static class PASOptionsBuilderExtension
         var services = builder.Services;
         
         services.AddSingleton<IRenderingFactory, RenderingFactory>();
+        services.AddSingleton<BuiltinRenderingPrimitive>();
         services.AddScoped<IRenderer, Renderer>();
 
         services.AddSingleton(new OpenGLSettings
