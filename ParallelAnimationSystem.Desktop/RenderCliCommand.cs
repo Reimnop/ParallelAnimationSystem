@@ -20,6 +20,12 @@ public class RenderCliCommand : RootCliCommand
     [CliOption(Name = "framerate", Description = "Frame rate of the output video")]
     public int Framerate { get; set; } = 60;
 
+    [CliOption(Name = "start-time", Description = "Start time in seconds")]
+    public float StartTime { get; set; } = 0f;
+
+    [CliOption(Name = "duration", Description = "Duration to render in seconds")]
+    public float? Duration { get; set; } = null;
+
     [CliOption(Name = "ffmpeg-args", Description = "Output arguments to pass to FFmpeg")]
     public string FFmpegArgs { get; set; } = "-c:v libx264 -pix_fmt yuv420p -preset slow -c:a aac -b:a 192k -ac 2 -channel_layout stereo";
 
@@ -50,7 +56,10 @@ public class RenderCliCommand : RootCliCommand
         
         // Start frame generator
         var frameGenerator = serviceProvider.GetRequiredService<FFmpegFrameGenerator>();
-        frameGenerator.GenerateFrames(BeatmapPath, AudioPath, Framerate, OutputPath, Seed, EnablePostProcessing, EnableTextRendering);
+        frameGenerator.GenerateFrames(
+            BeatmapPath, AudioPath, Framerate, OutputPath, Seed,
+            EnablePostProcessing, EnableTextRendering,
+            StartTime, Duration);
     }
 }
 

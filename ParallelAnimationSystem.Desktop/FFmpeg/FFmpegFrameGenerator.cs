@@ -23,7 +23,10 @@ public class FFmpegFrameGenerator(
         ffmpegLogWriter.Dispose();
     }
 
-    public void GenerateFrames(string beatmapPath, string audioPath, int framerate, string outputPath, ulong? seed, bool enablePostProcessing, bool enableTextRendering)
+    public void GenerateFrames(
+        string beatmapPath, string audioPath, int framerate, string outputPath,
+        ulong? seed, bool enablePostProcessing, bool enableTextRendering,
+        float startTime = 0f, float? duration = null)    
     {
         using var scope = serviceProvider.CreateScope();
         var sp = scope.ServiceProvider;
@@ -112,12 +115,19 @@ public class FFmpegFrameGenerator(
         // Load audio
         using var audioPlayer = AudioPlayer.Load(audioPath);
         
-        // Preserve space for progress bar
-        var duration = (float)audioPlayer.Length;
-        var frameCount = (int)(duration * framerate);
+        var totalLength = (float)audioPlayer.Length;
+        if (startTime < 0 || startTime > totalLength)
+            throw new ArgumentOutOfRangeException(nameof(startTime), $"Start time must be between 0 and {totalLength}");
+        
+        var renderDuration = duration ?? (totalLength - startTime);
+
+        if (startTime + renderDuration > totalLength)
+            renderDuration = totalLength - startTime;
+
+        var frameCount = (int)(renderDuration * framerate);
         for (var i = 0; i < frameCount; i++)
         {
-            var time = i / (float)framerate;
+            var time = startTime + i / (float)framerate;
             appDirector.PopulateRenderQueueDrawList(time);
             renderQueue.FinishFrame();
             renderQueue.FlushFrame(renderer);
