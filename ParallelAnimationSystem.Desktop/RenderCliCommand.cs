@@ -20,10 +20,10 @@ public class RenderCliCommand : RootCliCommand
     [CliOption(Name = "framerate", Description = "Frame rate of the output video")]
     public int Framerate { get; set; } = 60;
 
-    [CliOption(Name = "start-time", Description = "Start time in seconds")]
+    [CliOption(Name = "start-time", Description = "Start time in seconds", Required = false)]
     public float StartTime { get; set; } = 0f;
 
-    [CliOption(Name = "duration", Description = "Duration to render in seconds")]
+    [CliOption(Name = "duration", Description = "Duration to render in seconds", Required = false)]
     public float? Duration { get; set; } = null;
 
     [CliOption(Name = "ffmpeg-args", Description = "Output arguments to pass to FFmpeg")]
