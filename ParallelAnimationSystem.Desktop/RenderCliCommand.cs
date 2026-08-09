@@ -2,7 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using ParallelAnimationSystem.Desktop.FFmpeg;
 using ParallelAnimationSystem.Mathematics;
-using ParallelAnimationSystem.Rendering;
+using ParallelAnimationSystem.Platform.OpenGL;
 
 namespace ParallelAnimationSystem.Desktop;
 
@@ -49,6 +49,7 @@ public class RenderCliCommand : RootCliCommand
 
         services
             .AddPlatform<FFmpegGlfwService>(Backend)
+            .AddScoped<IOpenGLSurface, FFmpegSurface>()
             .AddTransient<FFmpegFrameGenerator>();
         
         // Build service provider

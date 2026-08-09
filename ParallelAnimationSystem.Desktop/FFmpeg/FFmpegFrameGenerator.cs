@@ -1,5 +1,6 @@
 using System.CommandLine.Parsing;
 using System.Diagnostics;
+using System.Globalization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ParallelAnimationSystem.Core;
@@ -41,6 +42,18 @@ public class FFmpegFrameGenerator(
         var rss = sp.GetRequiredService<RandomSeedService>();
         rss.Seed = seed ?? NumberUtil.SplitMix64((ulong)DateTimeOffset.Now.ToUnixTimeSeconds());
         
+        // Load audio
+        using var audioPlayer = AudioPlayer.Load(audioPath);
+        
+        var totalLength = (float)audioPlayer.Length;
+        if (startTime < 0 || startTime > totalLength)
+            throw new ArgumentOutOfRangeException(nameof(startTime), $"Start time must be between 0 and {totalLength}");
+        
+        var renderDuration = duration ?? (totalLength - startTime);
+
+        if (startTime + renderDuration > totalLength)
+            renderDuration = totalLength - startTime;
+        
         // Initialize renderer
         var renderQueue = serviceProvider.GetRequiredService<RenderQueue>();
         var renderer = sp.GetRequiredService<IRenderer>();
@@ -69,11 +82,15 @@ public class FFmpegFrameGenerator(
             "-i", "pipe:0",
 
             // input audio args
+            "-ss", startTime.ToString(CultureInfo.InvariantCulture),
             "-c:a", "libvorbis",
             "-i", audioPath,
 
             // video filter
-            "-vf", "vflip"
+            "-vf", "vflip",
+            
+            // cap output duration explicitly
+            "-t", renderDuration.ToString(CultureInfo.InvariantCulture)
         };
 
         foreach (var arg in processStartArgs)
@@ -111,18 +128,6 @@ public class FFmpegFrameGenerator(
         var appDirector = sp.GetRequiredService<AppDirector>();
         appDirector.EnablePostProcessing = enablePostProcessing;
         appDirector.EnableTextRendering = enableTextRendering;
-        
-        // Load audio
-        using var audioPlayer = AudioPlayer.Load(audioPath);
-        
-        var totalLength = (float)audioPlayer.Length;
-        if (startTime < 0 || startTime > totalLength)
-            throw new ArgumentOutOfRangeException(nameof(startTime), $"Start time must be between 0 and {totalLength}");
-        
-        var renderDuration = duration ?? (totalLength - startTime);
-
-        if (startTime + renderDuration > totalLength)
-            renderDuration = totalLength - startTime;
 
         var frameCount = (int)(renderDuration * framerate);
         for (var i = 0; i < frameCount; i++)
